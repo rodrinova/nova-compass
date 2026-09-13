@@ -1478,7 +1478,7 @@
           expenses = MOCK_EXPENSES;
         } else {
           const [projectRes, stagesRes, invoicesRes, timeRes, breaksRes, expensesRes] = await Promise.all([
-            supabase.from('projects').select('*, clients(name), project_types(name), teams(name)').eq('id', projectId).single(),
+            supabase.from('projects').select('*, clients(name), project_types(name)').eq('id', projectId).single(),
             supabase.from('project_stages').select('*, stage_types(name)').eq('project_id', projectId).order('stage_order'),
             supabase.from('invoices').select('*').eq('project_id', projectId).order('issue_date'),
             supabase.from('time_entries').select('hours, billable').eq('project_id', projectId),
@@ -1493,6 +1493,11 @@
           timeEntries = timeRes.data || [];
           breaks = breaksRes.data || [];
           expenses = expensesRes.data || [];
+
+          if (project.team_id) {
+            const teamRes = await supabase.from('teams').select('name').eq('id', project.team_id).maybeSingle();
+            if (!teamRes.error && teamRes.data) project.teams = teamRes.data;
+          }
         }
 
         const clienteNome = project.clients?.name || project.client || 'Sem cliente';
