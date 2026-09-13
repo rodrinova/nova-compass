@@ -606,6 +606,26 @@
     color: white;
   }
   .gantt-empty { font-size: 13px; color: var(--text-muted); }
+  .gantt-row-block { margin-bottom: 4px; }
+  .gantt-row-block .gantt-row { margin-bottom: 3px; }
+  .gantt-delivery-marker {
+    position: absolute;
+    top: -5px;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid #C4453D;
+    transform: translateX(-50%);
+  }
+  .gantt-hours-detail {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    margin: 0 0 10px 118px;
+  }
+  @media (max-width: 480px) {
+    .gantt-hours-detail { margin-left: 0; }
+  }
   .gantt-bar.break-bar {
     background: repeating-linear-gradient(45deg, rgba(184,132,42,0.55), rgba(184,132,42,0.55) 4px, rgba(184,132,42,0.25) 4px, rgba(184,132,42,0.25) 8px);
   }
@@ -971,10 +991,10 @@
     ];
 
     const MOCK_STAGES = [
-      { stage_types: { name: 'Estudo Prévio' }, start_date: '2025-11-10', end_date: '2025-12-05', percentage: 100, status: 'completed' },
-      { stage_types: { name: 'Anteprojeto' }, start_date: '2025-12-06', end_date: '2026-01-20', percentage: 100, status: 'completed' },
-      { stage_types: { name: 'Licenciamento' }, start_date: '2026-01-21', end_date: '2026-03-15', percentage: 60, status: 'in_progress' },
-      { stage_types: { name: 'Projeto Execução' }, start_date: '2026-03-16', end_date: '2026-05-30', percentage: 0, status: 'pending' }
+      { id: 'stg-1', stage_types: { name: 'Estudo Prévio' }, start_date: '2025-11-10', end_date: '2025-12-05', delivery_date: '2025-12-05', percentage: 100, status: 'completed' },
+      { id: 'stg-2', stage_types: { name: 'Anteprojeto' }, start_date: '2025-12-06', end_date: '2026-01-20', delivery_date: '2026-01-20', percentage: 100, status: 'completed' },
+      { id: 'stg-3', stage_types: { name: 'Licenciamento' }, start_date: '2026-01-21', end_date: '2026-03-15', delivery_date: '2026-03-10', percentage: 60, status: 'in_progress' },
+      { id: 'stg-4', stage_types: { name: 'Projeto Execução' }, start_date: '2026-03-16', end_date: '2026-05-30', delivery_date: '2026-05-30', percentage: 0, status: 'pending' }
     ];
 
     const MOCK_INVOICES = [
@@ -984,7 +1004,12 @@
     ];
 
     const MOCK_TIME = [
-      { hours: 42, billable: true }, { hours: 18, billable: true }, { hours: 6, billable: false }
+      { hours: 24, billable: true, stage_id: 'stg-1', user_id: 'm1', member_name: 'Rodrigo' },
+      { hours: 18, billable: true, stage_id: 'stg-1', user_id: 'm2', member_name: 'Nuno' },
+      { hours: 30, billable: true, stage_id: 'stg-2', user_id: 'm1', member_name: 'Rodrigo' },
+      { hours: 12, billable: true, stage_id: 'stg-2', user_id: 'm3', member_name: 'Rute' },
+      { hours: 18, billable: true, stage_id: 'stg-3', user_id: 'm2', member_name: 'Nuno' },
+      { hours: 6, billable: false, stage_id: 'stg-3', user_id: 'm1', member_name: 'Rodrigo' }
     ];
 
     const MOCK_TEAMS = [
@@ -1402,9 +1427,7 @@
         }
 
         const rows = data.map(p => {
-          const valor = p.commission_value != null
-            ? Number(p.commission_value).toLocaleString('pt-PT', {minimumFractionDigits: 2}) + ' €'
-            : '—';
+          const valor = fmtEUR(p.commission_value);
           return `
             <tr class="project-row" data-id="${p.id}">
               <td class="col-code">${p.code ?? '—'}</td>
@@ -1454,8 +1477,14 @@
     overlay.addEventListener('click', closeDetail);
     document.getElementById('close-detail').addEventListener('click', closeDetail);
 
+    function round2(n) {
+      return Math.round((Number(n) || 0) * 100) / 100;
+    }
     function fmtEUR(n) {
-      return n != null ? Number(n).toLocaleString('pt-PT', {minimumFractionDigits: 2}) + ' €' : '—';
+      return n != null ? round2(n).toLocaleString('pt-PT', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €' : '—';
+    }
+    function fmtDateShort(d) {
+      return d.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit' });
     }
 
     async function openDetail(projectId) {
@@ -1481,7 +1510,7 @@
             supabase.from('projects').select('*, clients(name), project_types(name)').eq('id', projectId).single(),
             supabase.from('project_stages').select('*, stage_types(name)').eq('project_id', projectId).order('stage_order'),
             supabase.from('invoices').select('*').eq('project_id', projectId).order('issue_date'),
-            supabase.from('time_entries').select('hours, billable').eq('project_id', projectId),
+            supabase.from('time_entries').select('hours, billable, stage_id, user_id').eq('project_id', projectId),
             supabase.from('project_breaks').select('*').eq('project_id', projectId).order('position_order'),
             supabase.from('expenses').select('*, expense_categories(name)').eq('project_id', projectId).order('date', { ascending: false })
           ]);
@@ -1498,6 +1527,14 @@
             const teamRes = await supabase.from('teams').select('name').eq('id', project.team_id).maybeSingle();
             if (!teamRes.error && teamRes.data) project.teams = teamRes.data;
           }
+
+          const userIds = [...new Set(timeEntries.map(t => t.user_id).filter(Boolean))];
+          if (userIds.length > 0) {
+            const membersRes = await supabase.from('team_members').select('id, name').in('id', userIds);
+            const memberMap = {};
+            (membersRes.data || []).forEach(m => { memberMap[m.id] = m.name; });
+            timeEntries.forEach(t => { t.member_name = memberMap[t.user_id] || 'Sem nome'; });
+          }
         }
 
         const clienteNome = project.clients?.name || project.client || 'Sem cliente';
@@ -1506,11 +1543,11 @@
         document.getElementById('detail-client').textContent = clienteNome;
 
         // --- Financeiro ---
-        const totalHonorarios = Number(project.commission_value ?? 0);
-        const totalFaturado = invoices.reduce((s, i) => s + Number(i.amount ?? 0), 0);
-        const totalRecebido = invoices.reduce((s, i) => s + Number(i.amount_paid ?? 0), 0);
-        const totalDespesas = expenses.reduce((s, e) => s + Number(e.amount ?? 0), 0);
-        const margem = totalFaturado - totalDespesas;
+        const totalHonorarios = round2(project.commission_value ?? 0);
+        const totalFaturado = round2(invoices.reduce((s, i) => s + Number(i.amount ?? 0), 0));
+        const totalRecebido = round2(invoices.reduce((s, i) => s + Number(i.amount_paid ?? 0), 0));
+        const totalDespesas = round2(expenses.reduce((s, e) => s + Number(e.amount ?? 0), 0));
+        const margem = round2(totalFaturado - totalDespesas);
         const pctFaturado = totalHonorarios > 0 ? Math.min(100, Math.round((totalFaturado / totalHonorarios) * 100)) : 0;
 
         // --- Horas ---
@@ -1518,7 +1555,18 @@
         const horasNaoFaturaveis = timeEntries.filter(t => !t.billable).reduce((s, t) => s + Number(t.hours ?? 0), 0);
         const totalHoras = horasFaturaveis + horasNaoFaturaveis;
         const pctFaturavel = totalHoras > 0 ? (horasFaturaveis / totalHoras) * 100 : 0;
-        const taxaEfetiva = horasFaturaveis > 0 ? (totalFaturado / horasFaturaveis) : null;
+        const taxaEfetiva = horasFaturaveis > 0 ? round2(totalFaturado / horasFaturaveis) : null;
+
+        // --- Horas por fase e por pessoa ---
+        const horasPorFase = {};
+        timeEntries.forEach(t => {
+          if (!t.stage_id) return;
+          if (!horasPorFase[t.stage_id]) horasPorFase[t.stage_id] = { total: 0, porPessoa: {} };
+          const h = Number(t.hours ?? 0);
+          horasPorFase[t.stage_id].total += h;
+          const nome = t.member_name || 'Sem nome';
+          horasPorFase[t.stage_id].porPessoa[nome] = (horasPorFase[t.stage_id].porPessoa[nome] || 0) + h;
+        });
 
         // --- Gantt: fases + pausas na mesma escala temporal ---
         const stageDates = stages
@@ -1555,14 +1603,36 @@
             const marcaExcluida = s.excluded_from_invoicing
               ? ' <span title="Excluída da faturação" style="opacity:.45;">✕</span>'
               : '';
+
+            let deliveryMarker = '';
+            if (s.delivery_date) {
+              const delivery = new Date(s.delivery_date);
+              const deliveryPct = ((delivery - minDate) / totalSpan) * 100;
+              deliveryMarker = `<div class="gantt-delivery-marker" style="left:${deliveryPct}%;" title="Entrega: ${fmtDateShort(delivery)}"></div>`;
+            }
+
+            const faseHoras = horasPorFase[s.id];
+            let horasLinha = '';
+            if (faseHoras && faseHoras.total > 0) {
+              const pessoas = Object.entries(faseHoras.porPessoa)
+                .sort((a, b) => b[1] - a[1])
+                .map(([nome, h]) => `${nome} ${Math.round((h / faseHoras.total) * 100)}%`)
+                .join(' · ');
+              horasLinha = `<div class="gantt-hours-detail">${faseHoras.total.toFixed(1)}h registadas — ${pessoas}</div>`;
+            }
+
             return `
-              <div class="gantt-row">
-                <div class="gantt-label">${s.stage_types?.name ?? 'Fase'}${marcaExcluida}</div>
-                <div class="gantt-track">
-                  <div class="gantt-bar" style="left:${leftPct}%; width:${widthPct}%; background:${color};">
-                    ${s.percentage != null ? `<span class="pct">${s.percentage}%</span>` : ''}
+              <div class="gantt-row-block">
+                <div class="gantt-row">
+                  <div class="gantt-label">${s.stage_types?.name ?? 'Fase'}${marcaExcluida}</div>
+                  <div class="gantt-track">
+                    <div class="gantt-bar" style="left:${leftPct}%; width:${widthPct}%; background:${color};">
+                      <span class="pct">${fmtDateShort(start)}–${fmtDateShort(end)}</span>
+                    </div>
+                    ${deliveryMarker}
                   </div>
                 </div>
+                ${horasLinha}
               </div>`;
           }).join('');
 
