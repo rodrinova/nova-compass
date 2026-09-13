@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOVA Compass v1.1</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --cream: #FAF7F2;
+    --purple: #6B4E9E;
+    --purple-light: #8A6DB8;
+    --purple-glow: rgba(107, 78, 158, 0.35);
+    --text-dark: #1C1A19;
+    --text-muted: #8A7F76;
+    --border: rgba(28, 26, 25, 0.08);
+    --glass-bg: rgba(255, 255, 255, 0.55);
+    --glass-border: rgba(255, 255, 255, 0.6);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html { -webkit-font-smoothing: antialiased; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+                 "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(138, 109, 184, 0.18), transparent 45%),
+      radial-gradient(circle at 85% 25%, rgba(107, 78, 158, 0.14), transparent 40%),
+      radial-gradient(circle at 50% 90%, rgba(250, 247, 242, 0.9), transparent 60%),
+      var(--cream);
+    background-attachment: fixed;
+    color: var(--text-dark);
+    min-height: 100vh;
+    letter-spacing: -0.01em;
+  }
+
+  /* ---------- Login ---------- */
+  #login-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 360px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    padding: 40px 32px;
+    border-radius: 28px;
+    box-shadow:
+      0 8px 32px rgba(28, 26, 25, 0.08),
+      0 1px 2px rgba(28, 26, 25, 0.04),
+      inset 0 1px 0 rgba(255,255,255,0.6);
+  }
+
+  .app-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: linear-gradient(155deg, var(--purple-light), var(--purple));
+    margin: 0 auto 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 16px var(--purple-glow), inset 0 1px 1px rgba(255,255,255,0.4);
+  }
+  .app-icon svg { width: 28px; height: 28px; }
+
+  .login-card h1 {
+    font-size: 24px;
+    font-weight: 650;
+    text-align: center;
+    letter-spacing: -0.02em;
+  }
+  .login-card p.sub {
+    color: var(--text-muted);
+    font-size: 14px;
+    text-align: center;
+    margin-top: 4px;
+    margin-bottom: 28px;
+  }
+
+  .field-group {
+    background: rgba(255,255,255,0.6);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    margin-bottom: 14px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+  }
+  .field-group input {
+    width: 100%;
+    padding: 14px 16px;
+    border: none;
+    background: transparent;
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--text-dark);
+  }
+  .field-group input:focus { outline: none; }
+  .field-group input::placeholder { color: var(--text-muted); }
+
+  .toggle-pw {
+    background: none;
+    border: none;
+    padding: 8px 14px 8px 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    color: var(--text-muted);
+  }
+  .toggle-pw:active { opacity: 0.6; }
+  .toggle-pw svg { width: 20px; height: 20px; display: block; }
+
+  #login-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(155deg, var(--purple-light), var(--purple));
+    color: white;
+    border: none;
+    border-radius: 16px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 4px 14px var(--purple-glow);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    margin-top: 4px;
+  }
+  #login-btn:active { transform: scale(0.97); box-shadow: 0 2px 8px var(--purple-glow); }
+  #login-btn:disabled { opacity: 0.6; cursor: default; transform: none; }
+
+  .login-msg {
+    font-size: 13px;
+    margin-top: 14px;
+    text-align: center;
+  }
+  .login-msg.error { color: #C4453D; }
+
+  /* ---------- App shell ---------- */
+  #app-screen { display: none; min-height: 100vh; }
+
+  .nav-bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(250, 247, 242, 0.72);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .nav-bar h1 {
+    font-size: 20px;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+  }
+  .nav-bar p.sub { color: var(--text-muted); font-size: 12px; margin-top: 1px; }
+
+  #logout-btn {
+    background: rgba(255,255,255,0.6);
+    border: 1px solid var(--border);
+    padding: 8px 16px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-dark);
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s ease, transform 0.15s ease;
+  }
+  #logout-btn:active { transform: scale(0.96); background: white; }
+
+  .content-area { max-width: 1080px; margin: 0 auto; padding: 24px 28px 60px; }
+
+  /* ---------- Welcome card ---------- */
+  .welcome-card {
+    background: linear-gradient(135deg, rgba(107,78,158,0.14), rgba(138,109,184,0.06));
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border-radius: 24px;
+    padding: 24px 26px;
+    margin-bottom: 22px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    box-shadow: 0 4px 20px rgba(28,26,25,0.05), inset 0 1px 0 rgba(255,255,255,0.5);
+  }
+  .welcome-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    background: linear-gradient(155deg, var(--purple-light), var(--purple));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px var(--purple-glow);
+  }
+  .welcome-icon svg { width: 26px; height: 26px; }
+  .welcome-text { min-width: 0; }
+  .welcome-greeting {
+    font-size: 20px;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+  }
+  .welcome-message {
+    font-size: 13.5px;
+    color: var(--text-muted);
+    margin-top: 3px;
+  }
+
+  /* ---------- Home screen ---------- */
+  .home-greeting {
+    font-size: 24px;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    margin-bottom: 24px;
+  }
+  .module-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
+  }
+  .module-tile {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid var(--glass-border);
+    border-radius: 22px;
+    padding: 22px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 18px rgba(28,26,25,0.05), inset 0 1px 0 rgba(255,255,255,0.5);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .module-tile:active { transform: scale(0.97); }
+  .module-tile .module-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: linear-gradient(155deg, var(--purple-light), var(--purple));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px var(--purple-glow);
+  }
+  .module-tile .module-icon svg { width: 22px; height: 22px; }
+  .module-tile .module-name { font-size: 15px; font-weight: 650; letter-spacing: -0.01em; }
+  .module-tile .module-desc { font-size: 12px; color: var(--text-muted); margin-top: -8px; }
+
+  /* ---------- Nav: logo / voltar à Home ---------- */
+  .nav-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+  }
+  .nav-logo-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    background: linear-gradient(155deg, var(--purple-light), var(--purple));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 10px var(--purple-glow);
+    flex-shrink: 0;
+  }
+  .nav-logo-icon svg { width: 18px; height: 18px; }
+
+  /* ---------- Cards / list ---------- */
+  .project-list { display: flex; flex-direction: column; gap: 12px; }
+
+  .project-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 18px 20px;
+    box-shadow: 0 4px 18px rgba(28,26,25,0.05), inset 0 1px 0 rgba(255,255,255,0.5);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px 16px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .project-card:active { transform: scale(0.99); }
+
+  .project-main { min-width: 0; }
+  .project-name {
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .project-meta {
+    color: var(--text-muted);
+    font-size: 13px;
+    margin-top: 3px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .project-code {
+    font-variant-numeric: tabular-nums;
+    color: var(--purple);
+    font-weight: 600;
+  }
+
+  .status-pill {
+    align-self: start;
+    padding: 5px 12px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+    background: rgba(107, 78, 158, 0.12);
+    color: var(--purple);
+    white-space: nowrap;
+  }
+
+  .project-footer {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 10px;
+    margin-top: 4px;
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .project-footer .amount {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: var(--text-dark);
+  }
+
+  .center-msg {
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 15px;
+  }
+
+  .error-box {
+    color: #C4453D;
+    background: rgba(196, 69, 61, 0.08);
+    border: 1px solid rgba(196, 69, 61, 0.2);
+    padding: 16px 18px;
+    border-radius: 16px;
+    font-size: 14px;
+  }
+
+  .spinner {
+    width: 28px;
+    height: 28px;
+    border: 3px solid var(--border);
+    border-top-color: var(--purple);
+    border-radius: 50%;
+    margin: 0 auto 14px;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 560px) {
+    .nav-bar, .content-area { padding-left: 18px; padding-right: 18px; }
+    .project-card { grid-template-columns: 1fr; }
+    .status-pill { justify-self: start; }
+  }
+
+  /* ---------- Slide-over de detalhe ---------- */
+  #overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(28, 26, 25, 0.25);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    z-index: 20;
+  }
+  #overlay.open { opacity: 1; pointer-events: auto; }
+
+  #detail-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(560px, 100%);
+    background: rgba(250, 247, 242, 0.92);
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    box-shadow: -8px 0 40px rgba(28,26,25,0.15);
+    transform: translateX(100%);
+    transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+    z-index: 21;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  #detail-panel.open { transform: translateX(0); }
+
+  .detail-header {
+    position: sticky;
+    top: 0;
+    background: rgba(250, 247, 242, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    z-index: 2;
+  }
+  .detail-header .titles { min-width: 0; }
+  .detail-header h2 {
+    font-size: 22px;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .detail-header .sub {
+    color: var(--text-muted);
+    font-size: 13px;
+    margin-top: 2px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  #close-detail {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(28,26,25,0.06);
+    border: none;
+    font-size: 16px;
+    color: var(--text-muted);
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-left: 12px;
+  }
+  #close-detail:active { background: rgba(28,26,25,0.12); }
+
+  .detail-body { padding: 20px 24px 60px; }
+
+  .section-label {
+    font-size: 12px;
+    font-weight: 650;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin: 24px 0 10px;
+  }
+  .section-label:first-child { margin-top: 0; }
+
+  /* Stat tiles */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .stat-tile {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 14px 12px;
+    text-align: center;
+  }
+  .stat-tile .stat-value {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-tile .stat-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 3px;
+  }
+
+  /* Progress ring */
+  .ring-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 18px;
+    padding: 16px 18px;
+  }
+  .ring-row .ring-text { flex: 1; }
+  .ring-row .ring-title { font-size: 14px; font-weight: 600; }
+  .ring-row .ring-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  /* Gantt */
+  .gantt-wrap {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 18px;
+    padding: 16px 18px 18px;
+  }
+  .gantt-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .gantt-row:last-child { margin-bottom: 0; }
+  .gantt-label {
+    width: 108px;
+    flex-shrink: 0;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .gantt-track {
+    position: relative;
+    flex: 1;
+    height: 20px;
+    background: rgba(28,26,25,0.05);
+    border-radius: 10px;
+  }
+  .gantt-bar {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 6px;
+  }
+  .gantt-bar .pct {
+    font-size: 9px;
+    font-weight: 700;
+    color: white;
+  }
+  .gantt-empty { font-size: 13px; color: var(--text-muted); }
+
+  /* Time bar */
+  .time-bar-track {
+    display: flex;
+    height: 28px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: rgba(28,26,25,0.05);
+  }
+  .time-bar-seg.billable { background: var(--purple); }
+  .time-bar-seg.nonbillable { background: rgba(107, 78, 158, 0.28); }
+  .time-legend {
+    display: flex;
+    gap: 16px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .time-legend .dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 5px;
+  }
+  .time-legend .dot.billable { background: var(--purple); }
+  .time-legend .dot.nonbillable { background: rgba(107, 78, 158, 0.28); }
+
+  /* Invoice list */
+  .invoice-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .invoice-row:last-child { border-bottom: none; }
+  .invoice-row .amount { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .invoice-status {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 100px;
+  }
+  .invoice-status.paid { background: rgba(46,125,79,0.12); color: #2E7D4F; }
+  .invoice-status.pending { background: rgba(196,69,61,0.1); color: #C4453D; }
+  .invoice-status.partial { background: rgba(196,150,61,0.12); color: #B8842A; }
+
+  .detail-loading, .detail-empty {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 40px 20px;
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+
+  <!-- Ecrã de Login -->
+  <div id="login-screen">
+    <div class="login-card">
+      <div class="app-icon">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L4 6V18L12 22L20 18V6L12 2Z" stroke="white" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M12 12L20 6" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+          <path d="M12 12L4 6" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+          <path d="M12 12V22" stroke="white" stroke-width="1.6"/>
+        </svg>
+      </div>
+      <h1>NOVA Compass</h1>
+      <p class="sub">v1.1 — inicia sessão com a tua conta</p>
+
+      <div class="field-group">
+        <input type="email" id="email-input" placeholder="Email" autocomplete="username">
+      </div>
+      <div class="field-group">
+        <input type="password" id="password-input" placeholder="Palavra-passe" autocomplete="current-password">
+        <button type="button" class="toggle-pw" id="toggle-pw" aria-label="Mostrar palavra-passe">
+          <svg id="eye-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2 12C2 12 5.5 5 12 5C18.5 5 22 12 22 12C22 12 18.5 19 12 19C5.5 19 2 12 2 12Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/>
+          </svg>
+        </button>
+      </div>
+      <button id="login-btn">Entrar</button>
+      <div id="login-msg" class="login-msg"></div>
+      <button id="dev-skip-btn" style="margin-top:10px; width:100%; background:none; border:none; color:var(--text-muted); font-size:12px; cursor:pointer; text-decoration:underline; font-family:inherit;">
+        Modo desenvolvimento (saltar login)
+      </button>
+    </div>
+  </div>
+
+  <!-- App -->
+  <div id="app-screen">
+    <div class="nav-bar">
+      <div class="nav-left" id="nav-home-btn">
+        <div class="nav-logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L4 6V18L12 22L20 18V6L12 2Z" stroke="white" stroke-width="1.6" stroke-linejoin="round"/>
+            <path d="M12 12L20 6" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+            <path d="M12 12L4 6" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+            <path d="M12 12V22" stroke="white" stroke-width="1.6"/>
+          </svg>
+        </div>
+        <div>
+          <h1 id="nav-title">NOVA Compass</h1>
+          <p class="sub" id="nav-subtitle">Home</p>
+        </div>
+      </div>
+      <button id="logout-btn">Sair</button>
+    </div>
+    <div class="content-area">
+      <div id="home-view">
+        <div id="home-greeting" class="home-greeting">—</div>
+        <div class="module-grid">
+          <div class="module-tile" id="module-projetos">
+            <div class="module-icon">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="4" width="7" height="7" rx="2" stroke="white" stroke-width="1.6"/>
+                <rect x="13" y="4" width="7" height="7" rx="2" stroke="white" stroke-width="1.6"/>
+                <rect x="4" y="13" width="7" height="7" rx="2" stroke="white" stroke-width="1.6"/>
+                <rect x="13" y="13" width="7" height="7" rx="2" stroke="white" stroke-width="1.6"/>
+              </svg>
+            </div>
+            <div class="module-name">Projetos</div>
+            <div class="module-desc">Carteira, faturação e fases</div>
+          </div>
+        </div>
+      </div>
+      <div id="projects-view" style="display:none;">
+        <div id="projects-container" class="center-msg">
+          <div class="spinner"></div>
+          A carregar projetos...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="fatal-banner" style="display:none; position:fixed; top:0; left:0; right:0; background:#C4453D; color:white; padding:12px 20px; font-family:-apple-system,sans-serif; font-size:14px; z-index:9999;"></div>
+
+  <div id="overlay"></div>
+  <div id="detail-panel">
+    <div class="detail-header">
+      <div class="titles">
+        <h2 id="detail-name">—</h2>
+        <div class="sub">
+          <span id="detail-code">—</span>
+          <span>·</span>
+          <span id="detail-client">—</span>
+        </div>
+      </div>
+      <button id="close-detail">✕</button>
+    </div>
+    <div class="detail-body" id="detail-body">
+      <div class="detail-loading">A carregar...</div>
+    </div>
+  </div>
+
+  <script>
+    function showFatal(message) {
+      const banner = document.getElementById('fatal-banner');
+      banner.textContent = message;
+      banner.style.display = 'block';
+      console.error(message);
+    }
+
+    window.addEventListener('error', (e) => {
+      showFatal('Erro JS: ' + e.message);
+    });
+
+    try {
+      const SUPABASE_URL = 'https://syatogsavmrcgjcuydtu.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5YXRvZ3Nhdm1yY2dqY3V5ZHR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMzc0NzEsImV4cCI6MjA5MDcxMzQ3MX0.Pcu3vfXKtbdqFWV0gv2b9ReHpwMErj40hbw_PgkFVBM';
+
+    if (!window.supabase) {
+      throw new Error('A biblioteca da Supabase não carregou. Verifica a tua ligação à internet e recarrega a página.');
+    }
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let devMode = false;
+
+    const MOCK_PROJECTS = [
+      { id: 'mock-1', name: 'Edifício Miradouro', code: 'NOVA-001', client: 'Promotora Atlântico', status: 'Em curso', area: 1240, awarding_date: '2025-11-03', commission_value: 48000 },
+      { id: 'mock-2', name: 'Moradia Vale das Flores', code: 'NOVA-002', client: 'Família Sousa', status: 'To Do', area: 320, awarding_date: '2026-01-15', commission_value: 18500 },
+      { id: 'mock-3', name: 'Reabilitação Rua do Comércio', code: 'NOVA-003', client: 'Município de Gaia', status: 'Concluído', area: 890, awarding_date: '2025-06-20', commission_value: 62000 }
+    ];
+
+    const MOCK_STAGES = [
+      { stage_types: { name: 'Estudo Prévio' }, start_date: '2025-11-10', end_date: '2025-12-05', percentage: 100, status: 'completed' },
+      { stage_types: { name: 'Anteprojeto' }, start_date: '2025-12-06', end_date: '2026-01-20', percentage: 100, status: 'completed' },
+      { stage_types: { name: 'Licenciamento' }, start_date: '2026-01-21', end_date: '2026-03-15', percentage: 60, status: 'in_progress' },
+      { stage_types: { name: 'Projeto Execução' }, start_date: '2026-03-16', end_date: '2026-05-30', percentage: 0, status: 'pending' }
+    ];
+
+    const MOCK_INVOICES = [
+      { invoice_number: 'FT 2025/014', issue_date: '2025-12-10', amount: 14400, amount_paid: 14400 },
+      { invoice_number: 'FT 2026/003', issue_date: '2026-01-25', amount: 14400, amount_paid: 7200 },
+      { invoice_number: 'FT 2026/009', issue_date: '2026-03-01', amount: 9600, amount_paid: 0 }
+    ];
+
+    const MOCK_TIME = [
+      { hours: 42, billable: true }, { hours: 18, billable: true }, { hours: 6, billable: false }
+    ];
+
+    const loginScreen = document.getElementById('login-screen');
+    const appScreen = document.getElementById('app-screen');
+    const loginMsg = document.getElementById('login-msg');
+    const loginBtn = document.getElementById('login-btn');
+    const emailInput = document.getElementById('email-input');
+    const passwordInput = document.getElementById('password-input');
+    const projectsContainer = document.getElementById('projects-container');
+
+    function showLogin() {
+      loginScreen.style.display = 'flex';
+      appScreen.style.display = 'none';
+    }
+
+    async function getDisplayName() {
+      if (devMode) return 'Rodrigo';
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return '';
+        if (user.user_metadata?.full_name) return user.user_metadata.full_name.split(' ')[0];
+
+        const { data: member } = await supabase
+          .from('team_members')
+          .select('name')
+          .eq('email', user.email)
+          .maybeSingle();
+        if (member?.name) return member.name.split(' ')[0];
+
+        return user.email ? user.email.split('@')[0] : '';
+      } catch {
+        return '';
+      }
+    }
+
+    const GREETINGS = {
+      morning: { label: 'Bom dia', icon: 'sun' },
+      afternoon: { label: 'Boa tarde', icon: 'sun' },
+      evening: { label: 'Boa noite', icon: 'moon' },
+      night: { label: 'Boa noite', icon: 'moon' }
+    };
+
+    const MESSAGES = {
+      morning: [
+        'Dia limpo, folha em branco. Vamos a isto.',
+        'O melhor momento para avançar numa fase é agora.',
+        'Um projeto de cada vez — hoje também conta.',
+        'Café feito, cabeça fresca. Bom trabalho.'
+      ],
+      afternoon: [
+        'A meio do dia é quando o trabalho a sério acontece.',
+        'Mais um bocadinho e o dia fecha bem.',
+        'Continua — o que estás a construir vai durar.',
+        'Cada detalhe hoje poupa retrabalho amanhã.'
+      ],
+      evening: [
+        'Fechar bem o dia também é parte do ofício.',
+        'Já foi um bom dia de trabalho. Remata com calma.',
+        'A qualidade nota-se mais no que se revê ao fim do dia.',
+        'Última verificação antes de fechar — vale sempre a pena.'
+      ],
+      night: [
+        'Trabalho a esta hora merece descanso a seguir.',
+        'Se estás aqui a esta hora, é porque importa. Bom trabalho.',
+        'Amanhã agradece o que resolveres agora, com calma.',
+        'Ainda a trabalhar? Faz o essencial e descansa.'
+      ]
+    };
+
+    function getTimePeriod() {
+      const h = new Date().getHours();
+      if (h >= 5 && h < 12) return 'morning';
+      if (h >= 12 && h < 19) return 'afternoon';
+      if (h >= 19 && h < 23) return 'evening';
+      return 'night';
+    }
+
+    const ICONS = {
+      sun: `<circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.6"/>
+            <path d="M12 2.5V5M12 19V21.5M4.2 4.2L6 6M18 18L19.8 19.8M2.5 12H5M19 12H21.5M4.2 19.8L6 18M18 6L19.8 4.2" stroke="white" stroke-width="1.6" stroke-linecap="round"/>`,
+      moon: `<path d="M20 14.5C18.7 15.5 17.1 16 15.4 16C11 16 7.5 12.5 7.5 8.1C7.5 6.4 8 4.8 9 3.5C5.4 4.4 2.8 7.6 2.8 11.5C2.8 16.1 6.6 19.9 11.2 19.9C15 19.9 18.2 17.4 19.2 13.9" stroke="white" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>`
+    };
+
+    async function renderHomeGreeting() {
+      const container = document.getElementById('home-greeting');
+      const name = await getDisplayName();
+      const period = getTimePeriod();
+      const greeting = GREETINGS[period];
+      const nameCapitalized = name ? name.charAt(0).toUpperCase() + name.slice(1) : '';
+      container.textContent = `${greeting.label}${nameCapitalized ? ', ' + nameCapitalized : ''}`;
+    }
+
+    function showApp() {
+      loginScreen.style.display = 'none';
+      appScreen.style.display = 'block';
+      showHome();
+    }
+
+    function showHome() {
+      document.getElementById('nav-title').textContent = 'NOVA Compass';
+      document.getElementById('nav-subtitle').textContent = 'Home';
+      document.getElementById('home-view').style.display = 'block';
+      document.getElementById('projects-view').style.display = 'none';
+      renderHomeGreeting();
+    }
+
+    function openProjectsModule() {
+      document.getElementById('nav-title').textContent = 'Projetos';
+      document.getElementById('nav-subtitle').textContent = 'NOVA Compass v1.1';
+      document.getElementById('home-view').style.display = 'none';
+      document.getElementById('projects-view').style.display = 'block';
+      loadProjects();
+    }
+
+    async function init() {
+      const { data: { session } } = await supabase.auth.getSession();
+      session ? showApp() : showLogin();
+    }
+
+    loginBtn.addEventListener('click', async () => {
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+      loginMsg.textContent = '';
+      loginMsg.className = 'login-msg';
+
+      if (!email || !password) {
+        loginMsg.textContent = 'Preenche email e palavra-passe.';
+        loginMsg.classList.add('error');
+        return;
+      }
+
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'A entrar...';
+
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Entrar';
+
+      if (error) {
+        loginMsg.textContent = 'Login falhou: ' + error.message;
+        loginMsg.classList.add('error');
+        return;
+      }
+      showApp();
+    });
+
+    [emailInput, passwordInput].forEach(el => {
+      el.addEventListener('keydown', e => {
+        if (e.key === 'Enter') loginBtn.click();
+      });
+    });
+
+    const togglePwBtn = document.getElementById('toggle-pw');
+    const eyeIcon = document.getElementById('eye-icon');
+    const eyeOpenPath = `<path d="M2 12C2 12 5.5 5 12 5C18.5 5 22 12 22 12C22 12 18.5 19 12 19C5.5 19 2 12 2 12Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/>`;
+    const eyeClosedPath = `<path d="M3 3L21 21" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M10.6 5.2C11.05 5.1 11.5 5 12 5C18.5 5 22 12 22 12C22 12 21.2 13.5 19.7 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.3 6.3C3.6 8.1 2 12 2 12C2 12 5.5 19 12 19C13.9 19 15.5 18.4 16.8 17.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 10.5C9.2 10.9 9 11.4 9 12C9 13.7 10.3 15 12 15C12.6 15 13.1 14.8 13.5 14.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>`;
+
+    togglePwBtn.addEventListener('click', () => {
+      const isPassword = passwordInput.type === 'password';
+      passwordInput.type = isPassword ? 'text' : 'password';
+      eyeIcon.innerHTML = isPassword ? eyeClosedPath : eyeOpenPath;
+      togglePwBtn.setAttribute('aria-label', isPassword ? 'Ocultar palavra-passe' : 'Mostrar palavra-passe');
+    });
+
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      devMode = false;
+      await supabase.auth.signOut();
+      showLogin();
+    });
+
+    document.getElementById('dev-skip-btn').addEventListener('click', () => {
+      devMode = true;
+      showApp();
+    });
+
+    document.getElementById('nav-home-btn').addEventListener('click', showHome);
+    document.getElementById('module-projetos').addEventListener('click', openProjectsModule);
+
+    async function loadProjects() {
+      projectsContainer.className = 'center-msg';
+      projectsContainer.innerHTML = '<div class="spinner"></div>A carregar projetos...';
+
+      try {
+        let data;
+        if (devMode) {
+          data = MOCK_PROJECTS;
+        } else {
+          const res = await supabase
+            .from('projects')
+            .select('id, name, code, client, status, area, awarding_date, commission_value')
+            .order('created_at', { ascending: false });
+          if (res.error) throw res.error;
+          data = res.data;
+        }
+
+        if (!data || data.length === 0) {
+          projectsContainer.className = 'center-msg';
+          projectsContainer.textContent = 'Sem projetos registados.';
+          return;
+        }
+
+        const cards = data.map(p => {
+          const honorarios = p.commission_value != null
+            ? Number(p.commission_value).toLocaleString('pt-PT', {minimumFractionDigits: 2}) + ' €'
+            : '—';
+          return `
+            <div class="project-card" data-id="${p.id}" style="cursor:pointer;">
+              <div class="project-main">
+                <div class="project-name">${p.name ?? 'Sem nome'}</div>
+                <div class="project-meta">
+                  <span class="project-code">${p.code ?? '—'}</span>
+                  <span>${p.client ?? 'Sem cliente'}</span>
+                  ${p.area != null ? `<span>${p.area} m²</span>` : ''}
+                </div>
+              </div>
+              <span class="status-pill">${p.status ?? '—'}</span>
+              <div class="project-footer">
+                <span>${p.awarding_date ? 'Adjudicado em ' + p.awarding_date : 'Sem data de adjudicação'}</span>
+                <span class="amount">${honorarios}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        projectsContainer.className = 'project-list';
+        projectsContainer.innerHTML = cards;
+
+        document.querySelectorAll('.project-card').forEach(card => {
+          card.addEventListener('click', () => openDetail(card.dataset.id));
+        });
+      } catch (err) {
+        projectsContainer.className = 'error-box';
+        projectsContainer.textContent = 'Erro ao carregar projetos: ' + err.message;
+        console.error(err);
+      }
+    }
+
+    // ---------- Painel de detalhe ----------
+    const overlay = document.getElementById('overlay');
+    const detailPanel = document.getElementById('detail-panel');
+    const detailBody = document.getElementById('detail-body');
+
+    function closeDetail() {
+      overlay.classList.remove('open');
+      detailPanel.classList.remove('open');
+    }
+    overlay.addEventListener('click', closeDetail);
+    document.getElementById('close-detail').addEventListener('click', closeDetail);
+
+    function fmtEUR(n) {
+      return n != null ? Number(n).toLocaleString('pt-PT', {minimumFractionDigits: 2}) + ' €' : '—';
+    }
+
+    async function openDetail(projectId) {
+      overlay.classList.add('open');
+      detailPanel.classList.add('open');
+      detailBody.innerHTML = '<div class="detail-loading">A carregar...</div>';
+      document.getElementById('detail-name').textContent = '—';
+      document.getElementById('detail-code').textContent = '—';
+      document.getElementById('detail-client').textContent = '—';
+
+      try {
+        let project, stages, invoices, timeEntries;
+
+        if (devMode) {
+          project = MOCK_PROJECTS.find(p => p.id === projectId) || MOCK_PROJECTS[0];
+          stages = MOCK_STAGES;
+          invoices = MOCK_INVOICES;
+          timeEntries = MOCK_TIME;
+        } else {
+          const [projectRes, stagesRes, invoicesRes, timeRes] = await Promise.all([
+            supabase.from('projects').select('*').eq('id', projectId).single(),
+            supabase.from('project_stages').select('*, stage_types(name)').eq('project_id', projectId).order('stage_order'),
+            supabase.from('invoices').select('*').eq('project_id', projectId).order('issue_date'),
+            supabase.from('time_entries').select('hours, billable').eq('project_id', projectId)
+          ]);
+
+          if (projectRes.error) throw projectRes.error;
+          project = projectRes.data;
+          stages = stagesRes.data || [];
+          invoices = invoicesRes.data || [];
+          timeEntries = timeRes.data || [];
+        }
+
+        document.getElementById('detail-name').textContent = project.name ?? 'Sem nome';
+        document.getElementById('detail-code').textContent = project.code ?? '—';
+        document.getElementById('detail-client').textContent = project.client ?? 'Sem cliente';
+
+        // --- Financeiro ---
+        const totalHonorarios = Number(project.commission_value ?? 0);
+        const totalFaturado = invoices.reduce((s, i) => s + Number(i.amount ?? 0), 0);
+        const totalRecebido = invoices.reduce((s, i) => s + Number(i.amount_paid ?? 0), 0);
+        const pctFaturado = totalHonorarios > 0 ? Math.min(100, Math.round((totalFaturado / totalHonorarios) * 100)) : 0;
+
+        // --- Horas ---
+        const horasFaturaveis = timeEntries.filter(t => t.billable).reduce((s, t) => s + Number(t.hours ?? 0), 0);
+        const horasNaoFaturaveis = timeEntries.filter(t => !t.billable).reduce((s, t) => s + Number(t.hours ?? 0), 0);
+        const totalHoras = horasFaturaveis + horasNaoFaturaveis;
+        const pctFaturavel = totalHoras > 0 ? (horasFaturaveis / totalHoras) * 100 : 0;
+
+        // --- Gantt: calcular escala temporal ---
+        const stageDates = stages
+          .filter(s => s.start_date && (s.end_date || s.delivery_date))
+          .map(s => ({ start: new Date(s.start_date), end: new Date(s.end_date || s.delivery_date) }));
+
+        let ganttHtml = '<div class="gantt-empty">Sem datas suficientes para desenhar o cronograma.</div>';
+        if (stageDates.length > 0) {
+          const minDate = new Date(Math.min(...stageDates.map(d => d.start)));
+          const maxDate = new Date(Math.max(...stageDates.map(d => d.end)));
+          const totalSpan = Math.max(1, maxDate - minDate);
+
+          ganttHtml = stages.map(s => {
+            if (!s.start_date) {
+              return `
+                <div class="gantt-row">
+                  <div class="gantt-label">${s.stage_types?.name ?? 'Fase'}</div>
+                  <div class="gantt-track"></div>
+                </div>`;
+            }
+            const start = new Date(s.start_date);
+            const end = new Date(s.end_date || s.delivery_date || s.start_date);
+            const leftPct = ((start - minDate) / totalSpan) * 100;
+            const widthPct = Math.max(2, ((end - start) / totalSpan) * 100);
+            const color = s.status === 'completed' || s.status === 'done'
+              ? '#2E7D4F'
+              : s.status === 'in_progress' || s.status === 'active'
+                ? 'var(--purple)'
+                : 'rgba(107,78,158,0.35)';
+            return `
+              <div class="gantt-row">
+                <div class="gantt-label">${s.stage_types?.name ?? 'Fase'}</div>
+                <div class="gantt-track">
+                  <div class="gantt-bar" style="left:${leftPct}%; width:${widthPct}%; background:${color};">
+                    ${s.percentage != null ? `<span class="pct">${s.percentage}%</span>` : ''}
+                  </div>
+                </div>
+              </div>`;
+          }).join('');
+        }
+
+        // --- Faturas ---
+        let invoicesHtml = '<div class="gantt-empty">Sem faturas registadas.</div>';
+        if (invoices.length > 0) {
+          invoicesHtml = invoices.map(inv => {
+            const paid = Number(inv.amount_paid ?? 0);
+            const amount = Number(inv.amount ?? 0);
+            const status = paid >= amount ? 'paid' : paid > 0 ? 'partial' : 'pending';
+            const statusLabel = status === 'paid' ? 'Pago' : status === 'partial' ? 'Parcial' : 'Pendente';
+            return `
+              <div class="invoice-row">
+                <span>${inv.invoice_number ?? inv.issue_date ?? 'Fatura'}</span>
+                <span class="invoice-status ${status}">${statusLabel}</span>
+                <span class="amount">${fmtEUR(amount)}</span>
+              </div>`;
+          }).join('');
+        }
+
+        detailBody.innerHTML = `
+          <div class="section-label">Estado</div>
+          <div class="stat-grid">
+            <div class="stat-tile">
+              <div class="stat-value">${project.status ?? '—'}</div>
+              <div class="stat-label">Estado</div>
+            </div>
+            <div class="stat-tile">
+              <div class="stat-value">${project.area != null ? project.area + ' m²' : '—'}</div>
+              <div class="stat-label">Área</div>
+            </div>
+            <div class="stat-tile">
+              <div class="stat-value">${project.awarding_date ?? '—'}</div>
+              <div class="stat-label">Adjudicação</div>
+            </div>
+          </div>
+
+          <div class="section-label">Financeiro</div>
+          <div class="ring-row">
+            <svg width="64" height="64" viewBox="0 0 64 64">
+              <circle cx="32" cy="32" r="27" fill="none" stroke="rgba(28,26,25,0.08)" stroke-width="7"/>
+              <circle cx="32" cy="32" r="27" fill="none" stroke="var(--purple)" stroke-width="7"
+                stroke-linecap="round"
+                stroke-dasharray="${2 * Math.PI * 27}"
+                stroke-dashoffset="${2 * Math.PI * 27 * (1 - pctFaturado / 100)}"
+                transform="rotate(-90 32 32)"/>
+              <text x="32" y="37" text-anchor="middle" font-size="14" font-weight="700" fill="#1C1A19">${pctFaturado}%</text>
+            </svg>
+            <div class="ring-text">
+              <div class="ring-title">Faturado do total</div>
+              <div class="ring-sub">${fmtEUR(totalFaturado)} de ${fmtEUR(totalHonorarios)}</div>
+            </div>
+          </div>
+          <div class="stat-grid" style="margin-top:10px;">
+            <div class="stat-tile">
+              <div class="stat-value">${fmtEUR(totalHonorarios)}</div>
+              <div class="stat-label">Honorários</div>
+            </div>
+            <div class="stat-tile">
+              <div class="stat-value">${fmtEUR(totalFaturado)}</div>
+              <div class="stat-label">Faturado</div>
+            </div>
+            <div class="stat-tile">
+              <div class="stat-value">${fmtEUR(totalRecebido)}</div>
+              <div class="stat-label">Recebido</div>
+            </div>
+          </div>
+
+          <div class="section-label">Fases</div>
+          <div class="gantt-wrap">${ganttHtml}</div>
+
+          <div class="section-label">Horas registadas</div>
+          <div class="gantt-wrap">
+            <div class="time-bar-track">
+              <div class="time-bar-seg billable" style="width:${pctFaturavel}%;"></div>
+              <div class="time-bar-seg nonbillable" style="width:${100 - pctFaturavel}%;"></div>
+            </div>
+            <div class="time-legend">
+              <span><span class="dot billable"></span>Faturáveis: ${horasFaturaveis.toFixed(1)}h</span>
+              <span><span class="dot nonbillable"></span>Não faturáveis: ${horasNaoFaturaveis.toFixed(1)}h</span>
+            </div>
+          </div>
+
+          <div class="section-label">Faturas</div>
+          <div class="gantt-wrap">${invoicesHtml}</div>
+        `;
+      } catch (err) {
+        detailBody.innerHTML = `<div class="error-box">Erro ao carregar detalhe: ${err.message}</div>`;
+        console.error(err);
+      }
+    }
+
+    init();
+
+    } catch (err) {
+      showFatal('Erro fatal ao iniciar a app: ' + err.message);
+    }
+  </script>
+</body>
+</html>
