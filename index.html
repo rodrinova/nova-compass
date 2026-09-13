@@ -561,6 +561,95 @@
   }
   .gantt-empty { font-size: 13px; color: var(--text-muted); }
 
+  /* ---------- Cartão de equipa (Home) ---------- */
+  .team-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    padding: 20px 22px 18px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 18px rgba(28,26,25,0.05), inset 0 1px 0 rgba(255,255,255,0.5);
+    cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+  .team-card:active { transform: scale(0.98); }
+  .team-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .team-card-name {
+    font-size: 12.5px;
+    font-weight: 650;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .team-card-chevron { color: var(--purple); font-size: 16px; }
+  .team-card-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .team-stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .team-stat-label { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .team-card-deliveries {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .delivery-mini-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 12.5px;
+  }
+  .delivery-mini-row span:first-child {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .delivery-mini-row .d-date { color: var(--text-muted); flex-shrink: 0; }
+  .team-card-empty { font-size: 12.5px; color: var(--text-muted); }
+
+  /* ---------- Seletor de equipa ---------- */
+  .segmented {
+    display: inline-flex;
+    background: rgba(28,26,25,0.05);
+    border-radius: 100px;
+    padding: 3px;
+    gap: 2px;
+    margin-bottom: 20px;
+  }
+  .segmented button {
+    border: none;
+    background: none;
+    padding: 8px 16px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .segmented button.active {
+    background: white;
+    color: var(--purple);
+    box-shadow: 0 2px 6px rgba(28,26,25,0.08);
+  }
+
   /* Time bar */
   .time-bar-track {
     display: flex;
@@ -675,6 +764,23 @@
     <div class="content-area">
       <div id="home-view">
         <div id="home-greeting" class="home-greeting">—</div>
+        <div class="team-card" id="team-card" style="display:none;">
+          <div class="team-card-top">
+            <div class="team-card-name" id="team-card-name">—</div>
+            <div class="team-card-chevron">→</div>
+          </div>
+          <div class="team-card-stats">
+            <div>
+              <div class="team-stat-value" id="team-stat-invoiced">—</div>
+              <div class="team-stat-label">Faturado em <span id="team-stat-month">—</span></div>
+            </div>
+            <div>
+              <div class="team-stat-value" id="team-stat-deliveries">—</div>
+              <div class="team-stat-label">Entregas este mês</div>
+            </div>
+          </div>
+          <div class="team-card-deliveries" id="team-card-deliveries-list"></div>
+        </div>
         <div class="module-grid">
           <div class="module-tile" id="module-projetos">
             <div class="module-icon">
@@ -694,6 +800,13 @@
         <div id="projects-container" class="center-msg">
           <div class="spinner"></div>
           A carregar projetos...
+        </div>
+      </div>
+      <div id="team-view" style="display:none;">
+        <div class="segmented" id="team-selector"></div>
+        <div class="section-label">Planeamento</div>
+        <div class="gantt-wrap" id="team-gantt">
+          <div class="detail-loading">A carregar...</div>
         </div>
       </div>
     </div>
@@ -766,6 +879,14 @@
       { hours: 42, billable: true }, { hours: 18, billable: true }, { hours: 6, billable: false }
     ];
 
+    const MOCK_TEAMS = [
+      { id: 'mock-team-alpha', name: 'Team Alpha' },
+      { id: 'mock-team-beta', name: 'Team Beta' }
+    ];
+    const MOCK_MEMBER = { id: 'mock-member-1', name: 'Rodrigo Alves', email: 'rodrigo@novassociates.com', team_id: 'mock-team-alpha', team_name: 'Team Alpha' };
+
+    let currentMember = null;
+
     const loginScreen = document.getElementById('login-screen');
     const appScreen = document.getElementById('app-screen');
     const loginMsg = document.getElementById('login-msg');
@@ -796,6 +917,208 @@
         return user.email ? user.email.split('@')[0] : '';
       } catch {
         return '';
+      }
+    }
+
+    async function getCurrentMember() {
+      if (currentMember) return currentMember;
+      if (devMode) {
+        currentMember = MOCK_MEMBER;
+        return currentMember;
+      }
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return null;
+        const { data: member } = await supabase
+          .from('team_members')
+          .select('id, name, email, team_id, teams(name)')
+          .eq('email', user.email)
+          .maybeSingle();
+        if (member) {
+          currentMember = {
+            id: member.id, name: member.name, email: member.email,
+            team_id: member.team_id, team_name: member.teams?.name
+          };
+        }
+        return currentMember;
+      } catch {
+        return null;
+      }
+    }
+
+    async function loadAllTeams() {
+      if (devMode) return MOCK_TEAMS;
+      const { data } = await supabase.from('teams').select('id, name').order('name');
+      return data || [];
+    }
+
+    function monthRange(date = new Date()) {
+      const y = date.getFullYear(), m = date.getMonth();
+      const first = new Date(y, m, 1);
+      const last = new Date(y, m + 1, 0);
+      const fmt = d => d.toISOString().slice(0, 10);
+      return { first: fmt(first), last: fmt(last), label: date.toLocaleDateString('pt-PT', { month: 'long' }) };
+    }
+
+    function fmtEURShort(n) {
+      return Number(n || 0).toLocaleString('pt-PT', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' €';
+    }
+
+    async function renderTeamCard() {
+      const card = document.getElementById('team-card');
+      const member = await getCurrentMember();
+      if (!member || !member.team_id) {
+        card.style.display = 'none';
+        return;
+      }
+      card.style.display = 'block';
+      const { first, last, label } = monthRange();
+      document.getElementById('team-card-name').textContent = member.team_name || 'Equipa';
+      document.getElementById('team-stat-month').textContent = label;
+
+      try {
+        let invoicesTotal = 0;
+        let deliveries = [];
+
+        if (devMode) {
+          invoicesTotal = MOCK_INVOICES.reduce((s, i) => s + Number(i.amount || 0), 0);
+          deliveries = MOCK_STAGES
+            .filter(s => s.end_date >= first && s.end_date <= last)
+            .map(s => ({ name: s.stage_types?.name ?? 'Fase', date: s.end_date }));
+        } else {
+          const [invRes, stagesRes] = await Promise.all([
+            supabase.from('invoices')
+              .select('amount, issue_date, projects!inner(team_id)')
+              .eq('projects.team_id', member.team_id)
+              .gte('issue_date', first).lte('issue_date', last),
+            supabase.from('project_stages')
+              .select('delivery_date, stage_types(name), projects!inner(name, team_id)')
+              .eq('projects.team_id', member.team_id)
+              .not('delivery_date', 'is', null)
+              .gte('delivery_date', first).lte('delivery_date', last)
+              .order('delivery_date')
+          ]);
+          invoicesTotal = (invRes.data || []).reduce((s, i) => s + Number(i.amount || 0), 0);
+          deliveries = (stagesRes.data || []).map(s => ({
+            name: `${s.projects?.name ?? 'Projeto'} — ${s.stage_types?.name ?? 'Fase'}`,
+            date: s.delivery_date
+          }));
+        }
+
+        document.getElementById('team-stat-invoiced').textContent = fmtEURShort(invoicesTotal);
+        document.getElementById('team-stat-deliveries').textContent = deliveries.length;
+
+        const list = document.getElementById('team-card-deliveries-list');
+        if (deliveries.length === 0) {
+          list.innerHTML = '<div class="team-card-empty">Sem entregas previstas este mês.</div>';
+        } else {
+          const shown = deliveries.slice(0, 2);
+          const rest = deliveries.length - shown.length;
+          list.innerHTML = shown.map(d => `
+            <div class="delivery-mini-row">
+              <span>${d.name}</span>
+              <span class="d-date">${new Date(d.date).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' })}</span>
+            </div>`).join('') + (rest > 0 ? `<div class="delivery-mini-row"><span>+${rest} mais</span></div>` : '');
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById('team-stat-invoiced').textContent = '—';
+        document.getElementById('team-stat-deliveries').textContent = '—';
+      }
+    }
+
+    async function showTeamView(teamId) {
+      document.getElementById('nav-title').textContent = 'Equipa';
+      document.getElementById('nav-subtitle').textContent = 'Planeamento';
+      document.getElementById('home-view').style.display = 'none';
+      document.getElementById('projects-view').style.display = 'none';
+      document.getElementById('team-view').style.display = 'block';
+
+      const teams = await loadAllTeams();
+      const member = await getCurrentMember();
+      const activeTeamId = teamId || member?.team_id || (teams[0] && teams[0].id);
+
+      const selector = document.getElementById('team-selector');
+      selector.innerHTML = teams.map(t => `
+        <button data-team-id="${t.id}" class="${t.id === activeTeamId ? 'active' : ''}">${t.name}</button>
+      `).join('');
+      selector.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => showTeamView(btn.dataset.teamId));
+      });
+
+      await loadTeamPlanning(activeTeamId);
+    }
+
+    async function loadTeamPlanning(teamId) {
+      const ganttEl = document.getElementById('team-gantt');
+      ganttEl.innerHTML = '<div class="detail-loading">A carregar...</div>';
+
+      try {
+        let stages;
+        if (devMode) {
+          stages = teamId === 'mock-team-alpha'
+            ? MOCK_STAGES.map((s, i) => ({
+                ...s,
+                project_id: MOCK_PROJECTS[i % MOCK_PROJECTS.length].id,
+                projects: { name: MOCK_PROJECTS[i % MOCK_PROJECTS.length].name }
+              }))
+            : [];
+        } else {
+          const res = await supabase
+            .from('project_stages')
+            .select('project_id, start_date, end_date, delivery_date, percentage, status, projects!inner(name, team_id)')
+            .eq('projects.team_id', teamId)
+            .order('start_date');
+          if (res.error) throw res.error;
+          stages = res.data || [];
+        }
+
+        if (!stages || stages.length === 0) {
+          ganttEl.innerHTML = '<div class="gantt-empty">Esta equipa ainda não tem fases com datas registadas.</div>';
+          return;
+        }
+
+        const byProject = {};
+        stages.forEach(s => {
+          if (!s.start_date) return;
+          const key = s.project_id;
+          const end = s.end_date || s.delivery_date || s.start_date;
+          if (!byProject[key]) {
+            byProject[key] = { name: s.projects?.name ?? 'Projeto', start: new Date(s.start_date), end: new Date(end), pcts: [] };
+          } else {
+            if (new Date(s.start_date) < byProject[key].start) byProject[key].start = new Date(s.start_date);
+            if (new Date(end) > byProject[key].end) byProject[key].end = new Date(end);
+          }
+          if (s.percentage != null) byProject[key].pcts.push(Number(s.percentage));
+        });
+
+        const projectsArr = Object.values(byProject);
+        if (projectsArr.length === 0) {
+          ganttEl.innerHTML = '<div class="gantt-empty">Sem datas suficientes para desenhar o planeamento.</div>';
+          return;
+        }
+
+        const minDate = new Date(Math.min(...projectsArr.map(p => p.start)));
+        const maxDate = new Date(Math.max(...projectsArr.map(p => p.end)));
+        const totalSpan = Math.max(1, maxDate - minDate);
+
+        ganttEl.innerHTML = projectsArr.map(p => {
+          const leftPct = ((p.start - minDate) / totalSpan) * 100;
+          const widthPct = Math.max(2, ((p.end - p.start) / totalSpan) * 100);
+          const avgPct = p.pcts.length ? Math.round(p.pcts.reduce((a, b) => a + b, 0) / p.pcts.length) : null;
+          return `
+            <div class="gantt-row">
+              <div class="gantt-label">${p.name}</div>
+              <div class="gantt-track">
+                <div class="gantt-bar" style="left:${leftPct}%; width:${widthPct}%; background:var(--purple);">
+                  ${avgPct != null ? `<span class="pct">${avgPct}%</span>` : ''}
+                </div>
+              </div>
+            </div>`;
+        }).join('');
+      } catch (err) {
+        ganttEl.innerHTML = `<div class="error-box">Erro ao carregar planeamento: ${err.message}</div>`;
+        console.error(err);
       }
     }
 
@@ -867,7 +1190,9 @@
       document.getElementById('nav-subtitle').textContent = 'Home';
       document.getElementById('home-view').style.display = 'block';
       document.getElementById('projects-view').style.display = 'none';
+      document.getElementById('team-view').style.display = 'none';
       renderHomeGreeting();
+      renderTeamCard();
     }
 
     function openProjectsModule() {
@@ -875,6 +1200,7 @@
       document.getElementById('nav-subtitle').textContent = 'NOVA Compass v1.1';
       document.getElementById('home-view').style.display = 'none';
       document.getElementById('projects-view').style.display = 'block';
+      document.getElementById('team-view').style.display = 'none';
       loadProjects();
     }
 
@@ -942,6 +1268,10 @@
 
     document.getElementById('nav-home-btn').addEventListener('click', showHome);
     document.getElementById('module-projetos').addEventListener('click', openProjectsModule);
+    document.getElementById('team-card').addEventListener('click', async () => {
+      const member = await getCurrentMember();
+      showTeamView(member?.team_id);
+    });
 
     async function loadProjects() {
       projectsContainer.className = 'center-msg';
