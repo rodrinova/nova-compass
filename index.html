@@ -606,26 +606,30 @@
     color: white;
   }
   .gantt-empty { font-size: 13px; color: var(--text-muted); }
-  .gantt-row-block { margin-bottom: 4px; }
-  .gantt-row-block .gantt-row { margin-bottom: 3px; }
-  .gantt-delivery-marker {
+  .gantt-end-date {
     position: absolute;
-    top: -5px;
-    width: 0;
-    height: 0;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 6px solid #C4453D;
-    transform: translateX(-50%);
-  }
-  .gantt-hours-detail {
-    font-size: 10.5px;
+    top: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    font-size: 10px;
+    font-weight: 600;
     color: var(--text-muted);
-    margin: 0 0 10px 118px;
+    white-space: nowrap;
+    padding-left: 6px;
   }
-  @media (max-width: 480px) {
-    .gantt-hours-detail { margin-left: 0; }
+  .mini-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .mini-table th {
+    text-align: left;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    font-weight: 650;
+    padding: 0 8px 8px 0;
   }
+  .mini-table td { padding: 8px 8px 8px 0; border-top: 1px solid var(--border); }
+  .mini-table th.col-value, .mini-table td.col-value { text-align: right; font-variant-numeric: tabular-nums; }
   .gantt-bar.break-bar {
     background: repeating-linear-gradient(45deg, rgba(184,132,42,0.55), rgba(184,132,42,0.55) 4px, rgba(184,132,42,0.25) 4px, rgba(184,132,42,0.25) 8px);
   }
@@ -665,9 +669,25 @@
     font-variant-numeric: tabular-nums;
     font-weight: 600;
   }
+  .search-bar-wrap { margin-bottom: 14px; }
+  .search-input {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 14px;
+    padding: 11px 16px;
+    font-size: 14px;
+    color: inherit;
+    font-family: inherit;
+  }
+  .search-input:focus { outline: none; border-color: var(--purple-light); }
+  .search-input::placeholder { color: var(--text-muted); }
+
   @media (max-width: 600px) {
     .projects-table { font-size: 12.5px; }
     .projects-table th, .projects-table td { padding: 10px 7px; }
+    .projects-table .col-type { display: none; }
   }
 
   /* ---------- Cartão de equipa (Home) ---------- */
@@ -916,6 +936,9 @@
         </div>
       </div>
       <div id="projects-view" style="display:none;">
+        <div class="search-bar-wrap">
+          <input type="text" id="projects-search" class="search-input" placeholder="Pesquisar por nome ou código..." autocomplete="off">
+        </div>
         <div id="projects-container" class="center-msg">
           <div class="spinner"></div>
           A carregar projetos...
@@ -1403,9 +1426,66 @@
       showTeamView(member?.team_id);
     });
 
+    let allProjectsData = [];
+
+    function renderProjectsTable(data) {
+      if (!data || data.length === 0) {
+        projectsContainer.className = 'center-msg';
+        projectsContainer.textContent = 'Sem projetos correspondentes.';
+        return;
+      }
+
+      const rows = data.map(p => {
+        const valor = fmtEUR(p.commission_value);
+        return `
+          <tr class="project-row" data-id="${p.id}">
+            <td class="col-code">${p.code ?? '—'}</td>
+            <td class="col-name">${p.name ?? 'Sem nome'}</td>
+            <td class="col-area">${p.area != null ? p.area + ' m²' : '—'}</td>
+            <td class="col-type">${p.project_types?.name ?? '—'}</td>
+            <td class="col-value">${valor}</td>
+          </tr>
+        `;
+      }).join('');
+
+      projectsContainer.className = 'projects-table-wrap';
+      projectsContainer.innerHTML = `
+        <table class="projects-table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Nome</th>
+              <th>Área</th>
+              <th class="col-type">Tipo</th>
+              <th class="col-value">Valor</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+
+      document.querySelectorAll('.project-row').forEach(row => {
+        row.addEventListener('click', () => openDetail(row.dataset.id));
+      });
+    }
+
+    document.getElementById('projects-search').addEventListener('input', (e) => {
+      const term = e.target.value.trim().toLowerCase();
+      if (!term) {
+        renderProjectsTable(allProjectsData);
+        return;
+      }
+      const filtered = allProjectsData.filter(p =>
+        (p.name ?? '').toLowerCase().includes(term) ||
+        (p.code ?? '').toLowerCase().includes(term)
+      );
+      renderProjectsTable(filtered);
+    });
+
     async function loadProjects() {
       projectsContainer.className = 'center-msg';
       projectsContainer.innerHTML = '<div class="spinner"></div>A carregar projetos...';
+      document.getElementById('projects-search').value = '';
 
       try {
         let data;
@@ -1420,44 +1500,8 @@
           data = res.data;
         }
 
-        if (!data || data.length === 0) {
-          projectsContainer.className = 'center-msg';
-          projectsContainer.textContent = 'Sem projetos registados.';
-          return;
-        }
-
-        const rows = data.map(p => {
-          const valor = fmtEUR(p.commission_value);
-          return `
-            <tr class="project-row" data-id="${p.id}">
-              <td class="col-code">${p.code ?? '—'}</td>
-              <td class="col-name">${p.name ?? 'Sem nome'}</td>
-              <td class="col-area">${p.area != null ? p.area + ' m²' : '—'}</td>
-              <td class="col-type">${p.project_types?.name ?? '—'}</td>
-              <td class="col-value">${valor}</td>
-            </tr>
-          `;
-        }).join('');
-
-        projectsContainer.className = 'projects-table-wrap';
-        projectsContainer.innerHTML = `
-          <table class="projects-table">
-            <thead>
-              <tr>
-                <th>Código</th>
-                <th>Nome</th>
-                <th>Área</th>
-                <th>Tipo</th>
-                <th class="col-value">Valor</th>
-              </tr>
-            </thead>
-            <tbody>${rows}</tbody>
-          </table>
-        `;
-
-        document.querySelectorAll('.project-row').forEach(row => {
-          row.addEventListener('click', () => openDetail(row.dataset.id));
-        });
+        allProjectsData = data || [];
+        renderProjectsTable(allProjectsData);
       } catch (err) {
         projectsContainer.className = 'error-box';
         projectsContainer.textContent = 'Erro ao carregar projetos: ' + err.message;
@@ -1568,7 +1612,7 @@
           horasPorFase[t.stage_id].porPessoa[nome] = (horasPorFase[t.stage_id].porPessoa[nome] || 0) + h;
         });
 
-        // --- Gantt: fases + pausas na mesma escala temporal ---
+        // --- Cronograma: fases e pausas intercaladas por ordem cronológica ---
         const stageDates = stages
           .filter(s => s.start_date && (s.end_date || s.delivery_date))
           .map(s => ({ start: new Date(s.start_date), end: new Date(s.end_date || s.delivery_date) }));
@@ -1583,60 +1627,50 @@
           const maxDate = new Date(Math.max(...allDates.map(d => d.end)));
           const totalSpan = Math.max(1, maxDate - minDate);
 
-          const stageRows = stages.map(s => {
-            if (!s.start_date) {
+          const timelineItems = [
+            ...stages.map(s => ({ kind: 'stage', data: s, sortDate: s.start_date ? new Date(s.start_date) : null })),
+            ...breaks.map(b => ({ kind: 'break', data: b, sortDate: b.start_date ? new Date(b.start_date) : null }))
+          ].sort((a, b) => {
+            if (!a.sortDate && !b.sortDate) return 0;
+            if (!a.sortDate) return 1;
+            if (!b.sortDate) return -1;
+            return a.sortDate - b.sortDate;
+          });
+
+          ganttHtml = timelineItems.map(item => {
+            if (item.kind === 'stage') {
+              const s = item.data;
+              if (!s.start_date) {
+                return `
+                  <div class="gantt-row">
+                    <div class="gantt-label">${s.stage_types?.name ?? 'Fase'}</div>
+                    <div class="gantt-track"></div>
+                  </div>`;
+              }
+              const start = new Date(s.start_date);
+              const end = new Date(s.end_date || s.delivery_date || s.start_date);
+              const leftPct = ((start - minDate) / totalSpan) * 100;
+              const widthPct = Math.max(2, ((end - start) / totalSpan) * 100);
+              const color = s.status === 'completed' || s.status === 'done'
+                ? '#2E7D4F'
+                : s.status === 'in_progress' || s.status === 'active'
+                  ? 'var(--purple)'
+                  : 'rgba(113,77,121,0.35)';
+              const marcaExcluida = s.excluded_from_invoicing
+                ? ' <span title="Excluída da faturação" style="opacity:.45;">✕</span>'
+                : '';
+              const endLabelLeft = Math.min(98, leftPct + widthPct);
               return `
-                <div class="gantt-row">
-                  <div class="gantt-label">${s.stage_types?.name ?? 'Fase'}</div>
-                  <div class="gantt-track"></div>
-                </div>`;
-            }
-            const start = new Date(s.start_date);
-            const end = new Date(s.end_date || s.delivery_date || s.start_date);
-            const leftPct = ((start - minDate) / totalSpan) * 100;
-            const widthPct = Math.max(2, ((end - start) / totalSpan) * 100);
-            const color = s.status === 'completed' || s.status === 'done'
-              ? '#2E7D4F'
-              : s.status === 'in_progress' || s.status === 'active'
-                ? 'var(--purple)'
-                : 'rgba(113,77,121,0.35)';
-            const marcaExcluida = s.excluded_from_invoicing
-              ? ' <span title="Excluída da faturação" style="opacity:.45;">✕</span>'
-              : '';
-
-            let deliveryMarker = '';
-            if (s.delivery_date) {
-              const delivery = new Date(s.delivery_date);
-              const deliveryPct = ((delivery - minDate) / totalSpan) * 100;
-              deliveryMarker = `<div class="gantt-delivery-marker" style="left:${deliveryPct}%;" title="Entrega: ${fmtDateShort(delivery)}"></div>`;
-            }
-
-            const faseHoras = horasPorFase[s.id];
-            let horasLinha = '';
-            if (faseHoras && faseHoras.total > 0) {
-              const pessoas = Object.entries(faseHoras.porPessoa)
-                .sort((a, b) => b[1] - a[1])
-                .map(([nome, h]) => `${nome} ${Math.round((h / faseHoras.total) * 100)}%`)
-                .join(' · ');
-              horasLinha = `<div class="gantt-hours-detail">${faseHoras.total.toFixed(1)}h registadas — ${pessoas}</div>`;
-            }
-
-            return `
-              <div class="gantt-row-block">
                 <div class="gantt-row">
                   <div class="gantt-label">${s.stage_types?.name ?? 'Fase'}${marcaExcluida}</div>
                   <div class="gantt-track">
-                    <div class="gantt-bar" style="left:${leftPct}%; width:${widthPct}%; background:${color};">
-                      <span class="pct">${fmtDateShort(start)}–${fmtDateShort(end)}</span>
-                    </div>
-                    ${deliveryMarker}
+                    <div class="gantt-bar" style="left:${leftPct}%; width:${widthPct}%; background:${color};"></div>
+                    <div class="gantt-end-date" style="left:${endLabelLeft}%;">${fmtDateShort(end)}</div>
                   </div>
-                </div>
-                ${horasLinha}
-              </div>`;
-          }).join('');
-
-          const breakRows = breaks.filter(b => b.start_date && b.end_date).map(b => {
+                </div>`;
+            }
+            const b = item.data;
+            if (!b.start_date || !b.end_date) return '';
             const start = new Date(b.start_date);
             const end = new Date(b.end_date);
             const leftPct = ((start - minDate) / totalSpan) * 100;
@@ -1651,8 +1685,35 @@
                 </div>
               </div>`;
           }).join('');
+        }
 
-          ganttHtml = stageRows + breakRows;
+        // --- Tabela: horas por fase e por pessoa ---
+        const stageNameById = {};
+        stages.forEach(s => { stageNameById[s.id] = s.stage_types?.name ?? 'Fase'; });
+        const horasRows = [];
+        Object.entries(horasPorFase).forEach(([stageId, info]) => {
+          const faseName = stageNameById[stageId] ?? 'Fase';
+          Object.entries(info.porPessoa)
+            .sort((a, b) => b[1] - a[1])
+            .forEach(([nome, h]) => {
+              horasRows.push({ faseName, nome, h, pct: info.total > 0 ? Math.round((h / info.total) * 100) : 0 });
+            });
+        });
+        let horasTableHtml = '<div class="gantt-empty">Sem horas registadas com fase associada.</div>';
+        if (horasRows.length > 0) {
+          horasTableHtml = `
+            <table class="mini-table">
+              <thead><tr><th>Fase</th><th>Pessoa</th><th class="col-value">Horas</th><th class="col-value">Peso</th></tr></thead>
+              <tbody>
+                ${horasRows.map(r => `
+                  <tr>
+                    <td>${r.faseName}</td>
+                    <td>${r.nome}</td>
+                    <td class="col-value">${r.h.toFixed(1)}h</td>
+                    <td class="col-value">${r.pct}%</td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>`;
         }
 
         // --- Faturas ---
@@ -1755,6 +1816,9 @@
 
           <div class="section-label">Cronograma</div>
           <div class="gantt-wrap">${ganttHtml}</div>
+
+          <div class="section-label">Horas por fase e por pessoa</div>
+          <div class="gantt-wrap">${horasTableHtml}</div>
 
           <div class="section-label">Faturas</div>
           <div class="gantt-wrap">${invoicesHtml}</div>
