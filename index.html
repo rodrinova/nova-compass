@@ -610,18 +610,22 @@
   /* Gantt com scroll horizontal e régua */
   .gantt-scale-toggle { margin-bottom: 12px; }
   .gantt-body { display: flex; align-items: flex-start; }
-  .gantt-labels-col { flex-shrink: 0; width: 116px; }
+  .gantt-labels-col { flex-shrink: 0; width: 168px; }
   .gantt-label-spacer { height: 26px; }
   .gantt-label-cell {
-    height: 34px;
-    display: flex;
-    align-items: center;
+    min-height: 42px;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    -webkit-box-pack: center;
+    overflow: hidden;
     font-size: 12px;
     font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    padding-right: 8px;
+    line-height: 1.2;
+    white-space: normal;
+    word-break: break-word;
+    padding: 4px 8px 4px 0;
+    box-sizing: border-box;
   }
   .gantt-scroll { flex: 1; overflow-x: auto; -webkit-overflow-scrolling: touch; min-width: 0; }
   .gantt-scroll-inner { position: relative; }
@@ -639,30 +643,19 @@
     color: var(--text-muted);
     white-space: nowrap;
   }
-  .gantt-track-row { position: relative; height: 34px; }
+  .gantt-track-row { position: relative; min-height: 42px; }
   .gantt-lane {
     position: absolute;
-    top: 7px; left: 0; right: 0;
+    top: 11px; left: 0; right: 0;
     height: 20px;
     background: rgba(28,26,25,0.05);
     border-radius: 10px;
   }
   .gantt-track-row .gantt-bar {
     position: absolute;
-    top: 7px;
+    top: 11px;
     height: 20px;
     border-radius: 10px;
-  }
-  .gantt-end-date {
-    position: absolute;
-    top: 0;
-    height: 34px;
-    display: flex;
-    align-items: center;
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--text-muted);
-    white-space: nowrap;
   }
 
   .mini-table-total td { font-weight: 700; border-top: 2px solid var(--border); }
@@ -1514,7 +1507,8 @@
             end_date: addDays(s.end_date, offset),
             delivery_date: addDays(s.delivery_date, offset),
             status: si === 0 ? 'completed' : (si === 1 ? 'in_progress' : 'pending'),
-            mock_invoice: si === 0 ? 3600 : (si === 1 ? 3600 : 0)
+            percentage: s.percentage,
+            fixed_value: null
           });
         });
         result.push({
@@ -1544,7 +1538,7 @@
         } else {
           const projRes = await supabase
             .from('projects')
-            .select('id, name, code, awarding_date')
+            .select('id, name, code, awarding_date, commission_value')
             .eq('team_id', teamId)
             .is('archived_at', null);
           if (projRes.error) throw projRes.error;
@@ -1555,13 +1549,16 @@
           if (projectIds.length > 0) {
             const stagesRes = await supabase
               .from('project_stages')
-              .select('id, project_id, stage_order, stage_types(name), start_date, end_date, delivery_date, status')
+              .select('id, project_id, stage_order, stage_types(name), start_date, end_date, delivery_date, status, percentage, fixed_value')
               .in('project_id', projectIds)
               .order('stage_order');
             if (stagesRes.error) throw stagesRes.error;
             stages = stagesRes.data || [];
           }
         }
+
+        // Adjudicação é só o marco de arranque do projeto, não uma fase de trabalho a planear
+        stages = stages.filter(s => (s.stage_types?.name ?? '') !== 'Adjudicação');
 
         projects.sort((a, b) => {
           if (!a.awarding_date && !b.awarding_date) return 0;
@@ -1576,6 +1573,9 @@
           return;
         }
 
+        const projectById = {};
+        projects.forEach(p => { projectById[p.id] = p; });
+
         const stagesByProject = {};
         stages.forEach(s => {
           if (!stagesByProject[s.project_id]) stagesByProject[s.project_id] = [];
@@ -1585,18 +1585,14 @@
         const hasDates = s => s.start_date && (s.end_date || s.delivery_date);
         const notCompleted = s => s.status !== 'completed' && s.status !== 'done';
 
-        let stageInvoiceTotals = {};
-        if (!devMode) {
-          const projectIds = projects.map(p => p.id);
-          if (projectIds.length > 0) {
-            const invRes = await supabase.from('invoices').select('stage_id, amount').in('project_id', projectIds);
-            (invRes.data || []).forEach(inv => {
-              if (!inv.stage_id) return;
-              stageInvoiceTotals[inv.stage_id] = (stageInvoiceTotals[inv.stage_id] || 0) + Number(inv.amount || 0);
-            });
+        function stageBudgetValue(stage) {
+          if (stage.fixed_value != null) return Number(stage.fixed_value);
+          const project = projectById[stage.project_id];
+          if (stage.percentage != null && project?.commission_value != null) {
+            return Number(project.commission_value) * Number(stage.percentage) / 100;
           }
+          return 0;
         }
-        const invoiceForStage = (s) => devMode ? (s.mock_invoice || 0) : (stageInvoiceTotals[s.id] || 0);
 
         let teamScale = 'week';
 
@@ -1649,7 +1645,7 @@
                 : (s.status === 'in_progress' || s.status === 'active')
                   ? 'var(--purple)'
                   : 'rgba(113,77,121,0.35)';
-              const invoiced = invoiceForStage(s);
+              const invoiced = stageBudgetValue(s);
 
               labelRows.push(`<div class="gantt-label-cell" style="padding-left:14px; font-weight:500;" data-open-project="${p.id}">${s.stage_types?.name ?? 'Fase'}</div>`);
               trackRows.push(`
