@@ -924,6 +924,11 @@
   /* ---------- Repositório de despesas ---------- */
   .expense-chart-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .expense-chart-caption { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+  #despesas-chart-inner {
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    margin-top: 12px;
+  }
+  #despesas-chart-inner.fading { opacity: 0; transform: translateY(4px); }
 
   /* ---------- Categorias (Definições) ---------- */
   .category-row {
@@ -3592,18 +3597,32 @@
         <input type="number" id="exp-amount" class="form-input" step="0.01" min="0">
         <label class="field-label">Data</label>
         <input type="date" id="exp-date" class="form-input">
-        <label class="field-label">Pago por</label>
-        <input type="text" id="exp-paidby" class="form-input" value="${member?.name ?? ''}">
-        <label class="field-label">Reembolsada?</label>
-        <div class="segmented" id="exp-reimbursed-toggle">
-          <button type="button" data-reimbursed="false" class="active">Não</button>
-          <button type="button" data-reimbursed="true">Sim</button>
+        <label class="field-label">Quem pagou</label>
+        <div class="segmented" id="exp-payer-toggle">
+          <button type="button" data-payer="me" class="active">Eu (${member?.name ?? 'sem nome'})</button>
+          <button type="button" data-payer="company">A empresa</button>
+        </div>
+        <div id="exp-reimbursed-wrap">
+          <label class="field-label">Reembolsada?</label>
+          <div class="segmented" id="exp-reimbursed-toggle">
+            <button type="button" data-reimbursed="false" class="active">Não</button>
+            <button type="button" data-reimbursed="true">Sim</button>
+          </div>
         </div>
         <button id="exp-submit" class="primary-btn">Guardar despesa</button>
         <div id="exp-msg" class="form-msg"></div>
       `;
       openQuickModal('Registar despesa', bodyHtml);
       document.getElementById('exp-date').value = fmtDateInput(new Date());
+
+      let expPayer = 'me';
+      document.getElementById('exp-payer-toggle').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-payer]');
+        if (!btn) return;
+        expPayer = btn.dataset.payer;
+        document.querySelectorAll('#exp-payer-toggle button').forEach(b => b.classList.toggle('active', b === btn));
+        document.getElementById('exp-reimbursed-wrap').style.display = expPayer === 'company' ? 'none' : 'block';
+      });
 
       let expReimbursed = false;
       document.getElementById('exp-reimbursed-toggle').addEventListener('click', (e) => {
@@ -3634,9 +3653,8 @@
         const description = document.getElementById('exp-description').value.trim();
         const amount = parseFloat(document.getElementById('exp-amount').value);
         const date = document.getElementById('exp-date').value;
-        const paidBy = document.getElementById('exp-paidby').value.trim();
-        if (!description || isNaN(amount) || amount <= 0 || !date || !paidBy) {
-          msgEl.textContent = 'Preenche descrição, valor, data e quem pagou.';
+        if (!description || isNaN(amount) || amount <= 0 || !date) {
+          msgEl.textContent = 'Preenche descrição, valor e data.';
           msgEl.className = 'form-msg error';
           return;
         }
@@ -3651,9 +3669,9 @@
             project_id: projSelect.value || null,
             description, amount, date,
             category_id: document.getElementById('exp-category').value || null,
-            paid_by: paidBy,
-            paid_by_member_id: member?.id || null,
-            reimbursed: expReimbursed
+            paid_by: expPayer === 'company' ? 'Empresa' : (member?.name || 'Desconhecido'),
+            paid_by_member_id: expPayer === 'company' ? null : (member?.id || null),
+            reimbursed: expPayer === 'company' ? false : expReimbursed
           };
           if (devMode) {
             msgEl.textContent = 'Despesa registada (modo de demonstração).';
@@ -3751,39 +3769,115 @@
       return e.paid_by || 'Desconhecido';
     }
 
-    function renderExpenseChartSvg(monthlyTotals) {
-      if (monthlyTotals.length === 0) return '<div class="gantt-empty">Sem despesas suficientes para o gráfico.</div>';
-      const chartHeight = 150;
-      const slotWidth = 46;
-      const barWidth = 28;
-      const svgWidth = monthlyTotals.length * slotWidth;
-      const maxVal = Math.max(...monthlyTotals.map(m => m.total), 1);
-      const avg = monthlyTotals.reduce((s, m) => s + m.total, 0) / monthlyTotals.length;
-      const usableHeight = chartHeight - 30;
+    function isCompanyPaid(e) {
+      const label = (e.paid_by || '').trim().toLowerCase();
+      return !e.paid_by_member_id && (label === 'empresa' || label === 'a empresa' || label.includes('cartão da empresa') || label.includes('cartao da empresa'));
+    }
 
-      const bars = monthlyTotals.map((m, i) => {
-        const barHeight = Math.max(3, (m.total / maxVal) * usableHeight);
-        const x = i * slotWidth + (slotWidth - barWidth) / 2;
-        const y = chartHeight - barHeight - 20;
-        const [yr, mo] = m.month.split('-');
-        const label = new Date(Number(yr), Number(mo) - 1, 1).toLocaleDateString('pt-PT', { month: 'short' }) + '/' + yr.slice(2);
-        return `
-          <rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" rx="5" fill="var(--purple)"></rect>
-          <text x="${x + barWidth / 2}" y="${chartHeight - 6}" font-size="9" fill="#8a8580" text-anchor="middle">${label}</text>
-        `;
+    function smoothPath(points) {
+      if (points.length < 2) {
+        return points.length === 1 ? `M ${points[0].x} ${points[0].y}` : '';
+      }
+      let d = `M ${points[0].x} ${points[0].y}`;
+      for (let i = 0; i < points.length - 1; i++) {
+        const p0 = points[i === 0 ? i : i - 1];
+        const p1 = points[i];
+        const p2 = points[i + 1];
+        const p3 = points[i + 2 < points.length ? i + 2 : i + 1];
+        const cp1x = p1.x + (p2.x - p0.x) / 6;
+        const cp1y = p1.y + (p2.y - p0.y) / 6;
+        const cp2x = p2.x - (p3.x - p1.x) / 6;
+        const cp2y = p2.y - (p3.y - p1.y) / 6;
+        d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+      }
+      return d;
+    }
+
+    function buildExpenseBuckets(expenses, granularity) {
+      const map = {};
+      expenses.forEach(e => {
+        if (!e.date) return;
+        let key;
+        if (granularity === 'month') {
+          key = e.date.slice(0, 7);
+        } else {
+          const d = new Date(e.date + 'T00:00:00');
+          const dow = d.getDay();
+          d.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1));
+          key = d.toISOString().slice(0, 10);
+        }
+        map[key] = (map[key] || 0) + Number(e.amount || 0);
+      });
+      const keys = Object.keys(map).sort();
+      const limited = granularity === 'week' ? keys.slice(-16) : keys.slice(-12);
+      return limited.map(k => ({ key: k, total: map[k] }));
+    }
+
+    function renderExpenseLineChart(buckets, granularity) {
+      if (buckets.length === 0) return '<div class="gantt-empty">Sem despesas suficientes para o gráfico.</div>';
+      const chartHeight = 168;
+      const slotWidth = granularity === 'week' ? 54 : 64;
+      const topPad = 26, bottomPad = 26;
+      const usableHeight = chartHeight - topPad - bottomPad;
+      const svgWidth = Math.max(slotWidth * buckets.length, 160);
+      const maxVal = Math.max(...buckets.map(b => b.total), 1);
+
+      const points = buckets.map((b, i) => ({
+        x: buckets.length === 1 ? svgWidth / 2 : i * slotWidth + slotWidth / 2,
+        y: topPad + usableHeight - (b.total / maxVal) * usableHeight,
+        total: b.total,
+        key: b.key
+      }));
+
+      const linePath = smoothPath(points);
+      const areaPath = points.length > 1
+        ? `${linePath} L ${points[points.length - 1].x} ${chartHeight - bottomPad} L ${points[0].x} ${chartHeight - bottomPad} Z`
+        : '';
+
+      const dots = points.map(p => `<circle cx="${p.x}" cy="${p.y}" r="3.5" fill="var(--purple)" stroke="white" stroke-width="1.5"></circle>`).join('');
+      const valueLabels = points.map(p => `<text x="${p.x}" y="${p.y - 10}" font-size="9.5" fill="#5c5650" text-anchor="middle" font-weight="650">${fmtEURShort(p.total)}</text>`).join('');
+      const axisLabels = points.map(p => {
+        let label;
+        if (granularity === 'month') {
+          const [yr, mo] = p.key.split('-');
+          label = new Date(Number(yr), Number(mo) - 1, 1).toLocaleDateString('pt-PT', { month: 'short' }) + '/' + yr.slice(2);
+        } else {
+          label = fmtDateShort(new Date(p.key + 'T00:00:00'));
+        }
+        return `<text x="${p.x}" y="${chartHeight - 8}" font-size="9" fill="#8a8580" text-anchor="middle">${label}</text>`;
       }).join('');
-
-      const avgY = chartHeight - 20 - (avg / maxVal) * usableHeight;
 
       return `
         <div class="expense-chart-scroll">
           <svg viewBox="0 0 ${svgWidth} ${chartHeight}" width="${svgWidth}" height="${chartHeight}">
-            <line x1="0" y1="${avgY}" x2="${svgWidth}" y2="${avgY}" stroke="#C4453D" stroke-width="1.2" stroke-dasharray="4,3"></line>
-            ${bars}
+            <defs>
+              <linearGradient id="expenseAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="var(--purple)" stop-opacity="0.22"/>
+                <stop offset="100%" stop-color="var(--purple)" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            ${areaPath ? `<path d="${areaPath}" fill="url(#expenseAreaGrad)"></path>` : ''}
+            <path d="${linePath}" fill="none" stroke="var(--purple)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
+            ${dots}
+            ${valueLabels}
+            ${axisLabels}
           </svg>
-        </div>
-        <div class="expense-chart-caption">Linha a tracejado: média mensal (${fmtEUR(avg)})</div>
-      `;
+        </div>`;
+    }
+
+    let despesasChartExpenses = [];
+    let despesasChartScale = 'month';
+
+    function updateDespesasChart(scale) {
+      despesasChartScale = scale;
+      const inner = document.getElementById('despesas-chart-inner');
+      if (!inner) return;
+      inner.classList.add('fading');
+      setTimeout(() => {
+        const buckets = buildExpenseBuckets(despesasChartExpenses, scale);
+        inner.innerHTML = renderExpenseLineChart(buckets, scale);
+        inner.classList.remove('fading');
+      }, 180);
     }
 
     function renderDespesas(expenses, projectMap, memberMap) {
@@ -3798,32 +3892,35 @@
 
       const totalDespesas = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
       const totalReembolsado = expenses.filter(e => e.reimbursed).reduce((s, e) => s + Number(e.amount || 0), 0);
-      const totalPorReembolsar = totalDespesas - totalReembolsado;
+      const totalPorReembolsar = expenses
+        .filter(e => !e.reimbursed && !isCompanyPaid(e))
+        .reduce((s, e) => s + Number(e.amount || 0), 0);
 
       const devidoPorPessoa = {};
-      expenses.filter(e => !e.reimbursed).forEach(e => {
+      expenses.filter(e => !e.reimbursed && !isCompanyPaid(e)).forEach(e => {
         const nome = payerName(e, memberMap);
         devidoPorPessoa[nome] = (devidoPorPessoa[nome] || 0) + Number(e.amount || 0);
       });
       const devidoRows = Object.entries(devidoPorPessoa).sort((a, b) => b[1] - a[1]);
 
-      const monthlyMap = {};
-      expenses.forEach(e => {
-        if (!e.date) return;
-        const month = e.date.slice(0, 7);
-        monthlyMap[month] = (monthlyMap[month] || 0) + Number(e.amount || 0);
-      });
-      const monthlyTotals = Object.keys(monthlyMap).sort().map(m => ({ month: m, total: monthlyMap[m] })).slice(-12);
+      despesasChartExpenses = expenses;
+      despesasChartScale = 'month';
+      const initialBuckets = buildExpenseBuckets(expenses, 'month');
 
-      const rows = expenses.map(e => `
+      const rows = expenses.map(e => {
+        const statusCell = isCompanyPaid(e)
+          ? `<span class="invoice-status neutral">Despesa da empresa</span>`
+          : `<span class="invoice-status ${e.reimbursed ? 'paid' : 'pending'}">${e.reimbursed ? 'Reembolsada' : 'Por reembolsar'}</span>`;
+        return `
         <tr>
           <td>${fmtDateShort(new Date(e.date + 'T00:00:00'))}</td>
           <td>${e.description ?? e.expense_categories?.name ?? 'Despesa'}</td>
           <td>${e.project_id ? (projectMap[e.project_id] ?? 'Projeto') : '—'}</td>
           <td>${payerName(e, memberMap)}</td>
           <td class="col-value">${fmtEUR(Number(e.amount))}</td>
-          <td><span class="invoice-status ${e.reimbursed ? 'paid' : 'pending'}">${e.reimbursed ? 'Reembolsada' : 'Por reembolsar'}</span></td>
-        </tr>`).join('');
+          <td>${statusCell}</td>
+        </tr>`;
+      }).join('');
 
       container.innerHTML = `
         <div class="stat-grid">
@@ -3832,8 +3929,14 @@
           <div class="stat-tile"><div class="stat-value">${fmtEUR(totalPorReembolsar)}</div><div class="stat-label">Por reembolsar</div></div>
         </div>
 
-        <div class="section-label">Média de despesas ao longo do tempo</div>
-        <div class="gantt-wrap">${renderExpenseChartSvg(monthlyTotals)}</div>
+        <div class="section-label">Despesas ao longo do tempo</div>
+        <div class="gantt-wrap">
+          <div class="segmented" id="despesas-chart-scale">
+            <button type="button" data-scale="week">Semanas</button>
+            <button type="button" data-scale="month" class="active">Meses</button>
+          </div>
+          <div id="despesas-chart-inner">${renderExpenseLineChart(initialBuckets, 'month')}</div>
+        </div>
 
         <div class="section-label">Quanto se deve a quem</div>
         <div class="gantt-wrap">
@@ -3854,6 +3957,13 @@
           </table>
         </div>
       `;
+
+      document.getElementById('despesas-chart-scale').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-scale]');
+        if (!btn) return;
+        document.querySelectorAll('#despesas-chart-scale button').forEach(b => b.classList.toggle('active', b === btn));
+        updateDespesasChart(btn.dataset.scale);
+      });
     }
 
     async function loadDespesas() {
