@@ -1007,6 +1007,7 @@
   .invoice-status.paid { background: rgba(46,125,79,0.12); color: #2E7D4F; }
   .invoice-status.pending { background: rgba(196,69,61,0.1); color: #C4453D; }
   .invoice-status.partial { background: rgba(196,150,61,0.12); color: #B8842A; }
+  .invoice-status.neutral { background: rgba(28,26,25,0.06); color: var(--text-muted); }
 
   .detail-loading, .detail-empty {
     text-align: center;
@@ -1278,6 +1279,14 @@
     const MOCK_EXPENSES = [
       { id: 'exp-1', description: 'Deslocação a obra', amount: 45.5, date: '2026-01-12', reimbursed: true, expense_categories: { name: 'Deslocações' } },
       { id: 'exp-2', description: 'Impressões A1', amount: 32, date: '2026-02-02', reimbursed: false, expense_categories: { name: 'Material' } }
+    ];
+
+    const MOCK_STAGE_TYPES = [
+      { id: 'st-1', name: 'Estudo Prévio' },
+      { id: 'st-2', name: 'Anteprojeto' },
+      { id: 'st-3', name: 'Licenciamento' },
+      { id: 'st-4', name: 'Projeto Execução' },
+      { id: 'st-5', name: 'Assistência Técnica' }
     ];
 
     const MOCK_CATEGORIES = [
@@ -2584,18 +2593,14 @@
         const pctFaturavel = totalHoras > 0 ? (horasFaturaveis / totalHoras) * 100 : 0;
         const taxaEfetiva = horasFaturaveis > 0 ? round2(totalFaturado / horasFaturaveis) : null;
 
-        // --- Horas por fase (agregadas por nome de fase) e por pessoa ---
-        const stageNameByStageId = {};
-        stages.forEach(s => { stageNameByStageId[s.id] = s.stage_types?.name ?? 'Fase'; });
-        const horasPorFase = {};
+        // --- Horas por fase específica (para a tabela de Fases) e por pessoa (para Participação) ---
+        const hoursByStageId = {};
+        const hoursByPerson = {};
         timeEntries.forEach(t => {
-          if (!t.stage_id) return;
-          const faseName = stageNameByStageId[t.stage_id] ?? 'Fase';
-          if (!horasPorFase[faseName]) horasPorFase[faseName] = { total: 0, porPessoa: {} };
           const h = Number(t.hours ?? 0);
-          horasPorFase[faseName].total += h;
+          if (t.stage_id) hoursByStageId[t.stage_id] = (hoursByStageId[t.stage_id] || 0) + h;
           const nome = t.member_name || 'Sem nome';
-          horasPorFase[faseName].porPessoa[nome] = (horasPorFase[faseName].porPessoa[nome] || 0) + h;
+          hoursByPerson[nome] = (hoursByPerson[nome] || 0) + h;
         });
 
         // --- Cronograma: fases e pausas intercaladas, com scroll horizontal e régua ---
@@ -2645,7 +2650,7 @@
               const marcaExcluida = s.excluded_from_invoicing
                 ? ' <span title="Excluída da faturação" style="opacity:.45;">✕</span>'
                 : '';
-              return `<div class="gantt-label-cell">${s.stage_types?.name ?? 'Fase'}${marcaExcluida}</div>`;
+              return `<div class="gantt-label-cell">${s.stage_types?.name ?? 'Fase'}${s.revision_label ? ' · ' + s.revision_label : ''}${marcaExcluida}</div>`;
             }
             const b = item.data;
             return `<div class="gantt-label-cell">⏸ ${b.name ?? 'Pausa'}</div>`;
@@ -2731,32 +2736,29 @@
         let ganttScale = 'week';
         const ganttHtml = renderGanttSection(ganttScale);
 
-        // --- Tabela: horas agregadas por fase, com pessoas e total global ---
-        let horasTableHtml = '<div class="gantt-empty">Sem horas registadas com fase associada.</div>';
-        const faseNomes = Object.keys(horasPorFase);
-        if (faseNomes.length > 0) {
-          const totalGlobal = faseNomes.reduce((s, f) => s + horasPorFase[f].total, 0);
-          const linhas = faseNomes.map(faseName => {
-            const info = horasPorFase[faseName];
-            const pessoas = Object.entries(info.porPessoa)
-              .sort((a, b) => b[1] - a[1])
-              .map(([nome, h]) => `${nome} ${h.toFixed(1)}h`)
-              .join(' · ');
-            return `
+        // --- Participação: colaboradores por percentagem de horas no projeto ---
+        let participacaoHtml = '<div class="gantt-empty">Sem horas registadas neste projeto.</div>';
+        const pessoasNomes = Object.keys(hoursByPerson);
+        if (pessoasNomes.length > 0) {
+          const totalGlobalPessoas = pessoasNomes.reduce((s, n) => s + hoursByPerson[n], 0);
+          const linhasPessoas = pessoasNomes
+            .map(nome => ({ nome, h: hoursByPerson[nome] }))
+            .sort((a, b) => b.h - a.h)
+            .map(p => `
               <tr>
-                <td>${faseName}</td>
-                <td>${pessoas}</td>
-                <td class="col-value">${info.total.toFixed(1)}h</td>
-              </tr>`;
-          }).join('');
-          horasTableHtml = `
+                <td>${p.nome}</td>
+                <td class="col-value">${p.h.toFixed(1)}h</td>
+                <td class="col-value">${totalGlobalPessoas > 0 ? Math.round((p.h / totalGlobalPessoas) * 100) : 0}%</td>
+              </tr>`).join('');
+          participacaoHtml = `
             <table class="mini-table">
-              <thead><tr><th>Fase</th><th>Pessoas</th><th class="col-value">Total</th></tr></thead>
+              <thead><tr><th>Colaborador</th><th class="col-value">Horas</th><th class="col-value">Contributo</th></tr></thead>
               <tbody>
-                ${linhas}
+                ${linhasPessoas}
                 <tr class="mini-table-total">
-                  <td colspan="2">Total geral</td>
-                  <td class="col-value">${totalGlobal.toFixed(1)}h</td>
+                  <td>Total geral</td>
+                  <td class="col-value">${totalGlobalPessoas.toFixed(1)}h</td>
+                  <td class="col-value">100%</td>
                 </tr>
               </tbody>
             </table>`;
@@ -2781,23 +2783,34 @@
         if (stages.length > 0) {
           stagesTableHtml = `
             <table class="mini-table">
-              <thead><tr><th>Fase</th><th>Estado</th><th>Faturação</th><th>Pagamento</th></tr></thead>
+              <thead><tr><th>Fase</th><th>Estado</th><th class="col-value">Valor</th><th class="col-value">Horas</th><th>Faturação</th><th>Pagamento</th></tr></thead>
               <tbody>
                 ${stages.map(s => {
                   const inv = stageInvoiceMap[s.id] || { amount: 0, paid: 0 };
+                  const budgeted = stageBudgetValue(s);
+                  const isCompleted = s.status === 'completed' || s.status === 'done';
+                  const shouldFlag = budgeted > 0 && isCompleted;
                   const isInvoiced = inv.amount > 0;
                   const isPaid = isInvoiced && inv.paid >= inv.amount;
                   const isPartial = inv.paid > 0 && inv.paid < inv.amount;
+                  const horas = hoursByStageId[s.id] || 0;
+                  const faseLabel = `${s.stage_types?.name ?? 'Fase'}${s.revision_label ? ' · ' + s.revision_label : ''}`;
                   const invoiceCell = isInvoiced
                     ? `<span class="invoice-status paid">Faturada · ${fmtEUR(inv.amount)}</span>`
-                    : `<span class="invoice-status pending">Por faturar</span>`;
+                    : `<span class="invoice-status ${shouldFlag ? 'pending' : 'neutral'}">Por faturar</span>`;
                   const paymentCell = !isInvoiced
                     ? '—'
-                    : `<span class="invoice-status ${isPaid ? 'paid' : isPartial ? 'partial' : 'pending'}">${isPaid ? 'Paga' : isPartial ? 'Parcial' : 'Não paga'}</span>`;
+                    : isPaid
+                      ? `<span class="invoice-status paid">Paga</span>`
+                      : isPartial
+                        ? `<span class="invoice-status partial">Parcial</span>`
+                        : `<span class="invoice-status ${shouldFlag ? 'pending' : 'neutral'}">Não paga</span>`;
                   return `
                     <tr>
-                      <td>${s.stage_types?.name ?? 'Fase'}</td>
+                      <td>${faseLabel}</td>
                       <td>${stageStatusLabel(s)}</td>
+                      <td class="col-value">${fmtEUR(budgeted)}</td>
+                      <td class="col-value">${horas.toFixed(1)}h</td>
                       <td>${invoiceCell}</td>
                       <td>${paymentCell}</td>
                     </tr>`;
@@ -2898,10 +2911,12 @@
           <div class="section-label">Cronograma</div>
           <div class="gantt-wrap">${ganttHtml}</div>
 
-          <div class="section-label">Horas por fase e por pessoa</div>
-          <div class="gantt-wrap">${horasTableHtml}</div>
+          <div class="section-label">Participação</div>
+          <div class="gantt-wrap">${participacaoHtml}</div>
 
           <div class="section-label">Fases</div>
+          <button type="button" id="add-revision-btn" class="secondary-btn" style="margin-top:0; margin-bottom:10px;">+ Nova revisão de fase</button>
+          <div id="revision-form-wrap" style="display:none;"></div>
           <div class="gantt-wrap">${stagesTableHtml}</div>
 
           <div class="section-label">Despesas</div>
@@ -2909,6 +2924,7 @@
         `;
 
         attachEditableHandlers(project.id ?? projectId, project);
+        attachRevisionFormHandlers(project.id ?? projectId, stages);
       } catch (err) {
         detailBody.innerHTML = `<div class="error-box">Erro ao carregar detalhe: ${err.message}</div>`;
         console.error(err);
@@ -2980,6 +2996,137 @@
             if (ev.key === 'Enter') { input.blur(); }
             if (ev.key === 'Escape') { input.removeEventListener('blur', onBlur); finish(false); }
           });
+        });
+      });
+    }
+
+    function renderRevisionFormHtml() {
+      return `
+        <div class="gantt-wrap" style="margin-bottom:10px;">
+          <label class="field-label" style="margin-top:0;">Tipo de fase</label>
+          <select id="revision-stage-type" class="form-input">
+            <option value="">A carregar...</option>
+          </select>
+          <label class="field-label">Rótulo da revisão (opcional)</label>
+          <input type="text" id="revision-label" class="form-input" placeholder="ex: R02">
+          <label class="field-label">Tipo de valor</label>
+          <div class="segmented" id="revision-value-type-toggle">
+            <button type="button" data-value-type="percentage" class="active">Percentagem</button>
+            <button type="button" data-value-type="fixed">Valor fixo</button>
+          </div>
+          <label class="field-label" id="revision-value-label">Percentagem do valor de adjudicação (%)</label>
+          <input type="number" id="revision-value" class="form-input" step="0.01" min="0" placeholder="ex: 10">
+          <label class="field-label">Início (opcional)</label>
+          <input type="date" id="revision-start" class="form-input">
+          <label class="field-label">Fim (opcional)</label>
+          <input type="date" id="revision-end" class="form-input">
+          <button id="revision-submit-btn" class="primary-btn">Adicionar fase</button>
+          <button id="revision-cancel-btn" class="secondary-btn">Cancelar</button>
+          <div id="revision-form-msg" class="form-msg"></div>
+        </div>`;
+    }
+
+    async function loadStageTypesInto(selectEl) {
+      let types;
+      if (devMode) {
+        types = MOCK_STAGE_TYPES;
+      } else {
+        const res = await supabase.from('stage_types').select('id, name').order('name');
+        types = res.data || [];
+      }
+      selectEl.innerHTML = '<option value="">Seleciona o tipo de fase</option>' +
+        types.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+    }
+
+    function attachRevisionFormHandlers(projectId, stages) {
+      const addBtn = document.getElementById('add-revision-btn');
+      const wrap = document.getElementById('revision-form-wrap');
+
+      addBtn.addEventListener('click', async () => {
+        if (wrap.style.display === 'block') {
+          wrap.style.display = 'none';
+          wrap.innerHTML = '';
+          return;
+        }
+        wrap.innerHTML = renderRevisionFormHtml();
+        wrap.style.display = 'block';
+        await loadStageTypesInto(document.getElementById('revision-stage-type'));
+
+        let revisionValueType = 'percentage';
+        document.getElementById('revision-value-type-toggle').addEventListener('click', (e) => {
+          const btn = e.target.closest('[data-value-type]');
+          if (!btn) return;
+          revisionValueType = btn.dataset.valueType;
+          document.querySelectorAll('#revision-value-type-toggle button').forEach(b => b.classList.toggle('active', b === btn));
+          document.getElementById('revision-value-label').textContent = revisionValueType === 'fixed'
+            ? 'Valor fixo (€)' : 'Percentagem do valor de adjudicação (%)';
+        });
+
+        document.getElementById('revision-cancel-btn').addEventListener('click', () => {
+          wrap.style.display = 'none';
+          wrap.innerHTML = '';
+        });
+
+        document.getElementById('revision-submit-btn').addEventListener('click', async () => {
+          const msgEl = document.getElementById('revision-form-msg');
+          msgEl.textContent = '';
+          msgEl.className = 'form-msg';
+
+          const stageTypeId = document.getElementById('revision-stage-type').value;
+          const revisionLabel = document.getElementById('revision-label').value.trim() || null;
+          const valueRaw = parseFloat(document.getElementById('revision-value').value);
+          const startDate = document.getElementById('revision-start').value || null;
+          const endDate = document.getElementById('revision-end').value || null;
+
+          if (!stageTypeId) {
+            msgEl.textContent = 'Escolhe o tipo de fase.';
+            msgEl.className = 'form-msg error';
+            return;
+          }
+          if (isNaN(valueRaw) || valueRaw < 0) {
+            msgEl.textContent = 'Indica um valor válido.';
+            msgEl.className = 'form-msg error';
+            return;
+          }
+
+          if (!window.confirm('Adicionar esta fase ao projeto?')) return;
+
+          const btn = document.getElementById('revision-submit-btn');
+          btn.disabled = true;
+          btn.textContent = 'A guardar...';
+
+          try {
+            if (devMode) {
+              msgEl.textContent = 'Modo de demonstração — a fase não fica guardada.';
+              msgEl.className = 'form-msg success';
+              btn.disabled = false;
+              btn.textContent = 'Adicionar fase';
+              return;
+            }
+
+            const maxOrder = stages.reduce((m, s) => Math.max(m, s.stage_order || 0), 0);
+            const payload = {
+              project_id: projectId,
+              stage_type_id: stageTypeId,
+              stage_order: maxOrder + 1,
+              revision_label: revisionLabel,
+              base_stage: false,
+              percentage: revisionValueType === 'percentage' ? valueRaw : null,
+              fixed_value: revisionValueType === 'fixed' ? valueRaw : null,
+              pricing_type: revisionValueType,
+              start_date: startDate,
+              end_date: endDate
+            };
+
+            const res = await supabase.from('project_stages').insert(payload);
+            if (res.error) throw res.error;
+            openDetail(projectId);
+          } catch (err) {
+            msgEl.textContent = 'Erro ao guardar: ' + err.message;
+            msgEl.className = 'form-msg error';
+            btn.disabled = false;
+            btn.textContent = 'Adicionar fase';
+          }
         });
       });
     }
