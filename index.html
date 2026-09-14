@@ -752,6 +752,89 @@
   .search-input:focus { outline: none; border-color: var(--purple-light); }
   .search-input::placeholder { color: var(--text-muted); }
 
+  /* ---------- Botão + flutuante e menu de ações rápidas ---------- */
+  .fab-btn {
+    position: fixed;
+    right: 24px;
+    bottom: 28px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(155deg, var(--purple-light), var(--purple));
+    color: white;
+    border: none;
+    font-size: 28px;
+    font-weight: 400;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 6px 20px var(--purple-glow);
+    z-index: 15;
+    transition: transform 0.2s ease;
+  }
+  .fab-btn.open { transform: rotate(45deg); }
+  .fab-menu {
+    position: fixed;
+    right: 24px;
+    bottom: 92px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    z-index: 15;
+  }
+  .fab-menu button {
+    background: rgba(237,237,232,0.97);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    border-radius: 100px;
+    padding: 11px 18px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text-dark);
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 4px 14px rgba(28,26,25,0.1);
+    white-space: nowrap;
+  }
+  .fab-menu button:active { background: white; }
+
+  /* ---------- Modal de ações rápidas ---------- */
+  #quick-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(28,26,25,0.3);
+    backdrop-filter: blur(4px);
+    z-index: 30;
+  }
+  #quick-modal {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(480px, calc(100% - 32px));
+    max-height: min(680px, calc(100% - 48px));
+    background: rgba(237, 237, 232, 0.97);
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    border-radius: 22px;
+    box-shadow: 0 20px 60px rgba(28,26,25,0.25);
+    z-index: 31;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .quick-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .quick-modal-header h3 { font-size: 17px; font-weight: 650; }
+  .quick-modal-body { padding: 18px 20px 24px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
   /* ---------- Formulários genéricos (Horas / Definições) ---------- */
   .field-label {
     font-size: 12px;
@@ -821,6 +904,22 @@
     color: var(--purple); cursor: pointer; font-family: inherit;
   }
   .text-btn.danger { color: #C4453D; }
+
+  /* ---------- Atas de reunião ---------- */
+  .ata-entry { padding: 12px 0; border-top: 1px solid var(--border); cursor: pointer; }
+  .ata-entry:first-child { border-top: none; }
+  .ata-entry-main { display: flex; align-items: baseline; gap: 10px; }
+  .ata-entry-title { font-size: 13.5px; font-weight: 650; flex: 1; min-width: 0; }
+  .ata-entry-date { font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
+  .ata-entry-project { font-size: 12px; color: var(--purple); margin-top: 2px; font-weight: 600; }
+  .ata-entry-body {
+    font-size: 12.5px;
+    color: var(--text-dark);
+    margin-top: 8px;
+    white-space: pre-wrap;
+    display: none;
+  }
+  .ata-entry.expanded .ata-entry-body { display: block; }
 
   /* ---------- Categorias (Definições) ---------- */
   .category-row {
@@ -1059,6 +1158,13 @@
     <div class="content-area">
       <div id="home-view">
         <div id="home-greeting" class="home-greeting">—</div>
+        <button id="home-fab" class="fab-btn" aria-label="Adicionar">+</button>
+        <div id="fab-menu" class="fab-menu" style="display:none;">
+          <button type="button" data-fab-action="horas">Registar horas</button>
+          <button type="button" data-fab-action="projeto">Novo projeto</button>
+          <button type="button" data-fab-action="ata">Nova ata de reunião</button>
+          <button type="button" data-fab-action="despesa">Registar despesa</button>
+        </div>
         <div class="team-card" id="team-card" style="display:none;">
           <div class="team-card-top">
             <div class="team-card-name" id="team-card-name">—</div>
@@ -1108,6 +1214,16 @@
             </div>
             <div class="module-name">Definições</div>
             <div class="module-desc">Categorias e configuração</div>
+          </div>
+          <div class="module-tile" id="module-atas">
+            <div class="module-icon">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7 3.5h8l3 3v14a1 1 0 01-1 1H7a1 1 0 01-1-1v-16a1 1 0 011-1z" stroke="white" stroke-width="1.6" stroke-linejoin="round"/>
+                <path d="M9 10h6M9 13.5h6M9 17h4" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="module-name">Atas</div>
+            <div class="module-desc">Reuniões e histórico</div>
           </div>
         </div>
       </div>
@@ -1208,7 +1324,27 @@
           <div class="detail-loading">A carregar...</div>
         </div>
       </div>
+      <div id="atas-view" style="display:none;">
+        <div class="search-bar-wrap">
+          <input type="text" id="atas-search" class="search-input" placeholder="Pesquisar por título ou texto..." autocomplete="off">
+        </div>
+        <div id="atas-container" class="center-msg">
+          <div class="spinner"></div>
+          A carregar atas...
+        </div>
+      </div>
     </div>
+  </div>
+
+  <div id="quick-modal-overlay" style="display:none;"></div>
+  <div id="quick-modal" style="display:none;">
+    <div class="quick-modal-header">
+      <h3 id="quick-modal-title">—</h3>
+      <button id="quick-modal-close" class="nav-icon-btn" aria-label="Fechar">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="quick-modal-body" id="quick-modal-body"></div>
   </div>
 
   <div id="fatal-banner" style="display:none; position:fixed; top:0; left:0; right:0; background:#C4453D; color:white; padding:12px 20px; font-family:-apple-system,sans-serif; font-size:14px; z-index:9999;"></div>
@@ -1250,6 +1386,29 @@
     const MOCK_EXPENSES = [
       { id: 'exp-1', description: 'Deslocação a obra', amount: 45.5, date: '2026-01-12', reimbursed: true, expense_categories: { name: 'Deslocações' } },
       { id: 'exp-2', description: 'Impressões A1', amount: 32, date: '2026-02-02', reimbursed: false, expense_categories: { name: 'Material' } }
+    ];
+
+    const MOCK_PROJECT_TYPES = [
+      { id: 'pt-1', name: 'Habitação Coletiva' },
+      { id: 'pt-2', name: 'Habitação Unifamiliar' },
+      { id: 'pt-3', name: 'Reabilitação' }
+    ];
+
+    const MOCK_CLIENTS = [
+      { id: 'cl-1', name: 'Promotora Atlântico' },
+      { id: 'cl-2', name: 'Família Sousa' },
+      { id: 'cl-3', name: 'Município de Gaia' }
+    ];
+
+    const MOCK_EXPENSE_CATEGORIES = [
+      { id: 'ec-1', name: 'Deslocações' },
+      { id: 'ec-2', name: 'Material' },
+      { id: 'ec-3', name: 'Outros' }
+    ];
+
+    let mockMeetingNotes = [
+      { id: 'note-1', project_id: 'mock-1', title: 'Reunião de arranque com cliente', body: 'Discutido o programa base e prazos de licenciamento. Cliente confirmou orçamento de 48 mil euros.', meeting_date: '2026-02-05', created_by: 'mock-member-1' },
+      { id: 'note-2', project_id: null, title: 'Reunião interna — planeamento trimestral', body: 'Revisão da carga de trabalho das equipas para o próximo trimestre.', meeting_date: '2026-01-20', created_by: 'mock-member-1' }
     ];
 
     const MOCK_STAGE_TYPES = [
@@ -1470,13 +1629,14 @@
       else if (prev.name === 'projects') openProjectsModule();
       else if (prev.name === 'horas') openHorasModule();
       else if (prev.name === 'settings') openSettingsModule();
+      else if (prev.name === 'atas') openAtasModule();
       else if (prev.name === 'team') showTeamView(prev.teamId);
       else if (prev.name === 'detail') openDetail(prev.projectId);
       else showHome();
     }
 
     function hideAllViews() {
-      ['home-view', 'projects-view', 'team-view', 'horas-view', 'settings-view', 'detail-panel'].forEach(id => {
+      ['home-view', 'projects-view', 'team-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view'].forEach(id => {
         document.getElementById(id).style.display = 'none';
       });
     }
@@ -1890,6 +2050,15 @@
       hideAllViews();
       document.getElementById('settings-view').style.display = 'block';
       loadCategories();
+    }
+
+    function openAtasModule() {
+      pushCurrentView({ name: 'atas' });
+      setNavChrome(false);
+      document.getElementById('nav-title').textContent = 'Atas';
+      hideAllViews();
+      document.getElementById('atas-view').style.display = 'block';
+      loadAtas();
     }
 
     // ---------- Módulo Horas ----------
@@ -2428,6 +2597,7 @@
     document.getElementById('module-projetos').addEventListener('click', openProjectsModule);
     document.getElementById('module-horas').addEventListener('click', openHorasModule);
     document.getElementById('module-definicoes').addEventListener('click', openSettingsModule);
+    document.getElementById('module-atas').addEventListener('click', openAtasModule);
     document.getElementById('team-card').addEventListener('click', async () => {
       const member = await getCurrentMember();
       showTeamView(member?.team_id);
@@ -2543,7 +2713,7 @@
       document.getElementById('detail-client').textContent = '—';
 
       try {
-        let project, stages, invoices, timeEntries, breaks, expenses;
+        let project, stages, invoices, timeEntries, breaks, expenses, projectNotes;
 
         if (devMode) {
           project = MOCK_PROJECTS.find(p => p.id === projectId) || MOCK_PROJECTS[0];
@@ -2552,14 +2722,16 @@
           timeEntries = MOCK_TIME;
           breaks = MOCK_BREAKS.filter(b => b.project_id === project.id);
           expenses = MOCK_EXPENSES;
+          projectNotes = mockMeetingNotes.filter(n => n.project_id === project.id);
         } else {
-          const [projectRes, stagesRes, invoicesRes, timeRes, breaksRes, expensesRes] = await Promise.all([
+          const [projectRes, stagesRes, invoicesRes, timeRes, breaksRes, expensesRes, notesRes] = await Promise.all([
             supabase.from('projects').select('*, clients(name), project_types(name)').eq('id', projectId).single(),
             supabase.from('project_stages').select('*, stage_types(name)').eq('project_id', projectId).order('stage_order'),
             supabase.from('invoices').select('*').eq('project_id', projectId).order('issue_date'),
             supabase.from('time_entries').select('hours, billable, stage_id, user_id').eq('project_id', projectId),
             supabase.from('project_breaks').select('*').eq('project_id', projectId).order('position_order'),
-            supabase.from('expenses').select('*, expense_categories(name)').eq('project_id', projectId).order('date', { ascending: false })
+            supabase.from('expenses').select('*, expense_categories(name)').eq('project_id', projectId).order('date', { ascending: false }),
+            supabase.from('meeting_notes').select('*').eq('project_id', projectId).order('meeting_date', { ascending: false })
           ]);
 
           if (projectRes.error) throw projectRes.error;
@@ -2569,6 +2741,7 @@
           timeEntries = timeRes.data || [];
           breaks = breaksRes.data || [];
           expenses = expensesRes.data || [];
+          projectNotes = notesRes.data || [];
 
           if (project.team_id) {
             const teamRes = await supabase.from('teams').select('name').eq('id', project.team_id).maybeSingle();
@@ -2845,6 +3018,19 @@
           }).join('');
         }
 
+        // --- Atas de reunião do projeto ---
+        let atasProjetoHtml = '<div class="gantt-empty">Sem atas registadas para este projeto.</div>';
+        if (projectNotes.length > 0) {
+          atasProjetoHtml = projectNotes.map(n => `
+            <div class="ata-entry" data-note-id="${n.id}">
+              <div class="ata-entry-main">
+                <span class="ata-entry-title">${n.title}</span>
+                <span class="ata-entry-date">${fmtDateShort(new Date(n.meeting_date + 'T00:00:00'))}</span>
+              </div>
+              <div class="ata-entry-body">${n.body ? n.body.replace(/</g, '&lt;') : 'Sem texto.'}</div>
+            </div>`).join('');
+        }
+
         detailBody.innerHTML = `
           <div class="section-label">Detalhes do projeto</div>
           <div class="gantt-wrap">
@@ -2933,10 +3119,18 @@
 
           <div class="section-label">Despesas</div>
           <div class="gantt-wrap">${expensesHtml}</div>
+
+          <div class="section-label">Atas de reunião</div>
+          <button type="button" id="add-ata-btn" class="secondary-btn" style="margin-top:0; margin-bottom:10px;">+ Nova ata</button>
+          <div class="gantt-wrap">${atasProjetoHtml}</div>
         `;
 
         attachEditableHandlers(project.id ?? projectId, project);
         attachRevisionFormHandlers(project.id ?? projectId, stages);
+        document.querySelectorAll('#detail-body .ata-entry').forEach(row => {
+          row.addEventListener('click', () => row.classList.toggle('expanded'));
+        });
+        document.getElementById('add-ata-btn').addEventListener('click', () => openNewAtaModal(project.id ?? projectId));
       } catch (err) {
         detailBody.innerHTML = `<div class="error-box">Erro ao carregar detalhe: ${err.message}</div>`;
         console.error(err);
@@ -3142,6 +3336,376 @@
         });
       });
     }
+
+    // ---------- Modal genérico de ações rápidas ----------
+    function openQuickModal(title, bodyHtml) {
+      document.getElementById('quick-modal-title').textContent = title;
+      document.getElementById('quick-modal-body').innerHTML = bodyHtml;
+      document.getElementById('quick-modal-overlay').style.display = 'block';
+      document.getElementById('quick-modal').style.display = 'flex';
+    }
+    function closeQuickModal() {
+      document.getElementById('quick-modal-overlay').style.display = 'none';
+      document.getElementById('quick-modal').style.display = 'none';
+      document.getElementById('quick-modal-body').innerHTML = '';
+    }
+    document.getElementById('quick-modal-close').addEventListener('click', closeQuickModal);
+    document.getElementById('quick-modal-overlay').addEventListener('click', closeQuickModal);
+
+    // ---------- Botão + e menu de ações rápidas ----------
+    const homeFab = document.getElementById('home-fab');
+    const fabMenu = document.getElementById('fab-menu');
+    homeFab.addEventListener('click', () => {
+      const isOpen = fabMenu.style.display === 'flex';
+      fabMenu.style.display = isOpen ? 'none' : 'flex';
+      homeFab.classList.toggle('open', !isOpen);
+    });
+    fabMenu.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-fab-action]');
+      if (!btn) return;
+      fabMenu.style.display = 'none';
+      homeFab.classList.remove('open');
+      const action = btn.dataset.fabAction;
+      if (action === 'horas') openHorasModule();
+      else if (action === 'projeto') openNewProjectModal();
+      else if (action === 'ata') openNewAtaModal(null);
+      else if (action === 'despesa') openNewExpenseModal(null);
+    });
+
+    // ---------- Novo projeto ----------
+    async function openNewProjectModal() {
+      const bodyHtml = `
+        <label class="field-label" style="margin-top:0;">Nome do projeto</label>
+        <input type="text" id="np-name" class="form-input" placeholder="ex: Edifício Miradouro">
+        <label class="field-label">Código</label>
+        <input type="text" id="np-code" class="form-input" placeholder="ex: NOVA-004">
+        <label class="field-label">Cliente</label>
+        <select id="np-client" class="form-input"><option value="">A carregar...</option></select>
+        <label class="field-label">Tipo de projeto</label>
+        <select id="np-type" class="form-input"><option value="">A carregar...</option></select>
+        <label class="field-label">Equipa</label>
+        <select id="np-team" class="form-input"><option value="">A carregar...</option></select>
+        <label class="field-label">Morada</label>
+        <input type="text" id="np-address" class="form-input">
+        <label class="field-label">Área (m²)</label>
+        <input type="number" id="np-area" class="form-input" step="0.01" min="0">
+        <label class="field-label">Valor de adjudicação (€)</label>
+        <input type="number" id="np-value" class="form-input" step="0.01" min="0">
+        <label class="field-label">Data de adjudicação</label>
+        <input type="date" id="np-awarding" class="form-input">
+        <label class="field-label">Estado</label>
+        <input type="text" id="np-status" class="form-input" placeholder="ex: Em curso">
+        <button id="np-submit" class="primary-btn">Criar projeto</button>
+        <div id="np-msg" class="form-msg"></div>
+      `;
+      openQuickModal('Novo projeto', bodyHtml);
+
+      let clients, types, teams;
+      if (devMode) {
+        clients = MOCK_CLIENTS; types = MOCK_PROJECT_TYPES; teams = MOCK_TEAMS;
+      } else {
+        const [cRes, tRes, teRes] = await Promise.all([
+          supabase.from('clients').select('id, name').order('name'),
+          supabase.from('project_types').select('id, name').order('name'),
+          supabase.from('teams').select('id, name').order('name')
+        ]);
+        clients = cRes.data || []; types = tRes.data || []; teams = teRes.data || [];
+      }
+      document.getElementById('np-client').innerHTML = '<option value="">Sem cliente</option>' + clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+      document.getElementById('np-type').innerHTML = '<option value="">Sem tipo</option>' + types.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+      document.getElementById('np-team').innerHTML = '<option value="">Sem equipa</option>' + teams.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+
+      document.getElementById('np-submit').addEventListener('click', async () => {
+        const msgEl = document.getElementById('np-msg');
+        msgEl.textContent = ''; msgEl.className = 'form-msg';
+        const name = document.getElementById('np-name').value.trim();
+        if (!name) {
+          msgEl.textContent = 'Indica o nome do projeto.';
+          msgEl.className = 'form-msg error';
+          return;
+        }
+
+        const payload = {
+          name,
+          code: document.getElementById('np-code').value.trim() || null,
+          client_id: document.getElementById('np-client').value || null,
+          project_type_id: document.getElementById('np-type').value || null,
+          team_id: document.getElementById('np-team').value || null,
+          address: document.getElementById('np-address').value.trim() || null,
+          area: document.getElementById('np-area').value ? parseFloat(document.getElementById('np-area').value) : null,
+          commission_value: document.getElementById('np-value').value ? parseFloat(document.getElementById('np-value').value) : null,
+          awarding_date: document.getElementById('np-awarding').value || null,
+          status: document.getElementById('np-status').value.trim() || null
+        };
+
+        if (!window.confirm(`Criar o projeto "${name}"?`)) return;
+
+        const btn = document.getElementById('np-submit');
+        btn.disabled = true;
+        btn.textContent = 'A criar...';
+
+        try {
+          if (devMode) {
+            msgEl.textContent = 'Modo de demonstração — o projeto não fica guardado.';
+            msgEl.className = 'form-msg success';
+            btn.disabled = false;
+            btn.textContent = 'Criar projeto';
+            return;
+          }
+          const res = await supabase.from('projects').insert(payload).select('id').single();
+          if (res.error) throw res.error;
+          closeQuickModal();
+          openDetail(res.data.id);
+        } catch (err) {
+          msgEl.textContent = 'Erro ao criar: ' + err.message;
+          msgEl.className = 'form-msg error';
+          btn.disabled = false;
+          btn.textContent = 'Criar projeto';
+        }
+      });
+    }
+
+    // ---------- Nova ata de reunião ----------
+    async function openNewAtaModal(lockedProjectId) {
+      const bodyHtml = `
+        <label class="field-label" style="margin-top:0;">Projeto (opcional)</label>
+        <select id="ata-project" class="form-input" ${lockedProjectId ? 'disabled' : ''}>
+          <option value="">A carregar...</option>
+        </select>
+        <label class="field-label">Título / Assunto</label>
+        <input type="text" id="ata-title" class="form-input" placeholder="ex: Reunião de arranque">
+        <label class="field-label">Data</label>
+        <input type="date" id="ata-date" class="form-input">
+        <label class="field-label">Texto da ata</label>
+        <textarea id="ata-body" class="form-input" rows="6" placeholder="Notas da reunião..."></textarea>
+        <button id="ata-submit" class="primary-btn">Guardar ata</button>
+        <div id="ata-msg" class="form-msg"></div>
+      `;
+      openQuickModal('Nova ata de reunião', bodyHtml);
+      document.getElementById('ata-date').value = fmtDateInput(new Date());
+
+      const projSelect = document.getElementById('ata-project');
+      let projects;
+      if (devMode) {
+        projects = MOCK_PROJECTS;
+      } else {
+        const r = await supabase.from('projects').select('id, name').order('name');
+        projects = r.data || [];
+      }
+      projSelect.innerHTML = '<option value="">Sem projeto</option>' + projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+      if (lockedProjectId) projSelect.value = lockedProjectId;
+
+      document.getElementById('ata-submit').addEventListener('click', async () => {
+        const msgEl = document.getElementById('ata-msg');
+        msgEl.textContent = ''; msgEl.className = 'form-msg';
+        const title = document.getElementById('ata-title').value.trim();
+        const date = document.getElementById('ata-date').value;
+        const body = document.getElementById('ata-body').value.trim();
+        if (!title || !date) {
+          msgEl.textContent = 'Indica o título e a data.';
+          msgEl.className = 'form-msg error';
+          return;
+        }
+        if (!window.confirm('Guardar esta ata de reunião?')) return;
+
+        const btn = document.getElementById('ata-submit');
+        btn.disabled = true;
+        btn.textContent = 'A guardar...';
+
+        try {
+          const member = await getCurrentMember();
+          const payload = {
+            project_id: projSelect.value || null,
+            title,
+            body: body || null,
+            meeting_date: date,
+            created_by: member?.id || null
+          };
+          if (devMode) {
+            mockMeetingNotes.unshift({ id: 'note-' + Date.now(), ...payload });
+            msgEl.textContent = 'Ata guardada (modo de demonstração).';
+            msgEl.className = 'form-msg success';
+            setTimeout(closeQuickModal, 800);
+            return;
+          }
+          const res = await supabase.from('meeting_notes').insert(payload);
+          if (res.error) throw res.error;
+          closeQuickModal();
+          if (lockedProjectId) openDetail(lockedProjectId);
+        } catch (err) {
+          msgEl.textContent = 'Erro ao guardar: ' + err.message;
+          msgEl.className = 'form-msg error';
+          btn.disabled = false;
+          btn.textContent = 'Guardar ata';
+        }
+      });
+    }
+
+    // ---------- Registar despesa ----------
+    async function openNewExpenseModal(lockedProjectId) {
+      const member = await getCurrentMember();
+      const bodyHtml = `
+        <label class="field-label" style="margin-top:0;">Projeto (opcional)</label>
+        <select id="exp-project" class="form-input" ${lockedProjectId ? 'disabled' : ''}>
+          <option value="">A carregar...</option>
+        </select>
+        <label class="field-label">Descrição</label>
+        <input type="text" id="exp-description" class="form-input" placeholder="ex: Deslocação a obra">
+        <label class="field-label">Categoria</label>
+        <select id="exp-category" class="form-input"><option value="">A carregar...</option></select>
+        <label class="field-label">Valor (€)</label>
+        <input type="number" id="exp-amount" class="form-input" step="0.01" min="0">
+        <label class="field-label">Data</label>
+        <input type="date" id="exp-date" class="form-input">
+        <label class="field-label">Pago por</label>
+        <input type="text" id="exp-paidby" class="form-input" value="${member?.name ?? ''}">
+        <label class="field-label">Reembolsada?</label>
+        <div class="segmented" id="exp-reimbursed-toggle">
+          <button type="button" data-reimbursed="false" class="active">Não</button>
+          <button type="button" data-reimbursed="true">Sim</button>
+        </div>
+        <button id="exp-submit" class="primary-btn">Guardar despesa</button>
+        <div id="exp-msg" class="form-msg"></div>
+      `;
+      openQuickModal('Registar despesa', bodyHtml);
+      document.getElementById('exp-date').value = fmtDateInput(new Date());
+
+      let expReimbursed = false;
+      document.getElementById('exp-reimbursed-toggle').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-reimbursed]');
+        if (!btn) return;
+        expReimbursed = btn.dataset.reimbursed === 'true';
+        document.querySelectorAll('#exp-reimbursed-toggle button').forEach(b => b.classList.toggle('active', b === btn));
+      });
+
+      const projSelect = document.getElementById('exp-project');
+      let projects, categories;
+      if (devMode) {
+        projects = MOCK_PROJECTS; categories = MOCK_EXPENSE_CATEGORIES;
+      } else {
+        const [pr, cr] = await Promise.all([
+          supabase.from('projects').select('id, name').order('name'),
+          supabase.from('expense_categories').select('id, name').order('name')
+        ]);
+        projects = pr.data || []; categories = cr.data || [];
+      }
+      projSelect.innerHTML = '<option value="">Sem projeto</option>' + projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+      if (lockedProjectId) projSelect.value = lockedProjectId;
+      document.getElementById('exp-category').innerHTML = '<option value="">Sem categoria</option>' + categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+      document.getElementById('exp-submit').addEventListener('click', async () => {
+        const msgEl = document.getElementById('exp-msg');
+        msgEl.textContent = ''; msgEl.className = 'form-msg';
+        const description = document.getElementById('exp-description').value.trim();
+        const amount = parseFloat(document.getElementById('exp-amount').value);
+        const date = document.getElementById('exp-date').value;
+        const paidBy = document.getElementById('exp-paidby').value.trim();
+        if (!description || isNaN(amount) || amount <= 0 || !date || !paidBy) {
+          msgEl.textContent = 'Preenche descrição, valor, data e quem pagou.';
+          msgEl.className = 'form-msg error';
+          return;
+        }
+        if (!window.confirm(`Registar despesa de ${fmtEUR(amount)}?`)) return;
+
+        const btn = document.getElementById('exp-submit');
+        btn.disabled = true;
+        btn.textContent = 'A guardar...';
+
+        try {
+          const payload = {
+            project_id: projSelect.value || null,
+            description, amount, date,
+            category_id: document.getElementById('exp-category').value || null,
+            paid_by: paidBy,
+            paid_by_member_id: member?.id || null,
+            reimbursed: expReimbursed
+          };
+          if (devMode) {
+            msgEl.textContent = 'Despesa registada (modo de demonstração).';
+            msgEl.className = 'form-msg success';
+            setTimeout(closeQuickModal, 800);
+            return;
+          }
+          const res = await supabase.from('expenses').insert(payload);
+          if (res.error) throw res.error;
+          closeQuickModal();
+          if (lockedProjectId) openDetail(lockedProjectId);
+        } catch (err) {
+          msgEl.textContent = 'Erro ao guardar: ' + err.message;
+          msgEl.className = 'form-msg error';
+          btn.disabled = false;
+          btn.textContent = 'Guardar despesa';
+        }
+      });
+    }
+
+    // ---------- Repositório geral de atas ----------
+    let allAtasData = [];
+
+    function renderAtasList(data) {
+      const container = document.getElementById('atas-container');
+      if (!data || data.length === 0) {
+        container.className = 'center-msg';
+        container.textContent = 'Sem atas correspondentes.';
+        return;
+      }
+      container.className = '';
+      container.innerHTML = data.map(n => `
+        <div class="gantt-wrap ata-entry" data-id="${n.id}" style="margin-bottom:8px;">
+          <div class="ata-entry-main">
+            <span class="ata-entry-title">${n.title}</span>
+            <span class="ata-entry-date">${fmtDateShort(new Date(n.meeting_date + 'T00:00:00'))}</span>
+          </div>
+          <div class="ata-entry-project">${n.projectName ?? 'Sem projeto'}</div>
+          <div class="ata-entry-body">${n.body ? n.body.replace(/</g, '&lt;') : 'Sem texto.'}</div>
+        </div>
+      `).join('');
+
+      container.querySelectorAll('.ata-entry').forEach(row => {
+        row.addEventListener('click', () => row.classList.toggle('expanded'));
+      });
+    }
+
+    async function loadAtas() {
+      const container = document.getElementById('atas-container');
+      container.className = 'center-msg';
+      container.innerHTML = '<div class="spinner"></div>A carregar atas...';
+      document.getElementById('atas-search').value = '';
+
+      try {
+        let notes;
+        if (devMode) {
+          notes = mockMeetingNotes.map(n => ({
+            ...n,
+            projectName: n.project_id ? (MOCK_PROJECTS.find(p => p.id === n.project_id)?.name ?? 'Projeto') : null
+          }));
+        } else {
+          const res = await supabase
+            .from('meeting_notes')
+            .select('id, project_id, title, body, meeting_date, projects(name)')
+            .order('meeting_date', { ascending: false });
+          if (res.error) throw res.error;
+          notes = (res.data || []).map(n => ({ ...n, projectName: n.projects?.name ?? null }));
+        }
+
+        notes.sort((a, b) => new Date(b.meeting_date) - new Date(a.meeting_date));
+        allAtasData = notes;
+        renderAtasList(allAtasData);
+      } catch (err) {
+        container.className = 'error-box';
+        container.textContent = 'Erro ao carregar atas: ' + err.message;
+      }
+    }
+
+    document.getElementById('atas-search').addEventListener('input', (e) => {
+      const term = e.target.value.trim().toLowerCase();
+      if (!term) { renderAtasList(allAtasData); return; }
+      const filtered = allAtasData.filter(n =>
+        (n.title ?? '').toLowerCase().includes(term) ||
+        (n.body ?? '').toLowerCase().includes(term)
+      );
+      renderAtasList(filtered);
+    });
 
     init();
 
