@@ -667,6 +667,24 @@
 
   .mini-table-total td { font-weight: 700; border-top: 2px solid var(--border); }
 
+  .gantt-group-header { font-weight: 700; padding-left: 0 !important; }
+  [data-open-project] { cursor: pointer; }
+  .gantt-today-line {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 2px;
+    background: #C4453D;
+    z-index: 3;
+  }
+  .gantt-today-label {
+    position: absolute;
+    top: -2px; left: 4px;
+    font-size: 9px;
+    font-weight: 700;
+    color: #C4453D;
+    white-space: nowrap;
+  }
+
   /* Campos editáveis */
   .editable-value { cursor: pointer; border-bottom: 1px dashed transparent; }
   .editable-value:hover { border-bottom-color: var(--purple-light); }
@@ -1126,6 +1144,8 @@
         <div class="gantt-wrap" id="team-gantt">
           <div class="detail-loading">A carregar...</div>
         </div>
+        <div class="section-label">Fases sem datas atribuídas</div>
+        <div id="team-phases-table"></div>
       </div>
       <div id="horas-view" style="display:none;">
         <div class="segmented" id="horas-tabs">
@@ -1239,9 +1259,9 @@
     let devMode = false;
 
     const MOCK_PROJECTS = [
-      { id: 'mock-1', name: 'Edifício Miradouro', code: 'NOVA-001', client: 'Promotora Atlântico', address: 'Rua do Miradouro 12, Vila Nova de Gaia', status: 'Em curso', area: 1240, awarding_date: '2025-11-03', commission_value: 48000, project_types: { name: 'Habitação Coletiva' }, teams: { name: 'Team Alpha' } },
-      { id: 'mock-2', name: 'Moradia Vale das Flores', code: 'NOVA-002', client: 'Família Sousa', address: 'Rua das Flores 8, Matosinhos', status: 'To Do', area: 320, awarding_date: '2026-01-15', commission_value: 18500, project_types: { name: 'Habitação Unifamiliar' }, teams: { name: 'Team Beta' } },
-      { id: 'mock-3', name: 'Reabilitação Rua do Comércio', code: 'NOVA-003', client: 'Município de Gaia', address: 'Rua do Comércio 45, Vila Nova de Gaia', status: 'Concluído', area: 890, awarding_date: '2025-06-20', commission_value: 62000, project_types: { name: 'Reabilitação' }, teams: { name: 'Team Alpha' } }
+      { id: 'mock-1', name: 'Edifício Miradouro', code: 'NOVA-001', client: 'Promotora Atlântico', address: 'Rua do Miradouro 12, Vila Nova de Gaia', status: 'Em curso', area: 1240, awarding_date: '2025-11-03', commission_value: 48000, team_id: 'mock-team-alpha', project_types: { name: 'Habitação Coletiva' }, teams: { name: 'Team Alpha' } },
+      { id: 'mock-2', name: 'Moradia Vale das Flores', code: 'NOVA-002', client: 'Família Sousa', address: 'Rua das Flores 8, Matosinhos', status: 'To Do', area: 320, awarding_date: '2026-01-15', commission_value: 18500, team_id: 'mock-team-beta', project_types: { name: 'Habitação Unifamiliar' }, teams: { name: 'Team Beta' } },
+      { id: 'mock-3', name: 'Reabilitação Rua do Comércio', code: 'NOVA-003', client: 'Município de Gaia', address: 'Rua do Comércio 45, Vila Nova de Gaia', status: 'Concluído', area: 890, awarding_date: '2025-06-20', commission_value: 62000, team_id: 'mock-team-alpha', project_types: { name: 'Reabilitação' }, teams: { name: 'Team Alpha' } }
     ];
 
     const MOCK_BREAKS = [
@@ -1461,75 +1481,245 @@
       await loadTeamPlanning(activeTeamId);
     }
 
+    function buildMockTeamStages(teamProjects) {
+      const addDays = (dateStr, days) => {
+        const d = new Date(dateStr);
+        d.setDate(d.getDate() + days);
+        return d.toISOString().slice(0, 10);
+      };
+      const result = [];
+      teamProjects.forEach((p, pi) => {
+        MOCK_STAGES.forEach((s, si) => {
+          const offset = pi * 25;
+          result.push({
+            id: `${p.id}-${s.id}`,
+            project_id: p.id,
+            stage_order: si + 1,
+            stage_types: s.stage_types,
+            start_date: addDays(s.start_date, offset),
+            end_date: addDays(s.end_date, offset),
+            delivery_date: addDays(s.delivery_date, offset),
+            status: si === 0 ? 'completed' : (si === 1 ? 'in_progress' : 'pending')
+          });
+        });
+        result.push({
+          id: `${p.id}-extra`,
+          project_id: p.id,
+          stage_order: 99,
+          stage_types: { name: 'Fiscalização de Obra' },
+          start_date: null, end_date: null, delivery_date: null,
+          status: 'pending'
+        });
+      });
+      return result;
+    }
+
     async function loadTeamPlanning(teamId) {
       const ganttEl = document.getElementById('team-gantt');
+      const tableEl = document.getElementById('team-phases-table');
       ganttEl.innerHTML = '<div class="detail-loading">A carregar...</div>';
+      tableEl.innerHTML = '';
 
       try {
-        let stages;
+        let projects, stages;
+
         if (devMode) {
-          stages = teamId === 'mock-team-alpha'
-            ? MOCK_STAGES.map((s, i) => ({
-                ...s,
-                project_id: MOCK_PROJECTS[i % MOCK_PROJECTS.length].id,
-                projects: { name: MOCK_PROJECTS[i % MOCK_PROJECTS.length].name }
-              }))
-            : [];
+          projects = MOCK_PROJECTS.filter(p => p.team_id === teamId);
+          stages = buildMockTeamStages(projects);
         } else {
-          const res = await supabase
-            .from('project_stages')
-            .select('project_id, start_date, end_date, delivery_date, percentage, status, projects!inner(name, team_id)')
-            .eq('projects.team_id', teamId)
-            .order('start_date');
-          if (res.error) throw res.error;
-          stages = res.data || [];
-        }
+          const projRes = await supabase
+            .from('projects')
+            .select('id, name, code, awarding_date')
+            .eq('team_id', teamId)
+            .is('archived_at', null);
+          if (projRes.error) throw projRes.error;
+          projects = projRes.data || [];
 
-        if (!stages || stages.length === 0) {
-          ganttEl.innerHTML = '<div class="gantt-empty">Esta equipa ainda não tem fases com datas registadas.</div>';
-          return;
-        }
-
-        const byProject = {};
-        stages.forEach(s => {
-          if (!s.start_date) return;
-          const key = s.project_id;
-          const end = s.end_date || s.delivery_date || s.start_date;
-          if (!byProject[key]) {
-            byProject[key] = { name: s.projects?.name ?? 'Projeto', start: new Date(s.start_date), end: new Date(end), pcts: [] };
-          } else {
-            if (new Date(s.start_date) < byProject[key].start) byProject[key].start = new Date(s.start_date);
-            if (new Date(end) > byProject[key].end) byProject[key].end = new Date(end);
+          const projectIds = projects.map(p => p.id);
+          stages = [];
+          if (projectIds.length > 0) {
+            const stagesRes = await supabase
+              .from('project_stages')
+              .select('id, project_id, stage_order, stage_types(name), start_date, end_date, delivery_date, status')
+              .in('project_id', projectIds)
+              .order('stage_order');
+            if (stagesRes.error) throw stagesRes.error;
+            stages = stagesRes.data || [];
           }
-          if (s.percentage != null) byProject[key].pcts.push(Number(s.percentage));
+        }
+
+        projects.sort((a, b) => {
+          if (!a.awarding_date && !b.awarding_date) return 0;
+          if (!a.awarding_date) return 1;
+          if (!b.awarding_date) return -1;
+          return new Date(a.awarding_date) - new Date(b.awarding_date);
         });
 
-        const projectsArr = Object.values(byProject);
-        if (projectsArr.length === 0) {
-          ganttEl.innerHTML = '<div class="gantt-empty">Sem datas suficientes para desenhar o planeamento.</div>';
+        if (projects.length === 0) {
+          ganttEl.innerHTML = '<div class="gantt-empty">Esta equipa ainda não tem projetos ativos.</div>';
+          tableEl.innerHTML = '';
           return;
         }
 
-        const minDate = new Date(Math.min(...projectsArr.map(p => p.start)));
-        const maxDate = new Date(Math.max(...projectsArr.map(p => p.end)));
-        const totalSpan = Math.max(1, maxDate - minDate);
+        const stagesByProject = {};
+        stages.forEach(s => {
+          if (!stagesByProject[s.project_id]) stagesByProject[s.project_id] = [];
+          stagesByProject[s.project_id].push(s);
+        });
 
-        ganttEl.innerHTML = projectsArr.map(p => {
-          const leftPct = ((p.start - minDate) / totalSpan) * 100;
-          const widthPct = Math.max(2, ((p.end - p.start) / totalSpan) * 100);
-          const avgPct = p.pcts.length ? Math.round(p.pcts.reduce((a, b) => a + b, 0) / p.pcts.length) : null;
+        const hasDates = s => s.start_date && (s.end_date || s.delivery_date);
+
+        let teamScale = 'week';
+
+        function renderTeamGanttSection(scale) {
+          const pxPerDay = scale === 'month' ? 6 : scale === 'day' ? 34 : 20;
+          const dayMs = 86400000;
+
+          const qualifying = [];
+          projects.forEach(p => {
+            (stagesByProject[p.id] || []).filter(hasDates).forEach(s => qualifying.push(s));
+          });
+
+          if (qualifying.length === 0) {
+            return `
+              <div class="gantt-scale-toggle segmented">
+                <button type="button" data-scale="day" class="${scale === 'day' ? 'active' : ''}">Dias</button>
+                <button type="button" data-scale="week" class="${scale === 'week' ? 'active' : ''}">Semanas</button>
+                <button type="button" data-scale="month" class="${scale === 'month' ? 'active' : ''}">Meses</button>
+              </div>
+              <div class="gantt-empty">Nenhuma fase com datas de início e fim registadas — consulta a tabela abaixo.</div>`;
+          }
+
+          const today = new Date(); today.setHours(0, 0, 0, 0);
+          const allStarts = qualifying.map(s => new Date(s.start_date)).concat([today]);
+          const allEnds = qualifying.map(s => new Date(s.end_date || s.delivery_date)).concat([today]);
+          const rangeStart = new Date(Math.min(...allStarts));
+          const rangeEnd = new Date(Math.max(...allEnds));
+          const totalDays = Math.max(1, Math.ceil((rangeEnd - rangeStart) / dayMs)) + 7;
+          const totalPx = totalDays * pxPerDay;
+          const dayOffset = (d) => Math.round((d - rangeStart) / dayMs) * pxPerDay;
+
+          const labelRows = [];
+          const trackRows = [];
+
+          projects.forEach(p => {
+            const projStages = (stagesByProject[p.id] || []).filter(hasDates);
+            if (projStages.length === 0) return;
+
+            labelRows.push(`<div class="gantt-label-cell gantt-group-header" data-open-project="${p.id}">${p.name}</div>`);
+            trackRows.push(`<div class="gantt-track-row"></div>`);
+
+            projStages.forEach(s => {
+              const start = new Date(s.start_date);
+              const end = new Date(s.end_date || s.delivery_date);
+              const left = dayOffset(start);
+              const width = Math.max(10, dayOffset(end) - left);
+              const isOverdue = end < today && s.status !== 'completed' && s.status !== 'done';
+              const color = isOverdue
+                ? '#C4453D'
+                : (s.status === 'completed' || s.status === 'done')
+                  ? '#2E7D4F'
+                  : (s.status === 'in_progress' || s.status === 'active')
+                    ? 'var(--purple)'
+                    : 'rgba(113,77,121,0.35)';
+
+              labelRows.push(`<div class="gantt-label-cell" style="padding-left:14px; font-weight:500;" data-open-project="${p.id}">${s.stage_types?.name ?? 'Fase'}</div>`);
+              trackRows.push(`
+                <div class="gantt-track-row" data-open-project="${p.id}">
+                  <div class="gantt-lane"></div>
+                  <div class="gantt-bar" style="left:${left}px; width:${width}px; background:${color};"></div>
+                  <div class="gantt-end-date" style="left:${left + width + 6}px;">${fmtDateShort(end)}</div>
+                </div>`);
+            });
+          });
+
+          let rulerTicks = '';
+          if (scale === 'month') {
+            let cursor = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 1);
+            while (cursor <= rangeEnd) {
+              const left = dayOffset(cursor);
+              if (left >= 0) rulerTicks += `<div class="gantt-ruler-tick" style="left:${left}px;">${cursor.toLocaleDateString('pt-PT', { month: 'short', year: '2-digit' })}</div>`;
+              cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+            }
+          } else if (scale === 'day') {
+            let cursor = new Date(rangeStart);
+            while (cursor <= rangeEnd) {
+              rulerTicks += `<div class="gantt-ruler-tick" style="left:${dayOffset(cursor)}px;">${fmtDateShort(cursor)}</div>`;
+              cursor = new Date(cursor.getTime() + dayMs);
+            }
+          } else {
+            let cursor = new Date(rangeStart);
+            const dow = cursor.getDay();
+            cursor.setDate(cursor.getDate() + (dow === 0 ? -6 : 1 - dow));
+            while (cursor <= rangeEnd) {
+              const left = dayOffset(cursor);
+              if (left >= 0) rulerTicks += `<div class="gantt-ruler-tick" style="left:${left}px;">${fmtDateShort(cursor)}</div>`;
+              cursor = new Date(cursor.getTime() + 7 * dayMs);
+            }
+          }
+
+          const todayLeft = dayOffset(today);
+
           return `
-            <div class="gantt-row">
-              <div class="gantt-label">${p.name}</div>
-              <div class="gantt-track">
-                <div class="gantt-bar" style="left:${leftPct}%; width:${widthPct}%; background:var(--purple);">
-                  ${avgPct != null ? `<span class="pct">${avgPct}%</span>` : ''}
+            <div class="gantt-scale-toggle segmented">
+              <button type="button" data-scale="day" class="${scale === 'day' ? 'active' : ''}">Dias</button>
+              <button type="button" data-scale="week" class="${scale === 'week' ? 'active' : ''}">Semanas</button>
+              <button type="button" data-scale="month" class="${scale === 'month' ? 'active' : ''}">Meses</button>
+            </div>
+            <div class="gantt-body">
+              <div class="gantt-labels-col">
+                <div class="gantt-label-spacer"></div>
+                ${labelRows.join('')}
+              </div>
+              <div class="gantt-scroll">
+                <div class="gantt-scroll-inner" style="width:${totalPx}px;">
+                  <div class="gantt-today-line" style="left:${todayLeft}px;"><span class="gantt-today-label">Hoje</span></div>
+                  <div class="gantt-ruler" style="width:${totalPx}px;">${rulerTicks}</div>
+                  ${trackRows.join('')}
                 </div>
               </div>
             </div>`;
-        }).join('');
+        }
+
+        ganttEl.innerHTML = renderTeamGanttSection(teamScale);
+        ganttEl.addEventListener('click', (e) => {
+          const scaleBtn = e.target.closest('[data-scale]');
+          if (scaleBtn) {
+            teamScale = scaleBtn.dataset.scale;
+            ganttEl.innerHTML = renderTeamGanttSection(teamScale);
+            return;
+          }
+          const openBtn = e.target.closest('[data-open-project]');
+          if (openBtn) openDetail(openBtn.dataset.openProject);
+        });
+
+        const withoutDatesByProject = projects
+          .map(p => ({ project: p, stages: (stagesByProject[p.id] || []).filter(s => !hasDates(s)) }))
+          .filter(g => g.stages.length > 0);
+
+        if (withoutDatesByProject.length === 0) {
+          tableEl.innerHTML = '<div class="gantt-wrap"><div class="gantt-empty">Todas as fases desta equipa já têm datas de início e fim.</div></div>';
+        } else {
+          tableEl.innerHTML = withoutDatesByProject.map(g => `
+            <div class="gantt-wrap" style="margin-bottom:12px;">
+              <table class="mini-table">
+                <thead><tr><th colspan="2" data-open-project="${g.project.id}">${g.project.name}</th></tr></thead>
+                <tbody>
+                  ${g.stages.map(s => `
+                    <tr>
+                      <td>${s.stage_types?.name ?? 'Fase'}</td>
+                      <td class="col-value">${s.status ?? '—'}</td>
+                    </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>`).join('');
+          tableEl.querySelectorAll('[data-open-project]').forEach(el => {
+            el.addEventListener('click', () => openDetail(el.dataset.openProject));
+          });
+        }
       } catch (err) {
         ganttEl.innerHTML = `<div class="error-box">Erro ao carregar planeamento: ${err.message}</div>`;
+        tableEl.innerHTML = '';
         console.error(err);
       }
     }
