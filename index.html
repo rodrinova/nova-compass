@@ -669,6 +669,20 @@
 
   .gantt-group-header { font-weight: 700; padding-left: 0 !important; }
   [data-open-project] { cursor: pointer; }
+  .gantt-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .gantt-toolbar .gantt-scale-toggle { margin-bottom: 0; }
+  .gantt-grid-line {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 1px;
+    background: var(--border);
+    z-index: 1;
+  }
   .gantt-today-line {
     position: absolute;
     top: 0; bottom: 0;
@@ -1499,7 +1513,8 @@
             start_date: addDays(s.start_date, offset),
             end_date: addDays(s.end_date, offset),
             delivery_date: addDays(s.delivery_date, offset),
-            status: si === 0 ? 'completed' : (si === 1 ? 'in_progress' : 'pending')
+            status: si === 0 ? 'completed' : (si === 1 ? 'in_progress' : 'pending'),
+            mock_invoice: si === 0 ? 3600 : (si === 1 ? 3600 : 0)
           });
         });
         result.push({
@@ -1568,6 +1583,20 @@
         });
 
         const hasDates = s => s.start_date && (s.end_date || s.delivery_date);
+        const notCompleted = s => s.status !== 'completed' && s.status !== 'done';
+
+        let stageInvoiceTotals = {};
+        if (!devMode) {
+          const projectIds = projects.map(p => p.id);
+          if (projectIds.length > 0) {
+            const invRes = await supabase.from('invoices').select('stage_id, amount').in('project_id', projectIds);
+            (invRes.data || []).forEach(inv => {
+              if (!inv.stage_id) return;
+              stageInvoiceTotals[inv.stage_id] = (stageInvoiceTotals[inv.stage_id] || 0) + Number(inv.amount || 0);
+            });
+          }
+        }
+        const invoiceForStage = (s) => devMode ? (s.mock_invoice || 0) : (stageInvoiceTotals[s.id] || 0);
 
         let teamScale = 'week';
 
@@ -1577,7 +1606,7 @@
 
           const qualifying = [];
           projects.forEach(p => {
-            (stagesByProject[p.id] || []).filter(hasDates).forEach(s => qualifying.push(s));
+            (stagesByProject[p.id] || []).filter(hasDates).filter(notCompleted).forEach(s => qualifying.push(s));
           });
 
           if (qualifying.length === 0) {
@@ -1587,7 +1616,7 @@
                 <button type="button" data-scale="week" class="${scale === 'week' ? 'active' : ''}">Semanas</button>
                 <button type="button" data-scale="month" class="${scale === 'month' ? 'active' : ''}">Meses</button>
               </div>
-              <div class="gantt-empty">Nenhuma fase com datas de início e fim registadas — consulta a tabela abaixo.</div>`;
+              <div class="gantt-empty">Nenhuma fase em curso ou por fazer com datas registadas — consulta a tabela abaixo.</div>`;
           }
 
           const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -1595,7 +1624,7 @@
           const allEnds = qualifying.map(s => new Date(s.end_date || s.delivery_date)).concat([today]);
           const rangeStart = new Date(Math.min(...allStarts));
           const rangeEnd = new Date(Math.max(...allEnds));
-          const totalDays = Math.max(1, Math.ceil((rangeEnd - rangeStart) / dayMs)) + 7;
+          const totalDays = Math.max(1, Math.ceil((rangeEnd - rangeStart) / dayMs)) + 12;
           const totalPx = totalDays * pxPerDay;
           const dayOffset = (d) => Math.round((d - rangeStart) / dayMs) * pxPerDay;
 
@@ -1603,7 +1632,7 @@
           const trackRows = [];
 
           projects.forEach(p => {
-            const projStages = (stagesByProject[p.id] || []).filter(hasDates);
+            const projStages = (stagesByProject[p.id] || []).filter(hasDates).filter(notCompleted);
             if (projStages.length === 0) return;
 
             labelRows.push(`<div class="gantt-label-cell gantt-group-header" data-open-project="${p.id}">${p.name}</div>`);
@@ -1614,37 +1643,42 @@
               const end = new Date(s.end_date || s.delivery_date);
               const left = dayOffset(start);
               const width = Math.max(10, dayOffset(end) - left);
-              const isOverdue = end < today && s.status !== 'completed' && s.status !== 'done';
+              const isOverdue = end < today;
               const color = isOverdue
                 ? '#C4453D'
-                : (s.status === 'completed' || s.status === 'done')
-                  ? '#2E7D4F'
-                  : (s.status === 'in_progress' || s.status === 'active')
-                    ? 'var(--purple)'
-                    : 'rgba(113,77,121,0.35)';
+                : (s.status === 'in_progress' || s.status === 'active')
+                  ? 'var(--purple)'
+                  : 'rgba(113,77,121,0.35)';
+              const invoiced = invoiceForStage(s);
 
               labelRows.push(`<div class="gantt-label-cell" style="padding-left:14px; font-weight:500;" data-open-project="${p.id}">${s.stage_types?.name ?? 'Fase'}</div>`);
               trackRows.push(`
                 <div class="gantt-track-row" data-open-project="${p.id}">
                   <div class="gantt-lane"></div>
                   <div class="gantt-bar" style="left:${left}px; width:${width}px; background:${color};"></div>
-                  <div class="gantt-end-date" style="left:${left + width + 6}px;">${fmtDateShort(end)}</div>
+                  <div class="gantt-end-date" style="left:${left + width + 6}px;">${fmtDateShort(end)} · ${fmtEUR(invoiced)}</div>
                 </div>`);
             });
           });
 
           let rulerTicks = '';
+          let gridLines = '';
           if (scale === 'month') {
             let cursor = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 1);
             while (cursor <= rangeEnd) {
               const left = dayOffset(cursor);
-              if (left >= 0) rulerTicks += `<div class="gantt-ruler-tick" style="left:${left}px;">${cursor.toLocaleDateString('pt-PT', { month: 'short', year: '2-digit' })}</div>`;
+              if (left >= 0) {
+                rulerTicks += `<div class="gantt-ruler-tick" style="left:${left}px;">${cursor.toLocaleDateString('pt-PT', { month: 'short', year: '2-digit' })}</div>`;
+                gridLines += `<div class="gantt-grid-line" style="left:${left}px;"></div>`;
+              }
               cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
             }
           } else if (scale === 'day') {
             let cursor = new Date(rangeStart);
             while (cursor <= rangeEnd) {
-              rulerTicks += `<div class="gantt-ruler-tick" style="left:${dayOffset(cursor)}px;">${fmtDateShort(cursor)}</div>`;
+              const left = dayOffset(cursor);
+              rulerTicks += `<div class="gantt-ruler-tick" style="left:${left}px;">${fmtDateShort(cursor)}</div>`;
+              gridLines += `<div class="gantt-grid-line" style="left:${left}px;"></div>`;
               cursor = new Date(cursor.getTime() + dayMs);
             }
           } else {
@@ -1653,7 +1687,10 @@
             cursor.setDate(cursor.getDate() + (dow === 0 ? -6 : 1 - dow));
             while (cursor <= rangeEnd) {
               const left = dayOffset(cursor);
-              if (left >= 0) rulerTicks += `<div class="gantt-ruler-tick" style="left:${left}px;">${fmtDateShort(cursor)}</div>`;
+              if (left >= 0) {
+                rulerTicks += `<div class="gantt-ruler-tick" style="left:${left}px;">${fmtDateShort(cursor)}</div>`;
+                gridLines += `<div class="gantt-grid-line" style="left:${left}px;"></div>`;
+              }
               cursor = new Date(cursor.getTime() + 7 * dayMs);
             }
           }
@@ -1661,10 +1698,13 @@
           const todayLeft = dayOffset(today);
 
           return `
-            <div class="gantt-scale-toggle segmented">
-              <button type="button" data-scale="day" class="${scale === 'day' ? 'active' : ''}">Dias</button>
-              <button type="button" data-scale="week" class="${scale === 'week' ? 'active' : ''}">Semanas</button>
-              <button type="button" data-scale="month" class="${scale === 'month' ? 'active' : ''}">Meses</button>
+            <div class="gantt-toolbar">
+              <div class="gantt-scale-toggle segmented">
+                <button type="button" data-scale="day" class="${scale === 'day' ? 'active' : ''}">Dias</button>
+                <button type="button" data-scale="week" class="${scale === 'week' ? 'active' : ''}">Semanas</button>
+                <button type="button" data-scale="month" class="${scale === 'month' ? 'active' : ''}">Meses</button>
+              </div>
+              <button type="button" class="text-btn" data-today-btn="1">Hoje</button>
             </div>
             <div class="gantt-body">
               <div class="gantt-labels-col">
@@ -1672,8 +1712,9 @@
                 ${labelRows.join('')}
               </div>
               <div class="gantt-scroll">
-                <div class="gantt-scroll-inner" style="width:${totalPx}px;">
+                <div class="gantt-scroll-inner" style="width:${totalPx}px;" data-today-left="${todayLeft}">
                   <div class="gantt-today-line" style="left:${todayLeft}px;"><span class="gantt-today-label">Hoje</span></div>
+                  ${gridLines}
                   <div class="gantt-ruler" style="width:${totalPx}px;">${rulerTicks}</div>
                   ${trackRows.join('')}
                 </div>
@@ -1687,11 +1728,27 @@
           if (scaleBtn) {
             teamScale = scaleBtn.dataset.scale;
             ganttEl.innerHTML = renderTeamGanttSection(teamScale);
+            scrollGanttToToday();
+            return;
+          }
+          const todayBtn = e.target.closest('[data-today-btn]');
+          if (todayBtn) {
+            scrollGanttToToday();
             return;
           }
           const openBtn = e.target.closest('[data-open-project]');
           if (openBtn) openDetail(openBtn.dataset.openProject);
         });
+
+        function scrollGanttToToday() {
+          const scrollEl = ganttEl.querySelector('.gantt-scroll');
+          const innerEl = ganttEl.querySelector('.gantt-scroll-inner');
+          if (!scrollEl || !innerEl) return;
+          const todayLeft = Number(innerEl.dataset.todayLeft || 0);
+          scrollEl.scrollLeft = Math.max(0, todayLeft - scrollEl.clientWidth / 2);
+        }
+
+        scrollGanttToToday();
 
         const withoutDatesByProject = projects
           .map(p => ({ project: p, stages: (stagesByProject[p.id] || []).filter(s => !hasDates(s)) }))
