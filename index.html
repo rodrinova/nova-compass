@@ -921,6 +921,10 @@
   }
   .ata-entry.expanded .ata-entry-body { display: block; }
 
+  /* ---------- Repositório de despesas ---------- */
+  .expense-chart-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .expense-chart-caption { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+
   /* ---------- Categorias (Definições) ---------- */
   .category-row {
     display: flex; align-items: center; justify-content: space-between;
@@ -1225,6 +1229,17 @@
             <div class="module-name">Atas</div>
             <div class="module-desc">Reuniões e histórico</div>
           </div>
+          <div class="module-tile" id="module-despesas">
+            <div class="module-icon">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="5" width="16" height="14" rx="2" stroke="white" stroke-width="1.6"/>
+                <path d="M8 9.5h8M8 13h5" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+                <circle cx="16.5" cy="15.5" r="2" stroke="white" stroke-width="1.4"/>
+              </svg>
+            </div>
+            <div class="module-name">Despesas</div>
+            <div class="module-desc">Repositório e reembolsos</div>
+          </div>
         </div>
       </div>
       <div id="projects-view" style="display:none;">
@@ -1333,6 +1348,13 @@
           A carregar atas...
         </div>
       </div>
+      <div id="despesas-view" style="display:none;">
+        <button type="button" id="despesas-new-btn" class="secondary-btn" style="margin-top:0; margin-bottom:14px; width:auto; padding:11px 18px;">+ Nova despesa</button>
+        <div id="despesas-container" class="center-msg">
+          <div class="spinner"></div>
+          A carregar despesas...
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1384,8 +1406,10 @@
     ];
 
     const MOCK_EXPENSES = [
-      { id: 'exp-1', description: 'Deslocação a obra', amount: 45.5, date: '2026-01-12', reimbursed: true, expense_categories: { name: 'Deslocações' } },
-      { id: 'exp-2', description: 'Impressões A1', amount: 32, date: '2026-02-02', reimbursed: false, expense_categories: { name: 'Material' } }
+      { id: 'exp-1', project_id: 'mock-1', description: 'Deslocação a obra', amount: 45.5, date: '2026-01-12', reimbursed: true, paid_by: 'Rodrigo Alves', paid_by_member_id: 'mock-member-1', expense_categories: { name: 'Deslocações' } },
+      { id: 'exp-2', project_id: 'mock-1', description: 'Impressões A1', amount: 32, date: '2026-02-02', reimbursed: false, paid_by: 'Nuno', paid_by_member_id: null, expense_categories: { name: 'Material' } },
+      { id: 'exp-3', project_id: 'mock-3', description: 'Portagens', amount: 18.4, date: '2025-12-05', reimbursed: false, paid_by: 'Rodrigo Alves', paid_by_member_id: 'mock-member-1', expense_categories: { name: 'Deslocações' } },
+      { id: 'exp-4', project_id: null, description: 'Material de escritório', amount: 64, date: '2025-11-20', reimbursed: true, paid_by: 'Rute', paid_by_member_id: null, expense_categories: { name: 'Outros' } }
     ];
 
     const MOCK_PROJECT_TYPES = [
@@ -1630,13 +1654,14 @@
       else if (prev.name === 'horas') openHorasModule();
       else if (prev.name === 'settings') openSettingsModule();
       else if (prev.name === 'atas') openAtasModule();
+      else if (prev.name === 'despesas') openDespesasModule();
       else if (prev.name === 'team') showTeamView(prev.teamId);
       else if (prev.name === 'detail') openDetail(prev.projectId);
       else showHome();
     }
 
     function hideAllViews() {
-      ['home-view', 'projects-view', 'team-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view'].forEach(id => {
+      ['home-view', 'projects-view', 'team-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view', 'despesas-view'].forEach(id => {
         document.getElementById(id).style.display = 'none';
       });
     }
@@ -2059,6 +2084,15 @@
       hideAllViews();
       document.getElementById('atas-view').style.display = 'block';
       loadAtas();
+    }
+
+    function openDespesasModule() {
+      pushCurrentView({ name: 'despesas' });
+      setNavChrome(false);
+      document.getElementById('nav-title').textContent = 'Despesas';
+      hideAllViews();
+      document.getElementById('despesas-view').style.display = 'block';
+      loadDespesas();
     }
 
     // ---------- Módulo Horas ----------
@@ -2598,6 +2632,7 @@
     document.getElementById('module-horas').addEventListener('click', openHorasModule);
     document.getElementById('module-definicoes').addEventListener('click', openSettingsModule);
     document.getElementById('module-atas').addEventListener('click', openAtasModule);
+    document.getElementById('module-despesas').addEventListener('click', openDespesasModule);
     document.getElementById('team-card').addEventListener('click', async () => {
       const member = await getCurrentMember();
       showTeamView(member?.team_id);
@@ -3542,7 +3577,7 @@
     }
 
     // ---------- Registar despesa ----------
-    async function openNewExpenseModal(lockedProjectId) {
+    async function openNewExpenseModal(lockedProjectId, onSuccess) {
       const member = await getCurrentMember();
       const bodyHtml = `
         <label class="field-label" style="margin-top:0;">Projeto (opcional)</label>
@@ -3629,7 +3664,8 @@
           const res = await supabase.from('expenses').insert(payload);
           if (res.error) throw res.error;
           closeQuickModal();
-          if (lockedProjectId) openDetail(lockedProjectId);
+          if (onSuccess) onSuccess();
+          else if (lockedProjectId) openDetail(lockedProjectId);
         } catch (err) {
           msgEl.textContent = 'Erro ao guardar: ' + err.message;
           msgEl.className = 'form-msg error';
@@ -3706,6 +3742,153 @@
       );
       renderAtasList(filtered);
     });
+
+    // ---------- Repositório de despesas ----------
+    document.getElementById('despesas-new-btn').addEventListener('click', () => openNewExpenseModal(null, loadDespesas));
+
+    function payerName(e, memberMap) {
+      if (e.paid_by_member_id && memberMap[e.paid_by_member_id]) return memberMap[e.paid_by_member_id];
+      return e.paid_by || 'Desconhecido';
+    }
+
+    function renderExpenseChartSvg(monthlyTotals) {
+      if (monthlyTotals.length === 0) return '<div class="gantt-empty">Sem despesas suficientes para o gráfico.</div>';
+      const chartHeight = 150;
+      const slotWidth = 46;
+      const barWidth = 28;
+      const svgWidth = monthlyTotals.length * slotWidth;
+      const maxVal = Math.max(...monthlyTotals.map(m => m.total), 1);
+      const avg = monthlyTotals.reduce((s, m) => s + m.total, 0) / monthlyTotals.length;
+      const usableHeight = chartHeight - 30;
+
+      const bars = monthlyTotals.map((m, i) => {
+        const barHeight = Math.max(3, (m.total / maxVal) * usableHeight);
+        const x = i * slotWidth + (slotWidth - barWidth) / 2;
+        const y = chartHeight - barHeight - 20;
+        const [yr, mo] = m.month.split('-');
+        const label = new Date(Number(yr), Number(mo) - 1, 1).toLocaleDateString('pt-PT', { month: 'short' }) + '/' + yr.slice(2);
+        return `
+          <rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" rx="5" fill="var(--purple)"></rect>
+          <text x="${x + barWidth / 2}" y="${chartHeight - 6}" font-size="9" fill="#8a8580" text-anchor="middle">${label}</text>
+        `;
+      }).join('');
+
+      const avgY = chartHeight - 20 - (avg / maxVal) * usableHeight;
+
+      return `
+        <div class="expense-chart-scroll">
+          <svg viewBox="0 0 ${svgWidth} ${chartHeight}" width="${svgWidth}" height="${chartHeight}">
+            <line x1="0" y1="${avgY}" x2="${svgWidth}" y2="${avgY}" stroke="#C4453D" stroke-width="1.2" stroke-dasharray="4,3"></line>
+            ${bars}
+          </svg>
+        </div>
+        <div class="expense-chart-caption">Linha a tracejado: média mensal (${fmtEUR(avg)})</div>
+      `;
+    }
+
+    function renderDespesas(expenses, projectMap, memberMap) {
+      const container = document.getElementById('despesas-container');
+
+      if (!expenses || expenses.length === 0) {
+        container.className = 'center-msg';
+        container.textContent = 'Sem despesas registadas.';
+        return;
+      }
+      container.className = '';
+
+      const totalDespesas = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+      const totalReembolsado = expenses.filter(e => e.reimbursed).reduce((s, e) => s + Number(e.amount || 0), 0);
+      const totalPorReembolsar = totalDespesas - totalReembolsado;
+
+      const devidoPorPessoa = {};
+      expenses.filter(e => !e.reimbursed).forEach(e => {
+        const nome = payerName(e, memberMap);
+        devidoPorPessoa[nome] = (devidoPorPessoa[nome] || 0) + Number(e.amount || 0);
+      });
+      const devidoRows = Object.entries(devidoPorPessoa).sort((a, b) => b[1] - a[1]);
+
+      const monthlyMap = {};
+      expenses.forEach(e => {
+        if (!e.date) return;
+        const month = e.date.slice(0, 7);
+        monthlyMap[month] = (monthlyMap[month] || 0) + Number(e.amount || 0);
+      });
+      const monthlyTotals = Object.keys(monthlyMap).sort().map(m => ({ month: m, total: monthlyMap[m] })).slice(-12);
+
+      const rows = expenses.map(e => `
+        <tr>
+          <td>${fmtDateShort(new Date(e.date + 'T00:00:00'))}</td>
+          <td>${e.description ?? e.expense_categories?.name ?? 'Despesa'}</td>
+          <td>${e.project_id ? (projectMap[e.project_id] ?? 'Projeto') : '—'}</td>
+          <td>${payerName(e, memberMap)}</td>
+          <td class="col-value">${fmtEUR(Number(e.amount))}</td>
+          <td><span class="invoice-status ${e.reimbursed ? 'paid' : 'pending'}">${e.reimbursed ? 'Reembolsada' : 'Por reembolsar'}</span></td>
+        </tr>`).join('');
+
+      container.innerHTML = `
+        <div class="stat-grid">
+          <div class="stat-tile"><div class="stat-value">${fmtEUR(totalDespesas)}</div><div class="stat-label">Total despesas</div></div>
+          <div class="stat-tile"><div class="stat-value">${fmtEUR(totalReembolsado)}</div><div class="stat-label">Reembolsado</div></div>
+          <div class="stat-tile"><div class="stat-value">${fmtEUR(totalPorReembolsar)}</div><div class="stat-label">Por reembolsar</div></div>
+        </div>
+
+        <div class="section-label">Média de despesas ao longo do tempo</div>
+        <div class="gantt-wrap">${renderExpenseChartSvg(monthlyTotals)}</div>
+
+        <div class="section-label">Quanto se deve a quem</div>
+        <div class="gantt-wrap">
+          ${devidoRows.length === 0
+            ? '<div class="gantt-empty">Não há valores por reembolsar.</div>'
+            : devidoRows.map(([nome, val]) => `
+                <div class="invoice-row">
+                  <span>${nome}</span>
+                  <span class="amount">${fmtEUR(val)}</span>
+                </div>`).join('')}
+        </div>
+
+        <div class="section-label">Todas as despesas</div>
+        <div class="gantt-wrap">
+          <table class="mini-table">
+            <thead><tr><th>Data</th><th>Descrição</th><th>Projeto</th><th>Pago por</th><th class="col-value">Valor</th><th>Estado</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    async function loadDespesas() {
+      const container = document.getElementById('despesas-container');
+      container.className = 'center-msg';
+      container.innerHTML = '<div class="spinner"></div>A carregar despesas...';
+
+      try {
+        let expenses, projectMap = {}, memberMap = {};
+
+        if (devMode) {
+          expenses = MOCK_EXPENSES;
+          MOCK_PROJECTS.forEach(p => { projectMap[p.id] = p.name; });
+        } else {
+          const res = await supabase.from('expenses').select('*, expense_categories(name)').order('date', { ascending: false });
+          if (res.error) throw res.error;
+          expenses = res.data || [];
+
+          const projectIds = [...new Set(expenses.map(e => e.project_id).filter(Boolean))];
+          const memberIds = [...new Set(expenses.map(e => e.paid_by_member_id).filter(Boolean))];
+
+          const [projRes, memRes] = await Promise.all([
+            projectIds.length ? supabase.from('projects').select('id, name').in('id', projectIds) : Promise.resolve({ data: [] }),
+            memberIds.length ? supabase.from('team_members').select('id, name').in('id', memberIds) : Promise.resolve({ data: [] })
+          ]);
+          (projRes.data || []).forEach(p => { projectMap[p.id] = p.name; });
+          (memRes.data || []).forEach(m => { memberMap[m.id] = m.name; });
+        }
+
+        renderDespesas(expenses, projectMap, memberMap);
+      } catch (err) {
+        container.className = 'error-box';
+        container.textContent = 'Erro ao carregar despesas: ' + err.message;
+      }
+    }
 
     init();
 
