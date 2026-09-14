@@ -2599,6 +2599,14 @@
         });
 
         // --- Cronograma: fases e pausas intercaladas, com scroll horizontal e régua ---
+        function stageBudgetValue(stage) {
+          if (stage.fixed_value != null) return Number(stage.fixed_value);
+          if (stage.percentage != null && project.commission_value != null) {
+            return Number(project.commission_value) * Number(stage.percentage) / 100;
+          }
+          return 0;
+        }
+
         function renderGanttSection(scale) {
           const pxPerDay = scale === 'month' ? 6 : 20;
           const dayMs = 86400000;
@@ -2617,7 +2625,7 @@
 
           const minDate = new Date(Math.min(...allDates.map(d => d.start)));
           const maxDate = new Date(Math.max(...allDates.map(d => d.end)));
-          const totalDays = Math.max(1, Math.ceil((maxDate - minDate) / dayMs)) + 7;
+          const totalDays = Math.max(1, Math.ceil((maxDate - minDate) / dayMs)) + 12;
           const totalPx = totalDays * pxPerDay;
           const dayOffset = (d) => Math.round((d - minDate) / dayMs) * pxPerDay;
 
@@ -2660,7 +2668,7 @@
                 <div class="gantt-track-row">
                   <div class="gantt-lane"></div>
                   <div class="gantt-bar" style="left:${left}px; width:${width}px; background:${color};"></div>
-                  <div class="gantt-end-date" style="left:${left + width + 6}px;">${fmtDateShort(end)}</div>
+                  <div class="gantt-end-date" style="left:${left + width + 6}px;">${fmtDateShort(end)} · ${fmtEUR(stageBudgetValue(s))}</div>
                 </div>`;
             }
             const b = item.data;
