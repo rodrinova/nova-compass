@@ -3764,14 +3764,19 @@
     // ---------- Repositório de despesas ----------
     document.getElementById('despesas-new-btn').addEventListener('click', () => openNewExpenseModal(null, loadDespesas));
 
-    function payerName(e, memberMap) {
-      if (e.paid_by_member_id && memberMap[e.paid_by_member_id]) return memberMap[e.paid_by_member_id];
-      return e.paid_by || 'Desconhecido';
-    }
-
     function isCompanyPaid(e) {
       const label = (e.paid_by || '').trim().toLowerCase();
-      return !e.paid_by_member_id && (label === 'empresa' || label === 'a empresa' || label.includes('cartão da empresa') || label.includes('cartao da empresa'));
+      return !e.paid_by_member_id && (
+        label === 'empresa' || label === 'a empresa' ||
+        label.includes('cartão da empresa') || label.includes('cartao da empresa') ||
+        label === 'company' || label.includes('company')
+      );
+    }
+
+    function payerName(e, memberMap) {
+      if (isCompanyPaid(e)) return 'NOVA';
+      if (e.paid_by_member_id && memberMap[e.paid_by_member_id]) return memberMap[e.paid_by_member_id];
+      return e.paid_by || 'Desconhecido';
     }
 
     function smoothPath(points) {
@@ -3909,7 +3914,7 @@
 
       const rows = expenses.map(e => {
         const statusCell = isCompanyPaid(e)
-          ? `<span class="invoice-status neutral">Despesa da empresa</span>`
+          ? '—'
           : `<span class="invoice-status ${e.reimbursed ? 'paid' : 'pending'}">${e.reimbursed ? 'Reembolsada' : 'Por reembolsar'}</span>`;
         return `
         <tr>
