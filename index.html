@@ -2762,21 +2762,48 @@
             </table>`;
         }
 
-        // --- Faturas ---
-        let invoicesHtml = '<div class="gantt-empty">Sem faturas registadas.</div>';
-        if (invoices.length > 0) {
-          invoicesHtml = invoices.map(inv => {
-            const paid = Number(inv.amount_paid ?? 0);
-            const amount = Number(inv.amount ?? 0);
-            const status = paid >= amount ? 'paid' : paid > 0 ? 'partial' : 'pending';
-            const statusLabel = status === 'paid' ? 'Pago' : status === 'partial' ? 'Parcial' : 'Pendente';
-            return `
-              <div class="invoice-row">
-                <span>${inv.invoice_number ?? inv.issue_date ?? 'Fatura'}</span>
-                <span class="invoice-status ${status}">${statusLabel}</span>
-                <span class="amount">${fmtEUR(amount)}</span>
-              </div>`;
-          }).join('');
+        // --- Fases: estado, faturação e pagamento ---
+        const stageInvoiceMap = {};
+        invoices.forEach(inv => {
+          if (!inv.stage_id) return;
+          if (!stageInvoiceMap[inv.stage_id]) stageInvoiceMap[inv.stage_id] = { amount: 0, paid: 0 };
+          stageInvoiceMap[inv.stage_id].amount += Number(inv.amount ?? 0);
+          stageInvoiceMap[inv.stage_id].paid += Number(inv.amount_paid ?? 0);
+        });
+
+        function stageStatusLabel(s) {
+          if (s.status === 'completed' || s.status === 'done') return 'Concluída';
+          if (s.status === 'in_progress' || s.status === 'active') return 'Em curso';
+          return 'Por iniciar';
+        }
+
+        let stagesTableHtml = '<div class="gantt-empty">Este projeto ainda não tem fases registadas.</div>';
+        if (stages.length > 0) {
+          stagesTableHtml = `
+            <table class="mini-table">
+              <thead><tr><th>Fase</th><th>Estado</th><th>Faturação</th><th>Pagamento</th></tr></thead>
+              <tbody>
+                ${stages.map(s => {
+                  const inv = stageInvoiceMap[s.id] || { amount: 0, paid: 0 };
+                  const isInvoiced = inv.amount > 0;
+                  const isPaid = isInvoiced && inv.paid >= inv.amount;
+                  const isPartial = inv.paid > 0 && inv.paid < inv.amount;
+                  const invoiceCell = isInvoiced
+                    ? `<span class="invoice-status paid">Faturada · ${fmtEUR(inv.amount)}</span>`
+                    : `<span class="invoice-status pending">Por faturar</span>`;
+                  const paymentCell = !isInvoiced
+                    ? '—'
+                    : `<span class="invoice-status ${isPaid ? 'paid' : isPartial ? 'partial' : 'pending'}">${isPaid ? 'Paga' : isPartial ? 'Parcial' : 'Não paga'}</span>`;
+                  return `
+                    <tr>
+                      <td>${s.stage_types?.name ?? 'Fase'}</td>
+                      <td>${stageStatusLabel(s)}</td>
+                      <td>${invoiceCell}</td>
+                      <td>${paymentCell}</td>
+                    </tr>`;
+                }).join('')}
+              </tbody>
+            </table>`;
         }
 
         // --- Despesas ---
@@ -2874,8 +2901,8 @@
           <div class="section-label">Horas por fase e por pessoa</div>
           <div class="gantt-wrap">${horasTableHtml}</div>
 
-          <div class="section-label">Faturas</div>
-          <div class="gantt-wrap">${invoicesHtml}</div>
+          <div class="section-label">Fases</div>
+          <div class="gantt-wrap">${stagesTableHtml}</div>
 
           <div class="section-label">Despesas</div>
           <div class="gantt-wrap">${expensesHtml}</div>
