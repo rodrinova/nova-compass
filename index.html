@@ -1355,10 +1355,15 @@
       </div>
       <div id="despesas-view" style="display:none;">
         <button type="button" id="despesas-new-btn" class="secondary-btn" style="margin-top:0; margin-bottom:14px; width:auto; padding:11px 18px;">+ Nova despesa</button>
-        <div id="despesas-container" class="center-msg">
+        <div class="segmented" id="despesas-tabs">
+          <button type="button" data-tab="todas" class="active">Todas</button>
+          <button type="button" data-tab="reembolsos">Reembolsos</button>
+        </div>
+        <div id="despesas-todas-panel" class="center-msg">
           <div class="spinner"></div>
           A carregar despesas...
         </div>
+        <div id="despesas-reembolsos-panel" style="display:none;"></div>
       </div>
     </div>
   </div>
@@ -2097,6 +2102,7 @@
       document.getElementById('nav-title').textContent = 'Despesas';
       hideAllViews();
       document.getElementById('despesas-view').style.display = 'block';
+      switchDespesasTab('todas');
       loadDespesas();
     }
 
@@ -3582,8 +3588,9 @@
     }
 
     // ---------- Registar despesa ----------
-    async function openNewExpenseModal(lockedProjectId, onSuccess) {
+    async function openNewExpenseModal(lockedProjectId, onSuccess, existingExpense) {
       const member = await getCurrentMember();
+      const isEdit = !!existingExpense;
       const bodyHtml = `
         <label class="field-label" style="margin-top:0;">Projeto (opcional)</label>
         <select id="exp-project" class="form-input" ${lockedProjectId ? 'disabled' : ''}>
@@ -3609,13 +3616,20 @@
             <button type="button" data-reimbursed="true">Sim</button>
           </div>
         </div>
-        <button id="exp-submit" class="primary-btn">Guardar despesa</button>
+        <button id="exp-submit" class="primary-btn">${isEdit ? 'Guardar alterações' : 'Guardar despesa'}</button>
+        ${isEdit ? '<button id="exp-archive" class="secondary-btn">Arquivar despesa</button>' : ''}
         <div id="exp-msg" class="form-msg"></div>
       `;
-      openQuickModal('Registar despesa', bodyHtml);
-      document.getElementById('exp-date').value = fmtDateInput(new Date());
+      openQuickModal(isEdit ? 'Editar despesa' : 'Registar despesa', bodyHtml);
+      document.getElementById('exp-date').value = isEdit ? existingExpense.date : fmtDateInput(new Date());
+      if (isEdit) {
+        document.getElementById('exp-description').value = existingExpense.description ?? '';
+        document.getElementById('exp-amount').value = existingExpense.amount ?? '';
+      }
 
-      let expPayer = 'me';
+      let expPayer = (isEdit && isCompanyPaid(existingExpense)) ? 'company' : 'me';
+      document.querySelectorAll('#exp-payer-toggle button').forEach(b => b.classList.toggle('active', b.dataset.payer === expPayer));
+      document.getElementById('exp-reimbursed-wrap').style.display = expPayer === 'company' ? 'none' : 'block';
       document.getElementById('exp-payer-toggle').addEventListener('click', (e) => {
         const btn = e.target.closest('[data-payer]');
         if (!btn) return;
@@ -3624,7 +3638,8 @@
         document.getElementById('exp-reimbursed-wrap').style.display = expPayer === 'company' ? 'none' : 'block';
       });
 
-      let expReimbursed = false;
+      let expReimbursed = isEdit ? !!existingExpense.reimbursed : false;
+      document.querySelectorAll('#exp-reimbursed-toggle button').forEach(b => b.classList.toggle('active', b.dataset.reimbursed === String(expReimbursed)));
       document.getElementById('exp-reimbursed-toggle').addEventListener('click', (e) => {
         const btn = e.target.closest('[data-reimbursed]');
         if (!btn) return;
@@ -3645,7 +3660,13 @@
       }
       projSelect.innerHTML = '<option value="">Sem projeto</option>' + projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
       if (lockedProjectId) projSelect.value = lockedProjectId;
+      else if (isEdit && existingExpense.project_id) projSelect.value = existingExpense.project_id;
       document.getElementById('exp-category').innerHTML = '<option value="">Sem categoria</option>' + categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+      if (isEdit && existingExpense.category_id) document.getElementById('exp-category').value = existingExpense.category_id;
+
+      if (isEdit) {
+        document.getElementById('exp-archive').addEventListener('click', () => archiveExpense(existingExpense.id));
+      }
 
       document.getElementById('exp-submit').addEventListener('click', async () => {
         const msgEl = document.getElementById('exp-msg');
@@ -3658,7 +3679,7 @@
           msgEl.className = 'form-msg error';
           return;
         }
-        if (!window.confirm(`Registar despesa de ${fmtEUR(amount)}?`)) return;
+        if (!window.confirm(isEdit ? 'Guardar as alterações desta despesa?' : `Registar despesa de ${fmtEUR(amount)}?`)) return;
 
         const btn = document.getElementById('exp-submit');
         btn.disabled = true;
@@ -3674,12 +3695,14 @@
             reimbursed: expPayer === 'company' ? false : expReimbursed
           };
           if (devMode) {
-            msgEl.textContent = 'Despesa registada (modo de demonstração).';
+            msgEl.textContent = (isEdit ? 'Alterações guardadas' : 'Despesa registada') + ' (modo de demonstração).';
             msgEl.className = 'form-msg success';
             setTimeout(closeQuickModal, 800);
             return;
           }
-          const res = await supabase.from('expenses').insert(payload);
+          const res = isEdit
+            ? await supabase.from('expenses').update(payload).eq('id', existingExpense.id)
+            : await supabase.from('expenses').insert(payload);
           if (res.error) throw res.error;
           closeQuickModal();
           if (onSuccess) onSuccess();
@@ -3688,7 +3711,7 @@
           msgEl.textContent = 'Erro ao guardar: ' + err.message;
           msgEl.className = 'form-msg error';
           btn.disabled = false;
-          btn.textContent = 'Guardar despesa';
+          btn.textContent = isEdit ? 'Guardar alterações' : 'Guardar despesa';
         }
       });
     }
@@ -3872,6 +3895,8 @@
 
     let despesasChartExpenses = [];
     let despesasChartScale = 'month';
+    let despesasActiveTab = 'todas';
+    let lastDespesasData = { expenses: [], projectMap: {}, memberMap: {} };
 
     function updateDespesasChart(scale) {
       despesasChartScale = scale;
@@ -3885,28 +3910,122 @@
       }, 180);
     }
 
-    function renderDespesas(expenses, projectMap, memberMap) {
-      const container = document.getElementById('despesas-container');
+    function switchDespesasTab(tab) {
+      despesasActiveTab = tab;
+      document.querySelectorAll('#despesas-tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+      document.getElementById('despesas-todas-panel').style.display = tab === 'todas' ? 'block' : 'none';
+      document.getElementById('despesas-reembolsos-panel').style.display = tab === 'reembolsos' ? 'block' : 'none';
+      if (tab === 'reembolsos') {
+        renderReembolsos(lastDespesasData.expenses, lastDespesasData.memberMap);
+      }
+    }
+    document.getElementById('despesas-tabs').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-tab]');
+      if (!btn) return;
+      switchDespesasTab(btn.dataset.tab);
+    });
 
-      if (!expenses || expenses.length === 0) {
-        container.className = 'center-msg';
-        container.textContent = 'Sem despesas registadas.';
+    async function toggleReimbursed(expenseId, newState) {
+      if (!window.confirm(newState ? 'Marcar esta despesa como reembolsada?' : 'Marcar esta despesa como por reembolsar?')) return;
+      try {
+        if (!devMode) {
+          const payload = { reimbursed: newState, reimbursed_at: newState ? new Date().toISOString() : null };
+          const res = await supabase.from('expenses').update(payload).eq('id', expenseId);
+          if (res.error) throw res.error;
+        } else {
+          const exp = MOCK_EXPENSES.find(e => e.id === expenseId);
+          if (exp) exp.reimbursed = newState;
+        }
+        await loadDespesas();
+      } catch (err) {
+        alert('Erro ao atualizar: ' + err.message);
+      }
+    }
+
+    async function archiveExpense(expenseId) {
+      if (!window.confirm('Arquivar esta despesa? Deixa de aparecer nas listas, mas não é eliminada.')) return;
+      try {
+        if (!devMode) {
+          const res = await supabase.from('expenses').update({ archived_at: new Date().toISOString() }).eq('id', expenseId);
+          if (res.error) throw res.error;
+        }
+        closeQuickModal();
+        await loadDespesas();
+      } catch (err) {
+        alert('Erro ao arquivar: ' + err.message);
+      }
+    }
+
+    function renderReembolsos(expenses, memberMap) {
+      const panel = document.getElementById('despesas-reembolsos-panel');
+      const reimbursable = (expenses || []).filter(e => !isCompanyPaid(e));
+
+      if (reimbursable.length === 0) {
+        panel.innerHTML = '<div class="gantt-empty">Sem despesas de colaboradores registadas.</div>';
         return;
       }
-      container.className = '';
+
+      const byPerson = {};
+      reimbursable.forEach(e => {
+        const nome = payerName(e, memberMap);
+        if (!byPerson[nome]) byPerson[nome] = [];
+        byPerson[nome].push(e);
+      });
+
+      const nomes = Object.keys(byPerson).sort((a, b) => {
+        const owedA = byPerson[a].filter(e => !e.reimbursed).reduce((s, e) => s + Number(e.amount || 0), 0);
+        const owedB = byPerson[b].filter(e => !e.reimbursed).reduce((s, e) => s + Number(e.amount || 0), 0);
+        return owedB - owedA;
+      });
+
+      const rowHtml = (e) => `
+        <div class="invoice-row">
+          <span>${fmtDateShort(new Date(e.date + 'T00:00:00'))} · ${e.description ?? 'Despesa'}</span>
+          <span class="amount">${fmtEUR(Number(e.amount))}</span>
+          <button type="button" class="text-btn" data-toggle-reimburse="${e.id}" data-current="${e.reimbursed ? 'true' : 'false'}">${e.reimbursed ? 'Marcar por reembolsar' : 'Marcar reembolsada'}</button>
+        </div>`;
+
+      panel.innerHTML = nomes.map(nome => {
+        const items = byPerson[nome];
+        const porFazer = items.filter(e => !e.reimbursed);
+        const feitos = items.filter(e => e.reimbursed);
+        const totalPorFazer = porFazer.reduce((s, e) => s + Number(e.amount || 0), 0);
+
+        return `
+          <div class="gantt-wrap" style="margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <strong>${nome}</strong>
+              <span class="amount">${fmtEUR(totalPorFazer)} por reembolsar</span>
+            </div>
+            ${porFazer.length ? porFazer.map(rowHtml).join('') : '<div class="gantt-empty">Sem despesas por reembolsar.</div>'}
+            ${feitos.length ? `<div class="field-label">Já reembolsadas</div>` + feitos.map(rowHtml).join('') : ''}
+          </div>`;
+      }).join('');
+
+      panel.querySelectorAll('[data-toggle-reimburse]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          toggleReimbursed(btn.dataset.toggleReimburse, btn.dataset.current !== 'true');
+        });
+      });
+    }
+
+    function renderDespesas(expenses, projectMap, memberMap) {
+      const panel = document.getElementById('despesas-todas-panel');
+      lastDespesasData = { expenses, projectMap, memberMap };
+
+      if (!expenses || expenses.length === 0) {
+        panel.className = 'center-msg';
+        panel.textContent = 'Sem despesas registadas.';
+        renderReembolsos([], memberMap);
+        return;
+      }
+      panel.className = '';
 
       const totalDespesas = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
       const totalReembolsado = expenses.filter(e => e.reimbursed).reduce((s, e) => s + Number(e.amount || 0), 0);
       const totalPorReembolsar = expenses
         .filter(e => !e.reimbursed && !isCompanyPaid(e))
         .reduce((s, e) => s + Number(e.amount || 0), 0);
-
-      const devidoPorPessoa = {};
-      expenses.filter(e => !e.reimbursed && !isCompanyPaid(e)).forEach(e => {
-        const nome = payerName(e, memberMap);
-        devidoPorPessoa[nome] = (devidoPorPessoa[nome] || 0) + Number(e.amount || 0);
-      });
-      const devidoRows = Object.entries(devidoPorPessoa).sort((a, b) => b[1] - a[1]);
 
       despesasChartExpenses = expenses;
       despesasChartScale = 'month';
@@ -3924,10 +4043,11 @@
           <td>${payerName(e, memberMap)}</td>
           <td class="col-value">${fmtEUR(Number(e.amount))}</td>
           <td>${statusCell}</td>
+          <td><button type="button" class="text-btn" data-edit-expense="${e.id}">Editar</button></td>
         </tr>`;
       }).join('');
 
-      container.innerHTML = `
+      panel.innerHTML = `
         <div class="stat-grid">
           <div class="stat-tile"><div class="stat-value">${fmtEUR(totalDespesas)}</div><div class="stat-label">Total despesas</div></div>
           <div class="stat-tile"><div class="stat-value">${fmtEUR(totalReembolsado)}</div><div class="stat-label">Reembolsado</div></div>
@@ -3943,21 +4063,10 @@
           <div id="despesas-chart-inner">${renderExpenseLineChart(initialBuckets, 'month')}</div>
         </div>
 
-        <div class="section-label">Quanto se deve a quem</div>
-        <div class="gantt-wrap">
-          ${devidoRows.length === 0
-            ? '<div class="gantt-empty">Não há valores por reembolsar.</div>'
-            : devidoRows.map(([nome, val]) => `
-                <div class="invoice-row">
-                  <span>${nome}</span>
-                  <span class="amount">${fmtEUR(val)}</span>
-                </div>`).join('')}
-        </div>
-
         <div class="section-label">Todas as despesas</div>
         <div class="gantt-wrap">
           <table class="mini-table">
-            <thead><tr><th>Data</th><th>Descrição</th><th>Projeto</th><th>Pago por</th><th class="col-value">Valor</th><th>Estado</th></tr></thead>
+            <thead><tr><th>Data</th><th>Descrição</th><th>Projeto</th><th>Pago por</th><th class="col-value">Valor</th><th>Estado</th><th></th></tr></thead>
             <tbody>${rows}</tbody>
           </table>
         </div>
@@ -3969,12 +4078,23 @@
         document.querySelectorAll('#despesas-chart-scale button').forEach(b => b.classList.toggle('active', b === btn));
         updateDespesasChart(btn.dataset.scale);
       });
+
+      panel.querySelectorAll('[data-edit-expense]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const exp = expenses.find(x => x.id === btn.dataset.editExpense);
+          if (exp) openNewExpenseModal(null, loadDespesas, exp);
+        });
+      });
+
+      if (despesasActiveTab === 'reembolsos') {
+        renderReembolsos(expenses, memberMap);
+      }
     }
 
     async function loadDespesas() {
-      const container = document.getElementById('despesas-container');
-      container.className = 'center-msg';
-      container.innerHTML = '<div class="spinner"></div>A carregar despesas...';
+      const panel = document.getElementById('despesas-todas-panel');
+      panel.className = 'center-msg';
+      panel.innerHTML = '<div class="spinner"></div>A carregar despesas...';
 
       try {
         let expenses, projectMap = {}, memberMap = {};
@@ -3983,7 +4103,7 @@
           expenses = MOCK_EXPENSES;
           MOCK_PROJECTS.forEach(p => { projectMap[p.id] = p.name; });
         } else {
-          const res = await supabase.from('expenses').select('*, expense_categories(name)').order('date', { ascending: false });
+          const res = await supabase.from('expenses').select('*, expense_categories(name)').is('archived_at', null).order('date', { ascending: false });
           if (res.error) throw res.error;
           expenses = res.data || [];
 
@@ -4000,8 +4120,8 @@
 
         renderDespesas(expenses, projectMap, memberMap);
       } catch (err) {
-        container.className = 'error-box';
-        container.textContent = 'Erro ao carregar despesas: ' + err.message;
+        panel.className = 'error-box';
+        panel.textContent = 'Erro ao carregar despesas: ' + err.message;
       }
     }
 
