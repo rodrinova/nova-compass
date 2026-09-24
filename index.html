@@ -428,7 +428,9 @@
   }
 
   /* ---------- Ficha do projeto ---------- */
-  .detail-header { padding-bottom: 16px; margin-bottom: 4px; border-bottom: 1px solid var(--border); }
+  .detail-header { padding-bottom: 16px; margin-bottom: 4px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .detail-header .secondary-btn { width: auto; margin: 2px 0 0; padding: 0 14px; height: 34px; flex-shrink: 0; }
+  .archived-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 14px 0 0; padding: 10px 14px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); font-size: 13.5px; color: var(--text-2); }
   .detail-header .titles { min-width: 0; }
   .detail-header h2 { font-size: 22px; font-weight: 650; letter-spacing: -0.02em; overflow-wrap: anywhere; }
   .detail-header .sub { color: var(--text-2); font-size: 13px; margin-top: 4px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
@@ -1034,9 +1036,33 @@
   .invoice-row.click-row { margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-radius: 6px; }
   .ph-row { grid-template-columns: minmax(0, 1.4fr) minmax(60px, 1fr) auto auto auto; }
   @media (max-width: 560px) { .ph-row { grid-template-columns: minmax(0, 1fr) auto auto; } .ph-row .ph-due { display: none; } }
+  /* ---------- Entrada: logo NOVA (0,5 s, uma vez por sessão) ---------- */
+  #splash { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center;
+    background: var(--bg); pointer-events: none; animation: splash-out .5s cubic-bezier(.4, 0, .2, 1) forwards; }
+  #splash img { width: 168px; height: auto; animation: splash-logo .5s cubic-bezier(.22, 1, .36, 1) forwards; }
+  @keyframes splash-logo {
+    0%   { opacity: 0; transform: translateY(6px) scale(.96); clip-path: inset(0 100% 0 0); filter: blur(3px); }
+    55%  { opacity: 1; transform: none; clip-path: inset(0 0 0 0); filter: blur(0); }
+    100% { opacity: 1; transform: scale(1.03); clip-path: inset(0 0 0 0); filter: blur(0); }
+  }
+  @keyframes splash-out { 0%, 68% { opacity: 1; } 100% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { #splash { display: none; } }
 </style>
 </head>
 <body>
+  <div id="splash" aria-hidden="true"><picture><source srcset="assets/nova-logo-white-cropped.png" media="(prefers-color-scheme: dark)"><img src="assets/nova-logo-plum-cropped.png" alt=""></picture></div>
+  <script>
+    // Só na primeira abertura da sessão; sai sozinha no fim da animação
+    (function () {
+      var el = document.getElementById('splash');
+      var seen = false;
+      try { seen = sessionStorage.getItem('nova-splash') === '1'; sessionStorage.setItem('nova-splash', '1'); } catch (e) {}
+      if (seen) { el.remove(); return; }
+      var done = function () { if (el.parentNode) el.remove(); };
+      el.addEventListener('animationend', function (e) { if (e.target === el) done(); });
+      setTimeout(done, 900);
+    })();
+  </script>
 
   <!-- Ecrã de Login -->
   <div id="login-screen">
@@ -1140,6 +1166,7 @@
           <div class="segmented" id="projects-scope">
             <button type="button" data-scope="active" class="active">Ativos</button>
             <button type="button" data-scope="all">Todos</button>
+            <button type="button" data-scope="archived">Arquivados</button>
           </div>
         </div>
         <div id="projects-container" class="center-msg">
@@ -1286,6 +1313,11 @@
               <span id="detail-status-pill"></span>
             </div>
           </div>
+          <button type="button" class="secondary-btn" id="detail-archive-btn" style="display:none;">Arquivar</button>
+        </div>
+        <div class="archived-banner" id="detail-archived" style="display:none;">
+          <span>Este projeto está arquivado: não aparece nas listas, na agenda nem nas horas.</span>
+          <button type="button" class="text-btn" id="detail-unarchive-btn">Desarquivar</button>
         </div>
         <div class="detail-body" id="detail-body">
           <div class="detail-loading">A carregar...</div>
@@ -2666,7 +2698,9 @@
     function renderProjectsTable(data) {
       if (!data || data.length === 0) {
         projectsContainer.className = 'center-msg';
-        projectsContainer.textContent = 'Sem projetos correspondentes.';
+        projectsContainer.textContent = projectsScope === 'archived'
+          ? 'Não há projetos arquivados. Para arquivar, abre o projeto e toca em Arquivar.'
+          : 'Sem projetos correspondentes.';
         return;
       }
 
@@ -2710,7 +2744,8 @@
     function applyProjectFilters() {
       const term = document.getElementById('projects-search').value.trim().toLowerCase();
       const filtered = allProjectsData.filter(p =>
-        (projectsScope === 'all' || !statusByCode(p.status)?.is_closed) &&
+        (projectsScope === 'archived' ? !!p.archived_at
+          : !p.archived_at && (projectsScope === 'all' || !statusByCode(p.status)?.is_closed)) &&
         (!term || (p.name ?? '').toLowerCase().includes(term) || (p.code ?? '').toLowerCase().includes(term))
       );
       renderProjectsTable(filtered);
@@ -2737,7 +2772,7 @@
           const [res, exRes] = await Promise.all([
             supabase
               .from('projects')
-              .select('id, name, code, area, status, commission_value, project_types(name)')
+              .select('id, name, code, area, status, commission_value, archived_at, project_types(name)')
               .order('created_at', { ascending: false }),
             supabase
               .from('project_stages')
@@ -3511,6 +3546,12 @@
 
         const reopen = () => openDetail(project.id ?? projectId);
         document.getElementById('edit-project-btn').addEventListener('click', () => openProjectEditModal(project, reopen));
+        // Arquivar / desarquivar (onclick: os botões são fixos e a ficha é redesenhada a cada abertura)
+        const archBtn = document.getElementById('detail-archive-btn');
+        archBtn.style.display = project.archived_at ? 'none' : '';
+        document.getElementById('detail-archived').style.display = project.archived_at ? 'flex' : 'none';
+        archBtn.onclick = () => setProjectArchived(project, true);
+        document.getElementById('detail-unarchive-btn').onclick = () => setProjectArchived(project, false);
         attachRevisionFormHandlers(project.id ?? projectId, stages);
         detailBody.querySelectorAll('[data-assign-stage]').forEach(btn => btn.addEventListener('click', (ev) => {
           ev.stopPropagation();
@@ -6136,6 +6177,26 @@
       });
     }
 
+    // ---------- Projeto: arquivar / desarquivar (nada é apagado) ----------
+    async function setProjectArchived(project, archive) {
+      if (archive && !window.confirm(`Arquivar o projeto "${project.name}"? Deixa de aparecer nas listas, na agenda e nas horas. Nada é apagado e podes desarquivar quando quiseres.`)) return;
+      try {
+        await dbUpdate('projects', project.id, { archived_at: archive ? new Date().toISOString() : null }, MOCK_PROJECTS);
+        invalidateActivePhases();
+        if (archive) {
+          showToast('Projeto arquivado', { undo: () => setProjectArchived(project, false) });
+          navStack = [];
+          openProjectsModule();
+        } else {
+          showToast('Projeto desarquivado');
+          suppressNavPush = true;
+          openDetail(project.id);
+        }
+      } catch (err) {
+        showToast('Não foi possível ' + (archive ? 'arquivar' : 'desarquivar') + ': ' + err.message, { type: 'error' });
+      }
+    }
+
     // ---------- Projeto: todos os dados ----------
     async function openProjectEditModal(project, onSaved) {
       openQuickModal('Editar projeto', '<div class="detail-loading">A carregar…</div>');
@@ -6164,20 +6225,8 @@
         </div>
         <div class="field-hint">Os honorários são o valor total do contrato. As fases em percentagem calculam-se a partir deste valor.</div>
         <button type="button" id="pe-save" class="primary-btn">Guardar</button>
-        <button type="button" id="pe-archive" class="secondary-btn danger-btn">Arquivar projeto</button>
         <div id="pe-msg" class="form-msg"></div>`;
 
-      document.getElementById('pe-archive').addEventListener('click', async () => {
-        if (!window.confirm(`Arquivar o projeto "${project.name}"? Deixa de aparecer nas listas e no calendário, mas nada é apagado.`)) return;
-        try {
-          await dbUpdate('projects', project.id, { archived_at: new Date().toISOString() }, MOCK_PROJECTS);
-          invalidateActivePhases();
-          closeQuickModal();
-          showToast('Projeto arquivado');
-          navStack = [];
-          openProjectsModule();
-        } catch (err) { formError('pe-msg', 'Não foi possível arquivar: ' + err.message); }
-      });
       document.getElementById('pe-save').addEventListener('click', async () => {
         const name = document.getElementById('pe-name').value.trim();
         const area = numOrNull(document.getElementById('pe-area').value);
