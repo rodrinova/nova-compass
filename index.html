@@ -1266,9 +1266,6 @@
       </div>
       <button id="login-btn">Entrar</button>
       <div id="login-msg" class="login-msg"></div>
-      <button id="dev-skip-btn" style="margin-top:10px; width:100%; background:none; border:none; color:var(--text-muted); font-size:12px; cursor:pointer; text-decoration:underline; font-family:inherit;">
-        Modo desenvolvimento (saltar login)
-      </button>
     </div>
   </div>
 
@@ -1558,7 +1555,8 @@
 
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    let devMode = false;
+    // Dados de demonstração (MOCK_*) ficam inativos: não há forma de ligar este modo no build publicado.
+    const devMode = false;
 
     const MOCK_PROJECTS = [
       { id: 'mock-1', name: 'Edifício Miradouro', code: 'NOVA-001', client: 'Promotora Atlântico', address: 'Rua do Miradouro 12, Vila Nova de Gaia', status: 'Em curso', area: 1240, awarding_date: '2025-11-03', commission_value: 48000, team_id: 'mock-team-alpha', project_types: { name: 'Habitação Coletiva' }, teams: { name: 'Team Alpha' } },
@@ -2784,14 +2782,8 @@
     });
 
     document.getElementById('logout-btn').addEventListener('click', async () => {
-      devMode = false;
       await supabase.auth.signOut();
       showLogin();
-    });
-
-    document.getElementById('dev-skip-btn').addEventListener('click', () => {
-      devMode = true;
-      showApp();
     });
 
     document.getElementById('nav-home-btn').addEventListener('click', showHome);
