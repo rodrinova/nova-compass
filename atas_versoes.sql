@@ -127,3 +127,9 @@ begin
       for update to authenticated using (true) with check (true);
   end if;
 end $$;
+
+-- 7. As funções só servem os triggers: não ficam expostas como RPC na API
+--    (os triggers continuam a funcionar; correm com os privilégios do dono).
+revoke execute on function public.current_team_member_id() from public, anon, authenticated;
+revoke execute on function public.meeting_notes_on_insert() from public, anon, authenticated;
+revoke execute on function public.meeting_notes_versioning() from public, anon, authenticated;
