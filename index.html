@@ -4605,18 +4605,40 @@
         location: 'Escritório', notes: null, done: false, owner_ids: ['mock-member-1'] },
       { id: 'mk-2', project_id: 'mock-2', type_id: 'mt-4', title: 'Entrega do projeto de execução',
         event_date: dateKey(new Date(Date.now() + 4 * 86400000)), all_day: true, start_time: null, end_time: null,
-        location: null, notes: null, done: false, owner_ids: [] }
+        location: null, notes: null, done: false, owner_ids: [] },
+      { id: 'mk-3', project_id: null, category_id: 'cat-3', type_id: 'mt-2', title: 'Visita a terreno em Matosinhos',
+        event_date: dateKey(new Date()), all_day: false, start_time: '15:00:00', end_time: null,
+        location: 'Matosinhos', notes: null, done: false, owner_ids: ['mock-member-1'] }
     ];
 
     let agendaScope = 'mine';
     let agendaMonth = new Date();
     let agendaSelected = dateKey(new Date());
-    let agendaData = { milestones: [], types: {}, members: {}, projects: {}, memberId: null };
+    let agendaData = { milestones: [], types: {}, members: {}, projects: {}, categories: {}, memberId: null };
 
     async function loadMilestoneTypes() {
       if (devMode) return MOCK_MILESTONE_TYPES;
       const res = await supabase.from('milestone_types').select('id, name, color, sort_order').order('sort_order');
       if (res.error) throw res.error;
+      return res.data || [];
+    }
+
+    // Marcos podem estar ligados a uma categoria de horas (marcos_categorias.sql).
+    // Enquanto esse SQL não tiver corrido, a coluna não existe: a app continua a
+    // funcionar e simplesmente não oferece a opção "Categoria".
+    let milestoneCategorySupport = null;
+    async function milestonesHaveCategory() {
+      if (devMode) return true;
+      if (milestoneCategorySupport === null) {
+        const r = await supabase.from('project_milestones').select('category_id').limit(1);
+        milestoneCategorySupport = !r.error;
+      }
+      return milestoneCategorySupport;
+    }
+
+    async function loadTimeCategories() {
+      if (devMode) return MOCK_CATEGORIES;
+      const res = await supabase.from('time_categories').select('id, name').order('name');
       return res.data || [];
     }
 
@@ -4627,8 +4649,9 @@
           (!projectId || m.project_id === projectId) &&
           (!from || m.event_date >= from) && (!to || m.event_date <= to));
       }
-      let q = supabase.from('project_milestones')
-        .select('id, project_id, type_id, title, event_date, all_day, start_time, end_time, location, notes, done');
+      const cols = 'id, project_id, type_id, title, event_date, all_day, start_time, end_time, location, notes, done' +
+        (await milestonesHaveCategory() ? ', category_id' : '');
+      let q = supabase.from('project_milestones').select(cols);
       if (projectId) q = q.eq('project_id', projectId);
       if (from) q = q.gte('event_date', from);
       if (to) q = q.lte('event_date', to);
@@ -4667,10 +4690,11 @@
         const from = dateKey(new Date(agendaMonth.getFullYear(), agendaMonth.getMonth() - 1, 1));
         const to = dateKey(new Date(agendaMonth.getFullYear(), agendaMonth.getMonth() + 2, 0));
 
-        const [milestones, types, members] = await Promise.all([
+        const [milestones, types, members, categories] = await Promise.all([
           fetchMilestones({ from, to }),
           loadMilestoneTypes(),
-          loadAllMembers()
+          loadAllMembers(),
+          loadTimeCategories()
         ]);
 
         const projectIds = [...new Set(milestones.map(m => m.project_id).filter(Boolean))];
@@ -4689,6 +4713,7 @@
           types: Object.fromEntries(types.map(t => [t.id, t])),
           members: Object.fromEntries(members.map(m => [m.id, m.name])),
           projects: projMap,
+          categories: Object.fromEntries(categories.map(c => [c.id, c.name])),
           memberId: member?.id ?? null
         };
         renderAgenda();
@@ -4769,6 +4794,7 @@
       const bits = [];
       if (type) bits.push(escapeHtml(type.name));
       if (showProject && m.project_id && agendaData.projects[m.project_id]) bits.push(escapeHtml(agendaData.projects[m.project_id]));
+      if (showProject && m.category_id && agendaData.categories[m.category_id]) bits.push(escapeHtml(agendaData.categories[m.category_id]));
       if (m.location) bits.push(escapeHtml(m.location));
       return '<div class="marco-row" data-marco-id="' + escapeHtml(m.id) + '">' +
         '<span class="marco-stripe" style="background:' + escapeHtml(color) + '"></span>' +
@@ -4868,8 +4894,18 @@
         <input type="text" id="mk-title" class="form-input" placeholder="ex: Reunião de licenciamento">
         <label class="field-label">Tipo</label>
         <select id="mk-type" class="form-input"><option value="">A carregar…</option></select>
-        <label class="field-label">Projeto (opcional)</label>
-        <select id="mk-project" class="form-input" ${lockedProjectId ? 'disabled' : ''}><option value="">A carregar…</option></select>
+        <label class="field-label">Associado a</label>
+        <div class="segmented" id="mk-link-toggle" style="margin-bottom:8px;${lockedProjectId ? ' display:none;' : ''}">
+          <button type="button" data-link="project" class="active">Projeto</button>
+          <button type="button" data-link="category">Categoria</button>
+          <button type="button" data-link="none">Interno</button>
+        </div>
+        <div id="mk-project-wrap">
+          <select id="mk-project" class="form-input" aria-label="Projeto" ${lockedProjectId ? 'disabled' : ''}><option value="">A carregar…</option></select>
+        </div>
+        <div id="mk-category-wrap" style="display:none;">
+          <select id="mk-category" class="form-input" aria-label="Categoria de horas"><option value="">A carregar…</option></select>
+        </div>
         <label class="field-label">Data</label>
         <input type="date" id="mk-date" class="form-input">
         <label class="field-label">Duração</label>
@@ -4905,17 +4941,42 @@
       `);
 
       // Opções
-      const [types, members, projects] = await Promise.all([
+      const [types, members, projects, categories, hasCategory] = await Promise.all([
         loadMilestoneTypes(),
         loadAllMembers(),
         devMode ? Promise.resolve(MOCK_PROJECTS)
-                : supabase.from('projects').select('id, name').is('archived_at', null).order('name').then(r => r.data || [])
+                : supabase.from('projects').select('id, name').is('archived_at', null).order('name').then(r => r.data || []),
+        loadTimeCategories(),
+        milestonesHaveCategory()
       ]);
 
       document.getElementById('mk-type').innerHTML = '<option value="">Sem tipo</option>' +
         types.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('');
-      document.getElementById('mk-project').innerHTML = '<option value="">Sem projeto (interno)</option>' +
+      document.getElementById('mk-project').innerHTML = '<option value="">Escolhe o projeto</option>' +
         projects.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('');
+      document.getElementById('mk-category').innerHTML = '<option value="">Escolhe a categoria</option>' +
+        categories.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
+
+      // Projeto / Categoria de horas / Interno — mutuamente exclusivos
+      let link = lockedProjectId ? 'project'
+        : isEdit ? (existing.category_id ? 'category' : existing.project_id ? 'project' : 'none')
+        : 'project';
+      if (!hasCategory) {
+        document.querySelector('#mk-link-toggle [data-link="category"]').remove();
+        if (link === 'category') link = 'none';
+      }
+      const syncLink = () => {
+        document.querySelectorAll('#mk-link-toggle button').forEach(b => b.classList.toggle('active', b.dataset.link === link));
+        document.getElementById('mk-project-wrap').style.display = link === 'project' ? 'block' : 'none';
+        document.getElementById('mk-category-wrap').style.display = link === 'category' ? 'block' : 'none';
+      };
+      syncLink();
+      document.getElementById('mk-link-toggle').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-link]');
+        if (!btn) return;
+        link = btn.dataset.link;
+        syncLink();
+      });
 
       let ownerIds = isEdit ? [...(existing.owner_ids || [])] : (member?.id ? [member.id] : []);
       const ownersEl = document.getElementById('mk-owners');
@@ -4960,6 +5021,7 @@
         document.getElementById('mk-title').value = existing.title ?? '';
         document.getElementById('mk-type').value = existing.type_id ?? '';
         document.getElementById('mk-project').value = existing.project_id ?? '';
+        document.getElementById('mk-category').value = existing.category_id ?? '';
         document.getElementById('mk-date').value = existing.event_date ?? '';
         document.getElementById('mk-start').value = (existing.start_time || '').slice(0, 5);
         document.getElementById('mk-end').value = (existing.end_time || '').slice(0, 5);
@@ -4999,6 +5061,18 @@
           msgEl.className = 'form-msg error';
           return;
         }
+        const projectValue = lockedProjectId || document.getElementById('mk-project').value;
+        const categoryValue = document.getElementById('mk-category').value;
+        if (link === 'project' && !projectValue) {
+          msgEl.textContent = 'Escolhe o projeto, ou marca como interno.';
+          msgEl.className = 'form-msg error';
+          return;
+        }
+        if (link === 'category' && !categoryValue) {
+          msgEl.textContent = 'Escolhe a categoria de horas.';
+          msgEl.className = 'form-msg error';
+          return;
+        }
         if (!allDay && !startTime) {
           msgEl.textContent = 'Indica a hora de início, ou marca como dia inteiro.';
           msgEl.className = 'form-msg error';
@@ -5015,7 +5089,7 @@
         btn.textContent = 'A guardar…';
 
         const payload = {
-          project_id: (lockedProjectId || document.getElementById('mk-project').value) || null,
+          project_id: link === 'project' ? projectValue : null,
           type_id: document.getElementById('mk-type').value || null,
           title,
           event_date: eventDate,
@@ -5026,6 +5100,7 @@
           notes: document.getElementById('mk-notes').value.trim() || null,
           done
         };
+        if (hasCategory) payload.category_id = link === 'category' ? categoryValue : null;
 
         try {
           if (devMode) {
