@@ -403,7 +403,7 @@
     .projects-table .col-type { display: none; }
     .projects-table th, .projects-table td { padding-left: 12px; padding-right: 12px; }
   }
-  @media (max-width: 480px) { .projects-table .col-area { display: none; } }
+  @media (max-width: 480px) { .projects-table .col-area, .projects-table .col-value { display: none; } .projects-table th, .projects-table td { padding-left: 12px; padding-right: 12px; } }
   @media (max-width: 400px) { .projects-table .col-code { display: none; } }
 
   /* Despesas: cartões no telemóvel */
@@ -979,10 +979,25 @@
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     background-repeat: no-repeat; background-position: right 9px center;
   }
+  .status-picker { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; margin: -3px -8px; border-radius: 6px; }
+  .status-picker:hover { background: var(--surface-3, var(--surface-2)); }
+  .status-picker .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; pointer-events: none; }
+  .status-picker select {
+    appearance: none; -webkit-appearance: none; border: none; background: transparent; cursor: pointer; padding: 0 16px 0 0;
+    font: inherit; font-size: 12.5px; font-weight: 550; color: var(--text); max-width: 150px; text-overflow: ellipsis;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 2px center;
+  }
+  .status-picker select:focus-visible { outline: none; }
+  .status-picker:focus-within { box-shadow: var(--focus); }
+  .status-picker.closed select { color: var(--text-2); }
+  .detail-header .status-picker { margin-left: -4px; }
+  .detail-header .status-picker select { font-size: 13px; }
   .status-select:focus { outline: none; border-color: var(--accent); box-shadow: var(--focus); }
   .list-toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; }
   .list-toolbar .search-input { flex: 1; }
   .list-toolbar .segmented { margin: 0; flex-shrink: 0; }
+  @media (max-width: 560px) { .list-toolbar { flex-wrap: wrap; } .list-toolbar .search-input { flex-basis: 100%; } }
   .status-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--border); font-size: 14px; }
   .status-row:first-child { border-top: none; padding-top: 2px; }
   .status-row .type-swatch { cursor: pointer; }
@@ -1036,16 +1051,16 @@
   .invoice-row.click-row { margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-radius: 6px; }
   .ph-row { grid-template-columns: minmax(0, 1.4fr) minmax(60px, 1fr) auto auto auto; }
   @media (max-width: 560px) { .ph-row { grid-template-columns: minmax(0, 1fr) auto auto; } .ph-row .ph-due { display: none; } }
-  /* ---------- Entrada: logo NOVA (0,5 s, uma vez por sessão) ---------- */
+  /* ---------- Entrada: logo NOVA (1,25 s, uma vez por sessão) ---------- */
   #splash { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center;
-    background: var(--bg); pointer-events: none; animation: splash-out .5s cubic-bezier(.4, 0, .2, 1) forwards; }
-  #splash img { width: 168px; height: auto; animation: splash-logo .5s cubic-bezier(.22, 1, .36, 1) forwards; }
+    background: var(--bg); pointer-events: none; animation: splash-out 1.25s cubic-bezier(.4, 0, .2, 1) forwards; }
+  #splash img { width: 168px; height: auto; animation: splash-logo 1.25s cubic-bezier(.22, 1, .36, 1) forwards; }
   @keyframes splash-logo {
     0%   { opacity: 0; transform: translateY(6px) scale(.96); clip-path: inset(0 100% 0 0); filter: blur(3px); }
-    55%  { opacity: 1; transform: none; clip-path: inset(0 0 0 0); filter: blur(0); }
+    40%  { opacity: 1; transform: none; clip-path: inset(0 0 0 0); filter: blur(0); }
     100% { opacity: 1; transform: scale(1.03); clip-path: inset(0 0 0 0); filter: blur(0); }
   }
-  @keyframes splash-out { 0%, 68% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes splash-out { 0%, 76% { opacity: 1; } 100% { opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { #splash { display: none; } }
 </style>
 </head>
@@ -1060,7 +1075,7 @@
       if (seen) { el.remove(); return; }
       var done = function () { if (el.parentNode) el.remove(); };
       el.addEventListener('animationend', function (e) { if (e.target === el) done(); });
-      setTimeout(done, 900);
+      setTimeout(done, 1700);
     })();
   </script>
 
@@ -1582,6 +1597,43 @@
       const s = statusByCode(code);
       if (!code) return '<span class="status-pill closed">—</span>';
       return `<span class="status-pill${s?.is_closed ? ' closed' : ''}"><span class="dot" style="background:${escapeHtml(s?.color || 'var(--text-3)')}"></span>${escapeHtml(s?.name ?? code)}</span>`;
+    }
+    // Estado mudável com um toque (lista de projetos e ficha): parece uma etiqueta, abre a lista de estados
+    function statusPickerHtml(code, projectId) {
+      const s = statusByCode(code);
+      return `<span class="status-picker${s?.is_closed ? ' closed' : ''}"><span class="dot" style="background:${escapeHtml(s?.color || 'var(--text-3)')}"></span>` +
+        `<select data-status-project="${escapeHtml(projectId)}" aria-label="Estado do projeto" title="Mudar estado">${statusOptionsHtml(code)}</select></span>`;
+    }
+    function bindStatusPickers(root, onSaved) {
+      root.querySelectorAll('select[data-status-project]').forEach(sel => {
+        let current = sel.value || null;
+        const paint = v => {
+          const st = statusByCode(v);
+          sel.innerHTML = statusOptionsHtml(v);
+          sel.value = v ?? '';
+          sel.previousElementSibling.style.background = st?.color || 'var(--text-3)';
+          sel.parentElement.classList.toggle('closed', !!st?.is_closed);
+          current = v;
+        };
+        const save = async v => {
+          await dbUpdate('projects', sel.dataset.statusProject, { status: v }, MOCK_PROJECTS);
+          paint(v);
+          onSaved && onSaved(sel.dataset.statusProject, v);
+        };
+        sel.addEventListener('click', e => e.stopPropagation());
+        sel.addEventListener('change', async () => {
+          const before = current, next = sel.value || null;
+          try {
+            await save(next);
+            showToast(`Estado: ${statusByCode(next)?.name ?? '—'}`, {
+              undo: () => save(before).catch(err => showToast('Não foi possível anular: ' + err.message, { type: 'error' }))
+            });
+          } catch (err) {
+            sel.value = before ?? '';
+            showToast('Não foi possível mudar o estado: ' + err.message, { type: 'error' });
+          }
+        });
+      });
     }
     function statusOptionsHtml(current) {
       const list = projectStatusCache || [];
@@ -2712,7 +2764,7 @@
             <td class="col-name">${escapeHtml(p.name ?? 'Sem nome')}</td>
             <td class="col-area">${escapeHtml(p.area != null ? p.area + ' m²' : '—')}</td>
             <td class="col-type">${escapeHtml(p.project_types?.name ?? '—')}</td>
-            <td class="col-status">${statusPillHtml(p.status)}</td>
+            <td class="col-status">${statusPickerHtml(p.status, p.id)}</td>
             <td class="col-value">${valor}</td>
           </tr>
         `;
@@ -2723,8 +2775,8 @@
         <table class="projects-table">
           <thead>
             <tr>
-              <th>Código</th>
-              <th>Nome</th>
+              <th class="col-code">Código</th>
+              <th class="col-name">Nome</th>
               <th class="col-area">Área</th>
               <th class="col-type">Tipo</th>
               <th class="col-status">Estado</th>
@@ -2737,6 +2789,10 @@
 
       document.querySelectorAll('.project-row').forEach(row => {
         row.addEventListener('click', () => openDetail(row.dataset.id));
+      });
+      bindStatusPickers(projectsContainer, (id, v) => {
+        const p = allProjectsData.find(x => String(x.id) === String(id));
+        if (p) p.status = v;
       });
     }
 
@@ -3003,7 +3059,9 @@
         }
 
         await loadProjectStatuses();
-        document.getElementById('detail-status-pill').innerHTML = statusPillHtml(project.status);
+        const pillEl = document.getElementById('detail-status-pill');
+        pillEl.innerHTML = statusPickerHtml(project.status, project.id ?? projectId);
+        bindStatusPickers(pillEl, (id, v) => { project.status = v; });
         const clienteNome = project.clients?.name || project.client || 'Sem cliente';
         document.getElementById('detail-name').textContent = project.name ?? 'Sem nome';
         document.getElementById('nav-title').textContent = project.name ?? 'Projeto';
@@ -3379,9 +3437,6 @@
             <div class="invoice-row"><span>Área</span><span>${escapeHtml(project.area != null ? String(project.area).replace('.', ',') + ' m²' : '—')}</span></div>
             <div class="invoice-row"><span>Honorários (contrato)</span><span>${fmtEUR(project.commission_value)}</span></div>
             <div class="invoice-row"><span>Adjudicação</span><span>${project.awarding_date ? escapeHtml(parseDateKey(project.awarding_date).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })) : '—'}</span></div>
-            <div class="invoice-row">
-              <span>Estado</span><span><select class="status-select" id="detail-status" aria-label="Estado do projeto">${statusOptionsHtml(project.status)}</select></span>
-            </div>
           </div>
             <div class="gantt-wrap"><div class="card-head"><h2>Participação</h2><span>horas por pessoa</span></div>${participacaoHtml}</div>
           </section>
@@ -3483,31 +3538,6 @@
             <div class="gantt-wrap"><div class="card-head"><h2>Despesas</h2><button type="button" id="add-expense-btn" class="text-btn">+ Registar despesa</button></div>${expensesHtml}</div>
           </section>
         `;
-
-        // Estado do projeto (lista fixa, editável em Definições)
-        const statusSel = document.getElementById('detail-status');
-        statusSel.addEventListener('change', async () => {
-          const prev = project.status ?? null;
-          const next = statusSel.value || null;
-          const save = async (value) => {
-            if (!devMode) {
-              const r = await supabase.from('projects').update({ status: value }).eq('id', pid0);
-              if (r.error) throw r.error;
-            } else {
-              const mp = MOCK_PROJECTS.find(x => x.id === pid0); if (mp) mp.status = value;
-            }
-            project.status = value;
-            statusSel.innerHTML = statusOptionsHtml(value);
-            document.getElementById('detail-status-pill').innerHTML = statusPillHtml(value);
-          };
-          try {
-            await save(next);
-            showToast(`Estado: ${statusByCode(next)?.name ?? '—'}`, { undo: () => save(prev).catch(err => showToast('Não foi possível anular: ' + err.message, { type: 'error' })) });
-          } catch (err) {
-            statusSel.value = prev ?? '';
-            showToast('Não foi possível mudar o estado: ' + err.message, { type: 'error' });
-          }
-        });
 
         // Edição de fases, pausas, faturas e despesas
         detailBody.querySelectorAll('[data-phase-row]').forEach(tr => tr.addEventListener('click', (e) => {
