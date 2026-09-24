@@ -1717,8 +1717,7 @@
       const y = date.getFullYear(), m = date.getMonth();
       const first = new Date(y, m, 1);
       const last = new Date(y, m + 1, 0);
-      const fmt = d => d.toISOString().slice(0, 10);
-      return { first: fmt(first), last: fmt(last), label: date.toLocaleDateString('pt-PT', { month: 'long' }) };
+      return { first: dateKey(first), last: dateKey(last), label: date.toLocaleDateString('pt-PT', { month: 'long' }) };
     }
 
     function fmtEURShort(n) {
@@ -4100,7 +4099,7 @@
           const d = new Date(e.date + 'T00:00:00');
           const dow = d.getDay();
           d.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1));
-          key = d.toISOString().slice(0, 10);
+          key = dateKey(d);
         }
         map[key] = (map[key] || 0) + Number(e.amount || 0);
       });
