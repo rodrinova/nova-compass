@@ -992,6 +992,26 @@
   .order-btns button:hover { background: var(--surface-2); color: var(--text); }
   .order-btns button:disabled { opacity: .3; cursor: default; }
   .detail-header .sub .status-pill { margin-left: 4px; }
+
+  /* ---------- Formulários de edição ---------- */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+  .form-grid .span2 { grid-column: 1 / -1; }
+  .form-grid .field-label, .form-grid .field-label:first-child { margin-top: 14px; }
+  @media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } }
+  .check-row { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 13.5px; color: var(--text-2); cursor: pointer; }
+  .check-row input { width: 16px; height: 16px; accent-color: var(--accent); }
+  .danger-btn { color: var(--danger) !important; }
+  .danger-btn:hover { background: var(--danger-soft) !important; border-color: transparent !important; }
+  .ph-status {
+    appearance: none; -webkit-appearance: none; border: 1px solid var(--border); background: var(--surface); color: var(--text-2);
+    border-radius: 6px; padding: 3px 8px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; max-width: 120px;
+  }
+  .ph-status:focus { outline: none; border-color: var(--accent); box-shadow: var(--focus); }
+  .click-row { cursor: pointer; }
+  .click-row:hover td, .invoice-row.click-row:hover { background: var(--surface-2); }
+  .invoice-row.click-row { margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-radius: 6px; }
+  .ph-row { grid-template-columns: minmax(0, 1.4fr) minmax(60px, 1fr) auto auto auto; }
+  @media (max-width: 560px) { .ph-row { grid-template-columns: minmax(0, 1fr) auto auto; } .ph-row .ph-due { display: none; } }
 </style>
 </head>
 <body>
@@ -1383,9 +1403,9 @@
     ];
 
     const MOCK_INVOICES = [
-      { invoice_number: 'FT 2025/014', issue_date: '2025-12-10', amount: 14400, amount_paid: 14400 },
-      { invoice_number: 'FT 2026/003', issue_date: '2026-01-25', amount: 14400, amount_paid: 7200 },
-      { invoice_number: 'FT 2026/009', issue_date: '2026-03-01', amount: 9600, amount_paid: 0 }
+      { id: 'inv-1', invoice_number: 'FT 2025/014', issue_date: '2025-12-10', amount: 14400, amount_paid: 14400 },
+      { id: 'inv-2', invoice_number: 'FT 2026/003', issue_date: '2026-01-25', amount: 14400, amount_paid: 7200 },
+      { id: 'inv-3', invoice_number: 'FT 2026/009', issue_date: '2026-03-01', amount: 9600, amount_paid: 0 }
     ];
 
     const MOCK_TIME = [
@@ -1471,6 +1491,7 @@
       if (s.status === 'completed' || s.status === 'done') return 'Concluída';
       if (['wip', 'in_progress', 'active'].includes(s.status)) return 'Em curso';
       if (s.status === 'interrupted') return 'Interrompida';
+      if (s.status === 'todo') return 'A fazer';
       return 'Por iniciar';
     }
 
@@ -3159,7 +3180,7 @@
                         ? `<span class="invoice-status partial">Parcial</span>`
                         : `<span class="invoice-status ${shouldFlag ? 'pending' : 'neutral'}">Não paga</span>`;
                   return `
-                    <tr${isExcluded ? ' style="opacity:.55;"' : ''}>
+                    <tr class="click-row" data-phase-row="${escapeHtml(s.id)}" title="Editar fase"${isExcluded ? ' style="opacity:.55;"' : ''}>
                       <td>${faseLabel}</td>
                       <td>${stageStatusLabel(s)}</td>
                       ${assignSupport ? `<td><button type="button" class="assign-cell" data-assign-stage="${escapeHtml(s.id)}" title="Escolher pessoas">${(stageAssignees[s.id] || []).length ? avatarsHtml(stageAssignees[s.id], ataMemberNames, meId) : '<span class="assign-empty">+ Atribuir</span>'}</button></td>` : ''}
@@ -3179,7 +3200,7 @@
           expensesHtml = expenses.map(e => {
             const reimbursed = !!e.reimbursed;
             return `
-              <div class="invoice-row">
+              <div class="invoice-row click-row" data-expense-id="${escapeHtml(e.id)}">
                 <span>${escapeHtml(e.description ?? e.expense_categories?.name ?? 'Despesa')}</span>
                 <span class="invoice-status ${reimbursed ? 'paid' : 'pending'}">${reimbursed ? 'Reembolsada' : 'Por reembolsar'}</span>
                 <span class="amount">${fmtEUR(Number(e.amount))}</span>
@@ -3277,18 +3298,14 @@
 
           <section data-dpanel="resumo">
           <div class="gantt-wrap">
-            <div class="card-head"><h2>Detalhes</h2><span>toca num valor para o alterar</span></div>
+            <div class="card-head"><h2>Detalhes</h2><button type="button" class="text-btn" id="edit-project-btn">Editar</button></div>
+            <div class="invoice-row"><span>Código</span><span>${escapeHtml(project.code ?? '—')}</span></div>
             <div class="invoice-row"><span>Cliente</span><span>${escapeHtml(clienteNome)}</span></div>
-            <div class="invoice-row editable-row" data-field="address" data-type="text">
-              <span>Morada</span><span class="editable-value" data-raw="${escapeHtml(project.address ?? '')}">${escapeHtml(project.address ?? '—')}</span>
-            </div>
             <div class="invoice-row"><span>Tipo</span><span>${escapeHtml(project.project_types?.name ?? '—')}</span></div>
-            <div class="invoice-row editable-row" data-field="area" data-type="number">
-              <span>Área</span><span class="editable-value" data-raw="${escapeHtml(project.area ?? '')}">${escapeHtml(project.area != null ? project.area + ' m²' : '—')}</span>
-            </div>
-            <div class="invoice-row editable-row" data-field="awarding_date" data-type="date">
-              <span>Adjudicação</span><span class="editable-value" data-raw="${escapeHtml(project.awarding_date ?? '')}">${escapeHtml(project.awarding_date ?? '—')}</span>
-            </div>
+            <div class="invoice-row"><span>Morada</span><span>${escapeHtml(project.address ?? '—')}</span></div>
+            <div class="invoice-row"><span>Área</span><span>${escapeHtml(project.area != null ? String(project.area).replace('.', ',') + ' m²' : '—')}</span></div>
+            <div class="invoice-row"><span>Honorários (contrato)</span><span>${fmtEUR(project.commission_value)}</span></div>
+            <div class="invoice-row"><span>Adjudicação</span><span>${project.awarding_date ? escapeHtml(parseDateKey(project.awarding_date).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })) : '—'}</span></div>
             <div class="invoice-row">
               <span>Estado</span><span><select class="status-select" id="detail-status" aria-label="Estado do projeto">${statusOptionsHtml(project.status)}</select></span>
             </div>
@@ -3302,6 +3319,14 @@
               <div class="card-head"><h2>Fases</h2><button type="button" id="add-revision-btn" class="text-btn">+ Nova revisão de fase</button></div>
               <div id="revision-form-wrap" style="display:none;"></div>
               ${stagesTableHtml}
+            </div>
+            <div class="gantt-wrap">
+              <div class="card-head"><h2>Pausas</h2><button type="button" id="add-break-btn" class="text-btn">+ Nova pausa</button></div>
+              ${breaks.length ? breaks.map(b => `
+                <div class="invoice-row click-row" data-break-id="${escapeHtml(b.id)}">
+                  <span>${escapeHtml(b.name ?? 'Pausa')}<br><small style="color:var(--text-3)">À espera ${b.type === 'client' ? 'do cliente' : b.type === 'municipality' ? 'da Câmara' : escapeHtml(b.type ?? '')}</small></span>
+                  <span class="amount" style="font-weight:500;color:var(--text-2)">${b.start_date ? escapeHtml(fmtDayMonth(b.start_date)) : '—'} → ${b.end_date ? escapeHtml(fmtDayMonth(b.end_date)) : 'em aberto'}</span>
+                </div>`).join('') : '<div class="gantt-empty">Sem pausas registadas.</div>'}
             </div>
           </section>
 
@@ -3369,7 +3394,20 @@
               <span><span class="dot nonbillable"></span>Não faturáveis: ${fmtHours(horasNaoFaturaveis)}</span>
             </div>
           </div>
-            <div class="gantt-wrap"><div class="card-head"><h2>Despesas</h2></div>${expensesHtml}</div>
+            <div class="gantt-wrap">
+              <div class="card-head"><h2>Faturas</h2><button type="button" id="add-invoice-btn" class="text-btn">+ Nova fatura</button></div>
+              ${invoices.length ? invoices.map(i => {
+                const pago = Number(i.amount_paid || 0), total = Number(i.amount || 0);
+                const st = pago >= total && total > 0 ? ['paid', 'Paga'] : pago > 0 ? ['partial', 'Parcial'] : ['pending', 'Por receber'];
+                const fase = stages.find(s => String(s.id) === String(i.stage_id));
+                return `<div class="invoice-row click-row" data-invoice-id="${escapeHtml(i.id)}">
+                  <span>${escapeHtml(i.invoice_number || 'Sem número')}<br><small style="color:var(--text-3)">${escapeHtml(i.issue_date ? fmtDayMonth(i.issue_date) : '—')}${fase ? ' · ' + escapeHtml(phaseName(fase)) : ''}</small></span>
+                  <span class="invoice-status ${st[0]}">${st[1]}</span>
+                  <span class="amount">${fmtEUR(total)}</span>
+                </div>`;
+              }).join('') : '<div class="gantt-empty">Sem faturas registadas.</div>'}
+            </div>
+            <div class="gantt-wrap"><div class="card-head"><h2>Despesas</h2><button type="button" id="add-expense-btn" class="text-btn">+ Registar despesa</button></div>${expensesHtml}</div>
           </section>
         `;
 
@@ -3398,6 +3436,21 @@
           }
         });
 
+        // Edição de fases, pausas, faturas e despesas
+        detailBody.querySelectorAll('[data-phase-row]').forEach(tr => tr.addEventListener('click', (e) => {
+          if (e.target.closest('[data-assign-stage]')) return;
+          openPhaseModal(tr.dataset.phaseRow, { fromProject: true, onSaved: reopen });
+        }));
+        document.getElementById('add-break-btn').addEventListener('click', () => openBreakModal(null, project, breaks, reopen));
+        detailBody.querySelectorAll('[data-break-id]').forEach(r => r.addEventListener('click', () =>
+          openBreakModal(breaks.find(b => String(b.id) === r.dataset.breakId), project, breaks, reopen)));
+        document.getElementById('add-invoice-btn').addEventListener('click', () => openInvoiceModal(null, project, stages, reopen));
+        detailBody.querySelectorAll('[data-invoice-id]').forEach(r => r.addEventListener('click', () =>
+          openInvoiceModal(invoices.find(i => String(i.id) === r.dataset.invoiceId), project, stages, reopen)));
+        document.getElementById('add-expense-btn').addEventListener('click', () => openNewExpenseModal(pid0, reopen));
+        detailBody.querySelectorAll('[data-expense-id]').forEach(r => r.addEventListener('click', () =>
+          openNewExpenseModal(null, reopen, expenses.find(x => String(x.id) === r.dataset.expenseId))));
+
         // Separadores
         const showDTab = (t) => {
           detailTabByProject[pid0] = t;
@@ -3418,9 +3471,11 @@
           ganttBox.innerHTML = renderGanttSection(b.dataset.scale);
         });
 
-        attachEditableHandlers(project.id ?? projectId, project);
+        const reopen = () => openDetail(project.id ?? projectId);
+        document.getElementById('edit-project-btn').addEventListener('click', () => openProjectEditModal(project, reopen));
         attachRevisionFormHandlers(project.id ?? projectId, stages);
-        detailBody.querySelectorAll('[data-assign-stage]').forEach(btn => btn.addEventListener('click', () => {
+        detailBody.querySelectorAll('[data-assign-stage]').forEach(btn => btn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
           const st = stages.find(s => String(s.id) === btn.dataset.assignStage);
           if (st) openAssignModal(st, stageAssignees[st.id] || [], () => openDetail(project.id ?? projectId));
         }));
@@ -3449,80 +3504,6 @@
         detailBody.innerHTML = `<div class="error-box">Erro ao carregar detalhe: ${escapeHtml(err.message)}</div>`;
         console.error(err);
       }
-    }
-
-    function formatFieldDisplay(field, value) {
-      if (value === null || value === undefined || value === '') return '—';
-      if (field === 'area') return value + ' m²';
-      return value;
-    }
-
-    function attachEditableHandlers(projectId, project) {
-      document.querySelectorAll('.editable-row .editable-value').forEach(el => {
-        el.addEventListener('click', function handler() {
-          if (el.classList.contains('editing')) return;
-          const row = el.closest('.editable-row');
-          const field = row.dataset.field;
-          const type = row.dataset.type || 'text';
-          const rawValue = el.dataset.raw ?? '';
-          el.classList.add('editing');
-          const input = document.createElement('input');
-          input.type = type;
-          input.value = rawValue;
-          input.className = 'inline-edit-input';
-          el.innerHTML = '';
-          el.appendChild(input);
-          input.focus();
-          if (type === 'text') input.select();
-
-          const finish = async (commit) => {
-            input.removeEventListener('blur', onBlur);
-            if (!commit) {
-              el.classList.remove('editing');
-              el.textContent = formatFieldDisplay(field, rawValue);
-              return;
-            }
-            const newValue = input.value.trim();
-            if (newValue === String(rawValue ?? '')) {
-              el.classList.remove('editing');
-              el.textContent = formatFieldDisplay(field, rawValue);
-              return;
-            }
-            if (!devMode) {
-              const updatePayload = {};
-              updatePayload[field] = newValue === '' ? null : newValue;
-              const res = await supabase.from('projects').update(updatePayload).eq('id', projectId);
-              if (res.error) {
-                showToast('Não foi possível guardar: ' + res.error.message, { type: 'error' });
-                el.classList.remove('editing');
-                el.textContent = formatFieldDisplay(field, rawValue);
-                return;
-              }
-            }
-            el.dataset.raw = newValue;
-            el.classList.remove('editing');
-            el.textContent = formatFieldDisplay(field, newValue);
-            showToast('Guardado', {
-              undo: async () => {
-                if (!devMode) {
-                  const back = {}; back[field] = rawValue === '' ? null : rawValue;
-                  const r = await supabase.from('projects').update(back).eq('id', projectId);
-                  if (r.error) { showToast('Não foi possível anular: ' + r.error.message, { type: 'error' }); return; }
-                }
-                el.dataset.raw = rawValue;
-                el.textContent = formatFieldDisplay(field, rawValue);
-              }
-            });
-          };
-
-          const onBlur = () => finish(true);
-          input.addEventListener('blur', onBlur);
-          input.addEventListener('keydown', (ev) => {
-            if (ev.key === 'Enter') { input.blur(); }
-            if (ev.key === 'Escape') { input.removeEventListener('blur', onBlur); finish(false); }
-          });
-        });
-      });
     }
 
     function renderRevisionFormHtml() {
@@ -4791,7 +4772,7 @@
       const promise = (async () => {
         let rows;
         if (devMode) {
-          rows = MOCK_AGENDA_PHASES.map(p => ({ ...p }));
+          rows = MOCK_AGENDA_PHASES.filter(p => p.status !== 'done').map(p => ({ ...p }));
         } else {
           const r = await supabase.from('project_stages')
             .select('id, project_id, status, start_date, end_date, delivery_date, deadline_override, revision_label, stage_types(name), projects(name, code, archived_at)')
@@ -4994,8 +4975,9 @@
             const pct = Math.min(100, Math.max(0, Math.round(diffDays(p.start_date, todayKey) / total * 100)));
             const lateCls = isStageLate(p, todayKey) ? ' late' : '';
             return `
-              <div class="ph-row${lateCls}" data-open-project="${escapeHtml(p.project_id)}">
-                <div class="ph-main"><b>${escapeHtml(p.projects?.name ?? 'Projeto')}</b><span>${escapeHtml(phaseName(p))} · ${escapeHtml(stageStatusLabel(p))}</span></div>
+              <div class="ph-row${lateCls}" data-phase-id="${escapeHtml(p.id)}" title="Editar fase">
+                <div class="ph-main"><b>${escapeHtml(p.projects?.name ?? 'Projeto')}</b><span>${escapeHtml(phaseName(p))}</span></div>
+                <select class="ph-status" data-stage-status="${escapeHtml(p.id)}" aria-label="Estado da fase">${stageStatusOptions(p.status)}</select>
                 <div class="ph-progress" title="${escapeHtml(fmtDayMonth(p.start_date))} → ${escapeHtml(fmtDayMonth(p.end_date || p.start_date))}"><span style="width:${pct}%"></span></div>
                 <div class="ph-due">${escapeHtml(deadlineText(p, todayKey))}</div>
                 <div class="marco-owners">${avatarsHtml(p.assignee_ids, ataMemberNames, me)}</div>
@@ -5003,8 +4985,16 @@
           }).join('');
         }
 
-        document.querySelectorAll('#home-view .today-grid [data-open-project], #today-phases [data-open-project]').forEach(el =>
+        const refreshHome = () => { if (document.getElementById('home-view').style.display !== 'none') { renderToday(); loadAgenda(); } };
+        document.querySelectorAll('#home-view .today-grid [data-open-project]').forEach(el =>
           el.addEventListener('click', () => openDetail(el.dataset.openProject)));
+        phasesEl.querySelectorAll('[data-phase-id]').forEach(el =>
+          el.addEventListener('click', (e) => { if (!e.target.closest('select')) openPhaseModal(el.dataset.phaseId, { onSaved: refreshHome }); }));
+        phasesEl.querySelectorAll('[data-stage-status]').forEach(sel => {
+          const prev = sel.value;
+          sel.addEventListener('click', e => e.stopPropagation());
+          sel.addEventListener('change', () => quickStageStatus(sel.dataset.stageStatus, sel.value, prev, refreshHome));
+        });
         weekEl.querySelectorAll('[data-marco-id]').forEach(el =>
           el.addEventListener('click', () => openMarcoModal({ milestoneId: el.dataset.marcoId, onSuccess: showHome })));
       } catch (err) {
@@ -5146,13 +5136,13 @@
           if (x.barEnd >= wStart && x.s <= wEnd) {
             const b0 = x.c0, b1 = Math.min(6, col(x.barEnd));
             const cls = 'cal-bar' + state + (x.s >= wStart ? ' start' : '') + (x.barEnd <= wEnd ? ' end' : '');
-            html += `<div class="${cls}" style="grid-column:${b0 + 1} / ${b1 + 2}; grid-row:${row}" data-open-project="${escapeHtml(p.project_id)}" title="${escapeHtml(title)}">${escapeHtml(calNarrow.matches ? phaseName(p) : phaseLabel(p))}</div>`;
+            html += `<div class="${cls}" style="grid-column:${b0 + 1} / ${b1 + 2}; grid-row:${row}" data-open-project="${escapeHtml(p.project_id)}" data-phase-id="${escapeHtml(p.id)}" title="${escapeHtml(title)}">${escapeHtml(calNarrow.matches ? phaseName(p) : phaseLabel(p))}</div>`;
           }
           // Ligação tracejada até ao prazo, quando este é depois do fim
           if (x.dl && x.dl > x.barEnd) {
             const l0 = Math.max(0, col(x.barEnd) + 1), l1 = Math.min(6, col(x.dl));
             if (l0 <= l1 && x.dl >= wStart) {
-              html += `<div class="cal-link${state}" style="grid-column:${l0 + 1} / ${l1 + 2}; grid-row:${row}" data-open-project="${escapeHtml(p.project_id)}" title="${escapeHtml(title)}"></div>`;
+              html += `<div class="cal-link${state}" style="grid-column:${l0 + 1} / ${l1 + 2}; grid-row:${row}" data-open-project="${escapeHtml(p.project_id)}" data-phase-id="${escapeHtml(p.id)}" title="${escapeHtml(title)}"></div>`;
             }
           }
           // Marca do prazo
@@ -5186,14 +5176,21 @@
       grid.querySelectorAll('[data-day]').forEach(btn => {
         btn.addEventListener('click', () => { agendaSelected = btn.dataset.day; renderAgenda(); });
       });
+      const afterPhaseEdit = () => { loadAgenda(); if (document.getElementById('home-view').style.display !== 'none') renderToday(); };
       grid.querySelectorAll('[data-open-project]').forEach(el => {
-        el.addEventListener('click', (e) => { e.stopPropagation(); openDetail(el.dataset.openProject); });
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (el.dataset.phaseId) openPhaseModal(el.dataset.phaseId, { onSaved: afterPhaseEdit });
+          else openDetail(el.dataset.openProject);
+        });
       });
       listEl.querySelectorAll('[data-marco-id]').forEach(row => {
         row.addEventListener('click', () => openMarcoModal({ milestoneId: row.dataset.marcoId }));
       });
       listEl.querySelectorAll('[data-open-project]').forEach(row => {
-        row.addEventListener('click', () => openDetail(row.dataset.openProject));
+        row.addEventListener('click', () => row.dataset.phaseId
+          ? openPhaseModal(row.dataset.phaseId, { onSaved: afterPhaseEdit })
+          : openDetail(row.dataset.openProject));
       });
     }
     calNarrow.addEventListener('change', () => {
@@ -5208,7 +5205,7 @@
       const dt = deadlineText(p, todayKey);
       if (dt) bits.push(dt);
       const onDeadline = stageDeadline(p) === dayKey;
-      return '<div class="marco-row" data-open-project="' + escapeHtml(p.project_id) + '">' +
+      return '<div class="marco-row" data-open-project="' + escapeHtml(p.project_id) + '" data-phase-id="' + escapeHtml(p.id) + '">' +
         '<span class="marco-stripe" style="background:' + (late ? 'var(--danger)' : p.status === 'interrupted' ? 'var(--text-3)' : 'var(--accent)') + '"></span>' +
         '<span class="marco-time">' + (onDeadline ? 'Prazo' : 'Fase') + '</span>' +
         '<span class="marco-body">' +
@@ -5767,6 +5764,361 @@
     tsNarrow.addEventListener('change', () => {
       if (tsState && document.getElementById('horas-view').style.display !== 'none') renderTimesheet();
     });
+
+    // ================= EDIÇÃO: fases, projeto, faturas e pausas =================
+    // Estados das fases (valores usados na base de dados)
+    const STAGE_STATUSES = [
+      ['pending', 'Por iniciar'], ['todo', 'A fazer'], ['wip', 'Em curso'],
+      ['interrupted', 'Interrompida'], ['done', 'Concluída']
+    ];
+    const stageStatusOptions = cur => STAGE_STATUSES.map(([v, l]) =>
+      `<option value="${v}"${v === cur ? ' selected' : ''}>${l}</option>`).join('') +
+      (cur && !STAGE_STATUSES.some(([v]) => v === cur) ? `<option value="${escapeHtml(cur)}" selected>${escapeHtml(cur)}</option>` : '');
+
+    // Escritas genéricas (no modo de demonstração, alteram os dados de exemplo)
+    async function dbUpdate(table, id, patch, mockArr) {
+      if (devMode) { const o = (mockArr || []).find(x => String(x.id) === String(id)); if (o) Object.assign(o, patch); return; }
+      const r = await supabase.from(table).update(patch).eq('id', id);
+      if (r.error) throw r.error;
+    }
+    async function dbInsert(table, row, mockArr) {
+      if (devMode) { const o = { id: table + '-' + Date.now(), ...row }; if (mockArr) mockArr.push(o); return o; }
+      const r = await supabase.from(table).insert(row).select().single();
+      if (r.error) throw r.error;
+      return r.data;
+    }
+    async function dbDelete(table, id, mockArr) {
+      if (devMode) { const i = (mockArr || []).findIndex(x => String(x.id) === String(id)); if (i >= 0) mockArr.splice(i, 1); return; }
+      const r = await supabase.from(table).delete().eq('id', id);
+      if (r.error) throw r.error;
+    }
+    const numOrNull = v => (v === '' || v == null ? null : Number(String(v).replace(',', '.')));
+    const valOrNull = v => (v === '' || v == null ? null : v);
+    function formError(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.className = 'form-msg error'; }
+
+    async function loadStageTypes() {
+      if (devMode) return MOCK_STAGE_TYPES;
+      const r = await supabase.from('stage_types').select('id, name').order('name');
+      return r.data || [];
+    }
+
+    // Mudança rápida do estado de uma fase (Home), com Anular
+    async function quickStageStatus(stageId, next, prev, onDone) {
+      try {
+        await dbUpdate('project_stages', stageId, { status: next }, MOCK_STAGES.concat(MOCK_AGENDA_PHASES));
+        invalidateActivePhases();
+        showToast(`Fase: ${STAGE_STATUSES.find(([v]) => v === next)?.[1] ?? next}`, {
+          undo: async () => {
+            try { await dbUpdate('project_stages', stageId, { status: prev }, MOCK_STAGES.concat(MOCK_AGENDA_PHASES)); invalidateActivePhases(); onDone && onDone(); }
+            catch (err) { showToast('Não foi possível anular: ' + err.message, { type: 'error' }); }
+          }
+        });
+        onDone && onDone();
+      } catch (err) {
+        showToast('Não foi possível mudar o estado: ' + err.message, { type: 'error' });
+        onDone && onDone();
+      }
+    }
+
+    // ---------- Fase: todos os parâmetros ----------
+    async function openPhaseModal(stageId, { onSaved = null, fromProject = false } = {}) {
+      openQuickModal('Fase', '<div class="detail-loading">A carregar…</div>');
+      let stage, project;
+      try {
+        if (devMode) {
+          stage = { ...[...MOCK_STAGES, ...MOCK_AGENDA_PHASES].find(s => String(s.id) === String(stageId)) };
+          project = MOCK_PROJECTS.find(p => p.id === stage.project_id) || MOCK_PROJECTS[0];
+        } else {
+          const r = await supabase.from('project_stages').select('*, stage_types(name)').eq('id', stageId).single();
+          if (r.error) throw r.error;
+          stage = r.data;
+          const pr = await supabase.from('projects').select('id, name, commission_value').eq('id', stage.project_id).single();
+          project = pr.data || { id: stage.project_id, name: 'Projeto' };
+        }
+      } catch (err) {
+        document.getElementById('quick-modal-body').innerHTML = `<div class="error-box">Não foi possível abrir a fase: ${escapeHtml(err.message)}</div>`;
+        return;
+      }
+      const [types, members, assigneeMap] = await Promise.all([
+        loadStageTypes(), loadAllMembers(), loadStageAssignees([stage.id])
+      ]);
+      const sel = new Set(assigneeMap[stage.id] || []);
+      const isFixed = stage.pricing_type === 'fixed' || (stage.fixed_value != null && stage.percentage == null);
+      document.getElementById('quick-modal-title').textContent = phaseName(stage);
+      document.getElementById('quick-modal-body').innerHTML = `
+        <div class="field-hint" style="margin:0 0 4px;">${escapeHtml(project?.name ?? '')}
+          ${fromProject ? '' : ` · <button type="button" class="text-btn" id="ph-open-project">Abrir projeto</button>`}</div>
+        <div class="form-grid">
+          <div><label class="field-label">Tipo de fase</label>
+            <select id="ph-type" class="form-input">${types.map(t => `<option value="${escapeHtml(t.id)}"${t.id === stage.stage_type_id ? ' selected' : ''}>${escapeHtml(t.name)}</option>`).join('')}</select></div>
+          <div><label class="field-label">Revisão</label>
+            <input type="text" id="ph-rev" class="form-input" placeholder="ex: R02" value="${escapeHtml(stage.revision_label ?? '')}"></div>
+          <div class="span2"><label class="field-label">Estado</label>
+            <select id="ph-status" class="form-input">${stageStatusOptions(stage.status)}</select></div>
+          <div><label class="field-label">Início</label><input type="date" id="ph-start" class="form-input" value="${escapeHtml(stage.start_date ?? '')}"></div>
+          <div><label class="field-label">Fim previsto</label><input type="date" id="ph-end" class="form-input" value="${escapeHtml(stage.end_date ?? '')}"></div>
+          <div><label class="field-label">Prazo (data limite)</label><input type="date" id="ph-deadline" class="form-input" value="${escapeHtml(stage.deadline_override ?? '')}"></div>
+          <div><label class="field-label">Entrega</label><input type="date" id="ph-delivery" class="form-input" value="${escapeHtml(stage.delivery_date ?? '')}"></div>
+          <div><label class="field-label">Tipo de valor</label>
+            <select id="ph-pricing" class="form-input">
+              <option value="percentage"${isFixed ? '' : ' selected'}>% dos honorários</option>
+              <option value="fixed"${isFixed ? ' selected' : ''}>Valor fixo (€)</option>
+            </select></div>
+          <div><label class="field-label" id="ph-value-label">${isFixed ? 'Valor (€)' : 'Percentagem (%)'}</label>
+            <input type="text" inputmode="decimal" id="ph-value" class="form-input" value="${escapeHtml(String((isFixed ? stage.fixed_value : stage.percentage) ?? '').replace('.', ','))}"></div>
+        </div>
+        <label class="field-label">Pessoas</label>
+        <div class="owner-picker" id="ph-people">${members.map(m => `<button type="button" class="owner-chip${sel.has(m.id) ? ' on' : ''}" data-member="${escapeHtml(m.id)}">${escapeHtml(m.name)}</button>`).join('')}</div>
+        <label class="check-row"><input type="checkbox" id="ph-excluded"${stage.excluded_from_invoicing ? ' checked' : ''}> Fora das contas da NOVA (não entra nos totais)</label>
+        <button type="button" id="ph-save" class="primary-btn">Guardar</button>
+        <button type="button" id="ph-delete" class="secondary-btn danger-btn">Eliminar fase</button>
+        <div id="ph-msg" class="form-msg"></div>`;
+
+      const openProj = document.getElementById('ph-open-project');
+      if (openProj) openProj.addEventListener('click', () => { closeQuickModal(); openDetail(stage.project_id); });
+      document.getElementById('ph-pricing').addEventListener('change', (e) => {
+        document.getElementById('ph-value-label').textContent = e.target.value === 'fixed' ? 'Valor (€)' : 'Percentagem (%)';
+      });
+      document.getElementById('ph-people').addEventListener('click', (e) => {
+        const chip = e.target.closest('[data-member]');
+        if (!chip) return;
+        const id = chip.dataset.member;
+        sel.has(id) ? sel.delete(id) : sel.add(id);
+        chip.classList.toggle('on', sel.has(id));
+      });
+      document.getElementById('ph-delete').addEventListener('click', async () => {
+        if (!window.confirm(`Eliminar a fase "${phaseName(stage)}"? As horas e faturas associadas ficam sem fase.`)) return;
+        try {
+          await dbDelete('project_stages', stage.id, MOCK_STAGES);
+          invalidateActivePhases();
+          closeQuickModal();
+          showToast('Fase eliminada');
+          onSaved && onSaved();
+        } catch (err) { formError('ph-msg', 'Não foi possível eliminar: ' + err.message); }
+      });
+      document.getElementById('ph-save').addEventListener('click', async () => {
+        const start = valOrNull(document.getElementById('ph-start').value);
+        const end = valOrNull(document.getElementById('ph-end').value);
+        const deadline = valOrNull(document.getElementById('ph-deadline').value);
+        const pricing = document.getElementById('ph-pricing').value;
+        const value = numOrNull(document.getElementById('ph-value').value);
+        if (start && end && end < start) return formError('ph-msg', 'O fim previsto é anterior ao início.');
+        if (value != null && (Number.isNaN(value) || value < 0)) return formError('ph-msg', 'Valor inválido.');
+        const patch = {
+          stage_type_id: document.getElementById('ph-type').value,
+          revision_label: valOrNull(document.getElementById('ph-rev').value.trim()),
+          status: document.getElementById('ph-status').value,
+          start_date: start, end_date: end,
+          deadline_override: deadline, is_deadline_fixed: !!deadline,
+          delivery_date: valOrNull(document.getElementById('ph-delivery').value),
+          pricing_type: pricing,
+          percentage: pricing === 'percentage' ? value : null,
+          fixed_value: pricing === 'fixed' ? value : null,
+          excluded_from_invoicing: document.getElementById('ph-excluded').checked
+        };
+        const btn = document.getElementById('ph-save');
+        btn.disabled = true; btn.textContent = 'A guardar…';
+        try {
+          await dbUpdate('project_stages', stage.id, patch, MOCK_STAGES.concat(MOCK_AGENDA_PHASES));
+          if (devMode) {
+            const t = types.find(x => x.id === patch.stage_type_id);
+            const o = MOCK_STAGES.concat(MOCK_AGENDA_PHASES).find(x => String(x.id) === String(stage.id));
+            if (o && t) o.stage_types = { name: t.name };
+          }
+          // Pessoas: substituir o conjunto, se mudou
+          const before = new Set(assigneeMap[stage.id] || []);
+          const changed = before.size !== sel.size || [...sel].some(id => !before.has(id));
+          if (changed && await stagesHaveAssignees()) {
+            if (devMode) mockStageAssignees[stage.id] = [...sel];
+            else {
+              const del = await supabase.from('stage_assignees').delete().eq('stage_id', stage.id);
+              if (del.error) throw del.error;
+              if (sel.size) {
+                const ins = await supabase.from('stage_assignees').insert([...sel].map(mid => ({ stage_id: stage.id, member_id: mid })));
+                if (ins.error) throw ins.error;
+              }
+            }
+          }
+          invalidateActivePhases();
+          closeQuickModal();
+          showToast('Fase guardada');
+          onSaved && onSaved();
+        } catch (err) {
+          formError('ph-msg', 'Não foi possível guardar: ' + err.message);
+          btn.disabled = false; btn.textContent = 'Guardar';
+        }
+      });
+    }
+
+    // ---------- Projeto: todos os dados ----------
+    async function openProjectEditModal(project, onSaved) {
+      openQuickModal('Editar projeto', '<div class="detail-loading">A carregar…</div>');
+      let clients, types;
+      if (devMode) { clients = MOCK_CLIENTS; types = MOCK_PROJECT_TYPES; }
+      else {
+        const [c, t] = await Promise.all([
+          supabase.from('clients').select('id, name').order('name'),
+          supabase.from('project_types').select('id, name').order('name')
+        ]);
+        clients = c.data || []; types = t.data || [];
+      }
+      await loadProjectStatuses();
+      const opt = (list, cur, empty) => `<option value="">${empty}</option>` + list.map(x => `<option value="${escapeHtml(x.id)}"${x.id === cur ? ' selected' : ''}>${escapeHtml(x.name)}</option>`).join('');
+      document.getElementById('quick-modal-body').innerHTML = `
+        <div class="form-grid">
+          <div class="span2"><label class="field-label">Nome</label><input type="text" id="pe-name" class="form-input" value="${escapeHtml(project.name ?? '')}"></div>
+          <div><label class="field-label">Código</label><input type="text" id="pe-code" class="form-input" value="${escapeHtml(project.code ?? '')}"></div>
+          <div><label class="field-label">Estado</label><select id="pe-status" class="form-input">${statusOptionsHtml(project.status)}</select></div>
+          <div><label class="field-label">Cliente</label><select id="pe-client" class="form-input">${opt(clients, project.client_id, 'Sem cliente')}</select></div>
+          <div><label class="field-label">Tipo de projeto</label><select id="pe-type" class="form-input">${opt(types, project.project_type_id, 'Sem tipo')}</select></div>
+          <div class="span2"><label class="field-label">Morada</label><input type="text" id="pe-address" class="form-input" value="${escapeHtml(project.address ?? '')}"></div>
+          <div><label class="field-label">Área (m²)</label><input type="text" inputmode="decimal" id="pe-area" class="form-input" value="${escapeHtml(String(project.area ?? '').replace('.', ','))}"></div>
+          <div><label class="field-label">Honorários (€)</label><input type="text" inputmode="decimal" id="pe-value" class="form-input" value="${escapeHtml(String(project.commission_value ?? '').replace('.', ','))}"></div>
+          <div><label class="field-label">Data de adjudicação</label><input type="date" id="pe-awarding" class="form-input" value="${escapeHtml(project.awarding_date ?? '')}"></div>
+        </div>
+        <div class="field-hint">Os honorários são o valor total do contrato. As fases em percentagem calculam-se a partir deste valor.</div>
+        <button type="button" id="pe-save" class="primary-btn">Guardar</button>
+        <button type="button" id="pe-archive" class="secondary-btn danger-btn">Arquivar projeto</button>
+        <div id="pe-msg" class="form-msg"></div>`;
+
+      document.getElementById('pe-archive').addEventListener('click', async () => {
+        if (!window.confirm(`Arquivar o projeto "${project.name}"? Deixa de aparecer nas listas e no calendário, mas nada é apagado.`)) return;
+        try {
+          await dbUpdate('projects', project.id, { archived_at: new Date().toISOString() }, MOCK_PROJECTS);
+          invalidateActivePhases();
+          closeQuickModal();
+          showToast('Projeto arquivado');
+          navStack = [];
+          openProjectsModule();
+        } catch (err) { formError('pe-msg', 'Não foi possível arquivar: ' + err.message); }
+      });
+      document.getElementById('pe-save').addEventListener('click', async () => {
+        const name = document.getElementById('pe-name').value.trim();
+        const area = numOrNull(document.getElementById('pe-area').value);
+        const value = numOrNull(document.getElementById('pe-value').value);
+        if (!name) return formError('pe-msg', 'O nome é obrigatório.');
+        if ((area != null && (Number.isNaN(area) || area < 0)) || (value != null && (Number.isNaN(value) || value < 0))) return formError('pe-msg', 'Área ou honorários inválidos.');
+        const clientId = valOrNull(document.getElementById('pe-client').value);
+        const patch = {
+          name,
+          code: valOrNull(document.getElementById('pe-code').value.trim()),
+          status: valOrNull(document.getElementById('pe-status').value),
+          client_id: clientId,
+          client: clientId ? (clients.find(c => c.id === clientId)?.name ?? null) : null,
+          project_type_id: valOrNull(document.getElementById('pe-type').value),
+          address: valOrNull(document.getElementById('pe-address').value.trim()),
+          area, commission_value: value,
+          awarding_date: valOrNull(document.getElementById('pe-awarding').value)
+        };
+        const btn = document.getElementById('pe-save');
+        btn.disabled = true; btn.textContent = 'A guardar…';
+        try {
+          await dbUpdate('projects', project.id, patch, MOCK_PROJECTS);
+          cmdkProjects = null;
+          closeQuickModal();
+          showToast('Projeto guardado');
+          onSaved && onSaved();
+        } catch (err) {
+          formError('pe-msg', 'Não foi possível guardar: ' + err.message);
+          btn.disabled = false; btn.textContent = 'Guardar';
+        }
+      });
+    }
+
+    // ---------- Faturas ----------
+    async function openInvoiceModal(invoice, project, stages, onSaved) {
+      const isEdit = !!invoice;
+      const inv = invoice || { issue_date: dateKey(new Date()), amount: '', amount_paid: 0 };
+      openQuickModal(isEdit ? 'Editar fatura' : 'Nova fatura', `
+        <div class="form-grid">
+          <div><label class="field-label">N.º da fatura</label><input type="text" id="iv-number" class="form-input" placeholder="ex: FT 2026/014" value="${escapeHtml(inv.invoice_number ?? '')}"></div>
+          <div><label class="field-label">Fase</label><select id="iv-stage" class="form-input"><option value="">Sem fase</option>${stages.map(s => `<option value="${escapeHtml(s.id)}"${String(s.id) === String(inv.stage_id) ? ' selected' : ''}>${escapeHtml(phaseName(s))}</option>`).join('')}</select></div>
+          <div><label class="field-label">Data de emissão</label><input type="date" id="iv-issue" class="form-input" value="${escapeHtml(inv.issue_date ?? '')}"></div>
+          <div><label class="field-label">Valor (€)</label><input type="text" inputmode="decimal" id="iv-amount" class="form-input" value="${escapeHtml(String(inv.amount ?? '').replace('.', ','))}"></div>
+          <div><label class="field-label">Valor recebido (€)</label><input type="text" inputmode="decimal" id="iv-paid" class="form-input" value="${escapeHtml(String(inv.amount_paid ?? 0).replace('.', ','))}"></div>
+          <div><label class="field-label">Data de pagamento</label><input type="date" id="iv-paydate" class="form-input" value="${escapeHtml(inv.payment_date ?? '')}"></div>
+          <div class="span2"><label class="field-label">Notas</label><input type="text" id="iv-notes" class="form-input" value="${escapeHtml(inv.notes ?? '')}"></div>
+        </div>
+        <button type="button" id="iv-save" class="primary-btn">${isEdit ? 'Guardar' : 'Registar fatura'}</button>
+        ${isEdit ? '<button type="button" id="iv-delete" class="secondary-btn danger-btn">Eliminar fatura</button>' : ''}
+        <div id="iv-msg" class="form-msg"></div>`);
+      // Ao marcar como paga, preencher a data de pagamento
+      document.getElementById('iv-paid').addEventListener('change', () => {
+        const pd = document.getElementById('iv-paydate');
+        if (!pd.value && numOrNull(document.getElementById('iv-paid').value) > 0) pd.value = dateKey(new Date());
+      });
+      if (isEdit) document.getElementById('iv-delete').addEventListener('click', async () => {
+        if (!window.confirm(`Eliminar a fatura ${inv.invoice_number || ''} de ${fmtEUR(inv.amount)}?`)) return;
+        try { await dbDelete('invoices', inv.id, MOCK_INVOICES); closeQuickModal(); showToast('Fatura eliminada'); onSaved && onSaved(); }
+        catch (err) { formError('iv-msg', 'Não foi possível eliminar: ' + err.message); }
+      });
+      document.getElementById('iv-save').addEventListener('click', async () => {
+        const amount = numOrNull(document.getElementById('iv-amount').value);
+        const paid = numOrNull(document.getElementById('iv-paid').value) ?? 0;
+        const issue = document.getElementById('iv-issue').value;
+        if (amount == null || Number.isNaN(amount) || amount < 0) return formError('iv-msg', 'Indica o valor da fatura.');
+        if (Number.isNaN(paid) || paid < 0) return formError('iv-msg', 'Valor recebido inválido.');
+        if (!issue) return formError('iv-msg', 'Indica a data de emissão.');
+        const row = {
+          project_id: project.id,
+          stage_id: valOrNull(document.getElementById('iv-stage').value),
+          invoice_number: valOrNull(document.getElementById('iv-number').value.trim()),
+          issue_date: issue, amount, amount_paid: paid,
+          payment_date: valOrNull(document.getElementById('iv-paydate').value),
+          notes: valOrNull(document.getElementById('iv-notes').value.trim())
+        };
+        try {
+          if (isEdit) await dbUpdate('invoices', inv.id, row, MOCK_INVOICES);
+          else await dbInsert('invoices', row, MOCK_INVOICES);
+          closeQuickModal();
+          showToast(isEdit ? 'Fatura guardada' : 'Fatura registada');
+          onSaved && onSaved();
+        } catch (err) { formError('iv-msg', 'Não foi possível guardar: ' + err.message); }
+      });
+    }
+
+    // ---------- Pausas (à espera da Câmara, do cliente…) ----------
+    const BREAK_TYPES = [['municipality', 'Câmara'], ['client', 'Cliente']];
+    async function openBreakModal(brk, project, breaks, onSaved) {
+      const isEdit = !!brk;
+      const b = brk || {};
+      openQuickModal(isEdit ? 'Editar pausa' : 'Nova pausa', `
+        <div class="form-grid">
+          <div class="span2"><label class="field-label">Descrição</label><input type="text" id="bk-name" class="form-input" placeholder="ex: Aguarda resposta da Câmara" value="${escapeHtml(b.name ?? '')}"></div>
+          <div><label class="field-label">À espera de</label><select id="bk-type" class="form-input">${BREAK_TYPES.map(([v, l]) => `<option value="${v}"${v === b.type ? ' selected' : ''}>${l}</option>`).join('')}${b.type && !BREAK_TYPES.some(([v]) => v === b.type) ? `<option value="${escapeHtml(b.type)}" selected>${escapeHtml(b.type)}</option>` : ''}</select></div>
+          <div></div>
+          <div><label class="field-label">Início</label><input type="date" id="bk-start" class="form-input" value="${escapeHtml(b.start_date ?? '')}"></div>
+          <div><label class="field-label">Fim</label><input type="date" id="bk-end" class="form-input" value="${escapeHtml(b.end_date ?? '')}"></div>
+          <div class="span2"><label class="field-label">Notas</label><input type="text" id="bk-notes" class="form-input" value="${escapeHtml(b.notes ?? '')}"></div>
+        </div>
+        <button type="button" id="bk-save" class="primary-btn">${isEdit ? 'Guardar' : 'Registar pausa'}</button>
+        ${isEdit ? '<button type="button" id="bk-delete" class="secondary-btn danger-btn">Eliminar pausa</button>' : ''}
+        <div id="bk-msg" class="form-msg"></div>`);
+      if (isEdit) document.getElementById('bk-delete').addEventListener('click', async () => {
+        if (!window.confirm(`Eliminar a pausa "${b.name}"?`)) return;
+        try { await dbDelete('project_breaks', b.id, MOCK_BREAKS); closeQuickModal(); showToast('Pausa eliminada'); onSaved && onSaved(); }
+        catch (err) { formError('bk-msg', 'Não foi possível eliminar: ' + err.message); }
+      });
+      document.getElementById('bk-save').addEventListener('click', async () => {
+        const name = document.getElementById('bk-name').value.trim();
+        const start = valOrNull(document.getElementById('bk-start').value);
+        const end = valOrNull(document.getElementById('bk-end').value);
+        if (!name) return formError('bk-msg', 'Indica a descrição.');
+        if (start && end && end < start) return formError('bk-msg', 'O fim é anterior ao início.');
+        const row = {
+          project_id: project.id, name, type: document.getElementById('bk-type').value,
+          start_date: start, end_date: end, notes: valOrNull(document.getElementById('bk-notes').value.trim())
+        };
+        if (!isEdit) row.position_order = breaks.reduce((m, x) => Math.max(m, x.position_order || 0), 0) + 1;
+        try {
+          if (isEdit) await dbUpdate('project_breaks', b.id, row, MOCK_BREAKS);
+          else await dbInsert('project_breaks', row, MOCK_BREAKS);
+          closeQuickModal();
+          showToast(isEdit ? 'Pausa guardada' : 'Pausa registada');
+          onSaved && onSaved();
+        } catch (err) { formError('bk-msg', 'Não foi possível guardar: ' + err.message); }
+      });
+    }
 
     function marcoRowHtml(m, showProject) {
       const type = agendaData.types[m.type_id];
