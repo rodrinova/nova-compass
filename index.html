@@ -1065,6 +1065,15 @@
   .ckt-list { margin: 10px 0 4px; }
   .ck-count { color: var(--text-3); font-variant-numeric: tabular-nums; }
   .ph-main .ck-count { display: inline; }
+  .ph-ck { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 2px; margin: -4px 0 0; padding-left: 2px; }
+  .ph-ck-item { display: flex; align-items: center; gap: 10px; padding: 5px 6px; margin: 0 -6px; border-radius: 6px; font-size: 13.5px; cursor: pointer; width: fit-content; max-width: 100%; }
+  .ph-ck-item:hover { background: var(--surface-3, var(--surface)); }
+  .ph-ck-item input { width: 17px; height: 17px; accent-color: var(--success); flex-shrink: 0; margin: 0; }
+  .ph-ck-item span:first-of-type { overflow-wrap: anywhere; }
+  .ph-ck-item.ticked span:first-of-type { color: var(--text-3); text-decoration: line-through; transition: color .2s; }
+  .ph-ck-more { align-self: flex-start; font-size: 12.5px; padding: 2px 0; }
+  .ph-ck-done { font-size: 12.5px; color: var(--success); font-weight: 600; }
+  @media (max-width: 899px) { .ph-ck-item { min-height: 36px; } }
   .cm-copyable { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
   .cm-copyable code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
   .cm-when { font-size: 12.5px; font-weight: 650; color: var(--text-2); white-space: nowrap; }
@@ -5352,6 +5361,13 @@
       const r = await supabase.from('stage_type_checklist_items').select('*').eq('stage_type_id', stageTypeId).order('sort_order').order('created_at');
       return r.error ? [] : (r.data || []);
     }
+    async function loadChecklistItemsFor(stageIds) {
+      if (!stageIds.length || !(await checklistsAvailable())) return [];
+      if (devMode) return mockChecklist.filter(i => stageIds.includes(i.stage_id)).sort((a, b) => a.sort_order - b.sort_order);
+      const r = await supabase.from('stage_checklist_items').select('id, stage_id, title, kind, sort_order, done')
+        .in('stage_id', stageIds).order('sort_order').order('created_at');
+      return r.error ? [] : (r.data || []);
+    }
     const ckCountText = c => (c && c.total ? `${c.done}/${c.total}` : '');
 
     // Checklist dentro da janela da fase: cada toque grava logo
@@ -5609,10 +5625,26 @@
         const typeMap = Object.fromEntries(types.map(t => [t.id, t]));
         const myMarcos = milestones.filter(m => !m.done && (m.owner_ids || []).includes(me));
         const myPhases = phases.filter(p => (p.assignee_ids || []).includes(me));
-        const [, myCk] = await Promise.all([
+        const [, ckItems] = await Promise.all([
           loadMemberNames(myPhases.flatMap(p => p.assignee_ids)),
-          loadChecklistCounts(myPhases.map(p => p.id)).catch(() => ({}))
+          loadChecklistItemsFor(myPhases.map(p => p.id)).catch(() => [])
         ]);
+        // Microtarefas à mão na Home: as próximas por fazer de cada fase, para marcar sem abrir nada
+        const ckByPhase = {};
+        ckItems.forEach(i => (ckByPhase[i.stage_id] = ckByPhase[i.stage_id] || []).push(i));
+        const ckCount = id => { const l = ckByPhase[id] || []; return { done: l.filter(i => i.done).length, total: l.length }; };
+        const HOME_CK_MAX = 3;
+        const homeCkHtml = id => {
+          const list = ckByPhase[id] || [];
+          if (!list.length) return '';
+          const pending = list.filter(i => !i.done);
+          if (!pending.length) return `<div class="ph-ck" data-ck-phase="${escapeHtml(id)}"><span class="ph-ck-done">✓ Checklist completa</span></div>`;
+          return `<div class="ph-ck" data-ck-phase="${escapeHtml(id)}">${pending.slice(0, HOME_CK_MAX).map(i => `
+              <label class="ph-ck-item"><input type="checkbox" data-home-ck="${escapeHtml(i.id)}">
+                <span>${escapeHtml(i.title)}</span>${i.kind === 'deliverable' ? '<span class="ck-badge">Entregável</span>' : ''}</label>`).join('')}
+              ${pending.length > HOME_CK_MAX ? `<button type="button" class="text-btn ph-ck-more" data-ck-open>+${pending.length - HOME_CK_MAX} por fazer · ver checklist</button>` : ''}
+            </div>`;
+        };
 
         // Nomes de projetos/categorias dos marcos
         const projIds = [...new Set(myMarcos.map(m => m.project_id).filter(Boolean))];
@@ -5687,20 +5719,50 @@
             const lateCls = isStageLate(p, todayKey) ? ' late' : '';
             return `
               <div class="ph-row${lateCls}" data-phase-id="${escapeHtml(p.id)}" title="Editar fase">
-                <div class="ph-main"><b>${escapeHtml(p.projects?.name ?? 'Projeto')}</b><span>${escapeHtml(phaseName(p))}${myCk[p.id]?.total ? ` · <span class="ck-count" title="Checklist">✓ ${escapeHtml(ckCountText(myCk[p.id]))}</span>` : ''}</span></div>
+                <div class="ph-main"><b>${escapeHtml(p.projects?.name ?? 'Projeto')}</b><span>${escapeHtml(phaseName(p))}${ckCount(p.id).total ? ` · <span class="ck-count" data-ck-count="${escapeHtml(p.id)}" title="Checklist">✓ ${escapeHtml(ckCountText(ckCount(p.id)))}</span>` : ''}</span></div>
                 <select class="ph-status" data-stage-status="${escapeHtml(p.id)}" aria-label="Estado da fase">${stageStatusOptions(p.status)}</select>
                 <div class="ph-progress" title="${win ? escapeHtml(fmtDayMonth(win.s) + ' → ' + fmtDayMonth(win.e)) : 'Sem datas'}"><span style="width:${pct}%"></span></div>
                 <div class="ph-due">${escapeHtml(deadlineText(p, todayKey))}</div>
                 <div class="marco-owners">${avatarsHtml(p.assignee_ids, ataMemberNames, me)}</div>
+                ${homeCkHtml(p.id)}
               </div>`;
           }).join('');
         }
+        // Marcar uma microtarefa na Home: grava logo, sai da lista e entra a seguinte (com Anular)
+        const setCkDone = async (item, doneV) => {
+          const patch = doneV ? { done: true, done_at: new Date().toISOString(), done_by: me } : { done: false, done_at: null, done_by: null };
+          await dbUpdate('stage_checklist_items', item.id, patch, mockChecklist);
+          Object.assign(item, patch);
+          const box = phasesEl.querySelector(`[data-ck-phase="${CSS.escape(item.stage_id)}"]`);
+          if (box) { box.outerHTML = homeCkHtml(item.stage_id); bindHomeCk(); }
+          const cnt = phasesEl.querySelector(`[data-ck-count="${CSS.escape(item.stage_id)}"]`);
+          if (cnt) cnt.textContent = '✓ ' + ckCountText(ckCount(item.stage_id));
+        };
+        const bindHomeCk = () => {
+          phasesEl.querySelectorAll('[data-home-ck]:not([data-bound])').forEach(cb => {
+            cb.dataset.bound = '1';
+            cb.addEventListener('change', async () => {
+              const item = ckItems.find(i => String(i.id) === cb.dataset.homeCk);
+              cb.disabled = true;
+              cb.closest('.ph-ck-item').classList.add('ticked');
+              try {
+                await new Promise(r => setTimeout(r, 350));   // deixa ver o visto antes de a tarefa sair
+                await setCkDone(item, true);
+                showToast('Feito: ' + item.title, { undo: () => setCkDone(item, false).catch(err => showToast('Não foi possível anular: ' + err.message, { type: 'error' })) });
+              } catch (err) {
+                cb.checked = false; cb.disabled = false; cb.closest('.ph-ck-item').classList.remove('ticked');
+                showToast('Não foi possível gravar: ' + err.message, { type: 'error' });
+              }
+            });
+          });
+        };
+        bindHomeCk();
 
         const refreshHome = () => { if (document.getElementById('home-view').style.display !== 'none') renderToday(); };
         document.querySelectorAll('#home-view .today-grid [data-open-project]').forEach(el =>
           el.addEventListener('click', () => openDetail(el.dataset.openProject)));
         phasesEl.querySelectorAll('[data-phase-id]').forEach(el =>
-          el.addEventListener('click', (e) => { if (!e.target.closest('select')) openPhaseModal(el.dataset.phaseId, { onSaved: refreshHome }); }));
+          el.addEventListener('click', (e) => { if (!e.target.closest('select, .ph-ck-item')) openPhaseModal(el.dataset.phaseId, { onSaved: refreshHome }); }));
         phasesEl.querySelectorAll('[data-stage-status]').forEach(sel => {
           const prev = sel.value;
           sel.addEventListener('click', e => e.stopPropagation());
