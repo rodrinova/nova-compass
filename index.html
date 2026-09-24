@@ -1748,7 +1748,7 @@
         } else {
           const [invRes, stagesRes] = await Promise.all([
             supabase.from('invoices')
-              .select('amount, issue_date, projects!inner(team_id)')
+              .select('amount, issue_date, stage_id, projects!inner(team_id)')
               .eq('projects.team_id', member.team_id)
               .gte('issue_date', first).lte('issue_date', last),
             supabase.from('project_stages')
@@ -1758,7 +1758,20 @@
               .gte('delivery_date', first).lte('delivery_date', last)
               .order('delivery_date')
           ]);
-          invoicesTotal = (invRes.data || []).reduce((s, i) => s + Number(i.amount || 0), 0);
+          if (invRes.error) throw invRes.error;
+          // Faturas de fases excluídas das contas da NOVA não entram no total
+          const monthInvoices = invRes.data || [];
+          const invStageIds = [...new Set(monthInvoices.map(i => i.stage_id).filter(Boolean))];
+          let excludedIds = new Set();
+          if (invStageIds.length > 0) {
+            const exRes = await supabase.from('project_stages').select('id')
+              .in('id', invStageIds).eq('excluded_from_invoicing', true);
+            if (exRes.error) throw exRes.error;
+            excludedIds = new Set((exRes.data || []).map(s => s.id));
+          }
+          invoicesTotal = monthInvoices
+            .filter(i => !excludedIds.has(i.stage_id))
+            .reduce((s, i) => s + Number(i.amount || 0), 0);
           deliveries = (stagesRes.data || []).map(s => ({
             name: `${s.projects?.name ?? 'Projeto'} — ${s.stage_types?.name ?? 'Fase'}`,
             date: s.delivery_date
@@ -2865,12 +2878,30 @@
         if (devMode) {
           data = MOCK_PROJECTS;
         } else {
-          const res = await supabase
-            .from('projects')
-            .select('id, name, code, area, commission_value, project_types(name)')
-            .order('created_at', { ascending: false });
+          const [res, exRes] = await Promise.all([
+            supabase
+              .from('projects')
+              .select('id, name, code, area, commission_value, project_types(name)')
+              .order('created_at', { ascending: false }),
+            supabase
+              .from('project_stages')
+              .select('project_id, fixed_value, percentage')
+              .eq('excluded_from_invoicing', true)
+          ]);
           if (res.error) throw res.error;
-          data = res.data;
+          if (exRes.error) throw exRes.error;
+          data = res.data || [];
+          // Valor apresentado = honorários da NOVA (sem as fases excluídas das contas)
+          const excludedByProject = {};
+          (exRes.data || []).forEach(s => (excludedByProject[s.project_id] = excludedByProject[s.project_id] || []).push(s));
+          data.forEach(p => {
+            const excl = excludedByProject[p.id];
+            if (!excl || p.commission_value == null) return;
+            const contrato = Number(p.commission_value);
+            const valorExcluido = excl.reduce((sum, s) => sum + (s.fixed_value != null ? Number(s.fixed_value)
+              : s.percentage != null ? contrato * Number(s.percentage) / 100 : 0), 0);
+            p.commission_value = Math.max(0, contrato - valorExcluido);
+          });
         }
 
         allProjectsData = data || [];
@@ -2986,17 +3017,25 @@
         document.getElementById('detail-code').textContent = project.code ?? '—';
         document.getElementById('detail-client').textContent = clienteNome;
 
+        // --- Fases excluídas das contas da NOVA (escolhidas a dedo; não confundir com fases concluídas) ---
+        // Faturas e horas dessas fases, e o seu valor, saem de todos os totais abaixo.
+        const excludedStages = stages.filter(s => s.excluded_from_invoicing);
+        const excludedStageIds = new Set(excludedStages.map(s => s.id));
+        const invoicesNova = invoices.filter(i => !excludedStageIds.has(i.stage_id));
+        const timeEntriesNova = timeEntries.filter(t => !excludedStageIds.has(t.stage_id));
+        const valorExcluido = round2(excludedStages.reduce((s, st) => s + stageBudgetValue(st), 0));
+
         // --- Financeiro ---
-        const totalHonorarios = round2(project.commission_value ?? 0);
-        const totalFaturado = round2(invoices.reduce((s, i) => s + Number(i.amount ?? 0), 0));
-        const totalRecebido = round2(invoices.reduce((s, i) => s + Number(i.amount_paid ?? 0), 0));
+        const totalHonorarios = round2(Math.max(0, (project.commission_value ?? 0) - valorExcluido));
+        const totalFaturado = round2(invoicesNova.reduce((s, i) => s + Number(i.amount ?? 0), 0));
+        const totalRecebido = round2(invoicesNova.reduce((s, i) => s + Number(i.amount_paid ?? 0), 0));
         const totalDespesas = round2(expenses.reduce((s, e) => s + Number(e.amount ?? 0), 0));
         const margem = round2(totalFaturado - totalDespesas);
         const pctFaturado = totalHonorarios > 0 ? Math.min(100, Math.round((totalFaturado / totalHonorarios) * 100)) : 0;
 
         // --- Horas ---
-        const horasFaturaveis = timeEntries.filter(t => t.billable).reduce((s, t) => s + Number(t.hours ?? 0), 0);
-        const horasNaoFaturaveis = timeEntries.filter(t => !t.billable).reduce((s, t) => s + Number(t.hours ?? 0), 0);
+        const horasFaturaveis = timeEntriesNova.filter(t => t.billable).reduce((s, t) => s + Number(t.hours ?? 0), 0);
+        const horasNaoFaturaveis = timeEntriesNova.filter(t => !t.billable).reduce((s, t) => s + Number(t.hours ?? 0), 0);
         const totalHoras = horasFaturaveis + horasNaoFaturaveis;
         const pctFaturavel = totalHoras > 0 ? (horasFaturaveis / totalHoras) * 100 : 0;
         const taxaEfetiva = horasFaturaveis > 0 ? round2(totalFaturado / horasFaturaveis) : null;
@@ -3007,6 +3046,7 @@
         timeEntries.forEach(t => {
           const h = Number(t.hours ?? 0);
           if (t.stage_id) hoursByStageId[t.stage_id] = (hoursByStageId[t.stage_id] || 0) + h;
+          if (excludedStageIds.has(t.stage_id)) return;
           const nome = t.member_name || 'Sem nome';
           hoursByPerson[nome] = (hoursByPerson[nome] || 0) + h;
         });
@@ -3056,7 +3096,7 @@
             if (item.kind === 'stage') {
               const s = item.data;
               const marcaExcluida = s.excluded_from_invoicing
-                ? ' <span title="Excluída da faturação" style="opacity:.45;">✕</span>'
+                ? ' <span title="Fora das contas da NOVA" style="opacity:.45;">✕</span>'
                 : '';
               return `<div class="gantt-label-cell">${s.stage_types?.name ?? 'Fase'}${s.revision_label ? ' · ' + s.revision_label : ''}${marcaExcluida}</div>`;
             }
@@ -3197,16 +3237,19 @@
                   const inv = stageInvoiceMap[s.id] || { amount: 0, paid: 0 };
                   const budgeted = stageBudgetValue(s);
                   const isCompleted = s.status === 'completed' || s.status === 'done';
-                  const shouldFlag = budgeted > 0 && isCompleted;
+                  const isExcluded = !!s.excluded_from_invoicing;
+                  const shouldFlag = budgeted > 0 && isCompleted && !isExcluded;
                   const isInvoiced = inv.amount > 0;
                   const isPaid = isInvoiced && inv.paid >= inv.amount;
                   const isPartial = inv.paid > 0 && inv.paid < inv.amount;
                   const horas = hoursByStageId[s.id] || 0;
                   const faseLabel = `${s.stage_types?.name ?? 'Fase'}${s.revision_label ? ' · ' + s.revision_label : ''}`;
-                  const invoiceCell = isInvoiced
-                    ? `<span class="invoice-status paid">Faturada · ${fmtEUR(inv.amount)}</span>`
-                    : `<span class="invoice-status ${shouldFlag ? 'pending' : 'neutral'}">Por faturar</span>`;
-                  const paymentCell = !isInvoiced
+                  const invoiceCell = isExcluded
+                    ? `<span class="invoice-status neutral" title="Fase excluída: não conta para os totais">Fora das contas</span>`
+                    : isInvoiced
+                      ? `<span class="invoice-status paid">Faturada · ${fmtEUR(inv.amount)}</span>`
+                      : `<span class="invoice-status ${shouldFlag ? 'pending' : 'neutral'}">Por faturar</span>`;
+                  const paymentCell = (isExcluded || !isInvoiced)
                     ? '—'
                     : isPaid
                       ? `<span class="invoice-status paid">Paga</span>`
@@ -3214,7 +3257,7 @@
                         ? `<span class="invoice-status partial">Parcial</span>`
                         : `<span class="invoice-status ${shouldFlag ? 'pending' : 'neutral'}">Não paga</span>`;
                   return `
-                    <tr>
+                    <tr${isExcluded ? ' style="opacity:.55;"' : ''}>
                       <td>${faseLabel}</td>
                       <td>${stageStatusLabel(s)}</td>
                       <td class="col-value">${fmtEUR(budgeted)}</td>
@@ -3333,12 +3376,13 @@
             <div class="ring-text">
               <div class="ring-title">Faturado do total</div>
               <div class="ring-sub">${fmtEUR(totalFaturado)} de ${fmtEUR(totalHonorarios)}</div>
+              ${valorExcluido > 0 ? `<div class="ring-sub">Exclui ${excludedStages.length} fase${excludedStages.length > 1 ? 's' : ''} fora das contas (${fmtEUR(valorExcluido)})</div>` : ''}
             </div>
           </div>
           <div class="stat-grid" style="margin-top:10px;">
             <div class="stat-tile">
               <div class="stat-value">${fmtEUR(totalHonorarios)}</div>
-              <div class="stat-label">Honorários</div>
+              <div class="stat-label">Honorários${valorExcluido > 0 ? ' NOVA' : ''}</div>
             </div>
             <div class="stat-tile">
               <div class="stat-value">${fmtEUR(totalRecebido)}</div>
