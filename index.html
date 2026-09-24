@@ -921,6 +921,133 @@
   }
   .ata-entry.expanded .ata-entry-body { display: block; }
 
+  /* ---------- Agenda / calendário ---------- */
+  .agenda-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 24px 0 10px;
+  }
+  .cal-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .cal-title {
+    font-size: 14px;
+    font-weight: 650;
+    text-transform: capitalize;
+    flex: 1;
+    text-align: center;
+  }
+  .cal-head .text-btn { flex-shrink: 0; }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+  .cal-dow {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    text-align: center;
+    padding-bottom: 6px;
+  }
+  .cal-cell {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    border: none;
+    background: none;
+    font-family: inherit;
+    font-size: 12.5px;
+    color: var(--text-dark);
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 0;
+  }
+  .cal-cell.out { color: var(--text-muted); opacity: 0.4; }
+  .cal-cell.today { font-weight: 800; color: var(--purple); }
+  .cal-cell.today::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 1.5px solid var(--purple);
+    border-radius: 10px;
+    pointer-events: none;
+  }
+  .cal-cell.selected { background: var(--purple); color: white; font-weight: 700; }
+  .cal-cell.selected.today { color: white; }
+  .cal-cell.selected.today::after { border-color: transparent; }
+  .cal-cell.selected .cal-dot { box-shadow: 0 0 0 1.5px var(--purple); }
+  .cal-dots { display: flex; gap: 2px; height: 5px; align-items: center; }
+  .cal-dot { width: 5px; height: 5px; border-radius: 50%; }
+
+  .cal-day-list { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 12px; }
+  .cal-day-title { font-size: 12px; font-weight: 650; color: var(--text-muted); margin-bottom: 8px; }
+  .marco-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    border-top: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .marco-row:first-of-type { border-top: none; }
+  .marco-stripe { width: 3px; border-radius: 2px; flex-shrink: 0; align-self: stretch; min-height: 32px; }
+  .marco-body { flex: 1; min-width: 0; }
+  .marco-title { font-size: 13.5px; font-weight: 650; }
+  .marco-title.done { text-decoration: line-through; opacity: 0.55; }
+  .marco-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .marco-owners { display: flex; gap: 4px; flex-shrink: 0; margin-top: 2px; }
+  .marco-avatar {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--purple-light); color: white;
+    font-size: 9.5px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .marco-avatar.me { background: var(--purple); box-shadow: 0 0 0 2px rgba(113,77,121,0.25); }
+  .marco-time { font-size: 12px; font-weight: 650; color: var(--purple); flex-shrink: 0; min-width: 44px; }
+
+  /* Seleção múltipla de owners */
+  .owner-picker { display: flex; flex-wrap: wrap; gap: 6px; }
+  .owner-chip {
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    border-radius: 100px;
+    padding: 7px 13px;
+    font-size: 12.5px;
+    font-family: inherit;
+    color: var(--text-dark);
+    cursor: pointer;
+  }
+  .owner-chip.on { background: var(--purple); color: white; border-color: var(--purple); font-weight: 600; }
+
+  /* Tipos de marco em Definições */
+  .type-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 0; border-top: 1px solid var(--border);
+  }
+  .type-row:first-child { border-top: none; }
+  .type-swatch { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; }
+  .type-row .type-name { flex: 1; min-width: 0; }
+  .add-type-row { display: flex; gap: 8px; margin-top: 14px; align-items: center; }
+  .add-type-row input[type="text"] { flex: 1; }
+  .add-type-row input[type="color"] {
+    width: 42px; height: 40px; padding: 2px;
+    border: 1px solid var(--glass-border); border-radius: 12px;
+    background: var(--glass-bg); cursor: pointer; flex-shrink: 0;
+  }
+
   /* ---------- Repositório de despesas ---------- */
   .expense-chart-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .expense-chart-caption { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
@@ -1169,6 +1296,7 @@
         <div id="home-greeting" class="home-greeting">—</div>
         <button id="home-fab" class="fab-btn" aria-label="Adicionar">+</button>
         <div id="fab-menu" class="fab-menu" style="display:none;">
+          <button type="button" data-fab-action="marco">Novo marco</button>
           <button type="button" data-fab-action="horas">Registar horas</button>
           <button type="button" data-fab-action="projeto">Novo projeto</button>
           <button type="button" data-fab-action="ata">Nova ata de reunião</button>
@@ -1191,6 +1319,29 @@
           </div>
           <div class="team-card-deliveries" id="team-card-deliveries-list"></div>
         </div>
+
+        <div class="agenda-head">
+          <div class="section-label" style="margin:0;">Agenda</div>
+          <div class="segmented" id="agenda-scope" style="margin:0;">
+            <button type="button" data-scope="mine" class="active">Meus</button>
+            <button type="button" data-scope="all">Todos</button>
+          </div>
+        </div>
+        <div class="gantt-wrap" id="agenda-wrap">
+          <div class="cal-head">
+            <button type="button" class="nav-icon-btn" id="cal-prev" aria-label="Mês anterior">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="cal-title" id="cal-title">—</div>
+            <button type="button" class="nav-icon-btn" id="cal-next" aria-label="Mês seguinte">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button type="button" class="text-btn" id="cal-today">Hoje</button>
+          </div>
+          <div class="cal-grid" id="cal-grid"></div>
+          <div class="cal-day-list" id="cal-day-list"></div>
+        </div>
+
         <div class="module-grid">
           <div class="module-tile" id="module-projetos">
             <div class="module-icon">
@@ -1326,6 +1477,10 @@
       <div id="settings-view" style="display:none;">
         <div class="section-label">Categorias de imputação de horas</div>
         <div class="gantt-wrap" id="settings-categories-container">
+          <div class="detail-loading">A carregar...</div>
+        </div>
+        <div class="section-label">Tipos de marco</div>
+        <div class="gantt-wrap" id="settings-mtypes-container">
           <div class="detail-loading">A carregar...</div>
         </div>
       </div>
@@ -2058,6 +2213,7 @@
       document.getElementById('home-view').style.display = 'block';
       renderHomeGreeting();
       renderTeamCard();
+      loadAgenda();
     }
 
     function openProjectsModule() {
@@ -2085,6 +2241,7 @@
       hideAllViews();
       document.getElementById('settings-view').style.display = 'block';
       loadCategories();
+      loadMilestoneTypeSettings();
     }
 
     function openAtasModule() {
@@ -2736,6 +2893,14 @@
     const detailPanel = document.getElementById('detail-panel');
     const detailBody = document.getElementById('detail-body');
 
+    // Escapa texto vindo da base de dados antes de ir para innerHTML.
+    function escapeHtml(v) {
+      if (v === null || v === undefined) return '';
+      return String(v)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
     function round2(n) {
       return Math.round((Number(n) || 0) * 100) / 100;
     }
@@ -2760,6 +2925,7 @@
 
       try {
         let project, stages, invoices, timeEntries, breaks, expenses, projectNotes;
+        let projectMarcos = [], marcoTypes = {}, marcoMembers = {}, marcoErro = null;
 
         if (devMode) {
           project = MOCK_PROJECTS.find(p => p.id === projectId) || MOCK_PROJECTS[0];
@@ -2793,6 +2959,24 @@
             const teamRes = await supabase.from('teams').select('name').eq('id', project.team_id).maybeSingle();
             if (!teamRes.error && teamRes.data) project.teams = teamRes.data;
           }
+        }
+
+        // Marcos do projeto (sempre, em qualquer modo)
+        try {
+          const [mk, tps, mbs] = await Promise.all([
+            fetchMilestones({ projectId }),
+            loadMilestoneTypes(),
+            loadAllMembers()
+          ]);
+          projectMarcos = mk;
+          marcoTypes = Object.fromEntries(tps.map(t => [t.id, t]));
+          marcoMembers = Object.fromEntries(mbs.map(m => [m.id, m.name]));
+        } catch (e) {
+          marcoErro = e.message;
+          console.error('Marcos:', e);
+        }
+
+        if (!devMode) {
 
           const userIds = [...new Set(timeEntries.map(t => t.user_id).filter(Boolean))];
           if (userIds.length > 0) {
@@ -3064,17 +3248,62 @@
           }).join('');
         }
 
-        // --- Atas de reunião do projeto ---
-        let atasProjetoHtml = '<div class="gantt-empty">Sem atas registadas para este projeto.</div>';
-        if (projectNotes.length > 0) {
-          atasProjetoHtml = projectNotes.map(n => `
-            <div class="ata-entry" data-note-id="${n.id}">
-              <div class="ata-entry-main">
-                <span class="ata-entry-title">${n.title}</span>
-                <span class="ata-entry-date">${fmtDateShort(new Date(n.meeting_date + 'T00:00:00'))}</span>
-              </div>
-              <div class="ata-entry-body">${n.body ? n.body.replace(/</g, '&lt;') : 'Sem texto.'}</div>
-            </div>`).join('');
+        // --- Marcos do projeto ---
+        const notesByMarco = {};
+        projectNotes.forEach(n => {
+          if (n.milestone_id) (notesByMarco[n.milestone_id] = notesByMarco[n.milestone_id] || []).push(n);
+        });
+
+        const ataEntryHtml = (n, nested) => `
+          <div class="ata-entry" data-note-id="${escapeHtml(n.id)}"${nested ? ' style="padding-left:13px; border-left:2px solid var(--border);"' : ''}>
+            <div class="ata-entry-main">
+              <span class="ata-entry-title">${escapeHtml(n.title)}</span>
+              <span class="ata-entry-date">${escapeHtml(fmtDateShort(new Date(n.meeting_date + 'T00:00:00')))}</span>
+            </div>
+            <div class="ata-entry-body">${escapeHtml(n.body || 'Sem texto.')}</div>
+          </div>`;
+
+        const hojeKey = dateKey(new Date());
+        let marcosHtml = marcoErro
+          ? `<div class="error-box">Não foi possível carregar os marcos: ${escapeHtml(marcoErro)}<br><br>Se as tabelas ainda não existem, corre o SQL de Marcos na Supabase.</div>`
+          : '<div class="gantt-empty">Sem marcos registados para este projeto.</div>';
+        if (projectMarcos.length > 0) {
+          const ordered = [...projectMarcos].sort((a, b) => b.event_date.localeCompare(a.event_date));
+          marcosHtml = ordered.map(m => {
+            const type = marcoTypes[m.type_id];
+            const color = type?.color || '#714D79';
+            const owners = (m.owner_ids || []).map(id => {
+              const nome = marcoMembers[id] || '?';
+              return `<span class="marco-avatar" title="${escapeHtml(nome)}">${escapeHtml(initials(nome))}</span>`;
+            }).join('');
+            const bits = [];
+            if (type) bits.push(escapeHtml(type.name));
+            bits.push(escapeHtml(parseDateKey(m.event_date).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short', year: 'numeric' })));
+            bits.push(escapeHtml(fmtTimeRange(m)));
+            if (m.location) bits.push(escapeHtml(m.location));
+            const futuro = m.event_date >= hojeKey && !m.done;
+            const atas = notesByMarco[m.id] || [];
+            return `
+              <div style="padding:12px 0; border-top:1px solid var(--border);">
+                <div class="marco-row" data-marco-id="${escapeHtml(m.id)}" style="border-top:none; padding:0;">
+                  <span class="marco-stripe" style="background:${escapeHtml(color)}${futuro ? '' : '; opacity:.45'}"></span>
+                  <span class="marco-body">
+                    <span class="marco-title${m.done ? ' done' : ''}">${escapeHtml(m.title)}</span>
+                    <span class="marco-meta">${bits.join(' · ')}</span>
+                  </span>
+                  ${owners ? `<span class="marco-owners">${owners}</span>` : ''}
+                </div>
+                ${atas.length ? `<div style="margin-top:8px;">${atas.map(n => ataEntryHtml(n, true)).join('')}</div>` : ''}
+                <button type="button" class="text-btn" data-add-ata-marco="${escapeHtml(m.id)}" style="margin-top:8px;">+ Ata para este marco</button>
+              </div>`;
+          }).join('');
+        }
+
+        // --- Atas sem marco associado ---
+        const soltas = projectNotes.filter(n => !n.milestone_id);
+        let atasProjetoHtml = '<div class="gantt-empty">Sem atas avulsas — todas estão associadas a um marco.</div>';
+        if (soltas.length > 0) {
+          atasProjetoHtml = soltas.map(n => ataEntryHtml(n, false)).join('');
         }
 
         detailBody.innerHTML = `
@@ -3152,6 +3381,10 @@
             </div>
           </div>
 
+          <div class="section-label">Marcos</div>
+          <button type="button" id="add-marco-btn" class="secondary-btn" style="margin-top:0; margin-bottom:10px;">+ Novo marco</button>
+          <div class="gantt-wrap">${marcosHtml}</div>
+
           <div class="section-label">Cronograma</div>
           <div class="gantt-wrap">${ganttHtml}</div>
 
@@ -3166,7 +3399,7 @@
           <div class="section-label">Despesas</div>
           <div class="gantt-wrap">${expensesHtml}</div>
 
-          <div class="section-label">Atas de reunião</div>
+          <div class="section-label">Atas sem marco</div>
           <button type="button" id="add-ata-btn" class="secondary-btn" style="margin-top:0; margin-bottom:10px;">+ Nova ata</button>
           <div class="gantt-wrap">${atasProjetoHtml}</div>
         `;
@@ -3177,8 +3410,24 @@
           row.addEventListener('click', () => row.classList.toggle('expanded'));
         });
         document.getElementById('add-ata-btn').addEventListener('click', () => openNewAtaModal(project.id ?? projectId));
+
+        const pid = project.id ?? projectId;
+        document.getElementById('add-marco-btn').addEventListener('click', () =>
+          openMarcoModal({ lockedProjectId: pid, onSuccess: () => openDetail(pid) }));
+        document.querySelectorAll('#detail-body [data-marco-id]').forEach(row => {
+          row.addEventListener('click', (ev) => {
+            if (ev.target.closest('[data-add-ata-marco]')) return;
+            openMarcoModal({ milestoneId: row.dataset.marcoId, onSuccess: () => openDetail(pid) });
+          });
+        });
+        document.querySelectorAll('#detail-body [data-add-ata-marco]').forEach(btn => {
+          btn.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            openNewAtaModal(pid, btn.dataset.addAtaMarco);
+          });
+        });
       } catch (err) {
-        detailBody.innerHTML = `<div class="error-box">Erro ao carregar detalhe: ${err.message}</div>`;
+        detailBody.innerHTML = `<div class="error-box">Erro ao carregar detalhe: ${escapeHtml(err.message)}</div>`;
         console.error(err);
       }
     }
@@ -3412,7 +3661,8 @@
       fabMenu.style.display = 'none';
       homeFab.classList.remove('open');
       const action = btn.dataset.fabAction;
-      if (action === 'horas') openHorasModule();
+      if (action === 'marco') openMarcoModal({});
+      else if (action === 'horas') openHorasModule();
       else if (action === 'projeto') openNewProjectModal();
       else if (action === 'ata') openNewAtaModal(null);
       else if (action === 'despesa') openNewExpenseModal(null);
@@ -3512,11 +3762,15 @@
     }
 
     // ---------- Nova ata de reunião ----------
-    async function openNewAtaModal(lockedProjectId) {
+    async function openNewAtaModal(lockedProjectId, preselectMilestoneId = null) {
       const bodyHtml = `
         <label class="field-label" style="margin-top:0;">Projeto (opcional)</label>
         <select id="ata-project" class="form-input" ${lockedProjectId ? 'disabled' : ''}>
           <option value="">A carregar...</option>
+        </select>
+        <label class="field-label">Marco associado (opcional)</label>
+        <select id="ata-milestone" class="form-input">
+          <option value="">Escolhe primeiro o projeto</option>
         </select>
         <label class="field-label">Título / Assunto</label>
         <input type="text" id="ata-title" class="form-input" placeholder="ex: Reunião de arranque">
@@ -3538,8 +3792,29 @@
         const r = await supabase.from('projects').select('id, name').order('name');
         projects = r.data || [];
       }
-      projSelect.innerHTML = '<option value="">Sem projeto</option>' + projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+      projSelect.innerHTML = '<option value="">Sem projeto</option>' + projects.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('');
       if (lockedProjectId) projSelect.value = lockedProjectId;
+
+      // Marcos do projeto escolhido, para associar a ata
+      const mkSelect = document.getElementById('ata-milestone');
+      async function refreshAtaMilestones(projectId) {
+        if (!projectId) {
+          mkSelect.innerHTML = '<option value="">Escolhe primeiro o projeto</option>';
+          return;
+        }
+        mkSelect.innerHTML = '<option value="">A carregar…</option>';
+        try {
+          const list = await fetchMilestones({ projectId });
+          mkSelect.innerHTML = '<option value="">Sem marco associado</option>' +
+            list.sort((a, b) => b.event_date.localeCompare(a.event_date))
+                .map(m => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.title)} · ${escapeHtml(m.event_date)}</option>`).join('');
+        } catch {
+          mkSelect.innerHTML = '<option value="">Sem marco associado</option>';
+        }
+      }
+      projSelect.addEventListener('change', () => refreshAtaMilestones(projSelect.value));
+      await refreshAtaMilestones(projSelect.value);
+      if (preselectMilestoneId) mkSelect.value = preselectMilestoneId;
 
       document.getElementById('ata-submit').addEventListener('click', async () => {
         const msgEl = document.getElementById('ata-msg');
@@ -3562,6 +3837,7 @@
           const member = await getCurrentMember();
           const payload = {
             project_id: projSelect.value || null,
+            milestone_id: mkSelect.value || null,
             title,
             body: body || null,
             meeting_date: date,
@@ -4124,6 +4400,523 @@
         panel.textContent = 'Erro ao carregar despesas: ' + err.message;
       }
     }
+
+    // ================= MARCOS / AGENDA =================
+
+    // Chave de data local (YYYY-MM-DD) sem passar por UTC — evita o desvio de fuso.
+    function dateKey(d) {
+      const p = n => String(n).padStart(2, '0');
+      return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+    }
+    function parseDateKey(s) {
+      const [y, m, d] = s.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    }
+    function initials(name) {
+      if (!name) return '?';
+      const parts = name.trim().split(/\s+/);
+      return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+    }
+    function fmtTimeRange(m) {
+      if (m.all_day || !m.start_time) return 'Dia inteiro';
+      const t = s => s.slice(0, 5);
+      return m.end_time ? t(m.start_time) + '–' + t(m.end_time) : t(m.start_time);
+    }
+
+    const MOCK_MILESTONE_TYPES = [
+      { id: 'mt-1', name: 'Reunião', color: '#714D79', sort_order: 1 },
+      { id: 'mt-2', name: 'Visita', color: '#2E7D4F', sort_order: 2 },
+      { id: 'mt-3', name: 'Vistoria', color: '#B8842A', sort_order: 3 },
+      { id: 'mt-4', name: 'Entrega', color: '#C4453D', sort_order: 4 }
+    ];
+    let mockMilestones = [
+      { id: 'mk-1', project_id: 'mock-1', type_id: 'mt-1', title: 'Reunião de licenciamento com o cliente',
+        event_date: dateKey(new Date()), all_day: false, start_time: '10:00:00', end_time: '11:30:00',
+        location: 'Escritório', notes: null, done: false, owner_ids: ['mock-member-1'] },
+      { id: 'mk-2', project_id: 'mock-2', type_id: 'mt-4', title: 'Entrega do projeto de execução',
+        event_date: dateKey(new Date(Date.now() + 4 * 86400000)), all_day: true, start_time: null, end_time: null,
+        location: null, notes: null, done: false, owner_ids: [] }
+    ];
+
+    let agendaScope = 'mine';
+    let agendaMonth = new Date();
+    let agendaSelected = dateKey(new Date());
+    let agendaData = { milestones: [], types: {}, members: {}, projects: {}, memberId: null };
+
+    async function loadMilestoneTypes() {
+      if (devMode) return MOCK_MILESTONE_TYPES;
+      const res = await supabase.from('milestone_types').select('id, name, color, sort_order').order('sort_order');
+      if (res.error) throw res.error;
+      return res.data || [];
+    }
+
+    // Carrega marcos de um intervalo de datas, já com owners resolvidos.
+    async function fetchMilestones({ from, to, projectId }) {
+      if (devMode) {
+        return mockMilestones.filter(m =>
+          (!projectId || m.project_id === projectId) &&
+          (!from || m.event_date >= from) && (!to || m.event_date <= to));
+      }
+      let q = supabase.from('project_milestones')
+        .select('id, project_id, type_id, title, event_date, all_day, start_time, end_time, location, notes, done');
+      if (projectId) q = q.eq('project_id', projectId);
+      if (from) q = q.gte('event_date', from);
+      if (to) q = q.lte('event_date', to);
+      const res = await q.order('event_date').order('start_time', { nullsFirst: true });
+      if (res.error) throw res.error;
+      const milestones = res.data || [];
+
+      if (milestones.length > 0) {
+        const ids = milestones.map(m => m.id);
+        const ownRes = await supabase.from('milestone_owners').select('milestone_id, member_id').in('milestone_id', ids);
+        if (ownRes.error) throw ownRes.error;
+        const byMilestone = {};
+        (ownRes.data || []).forEach(o => {
+          (byMilestone[o.milestone_id] = byMilestone[o.milestone_id] || []).push(o.member_id);
+        });
+        milestones.forEach(m => { m.owner_ids = byMilestone[m.id] || []; });
+      }
+      return milestones;
+    }
+
+    async function loadAllMembers() {
+      if (devMode) return [MOCK_MEMBER, { id: 'm2', name: 'Nuno' }, { id: 'm3', name: 'Rute' }];
+      const res = await supabase.from('team_members').select('id, name').eq('active', true).order('name');
+      return res.data || [];
+    }
+
+    async function loadAgenda() {
+      const grid = document.getElementById('cal-grid');
+      const list = document.getElementById('cal-day-list');
+      grid.innerHTML = '';
+      list.innerHTML = '<div class="gantt-empty">A carregar…</div>';
+
+      try {
+        const member = await getCurrentMember();
+        // Janela alargada: mês anterior e seguinte, para navegar sem recarregar.
+        const from = dateKey(new Date(agendaMonth.getFullYear(), agendaMonth.getMonth() - 1, 1));
+        const to = dateKey(new Date(agendaMonth.getFullYear(), agendaMonth.getMonth() + 2, 0));
+
+        const [milestones, types, members] = await Promise.all([
+          fetchMilestones({ from, to }),
+          loadMilestoneTypes(),
+          loadAllMembers()
+        ]);
+
+        const projectIds = [...new Set(milestones.map(m => m.project_id).filter(Boolean))];
+        const projMap = {};
+        if (projectIds.length > 0) {
+          if (devMode) {
+            MOCK_PROJECTS.forEach(p => { projMap[p.id] = p.name; });
+          } else {
+            const pr = await supabase.from('projects').select('id, name').in('id', projectIds);
+            (pr.data || []).forEach(p => { projMap[p.id] = p.name; });
+          }
+        }
+
+        agendaData = {
+          milestones,
+          types: Object.fromEntries(types.map(t => [t.id, t])),
+          members: Object.fromEntries(members.map(m => [m.id, m.name])),
+          projects: projMap,
+          memberId: member?.id ?? null
+        };
+        renderAgenda();
+      } catch (err) {
+        list.innerHTML = '<div class="error-box">Erro ao carregar a agenda: ' + escapeHtml(err.message) + '</div>';
+      }
+    }
+
+    function agendaVisible() {
+      const { milestones, memberId } = agendaData;
+      if (agendaScope === 'all') return milestones;
+      return milestones.filter(m => (m.owner_ids || []).includes(memberId));
+    }
+
+    function renderAgenda() {
+      const visible = agendaVisible();
+      const byDay = {};
+      visible.forEach(m => { (byDay[m.event_date] = byDay[m.event_date] || []).push(m); });
+
+      const y = agendaMonth.getFullYear(), mo = agendaMonth.getMonth();
+      document.getElementById('cal-title').textContent =
+        agendaMonth.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' });
+
+      const first = new Date(y, mo, 1);
+      const offset = (first.getDay() + 6) % 7; // semana começa à segunda
+      const start = new Date(y, mo, 1 - offset);
+      const todayKey = dateKey(new Date());
+
+      let cells = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D']
+        .map(d => '<div class="cal-dow">' + d + '</div>').join('');
+
+      for (let i = 0; i < 42; i++) {
+        const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+        const key = dateKey(d);
+        const items = byDay[key] || [];
+        const dots = items.slice(0, 3).map(m => {
+          const c = agendaData.types[m.type_id]?.color || '#714D79';
+          return '<span class="cal-dot" style="background:' + escapeHtml(c) + '"></span>';
+        }).join('');
+        const cls = ['cal-cell'];
+        if (d.getMonth() !== mo) cls.push('out');
+        if (key === todayKey) cls.push('today');
+        if (key === agendaSelected) cls.push('selected');
+        cells += '<button type="button" class="' + cls.join(' ') + '" data-day="' + key + '">' +
+                 '<span>' + d.getDate() + '</span>' +
+                 '<span class="cal-dots">' + dots + '</span></button>';
+      }
+      document.getElementById('cal-grid').innerHTML = cells;
+
+      const sel = byDay[agendaSelected] || [];
+      const selDate = parseDateKey(agendaSelected);
+      const label = selDate.toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' });
+      const listEl = document.getElementById('cal-day-list');
+      listEl.innerHTML = '<div class="cal-day-title">' + escapeHtml(label) + '</div>' +
+        (sel.length === 0
+          ? '<div class="gantt-empty">Nada marcado neste dia.</div>'
+          : sel.map(m => marcoRowHtml(m, true)).join(''));
+
+      document.getElementById('cal-grid').querySelectorAll('[data-day]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          agendaSelected = btn.dataset.day;
+          renderAgenda();
+        });
+      });
+      listEl.querySelectorAll('[data-marco-id]').forEach(row => {
+        row.addEventListener('click', () => openMarcoModal({ milestoneId: row.dataset.marcoId }));
+      });
+    }
+
+    function marcoRowHtml(m, showProject) {
+      const type = agendaData.types[m.type_id];
+      const color = type?.color || '#714D79';
+      const owners = (m.owner_ids || []).map(id => {
+        const nome = agendaData.members[id] || '?';
+        const me = id === agendaData.memberId ? ' me' : '';
+        return '<span class="marco-avatar' + me + '" title="' + escapeHtml(nome) + '">' + escapeHtml(initials(nome)) + '</span>';
+      }).join('');
+      const bits = [];
+      if (type) bits.push(escapeHtml(type.name));
+      if (showProject && m.project_id && agendaData.projects[m.project_id]) bits.push(escapeHtml(agendaData.projects[m.project_id]));
+      if (m.location) bits.push(escapeHtml(m.location));
+      return '<div class="marco-row" data-marco-id="' + escapeHtml(m.id) + '">' +
+        '<span class="marco-stripe" style="background:' + escapeHtml(color) + '"></span>' +
+        '<span class="marco-time">' + escapeHtml(fmtTimeRange(m)) + '</span>' +
+        '<span class="marco-body">' +
+          '<span class="marco-title' + (m.done ? ' done' : '') + '">' + escapeHtml(m.title) + '</span>' +
+          (bits.length ? '<span class="marco-meta">' + bits.join(' · ') + '</span>' : '') +
+        '</span>' +
+        (owners ? '<span class="marco-owners">' + owners + '</span>' : '') +
+      '</div>';
+    }
+
+    // ---------- Tipos de marco (Definições) ----------
+    async function loadMilestoneTypeSettings() {
+      const box = document.getElementById('settings-mtypes-container');
+      box.innerHTML = '<div class="detail-loading">A carregar...</div>';
+      try {
+        const types = await loadMilestoneTypes();
+        box.innerHTML =
+          (types.length === 0
+            ? '<div class="gantt-empty">Sem tipos criados.</div>'
+            : types.map(t => `
+              <div class="type-row" data-type-id="${escapeHtml(t.id)}">
+                <span class="type-swatch" style="background:${escapeHtml(t.color)}"></span>
+                <span class="type-name">${escapeHtml(t.name)}</span>
+                <button type="button" class="text-btn danger" data-del-type="${escapeHtml(t.id)}">Eliminar</button>
+              </div>`).join('')) +
+          `<div class="add-type-row">
+             <input type="color" id="new-mtype-color" value="#714D79" aria-label="Cor do tipo">
+             <input type="text" id="new-mtype-name" class="form-input" placeholder="Novo tipo de marco...">
+             <button id="add-mtype-btn" class="secondary-btn" style="margin-top:0; width:auto; padding:11px 18px;">Adicionar</button>
+           </div>`;
+
+        box.querySelectorAll('[data-del-type]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const row = btn.closest('.type-row');
+            const nome = row.querySelector('.type-name').textContent;
+            if (!window.confirm(`Eliminar o tipo "${nome}"? Os marcos que o usam ficam sem tipo.`)) return;
+            try {
+              if (devMode) {
+                const i = MOCK_MILESTONE_TYPES.findIndex(t => t.id === btn.dataset.delType);
+                if (i >= 0) MOCK_MILESTONE_TYPES.splice(i, 1);
+              } else {
+                const res = await supabase.from('milestone_types').delete().eq('id', btn.dataset.delType);
+                if (res.error) throw res.error;
+              }
+              loadMilestoneTypeSettings();
+            } catch (err) { alert('Erro ao eliminar: ' + err.message); }
+          });
+        });
+
+        const addBtn = document.getElementById('add-mtype-btn');
+        addBtn.addEventListener('click', async () => {
+          const name = document.getElementById('new-mtype-name').value.trim();
+          const color = document.getElementById('new-mtype-color').value;
+          if (!name) return;
+          addBtn.disabled = true;
+          try {
+            if (devMode) {
+              MOCK_MILESTONE_TYPES.push({ id: 'mt-' + Date.now(), name, color, sort_order: MOCK_MILESTONE_TYPES.length + 1 });
+            } else {
+              const res = await supabase.from('milestone_types')
+                .insert({ name, color, sort_order: types.length + 1 });
+              if (res.error) throw res.error;
+            }
+            loadMilestoneTypeSettings();
+          } catch (err) {
+            alert('Erro ao criar tipo: ' + err.message);
+          } finally { addBtn.disabled = false; }
+        });
+      } catch (err) {
+        box.innerHTML = '<div class="error-box">Erro ao carregar tipos: ' + escapeHtml(err.message) + '</div>';
+      }
+    }
+
+    // ---------- Criar / editar marco ----------
+    async function openMarcoModal({ milestoneId = null, lockedProjectId = null, onSuccess = null } = {}) {
+      const isEdit = !!milestoneId;
+      const member = await getCurrentMember();
+
+      let existing = null;
+      if (isEdit) {
+        if (devMode) {
+          existing = mockMilestones.find(m => m.id === milestoneId);
+        } else {
+          const res = await supabase.from('project_milestones').select('*').eq('id', milestoneId).single();
+          if (res.error) { alert('Erro ao carregar o marco: ' + res.error.message); return; }
+          existing = res.data;
+          const own = await supabase.from('milestone_owners').select('member_id').eq('milestone_id', milestoneId);
+          existing.owner_ids = (own.data || []).map(o => o.member_id);
+        }
+        if (!existing) return;
+      }
+
+      openQuickModal(isEdit ? 'Editar marco' : 'Novo marco', `
+        <label class="field-label" style="margin-top:0;">Título</label>
+        <input type="text" id="mk-title" class="form-input" placeholder="ex: Reunião de licenciamento">
+        <label class="field-label">Tipo</label>
+        <select id="mk-type" class="form-input"><option value="">A carregar…</option></select>
+        <label class="field-label">Projeto (opcional)</label>
+        <select id="mk-project" class="form-input" ${lockedProjectId ? 'disabled' : ''}><option value="">A carregar…</option></select>
+        <label class="field-label">Data</label>
+        <input type="date" id="mk-date" class="form-input">
+        <label class="field-label">Duração</label>
+        <div class="segmented" id="mk-allday-toggle">
+          <button type="button" data-allday="false" class="active">Com hora</button>
+          <button type="button" data-allday="true">Dia inteiro</button>
+        </div>
+        <div id="mk-time-wrap" style="display:flex; gap:10px;">
+          <div style="flex:1;">
+            <label class="field-label">Início</label>
+            <input type="time" id="mk-start" class="form-input">
+          </div>
+          <div style="flex:1;">
+            <label class="field-label">Fim</label>
+            <input type="time" id="mk-end" class="form-input">
+          </div>
+        </div>
+        <label class="field-label">Local (opcional)</label>
+        <input type="text" id="mk-location" class="form-input" placeholder="ex: Câmara de Gaia">
+        <label class="field-label">Em que calendários aparece</label>
+        <div class="owner-picker" id="mk-owners"></div>
+        <label class="field-label">Notas (opcional)</label>
+        <textarea id="mk-notes" class="form-input" rows="2"></textarea>
+        ${isEdit ? `
+        <label class="field-label">Estado</label>
+        <div class="segmented" id="mk-done-toggle">
+          <button type="button" data-done="false" class="active">Por realizar</button>
+          <button type="button" data-done="true">Realizado</button>
+        </div>` : ''}
+        <button id="mk-submit" class="primary-btn">${isEdit ? 'Guardar alterações' : 'Criar marco'}</button>
+        ${isEdit ? '<button id="mk-delete" class="secondary-btn">Eliminar marco</button>' : ''}
+        <div id="mk-msg" class="form-msg"></div>
+      `);
+
+      // Opções
+      const [types, members, projects] = await Promise.all([
+        loadMilestoneTypes(),
+        loadAllMembers(),
+        devMode ? Promise.resolve(MOCK_PROJECTS)
+                : supabase.from('projects').select('id, name').is('archived_at', null).order('name').then(r => r.data || [])
+      ]);
+
+      document.getElementById('mk-type').innerHTML = '<option value="">Sem tipo</option>' +
+        types.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('');
+      document.getElementById('mk-project').innerHTML = '<option value="">Sem projeto (interno)</option>' +
+        projects.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('');
+
+      let ownerIds = isEdit ? [...(existing.owner_ids || [])] : (member?.id ? [member.id] : []);
+      const ownersEl = document.getElementById('mk-owners');
+      ownersEl.innerHTML = members.map(m =>
+        `<button type="button" class="owner-chip${ownerIds.includes(m.id) ? ' on' : ''}" data-member="${escapeHtml(m.id)}">${escapeHtml(m.name)}</button>`
+      ).join('');
+      ownersEl.addEventListener('click', (e) => {
+        const chip = e.target.closest('[data-member]');
+        if (!chip) return;
+        const id = chip.dataset.member;
+        if (ownerIds.includes(id)) ownerIds = ownerIds.filter(x => x !== id);
+        else ownerIds.push(id);
+        chip.classList.toggle('on');
+      });
+
+      let allDay = isEdit ? !!existing.all_day : false;
+      const timeWrap = document.getElementById('mk-time-wrap');
+      const syncAllDay = () => { timeWrap.style.display = allDay ? 'none' : 'flex'; };
+      document.querySelectorAll('#mk-allday-toggle button').forEach(b => b.classList.toggle('active', (b.dataset.allday === 'true') === allDay));
+      syncAllDay();
+      document.getElementById('mk-allday-toggle').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-allday]');
+        if (!btn) return;
+        allDay = btn.dataset.allday === 'true';
+        document.querySelectorAll('#mk-allday-toggle button').forEach(b => b.classList.toggle('active', b === btn));
+        syncAllDay();
+      });
+
+      let done = isEdit ? !!existing.done : false;
+      if (isEdit) {
+        document.querySelectorAll('#mk-done-toggle button').forEach(b => b.classList.toggle('active', (b.dataset.done === 'true') === done));
+        document.getElementById('mk-done-toggle').addEventListener('click', (e) => {
+          const btn = e.target.closest('[data-done]');
+          if (!btn) return;
+          done = btn.dataset.done === 'true';
+          document.querySelectorAll('#mk-done-toggle button').forEach(b => b.classList.toggle('active', b === btn));
+        });
+      }
+
+      // Pré-preencher
+      if (isEdit) {
+        document.getElementById('mk-title').value = existing.title ?? '';
+        document.getElementById('mk-type').value = existing.type_id ?? '';
+        document.getElementById('mk-project').value = existing.project_id ?? '';
+        document.getElementById('mk-date').value = existing.event_date ?? '';
+        document.getElementById('mk-start').value = (existing.start_time || '').slice(0, 5);
+        document.getElementById('mk-end').value = (existing.end_time || '').slice(0, 5);
+        document.getElementById('mk-location').value = existing.location ?? '';
+        document.getElementById('mk-notes').value = existing.notes ?? '';
+      } else {
+        document.getElementById('mk-date').value = agendaSelected || dateKey(new Date());
+        if (lockedProjectId) document.getElementById('mk-project').value = lockedProjectId;
+      }
+
+      if (isEdit) {
+        document.getElementById('mk-delete').addEventListener('click', async () => {
+          if (!window.confirm('Eliminar este marco? As atas associadas ficam sem marco, mas não são apagadas.')) return;
+          try {
+            if (devMode) mockMilestones = mockMilestones.filter(m => m.id !== milestoneId);
+            else {
+              const res = await supabase.from('project_milestones').delete().eq('id', milestoneId);
+              if (res.error) throw res.error;
+            }
+            closeQuickModal();
+            if (onSuccess) onSuccess(); else loadAgenda();
+          } catch (err) { alert('Erro ao eliminar: ' + err.message); }
+        });
+      }
+
+      document.getElementById('mk-submit').addEventListener('click', async () => {
+        const msgEl = document.getElementById('mk-msg');
+        msgEl.textContent = ''; msgEl.className = 'form-msg';
+
+        const title = document.getElementById('mk-title').value.trim();
+        const eventDate = document.getElementById('mk-date').value;
+        const startTime = document.getElementById('mk-start').value;
+        const endTime = document.getElementById('mk-end').value;
+
+        if (!title || !eventDate) {
+          msgEl.textContent = 'Indica o título e a data.';
+          msgEl.className = 'form-msg error';
+          return;
+        }
+        if (!allDay && !startTime) {
+          msgEl.textContent = 'Indica a hora de início, ou marca como dia inteiro.';
+          msgEl.className = 'form-msg error';
+          return;
+        }
+        if (!allDay && endTime && endTime < startTime) {
+          msgEl.textContent = 'A hora de fim é anterior à de início.';
+          msgEl.className = 'form-msg error';
+          return;
+        }
+
+        const btn = document.getElementById('mk-submit');
+        btn.disabled = true;
+        btn.textContent = 'A guardar…';
+
+        const payload = {
+          project_id: (lockedProjectId || document.getElementById('mk-project').value) || null,
+          type_id: document.getElementById('mk-type').value || null,
+          title,
+          event_date: eventDate,
+          all_day: allDay,
+          start_time: allDay ? null : (startTime || null),
+          end_time: allDay ? null : (endTime || null),
+          location: document.getElementById('mk-location').value.trim() || null,
+          notes: document.getElementById('mk-notes').value.trim() || null,
+          done
+        };
+
+        try {
+          if (devMode) {
+            if (isEdit) {
+              const i = mockMilestones.findIndex(m => m.id === milestoneId);
+              if (i >= 0) mockMilestones[i] = { ...mockMilestones[i], ...payload, owner_ids: ownerIds };
+            } else {
+              mockMilestones.push({ id: 'mk-' + Date.now(), ...payload, owner_ids: ownerIds });
+            }
+          } else {
+            let id = milestoneId;
+            if (isEdit) {
+              const res = await supabase.from('project_milestones').update(payload).eq('id', milestoneId);
+              if (res.error) throw res.error;
+            } else {
+              payload.created_by = member?.id ?? null;
+              const res = await supabase.from('project_milestones').insert(payload).select('id').single();
+              if (res.error) throw res.error;
+              id = res.data.id;
+            }
+            // Owners: substituir o conjunto
+            const del = await supabase.from('milestone_owners').delete().eq('milestone_id', id);
+            if (del.error) throw del.error;
+            if (ownerIds.length > 0) {
+              const ins = await supabase.from('milestone_owners')
+                .insert(ownerIds.map(mid => ({ milestone_id: id, member_id: mid })));
+              if (ins.error) throw ins.error;
+            }
+          }
+          closeQuickModal();
+          if (onSuccess) onSuccess();
+          else if (document.getElementById('home-view').style.display !== 'none') loadAgenda();
+        } catch (err) {
+          msgEl.textContent = 'Erro ao guardar: ' + err.message;
+          msgEl.className = 'form-msg error';
+          btn.disabled = false;
+          btn.textContent = isEdit ? 'Guardar alterações' : 'Criar marco';
+        }
+      });
+    }
+
+    document.getElementById('agenda-scope').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-scope]');
+      if (!btn) return;
+      agendaScope = btn.dataset.scope;
+      document.querySelectorAll('#agenda-scope button').forEach(b => b.classList.toggle('active', b === btn));
+      renderAgenda();
+    });
+    document.getElementById('cal-prev').addEventListener('click', () => {
+      agendaMonth = new Date(agendaMonth.getFullYear(), agendaMonth.getMonth() - 1, 1);
+      loadAgenda();
+    });
+    document.getElementById('cal-next').addEventListener('click', () => {
+      agendaMonth = new Date(agendaMonth.getFullYear(), agendaMonth.getMonth() + 1, 1);
+      loadAgenda();
+    });
+    document.getElementById('cal-today').addEventListener('click', () => {
+      agendaMonth = new Date();
+      agendaSelected = dateKey(new Date());
+      loadAgenda();
+    });
 
     init();
 
