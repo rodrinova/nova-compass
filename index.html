@@ -404,6 +404,7 @@
     .projects-table th, .projects-table td { padding-left: 12px; padding-right: 12px; }
   }
   @media (max-width: 480px) { .projects-table .col-area { display: none; } }
+  @media (max-width: 400px) { .projects-table .col-code { display: none; } }
 
   /* Despesas: cartões no telemóvel */
   @media (max-width: 640px) {
@@ -923,6 +924,94 @@
   .toast.show { opacity: 1; transform: none; }
   .toast.error { background: var(--danger); color: #fff; }
   .toast-undo { background: none; border: none; color: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; padding: 0; font-size: 13.5px; opacity: .9; }
+
+  /* ---------- Ficha do projeto: indicadores + separadores ---------- */
+  .kpi-strip {
+    display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    margin-bottom: 14px;
+  }
+  .kpi { padding: 12px 16px; border-left: 1px solid var(--border); min-width: 0; }
+  .kpi:first-child { border-left: none; }
+  .kpi span { display: block; font-size: 12px; color: var(--text-2); }
+  .kpi b { display: block; font-size: 18px; font-weight: 650; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; margin-top: 2px; }
+  .kpi i { display: block; font-style: normal; font-size: 12px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpi b.late { color: var(--danger); }
+  .kpi b.warn { color: var(--warning); }
+  @media (max-width: 760px) {
+    .kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .kpi { border-left: none; border-top: 1px solid var(--border); }
+    .kpi:nth-child(-n+2) { border-top: none; }
+    .kpi:nth-child(even) { border-left: 1px solid var(--border); }
+    .kpi:last-child { grid-column: 1 / -1; border-left: none; }
+  }
+  .detail-tabs {
+    position: sticky; top: 52px; z-index: 5;
+    display: flex; gap: 2px; margin: 0 0 16px; padding: 8px 0;
+    background: var(--bg); border-bottom: 1px solid var(--border);
+    overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  }
+  .detail-tabs::-webkit-scrollbar { display: none; }
+  .detail-tabs button {
+    border: none; background: none; cursor: pointer; white-space: nowrap;
+    height: 32px; padding: 0 12px; border-radius: 6px;
+    font-size: 13.5px; font-weight: 550; color: var(--text-2);
+  }
+  .detail-tabs button:hover { background: var(--surface-2); color: var(--text); }
+  .detail-tabs button.active { background: var(--surface); color: var(--text); box-shadow: 0 0 0 1px var(--border); }
+  .detail-tabs button em { font-style: normal; color: var(--text-3); margin-left: 4px; font-variant-numeric: tabular-nums; }
+  @media (max-width: 899px) {
+    .detail-tabs { top: calc(52px + env(safe-area-inset-top, 0px)); margin: 0 -16px 14px; padding: 8px 16px; }
+  }
+  [data-dpanel] > .gantt-wrap + .gantt-wrap, [data-dpanel] > * + .gantt-wrap { margin-top: 12px; }
+  .card-head .text-btn { font-size: 13px; }
+
+  /* ---------- Estados de projeto ---------- */
+  .status-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 550; color: var(--text); white-space: nowrap; }
+  .status-pill .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .status-pill.closed { color: var(--text-2); }
+  .status-select {
+    appearance: none; -webkit-appearance: none; border: 1px solid var(--border); background: var(--surface);
+    border-radius: 6px; padding: 4px 26px 4px 10px; font: inherit; font-size: 13.5px; font-weight: 550; color: var(--text); cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 9px center;
+  }
+  .status-select:focus { outline: none; border-color: var(--accent); box-shadow: var(--focus); }
+  .list-toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; }
+  .list-toolbar .search-input { flex: 1; }
+  .list-toolbar .segmented { margin: 0; flex-shrink: 0; }
+  .status-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--border); font-size: 14px; }
+  .status-row:first-child { border-top: none; padding-top: 2px; }
+  .status-row .type-swatch { cursor: pointer; }
+  .status-row .st-name { flex: 1; min-width: 0; }
+  .status-row .st-code { font-size: 11.5px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .chip-toggle { height: 26px; padding: 0 10px; border-radius: 13px; border: 1px solid var(--border); background: var(--surface); font-size: 12px; font-weight: 600; color: var(--text-3); cursor: pointer; }
+  .chip-toggle.on { background: var(--success-soft); border-color: transparent; color: var(--success); }
+  .order-btns { display: inline-flex; gap: 2px; }
+  .order-btns button { width: 24px; height: 24px; border: none; background: none; border-radius: 5px; color: var(--text-3); cursor: pointer; font-size: 12px; }
+  .order-btns button:hover { background: var(--surface-2); color: var(--text); }
+  .order-btns button:disabled { opacity: .3; cursor: default; }
+  .detail-header .sub .status-pill { margin-left: 4px; }
+
+  /* ---------- Formulários de edição ---------- */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+  .form-grid .span2 { grid-column: 1 / -1; }
+  .form-grid .field-label, .form-grid .field-label:first-child { margin-top: 14px; }
+  @media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } }
+  .check-row { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 13.5px; color: var(--text-2); cursor: pointer; }
+  .check-row input { width: 16px; height: 16px; accent-color: var(--accent); }
+  .danger-btn { color: var(--danger) !important; }
+  .danger-btn:hover { background: var(--danger-soft) !important; border-color: transparent !important; }
+  .ph-status {
+    appearance: none; -webkit-appearance: none; border: 1px solid var(--border); background: var(--surface); color: var(--text-2);
+    border-radius: 6px; padding: 3px 8px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; max-width: 120px;
+  }
+  .ph-status:focus { outline: none; border-color: var(--accent); box-shadow: var(--focus); }
+  .click-row { cursor: pointer; }
+  .click-row:hover td, .invoice-row.click-row:hover { background: var(--surface-2); }
+  .invoice-row.click-row { margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-radius: 6px; }
+  .ph-row { grid-template-columns: minmax(0, 1.4fr) minmax(60px, 1fr) auto auto auto; }
+  @media (max-width: 560px) { .ph-row { grid-template-columns: minmax(0, 1fr) auto auto; } .ph-row .ph-due { display: none; } }
 </style>
 </head>
 <body>
@@ -963,7 +1052,7 @@
         <button type="button" class="nav-item" data-nav="horas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span>Horas</span></button>
         <button type="button" class="nav-item" data-nav="atas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h7l4 4v12a1 1 0 01-1 1H7a1 1 0 01-1-1v-15a1 1 0 011-1z"/><path d="M9 11h6M9 14.5h6M9 18h3.5"/></svg><span>Atas</span></button>
         <button type="button" class="nav-item" data-nav="despesas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12v17l-3-2-3 2-3-2-3 2z"/><path d="M9 8.5h6M9 12h6M9 15.5h3"/></svg><span>Despesas</span></button>
-        <button type="button" class="nav-item" data-nav="team"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19.5c.6-3 2.8-4.8 5.5-4.8s4.9 1.8 5.5 4.8"/><circle cx="16.5" cy="9.5" r="2.6"/><path d="M16.5 14.7c2.2 0 3.7 1.5 4.1 4"/></svg><span>Equipa</span></button>
+        <button type="button" class="nav-item" data-nav="team"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 6.5h9M8 12h10M6 17.5h8"/><path d="M3.5 3.5v17" opacity=".5"/></svg><span>Planeamento</span></button>
       </nav>
       <div class="side-foot">
         <button type="button" class="nav-item" data-nav="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.5 7.5 0 000-2l1.9-1.5-2-3.4-2.2.9a7.6 7.6 0 00-1.7-1L15 3.5h-4l-.4 2.5a7.6 7.6 0 00-1.7 1l-2.2-.9-2 3.4L6.6 11a7.5 7.5 0 000 2l-1.9 1.5 2 3.4 2.2-.9a7.6 7.6 0 001.7 1L11 20.5h4l.4-2.5a7.6 7.6 0 001.7-1l2.2.9 2-3.4z"/></svg><span>Definições</span></button>
@@ -981,7 +1070,7 @@
     </nav>
     <div class="more-sheet" id="more-sheet">
       <button type="button" class="nav-item" data-nav="despesas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12v17l-3-2-3 2-3-2-3 2z"/><path d="M9 8.5h6M9 12h6M9 15.5h3"/></svg><span>Despesas</span></button>
-      <button type="button" class="nav-item" data-nav="team"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19.5c.6-3 2.8-4.8 5.5-4.8s4.9 1.8 5.5 4.8"/><circle cx="16.5" cy="9.5" r="2.6"/><path d="M16.5 14.7c2.2 0 3.7 1.5 4.1 4"/></svg><span>Equipa</span></button>
+      <button type="button" class="nav-item" data-nav="team"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 6.5h9M8 12h10M6 17.5h8"/><path d="M3.5 3.5v17" opacity=".5"/></svg><span>Planeamento</span></button>
       <button type="button" class="nav-item" data-nav="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.5 7.5 0 000-2l1.9-1.5-2-3.4-2.2.9a7.6 7.6 0 00-1.7-1L15 3.5h-4l-.4 2.5a7.6 7.6 0 00-1.7 1l-2.2-.9-2 3.4L6.6 11a7.5 7.5 0 000 2l-1.9 1.5 2 3.4 2.2-.9a7.6 7.6 0 001.7 1L11 20.5h4l.4-2.5a7.6 7.6 0 001.7-1l2.2.9 2-3.4z"/></svg><span>Definições</span></button>
       <button type="button" class="nav-item danger" data-logout><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4.5h4a1.5 1.5 0 011.5 1.5v12a1.5 1.5 0 01-1.5 1.5h-4"/><path d="M10 16l-4-4 4-4M6 12h9"/></svg><span>Sair</span></button>
     </div>
@@ -1048,8 +1137,12 @@
 
       </div>
       <div id="projects-view" style="display:none;">
-        <div class="search-bar-wrap">
+        <div class="list-toolbar">
           <input type="text" id="projects-search" class="search-input" placeholder="Pesquisar por nome ou código..." autocomplete="off">
+          <div class="segmented" id="projects-scope">
+            <button type="button" data-scope="active" class="active">Ativos</button>
+            <button type="button" data-scope="all">Todos</button>
+          </div>
         </div>
         <div id="projects-container" class="center-msg">
           <div class="spinner"></div>
@@ -1059,7 +1152,7 @@
       <div id="team-view" style="display:none;">
         <div class="team-card" id="team-card" style="display:none;">
           <div class="team-card-top">
-            <div class="team-card-name" id="team-card-name">—</div>
+            <div class="team-card-name" id="team-card-name">NOVA</div>
           </div>
           <div class="team-card-stats">
             <div>
@@ -1073,7 +1166,6 @@
           </div>
           <div class="team-card-deliveries" id="team-card-deliveries-list"></div>
         </div>
-        <div class="segmented" id="team-selector"></div>
         <div class="section-label">Planeamento</div>
         <div class="gantt-wrap" id="team-gantt">
           <div class="detail-loading">A carregar...</div>
@@ -1143,6 +1235,10 @@
         </div>
       </div>
       <div id="settings-view" style="display:none;">
+        <div class="section-label">Estados de projeto</div>
+        <div class="gantt-wrap" id="settings-statuses-container">
+          <div class="detail-loading">A carregar...</div>
+        </div>
         <div class="section-label">Categorias de imputação de horas</div>
         <div class="gantt-wrap" id="settings-categories-container">
           <div class="detail-loading">A carregar...</div>
@@ -1160,6 +1256,7 @@
               <span id="detail-code">—</span>
               <span>·</span>
               <span id="detail-client">—</span>
+              <span id="detail-status-pill"></span>
             </div>
           </div>
         </div>
@@ -1238,9 +1335,9 @@
     const devMode = false;
 
     const MOCK_PROJECTS = [
-      { id: 'mock-1', name: 'Edifício Miradouro', code: 'NOVA-001', client: 'Promotora Atlântico', address: 'Rua do Miradouro 12, Vila Nova de Gaia', status: 'Em curso', area: 1240, awarding_date: '2025-11-03', commission_value: 48000, team_id: 'mock-team-alpha', project_types: { name: 'Habitação Coletiva' }, teams: { name: 'Team Alpha' } },
+      { id: 'mock-1', name: 'Edifício Miradouro', code: 'NOVA-001', client: 'Promotora Atlântico', address: 'Rua do Miradouro 12, Vila Nova de Gaia', status: 'WIP', area: 1240, awarding_date: '2025-11-03', commission_value: 48000, team_id: 'mock-team-alpha', project_types: { name: 'Habitação Coletiva' }, teams: { name: 'Team Alpha' } },
       { id: 'mock-2', name: 'Moradia Vale das Flores', code: 'NOVA-002', client: 'Família Sousa', address: 'Rua das Flores 8, Matosinhos', status: 'To Do', area: 320, awarding_date: '2026-01-15', commission_value: 18500, team_id: 'mock-team-beta', project_types: { name: 'Habitação Unifamiliar' }, teams: { name: 'Team Beta' } },
-      { id: 'mock-3', name: 'Reabilitação Rua do Comércio', code: 'NOVA-003', client: 'Município de Gaia', address: 'Rua do Comércio 45, Vila Nova de Gaia', status: 'Concluído', area: 890, awarding_date: '2025-06-20', commission_value: 62000, team_id: 'mock-team-alpha', project_types: { name: 'Reabilitação' }, teams: { name: 'Team Alpha' } }
+      { id: 'mock-3', name: 'Reabilitação Rua do Comércio', code: 'NOVA-003', client: 'Município de Gaia', address: 'Rua do Comércio 45, Vila Nova de Gaia', status: 'Done', area: 890, awarding_date: '2025-06-20', commission_value: 62000, team_id: 'mock-team-alpha', project_types: { name: 'Reabilitação' }, teams: { name: 'Team Alpha' } }
     ];
 
     const MOCK_BREAKS = [
@@ -1306,9 +1403,9 @@
     ];
 
     const MOCK_INVOICES = [
-      { invoice_number: 'FT 2025/014', issue_date: '2025-12-10', amount: 14400, amount_paid: 14400 },
-      { invoice_number: 'FT 2026/003', issue_date: '2026-01-25', amount: 14400, amount_paid: 7200 },
-      { invoice_number: 'FT 2026/009', issue_date: '2026-03-01', amount: 9600, amount_paid: 0 }
+      { id: 'inv-1', invoice_number: 'FT 2025/014', issue_date: '2025-12-10', amount: 14400, amount_paid: 14400 },
+      { id: 'inv-2', invoice_number: 'FT 2026/003', issue_date: '2026-01-25', amount: 14400, amount_paid: 7200 },
+      { id: 'inv-3', invoice_number: 'FT 2026/009', issue_date: '2026-03-01', amount: 9600, amount_paid: 0 }
     ];
 
     const MOCK_TIME = [
@@ -1320,11 +1417,7 @@
       { hours: 6, billable: false, stage_id: 'stg-3', user_id: 'm1', member_name: 'Rodrigo' }
     ];
 
-    const MOCK_TEAMS = [
-      { id: 'mock-team-alpha', name: 'Team Alpha' },
-      { id: 'mock-team-beta', name: 'Team Beta' }
-    ];
-    const MOCK_MEMBER = { id: 'mock-member-1', name: 'Rodrigo Alves', email: 'rodrigo@novassociates.com', team_id: 'mock-team-alpha', team_name: 'Team Alpha' };
+    const MOCK_MEMBER = { id: 'mock-member-1', name: 'Rodrigo Alves', email: 'rodrigo@novassociates.com', role: 'Partner' };
 
     let currentMember = null;
 
@@ -1372,25 +1465,19 @@
         if (!user) return null;
         const { data: member } = await supabase
           .from('team_members')
-          .select('id, name, email, team_id, teams(name)')
+          .select('id, name, email, role')
           .eq('email', user.email)
           .maybeSingle();
         if (member) {
           currentMember = {
             id: member.id, name: member.name, email: member.email,
-            team_id: member.team_id, team_name: member.teams?.name
+            role: member.role
           };
         }
         return currentMember;
       } catch {
         return null;
       }
-    }
-
-    async function loadAllTeams() {
-      if (devMode) return MOCK_TEAMS;
-      const { data } = await supabase.from('teams').select('id, name').order('name');
-      return data || [];
     }
 
     function monthRange(date = new Date()) {
@@ -1404,6 +1491,7 @@
       if (s.status === 'completed' || s.status === 'done') return 'Concluída';
       if (['wip', 'in_progress', 'active'].includes(s.status)) return 'Em curso';
       if (s.status === 'interrupted') return 'Interrompida';
+      if (s.status === 'todo') return 'A fazer';
       return 'Por iniciar';
     }
 
@@ -1411,20 +1499,50 @@
       return Number(n || 0).toLocaleString('pt-PT', { minimumFractionDigits: decimals, maximumFractionDigits: 2 }) + 'h';
     }
 
+    // ---------- Estados de projeto (tabela project_statuses — estados_projeto.sql) ----------
+    // projects.status guarda o código (To Do, WIP, Done, …); o nome e a cor vêm da tabela.
+    const MOCK_PROJECT_STATUSES = [
+      { id: 'ps-1', code: 'To Do', name: 'Por iniciar', color: '#5A6B7A', sort_order: 1, is_closed: false },
+      { id: 'ps-2', code: 'For Approval', name: 'Em aprovação', color: '#3E6FA8', sort_order: 2, is_closed: false },
+      { id: 'ps-3', code: 'WIP', name: 'Em curso', color: '#714D79', sort_order: 3, is_closed: false },
+      { id: 'ps-4', code: 'Interrupted', name: 'Interrompido', color: '#B8842A', sort_order: 4, is_closed: false },
+      { id: 'ps-5', code: 'Done', name: 'Concluído', color: '#2E7D4F', sort_order: 5, is_closed: true }
+    ];
+    let projectStatusCache = null;
+    async function loadProjectStatuses(force = false) {
+      if (projectStatusCache && !force) return projectStatusCache;
+      if (devMode) {
+        projectStatusCache = [...MOCK_PROJECT_STATUSES].sort((a, b) => a.sort_order - b.sort_order);
+      } else {
+        const r = await supabase.from('project_statuses').select('id, code, name, color, sort_order, is_closed').order('sort_order');
+        projectStatusCache = r.error ? [] : (r.data || []);
+      }
+      return projectStatusCache;
+    }
+    const statusByCode = code => (projectStatusCache || []).find(s => s.code === code) || null;
+    function statusPillHtml(code) {
+      const s = statusByCode(code);
+      if (!code) return '<span class="status-pill closed">—</span>';
+      return `<span class="status-pill${s?.is_closed ? ' closed' : ''}"><span class="dot" style="background:${escapeHtml(s?.color || 'var(--text-3)')}"></span>${escapeHtml(s?.name ?? code)}</span>`;
+    }
+    function statusOptionsHtml(current) {
+      const list = projectStatusCache || [];
+      const known = list.some(s => s.code === current);
+      return (current && !known ? `<option value="${escapeHtml(current)}">${escapeHtml(current)}</option>` : '') +
+        (!current ? '<option value="">—</option>' : '') +
+        list.map(s => `<option value="${escapeHtml(s.code)}"${s.code === current ? ' selected' : ''}>${escapeHtml(s.name)}</option>`).join('');
+    }
+
     function fmtEURShort(n) {
       return Number(n || 0).toLocaleString('pt-PT', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' €';
     }
 
+    // Resumo do mês do ateliê (sem equipas: conta todos os projetos)
     async function renderTeamCard() {
       const card = document.getElementById('team-card');
-      const member = await getCurrentMember();
-      if (!member || !member.team_id) {
-        card.style.display = 'none';
-        return;
-      }
       card.style.display = 'block';
       const { first, last, label } = monthRange();
-      document.getElementById('team-card-name').textContent = member.team_name || 'Equipa';
+      document.getElementById('team-card-name').textContent = 'NOVA · este mês';
       document.getElementById('team-stat-month').textContent = label;
 
       try {
@@ -1439,12 +1557,10 @@
         } else {
           const [invRes, stagesRes] = await Promise.all([
             supabase.from('invoices')
-              .select('amount, issue_date, stage_id, projects!inner(team_id)')
-              .eq('projects.team_id', member.team_id)
+              .select('amount, issue_date, stage_id')
               .gte('issue_date', first).lte('issue_date', last),
             supabase.from('project_stages')
-              .select('delivery_date, stage_types(name), projects!inner(name, team_id)')
-              .eq('projects.team_id', member.team_id)
+              .select('delivery_date, stage_types(name), projects(name)')
               .not('delivery_date', 'is', null)
               .gte('delivery_date', first).lte('delivery_date', last)
               .order('delivery_date')
@@ -1533,26 +1649,14 @@
       });
     }
 
-    async function showTeamView(teamId) {
-      document.getElementById('nav-title').textContent = 'Equipa';
+    // Planeamento de todos os projetos ativos (as equipas deixaram de existir na app)
+    async function showTeamView() {
+      document.getElementById('nav-title').textContent = 'Planeamento';
       hideAllViews();
       document.getElementById('team-view').style.display = 'block';
+      pushCurrentView({ name: 'team' });
       renderTeamCard();
-
-      const teams = await loadAllTeams();
-      const member = await getCurrentMember();
-      const activeTeamId = teamId || member?.team_id || (teams[0] && teams[0].id);
-      pushCurrentView({ name: 'team', teamId: activeTeamId });
-
-      const selector = document.getElementById('team-selector');
-      selector.innerHTML = teams.map(t => `
-        <button data-team-id="${escapeHtml(t.id)}" class="${t.id === activeTeamId ? 'active' : ''}">${escapeHtml(t.name)}</button>
-      `).join('');
-      selector.querySelectorAll('button').forEach(btn => {
-        btn.addEventListener('click', () => showTeamView(btn.dataset.teamId));
-      });
-
-      await loadTeamPlanning(activeTeamId);
+      await loadTeamPlanning();
     }
 
     function buildMockTeamStages(teamProjects) {
@@ -1600,13 +1704,12 @@
         let projects, stages;
 
         if (devMode) {
-          projects = MOCK_PROJECTS.filter(p => p.team_id === teamId);
+          projects = MOCK_PROJECTS;
           stages = buildMockTeamStages(projects);
         } else {
           const projRes = await supabase
             .from('projects')
             .select('id, name, code, awarding_date, commission_value')
-            .eq('team_id', teamId)
             .is('archived_at', null);
           if (projRes.error) throw projRes.error;
           projects = projRes.data || [];
@@ -1635,7 +1738,7 @@
         });
 
         if (projects.length === 0) {
-          ganttEl.innerHTML = '<div class="gantt-empty">Esta equipa ainda não tem projetos ativos.</div>';
+          ganttEl.innerHTML = '<div class="gantt-empty">Sem projetos ativos.</div>';
           tableEl.innerHTML = '';
           return;
         }
@@ -1820,7 +1923,7 @@
           .filter(g => g.stages.length > 0);
 
         if (withoutDatesByProject.length === 0) {
-          tableEl.innerHTML = '<div class="gantt-wrap"><div class="gantt-empty">Todas as fases desta equipa já têm datas de início e fim.</div></div>';
+          tableEl.innerHTML = '<div class="gantt-wrap"><div class="gantt-empty">Todas as fases já têm datas de início e fim.</div></div>';
         } else {
           tableEl.innerHTML = withoutDatesByProject.map(g => `
             <div class="gantt-wrap" style="margin-bottom:12px;">
@@ -1945,6 +2048,7 @@
       document.getElementById('settings-view').style.display = 'block';
       loadCategories();
       loadMilestoneTypeSettings();
+      loadProjectStatusSettings();
     }
 
     function openAtasModule() {
@@ -2367,11 +2471,6 @@
               el.textContent = rawValue;
               return;
             }
-            if (!window.confirm(`Renomear categoria de "${rawValue}" para "${newValue}"?`)) {
-              el.classList.remove('editing');
-              el.textContent = rawValue;
-              return;
-            }
             if (devMode) {
               const cat = MOCK_CATEGORIES.find(c => c.id === catId);
               if (cat) cat.name = newValue;
@@ -2503,7 +2602,7 @@
       atas: openAtasModule,
       despesas: openDespesasModule,
       settings: openSettingsModule,
-      team: async () => { const m = await getCurrentMember(); showTeamView(m?.team_id); }
+      team: () => showTeamView()
     };
     document.querySelectorAll('[data-nav]').forEach(el => el.addEventListener('click', () => {
       navStack = [];
@@ -2522,7 +2621,7 @@
       const m = await getCurrentMember();
       const name = m?.name || '';
       document.getElementById('side-user-name').textContent = name || 'Sem nome';
-      document.getElementById('side-user-team').textContent = m?.team_name || '';
+      document.getElementById('side-user-team').textContent = m?.role || '';
       document.getElementById('side-avatar').textContent = name ? initials(name) : '—';
     }
     document.getElementById('today-log-hours').addEventListener('click', () => { navStack = []; openHorasModule(); });
@@ -2544,6 +2643,7 @@
             <td class="col-name">${escapeHtml(p.name ?? 'Sem nome')}</td>
             <td class="col-area">${escapeHtml(p.area != null ? p.area + ' m²' : '—')}</td>
             <td class="col-type">${escapeHtml(p.project_types?.name ?? '—')}</td>
+            <td class="col-status">${statusPillHtml(p.status)}</td>
             <td class="col-value">${valor}</td>
           </tr>
         `;
@@ -2558,6 +2658,7 @@
               <th>Nome</th>
               <th class="col-area">Área</th>
               <th class="col-type">Tipo</th>
+              <th class="col-status">Estado</th>
               <th class="col-value">Valor</th>
             </tr>
           </thead>
@@ -2570,17 +2671,22 @@
       });
     }
 
-    document.getElementById('projects-search').addEventListener('input', (e) => {
-      const term = e.target.value.trim().toLowerCase();
-      if (!term) {
-        renderProjectsTable(allProjectsData);
-        return;
-      }
+    let projectsScope = 'active';
+    function applyProjectFilters() {
+      const term = document.getElementById('projects-search').value.trim().toLowerCase();
       const filtered = allProjectsData.filter(p =>
-        (p.name ?? '').toLowerCase().includes(term) ||
-        (p.code ?? '').toLowerCase().includes(term)
+        (projectsScope === 'all' || !statusByCode(p.status)?.is_closed) &&
+        (!term || (p.name ?? '').toLowerCase().includes(term) || (p.code ?? '').toLowerCase().includes(term))
       );
       renderProjectsTable(filtered);
+    }
+    document.getElementById('projects-search').addEventListener('input', applyProjectFilters);
+    document.getElementById('projects-scope').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-scope]');
+      if (!b) return;
+      projectsScope = b.dataset.scope;
+      document.querySelectorAll('#projects-scope button').forEach(x => x.classList.toggle('active', x === b));
+      applyProjectFilters();
     });
 
     async function loadProjects() {
@@ -2596,7 +2702,7 @@
           const [res, exRes] = await Promise.all([
             supabase
               .from('projects')
-              .select('id, name, code, area, commission_value, project_types(name)')
+              .select('id, name, code, area, status, commission_value, project_types(name)')
               .order('created_at', { ascending: false }),
             supabase
               .from('project_stages')
@@ -2619,8 +2725,9 @@
           });
         }
 
+        await loadProjectStatuses();
         allProjectsData = data || [];
-        renderProjectsTable(allProjectsData);
+        applyProjectFilters();
       } catch (err) {
         projectsContainer.className = 'error-box';
         projectsContainer.textContent = 'Erro ao carregar projetos: ' + err.message;
@@ -2630,6 +2737,7 @@
 
     // ---------- Página de detalhe de projeto ----------
     const detailPanel = document.getElementById('detail-panel');
+    const detailTabByProject = {};   // separador aberto em cada ficha (mantém-se ao gravar)
     const detailBody = document.getElementById('detail-body');
 
     // Escapa texto vindo da base de dados antes de ir para innerHTML.
@@ -2782,7 +2890,7 @@
             supabase.from('invoices').select('*').eq('project_id', projectId).order('issue_date'),
             supabase.from('time_entries').select('hours, billable, stage_id, user_id').eq('project_id', projectId),
             supabase.from('project_breaks').select('*').eq('project_id', projectId).order('position_order'),
-            supabase.from('expenses').select('*, expense_categories(name)').eq('project_id', projectId).order('date', { ascending: false }),
+            supabase.from('expenses').select('*, expense_categories(name)').eq('project_id', projectId).is('archived_at', null).order('date', { ascending: false }),
             supabase.from('meeting_notes').select('*').eq('project_id', projectId).order('meeting_date', { ascending: false })
           ]);
 
@@ -2795,10 +2903,6 @@
           expenses = expensesRes.data || [];
           projectNotes = notesRes.data || [];
 
-          if (project.team_id) {
-            const teamRes = await supabase.from('teams').select('name').eq('id', project.team_id).maybeSingle();
-            if (!teamRes.error && teamRes.data) project.teams = teamRes.data;
-          }
         }
 
         // Marcos do projeto (sempre, em qualquer modo)
@@ -2827,6 +2931,8 @@
           }
         }
 
+        await loadProjectStatuses();
+        document.getElementById('detail-status-pill').innerHTML = statusPillHtml(project.status);
         const clienteNome = project.clients?.name || project.client || 'Sem cliente';
         document.getElementById('detail-name').textContent = project.name ?? 'Sem nome';
         document.getElementById('nav-title').textContent = project.name ?? 'Projeto';
@@ -2854,7 +2960,8 @@
         const horasNaoFaturaveis = timeEntriesNova.filter(t => !t.billable).reduce((s, t) => s + Number(t.hours ?? 0), 0);
         const totalHoras = horasFaturaveis + horasNaoFaturaveis;
         const pctFaturavel = totalHoras > 0 ? (horasFaturaveis / totalHoras) * 100 : 0;
-        const taxaEfetiva = horasFaturaveis > 0 ? round2(totalFaturado / horasFaturaveis) : null;
+        // Taxa efetiva: o que o projeto rendeu por hora de trabalho (todas as horas, não só as faturáveis)
+        const taxaEfetiva = totalHoras > 0 ? round2(totalFaturado / totalHoras) : null;
 
         // --- Horas por fase específica (para a tabela de Fases) e por pessoa (para Participação) ---
         const hoursByStageId = {};
@@ -3073,7 +3180,7 @@
                         ? `<span class="invoice-status partial">Parcial</span>`
                         : `<span class="invoice-status ${shouldFlag ? 'pending' : 'neutral'}">Não paga</span>`;
                   return `
-                    <tr${isExcluded ? ' style="opacity:.55;"' : ''}>
+                    <tr class="click-row" data-phase-row="${escapeHtml(s.id)}" title="Editar fase"${isExcluded ? ' style="opacity:.55;"' : ''}>
                       <td>${faseLabel}</td>
                       <td>${stageStatusLabel(s)}</td>
                       ${assignSupport ? `<td><button type="button" class="assign-cell" data-assign-stage="${escapeHtml(s.id)}" title="Escolher pessoas">${(stageAssignees[s.id] || []).length ? avatarsHtml(stageAssignees[s.id], ataMemberNames, meId) : '<span class="assign-empty">+ Atribuir</span>'}</button></td>` : ''}
@@ -3093,7 +3200,7 @@
           expensesHtml = expenses.map(e => {
             const reimbursed = !!e.reimbursed;
             return `
-              <div class="invoice-row">
+              <div class="invoice-row click-row" data-expense-id="${escapeHtml(e.id)}">
                 <span>${escapeHtml(e.description ?? e.expense_categories?.name ?? 'Despesa')}</span>
                 <span class="invoice-status ${reimbursed ? 'paid' : 'pending'}">${reimbursed ? 'Reembolsada' : 'Por reembolsar'}</span>
                 <span class="amount">${fmtEUR(Number(e.amount))}</span>
@@ -3163,27 +3270,78 @@
           atasProjetoHtml = soltas.map(n => ataEntryHtml(n, false)).join('');
         }
 
+        // --- Indicadores do topo e contagens dos separadores ---
+        const porReceber = round2(totalFaturado - totalRecebido);
+        const hojeKeyDet = dateKey(new Date());
+        const proxima = stages.filter(s => !isStageDone(s) && stageDeadline(s))
+          .sort((x, y) => stageDeadline(x).localeCompare(stageDeadline(y)))[0];
+        const nAtas = projectNotes.length;
+        const pid0 = project.id ?? projectId;
+
         detailBody.innerHTML = `
-          <div class="section-label">Detalhes do projeto</div>
-          <div class="gantt-wrap">
-            <div class="invoice-row"><span>Cliente</span><span>${escapeHtml(clienteNome)}</span></div>
-            <div class="invoice-row editable-row" data-field="address" data-type="text">
-              <span>Morada</span><span class="editable-value" data-raw="${escapeHtml(project.address ?? '')}">${escapeHtml(project.address ?? '—')}</span>
-            </div>
-            <div class="invoice-row"><span>Tipo</span><span>${escapeHtml(project.project_types?.name ?? '—')}</span></div>
-            <div class="invoice-row editable-row" data-field="area" data-type="number">
-              <span>Área</span><span class="editable-value" data-raw="${escapeHtml(project.area ?? '')}">${escapeHtml(project.area != null ? project.area + ' m²' : '—')}</span>
-            </div>
-            <div class="invoice-row"><span>Equipa</span><span>${escapeHtml(project.teams?.name ?? '—')}</span></div>
-            <div class="invoice-row editable-row" data-field="awarding_date" data-type="date">
-              <span>Adjudicação</span><span class="editable-value" data-raw="${escapeHtml(project.awarding_date ?? '')}">${escapeHtml(project.awarding_date ?? '—')}</span>
-            </div>
-            <div class="invoice-row editable-row" data-field="status" data-type="text">
-              <span>Estado</span><span class="editable-value" data-raw="${escapeHtml(project.status ?? '')}">${escapeHtml(project.status ?? '—')}</span>
-            </div>
+          <div class="kpi-strip">
+            <div class="kpi"><span>Honorários${valorExcluido > 0 ? ' NOVA' : ''}</span><b>${fmtEURShort(totalHonorarios)}</b></div>
+            <div class="kpi"><span>Faturado</span><b>${pctFaturado}%</b><i>${fmtEURShort(totalFaturado)}</i></div>
+            <div class="kpi"><span>Por receber</span><b class="${porReceber > 0 ? 'warn' : ''}">${fmtEURShort(porReceber)}</b></div>
+            <div class="kpi"><span>Horas</span><b>${fmtHours(totalHoras)}</b><i>${fmtHours(horasFaturaveis)} faturáveis</i></div>
+            <div class="kpi"><span>Próximo prazo</span>${proxima
+              ? `<b class="${isStageLate(proxima, hojeKeyDet) ? 'late' : ''}">${escapeHtml(deadlineText(proxima, hojeKeyDet))}</b><i>${escapeHtml(phaseName(proxima))}</i>`
+              : '<b>—</b><i>sem fases por concluir</i>'}</div>
           </div>
 
-          <div class="section-label">Financeiro</div>
+          <nav class="detail-tabs" role="tablist">
+            <button type="button" data-dtab="resumo" role="tab">Resumo</button>
+            <button type="button" data-dtab="fases" role="tab">Fases<em>${stages.length}</em></button>
+            <button type="button" data-dtab="marcos" role="tab">Marcos e atas<em>${projectMarcos.length + nAtas}</em></button>
+            <button type="button" data-dtab="financas" role="tab">Finanças</button>
+          </nav>
+
+          <section data-dpanel="resumo">
+          <div class="gantt-wrap">
+            <div class="card-head"><h2>Detalhes</h2><button type="button" class="text-btn" id="edit-project-btn">Editar</button></div>
+            <div class="invoice-row"><span>Código</span><span>${escapeHtml(project.code ?? '—')}</span></div>
+            <div class="invoice-row"><span>Cliente</span><span>${escapeHtml(clienteNome)}</span></div>
+            <div class="invoice-row"><span>Tipo</span><span>${escapeHtml(project.project_types?.name ?? '—')}</span></div>
+            <div class="invoice-row"><span>Morada</span><span>${escapeHtml(project.address ?? '—')}</span></div>
+            <div class="invoice-row"><span>Área</span><span>${escapeHtml(project.area != null ? String(project.area).replace('.', ',') + ' m²' : '—')}</span></div>
+            <div class="invoice-row"><span>Honorários (contrato)</span><span>${fmtEUR(project.commission_value)}</span></div>
+            <div class="invoice-row"><span>Adjudicação</span><span>${project.awarding_date ? escapeHtml(parseDateKey(project.awarding_date).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })) : '—'}</span></div>
+            <div class="invoice-row">
+              <span>Estado</span><span><select class="status-select" id="detail-status" aria-label="Estado do projeto">${statusOptionsHtml(project.status)}</select></span>
+            </div>
+          </div>
+            <div class="gantt-wrap"><div class="card-head"><h2>Participação</h2><span>horas por pessoa</span></div>${participacaoHtml}</div>
+          </section>
+
+          <section data-dpanel="fases" hidden>
+            <div class="gantt-wrap"><div class="card-head"><h2>Cronograma</h2></div><div id="detail-gantt">${ganttHtml}</div></div>
+            <div class="gantt-wrap">
+              <div class="card-head"><h2>Fases</h2><button type="button" id="add-revision-btn" class="text-btn">+ Nova revisão de fase</button></div>
+              <div id="revision-form-wrap" style="display:none;"></div>
+              ${stagesTableHtml}
+            </div>
+            <div class="gantt-wrap">
+              <div class="card-head"><h2>Pausas</h2><button type="button" id="add-break-btn" class="text-btn">+ Nova pausa</button></div>
+              ${breaks.length ? breaks.map(b => `
+                <div class="invoice-row click-row" data-break-id="${escapeHtml(b.id)}">
+                  <span>${escapeHtml(b.name ?? 'Pausa')}<br><small style="color:var(--text-3)">À espera ${b.type === 'client' ? 'do cliente' : b.type === 'municipality' ? 'da Câmara' : escapeHtml(b.type ?? '')}</small></span>
+                  <span class="amount" style="font-weight:500;color:var(--text-2)">${b.start_date ? escapeHtml(fmtDayMonth(b.start_date)) : '—'} → ${b.end_date ? escapeHtml(fmtDayMonth(b.end_date)) : 'em aberto'}</span>
+                </div>`).join('') : '<div class="gantt-empty">Sem pausas registadas.</div>'}
+            </div>
+          </section>
+
+          <section data-dpanel="marcos" hidden>
+            <div class="gantt-wrap">
+              <div class="card-head"><h2>Marcos</h2><button type="button" id="add-marco-btn" class="text-btn">+ Novo marco</button></div>
+              ${marcosHtml}
+            </div>
+            <div class="gantt-wrap">
+              <div class="card-head"><h2>Atas sem marco</h2><button type="button" id="add-ata-btn" class="text-btn">+ Nova ata</button></div>
+              ${atasProjetoHtml}
+            </div>
+          </section>
+
+          <section data-dpanel="financas" hidden>
           <div class="ring-row">
             <svg width="64" height="64" viewBox="0 0 64 64">
               <circle cx="32" cy="32" r="27" fill="none" stroke="var(--track)" stroke-width="6"/>
@@ -3215,11 +3373,11 @@
             </div>
             <div class="stat-tile">
               <div class="stat-value">${fmtEUR(margem)}</div>
-              <div class="stat-label">Margem</div>
+              <div class="stat-label">Margem <span style="color:var(--text-3)">· faturado − despesas</span></div>
             </div>
             <div class="stat-tile">
               <div class="stat-value">${taxaEfetiva != null ? fmtEUR(taxaEfetiva) + '/h' : '—'}</div>
-              <div class="stat-label">Taxa efetiva</div>
+              <div class="stat-label">Taxa efetiva <span style="color:var(--text-3)">· faturado ÷ horas</span></div>
             </div>
             <div class="stat-tile">
               <div class="stat-value">${fmtHours(totalHoras)}</div>
@@ -3236,33 +3394,88 @@
               <span><span class="dot nonbillable"></span>Não faturáveis: ${fmtHours(horasNaoFaturaveis)}</span>
             </div>
           </div>
-
-          <div class="section-label">Marcos</div>
-          <button type="button" id="add-marco-btn" class="secondary-btn" style="margin-top:0; margin-bottom:10px;">+ Novo marco</button>
-          <div class="gantt-wrap">${marcosHtml}</div>
-
-          <div class="section-label">Cronograma</div>
-          <div class="gantt-wrap">${ganttHtml}</div>
-
-          <div class="section-label">Participação</div>
-          <div class="gantt-wrap">${participacaoHtml}</div>
-
-          <div class="section-label">Fases</div>
-          <button type="button" id="add-revision-btn" class="secondary-btn" style="margin-top:0; margin-bottom:10px;">+ Nova revisão de fase</button>
-          <div id="revision-form-wrap" style="display:none;"></div>
-          <div class="gantt-wrap">${stagesTableHtml}</div>
-
-          <div class="section-label">Despesas</div>
-          <div class="gantt-wrap">${expensesHtml}</div>
-
-          <div class="section-label">Atas sem marco</div>
-          <button type="button" id="add-ata-btn" class="secondary-btn" style="margin-top:0; margin-bottom:10px;">+ Nova ata</button>
-          <div class="gantt-wrap">${atasProjetoHtml}</div>
+            <div class="gantt-wrap">
+              <div class="card-head"><h2>Faturas</h2><button type="button" id="add-invoice-btn" class="text-btn">+ Nova fatura</button></div>
+              ${invoices.length ? invoices.map(i => {
+                const pago = Number(i.amount_paid || 0), total = Number(i.amount || 0);
+                const st = pago >= total && total > 0 ? ['paid', 'Paga'] : pago > 0 ? ['partial', 'Parcial'] : ['pending', 'Por receber'];
+                const fase = stages.find(s => String(s.id) === String(i.stage_id));
+                return `<div class="invoice-row click-row" data-invoice-id="${escapeHtml(i.id)}">
+                  <span>${escapeHtml(i.invoice_number || 'Sem número')}<br><small style="color:var(--text-3)">${escapeHtml(i.issue_date ? fmtDayMonth(i.issue_date) : '—')}${fase ? ' · ' + escapeHtml(phaseName(fase)) : ''}</small></span>
+                  <span class="invoice-status ${st[0]}">${st[1]}</span>
+                  <span class="amount">${fmtEUR(total)}</span>
+                </div>`;
+              }).join('') : '<div class="gantt-empty">Sem faturas registadas.</div>'}
+            </div>
+            <div class="gantt-wrap"><div class="card-head"><h2>Despesas</h2><button type="button" id="add-expense-btn" class="text-btn">+ Registar despesa</button></div>${expensesHtml}</div>
+          </section>
         `;
 
-        attachEditableHandlers(project.id ?? projectId, project);
+        // Estado do projeto (lista fixa, editável em Definições)
+        const statusSel = document.getElementById('detail-status');
+        statusSel.addEventListener('change', async () => {
+          const prev = project.status ?? null;
+          const next = statusSel.value || null;
+          const save = async (value) => {
+            if (!devMode) {
+              const r = await supabase.from('projects').update({ status: value }).eq('id', pid0);
+              if (r.error) throw r.error;
+            } else {
+              const mp = MOCK_PROJECTS.find(x => x.id === pid0); if (mp) mp.status = value;
+            }
+            project.status = value;
+            statusSel.innerHTML = statusOptionsHtml(value);
+            document.getElementById('detail-status-pill').innerHTML = statusPillHtml(value);
+          };
+          try {
+            await save(next);
+            showToast(`Estado: ${statusByCode(next)?.name ?? '—'}`, { undo: () => save(prev).catch(err => showToast('Não foi possível anular: ' + err.message, { type: 'error' })) });
+          } catch (err) {
+            statusSel.value = prev ?? '';
+            showToast('Não foi possível mudar o estado: ' + err.message, { type: 'error' });
+          }
+        });
+
+        // Edição de fases, pausas, faturas e despesas
+        detailBody.querySelectorAll('[data-phase-row]').forEach(tr => tr.addEventListener('click', (e) => {
+          if (e.target.closest('[data-assign-stage]')) return;
+          openPhaseModal(tr.dataset.phaseRow, { fromProject: true, onSaved: reopen });
+        }));
+        document.getElementById('add-break-btn').addEventListener('click', () => openBreakModal(null, project, breaks, reopen));
+        detailBody.querySelectorAll('[data-break-id]').forEach(r => r.addEventListener('click', () =>
+          openBreakModal(breaks.find(b => String(b.id) === r.dataset.breakId), project, breaks, reopen)));
+        document.getElementById('add-invoice-btn').addEventListener('click', () => openInvoiceModal(null, project, stages, reopen));
+        detailBody.querySelectorAll('[data-invoice-id]').forEach(r => r.addEventListener('click', () =>
+          openInvoiceModal(invoices.find(i => String(i.id) === r.dataset.invoiceId), project, stages, reopen)));
+        document.getElementById('add-expense-btn').addEventListener('click', () => openNewExpenseModal(pid0, reopen));
+        detailBody.querySelectorAll('[data-expense-id]').forEach(r => r.addEventListener('click', () =>
+          openNewExpenseModal(null, reopen, expenses.find(x => String(x.id) === r.dataset.expenseId))));
+
+        // Separadores
+        const showDTab = (t) => {
+          detailTabByProject[pid0] = t;
+          detailBody.querySelectorAll('[data-dtab]').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.dtab === t);
+            btn.setAttribute('aria-selected', btn.dataset.dtab === t ? 'true' : 'false');
+          });
+          detailBody.querySelectorAll('[data-dpanel]').forEach(p => { p.hidden = p.dataset.dpanel !== t; });
+        };
+        showDTab(detailTabByProject[pid0] || 'resumo');
+        detailBody.querySelectorAll('[data-dtab]').forEach(btn => btn.addEventListener('click', () => showDTab(btn.dataset.dtab)));
+
+        // Cronograma: Semanas / Meses (os botões existiam mas não estavam ligados)
+        const ganttBox = document.getElementById('detail-gantt');
+        ganttBox.addEventListener('click', (e) => {
+          const b = e.target.closest('[data-scale]');
+          if (!b) return;
+          ganttBox.innerHTML = renderGanttSection(b.dataset.scale);
+        });
+
+        const reopen = () => openDetail(project.id ?? projectId);
+        document.getElementById('edit-project-btn').addEventListener('click', () => openProjectEditModal(project, reopen));
         attachRevisionFormHandlers(project.id ?? projectId, stages);
-        detailBody.querySelectorAll('[data-assign-stage]').forEach(btn => btn.addEventListener('click', () => {
+        detailBody.querySelectorAll('[data-assign-stage]').forEach(btn => btn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
           const st = stages.find(s => String(s.id) === btn.dataset.assignStage);
           if (st) openAssignModal(st, stageAssignees[st.id] || [], () => openDetail(project.id ?? projectId));
         }));
@@ -3291,75 +3504,6 @@
         detailBody.innerHTML = `<div class="error-box">Erro ao carregar detalhe: ${escapeHtml(err.message)}</div>`;
         console.error(err);
       }
-    }
-
-    function formatFieldDisplay(field, value) {
-      if (value === null || value === undefined || value === '') return '—';
-      if (field === 'area') return value + ' m²';
-      return value;
-    }
-
-    function attachEditableHandlers(projectId, project) {
-      document.querySelectorAll('.editable-row .editable-value').forEach(el => {
-        el.addEventListener('click', function handler() {
-          if (el.classList.contains('editing')) return;
-          const row = el.closest('.editable-row');
-          const field = row.dataset.field;
-          const type = row.dataset.type || 'text';
-          const rawValue = el.dataset.raw ?? '';
-          el.classList.add('editing');
-          const input = document.createElement('input');
-          input.type = type;
-          input.value = rawValue;
-          input.className = 'inline-edit-input';
-          el.innerHTML = '';
-          el.appendChild(input);
-          input.focus();
-          if (type === 'text') input.select();
-
-          const finish = async (commit) => {
-            input.removeEventListener('blur', onBlur);
-            if (!commit) {
-              el.classList.remove('editing');
-              el.textContent = formatFieldDisplay(field, rawValue);
-              return;
-            }
-            const newValue = input.value.trim();
-            if (newValue === String(rawValue ?? '')) {
-              el.classList.remove('editing');
-              el.textContent = formatFieldDisplay(field, rawValue);
-              return;
-            }
-            const ok = window.confirm(`Guardar alteração?\n\n${formatFieldDisplay(field, rawValue)} → ${formatFieldDisplay(field, newValue)}`);
-            if (!ok) {
-              el.classList.remove('editing');
-              el.textContent = formatFieldDisplay(field, rawValue);
-              return;
-            }
-            if (!devMode) {
-              const updatePayload = {};
-              updatePayload[field] = newValue === '' ? null : newValue;
-              const res = await supabase.from('projects').update(updatePayload).eq('id', projectId);
-              if (res.error) {
-                alert('Erro ao guardar: ' + res.error.message);
-                el.classList.remove('editing');
-                el.textContent = formatFieldDisplay(field, rawValue);
-                return;
-              }
-            }
-            el.dataset.raw = newValue;
-            el.classList.remove('editing');
-            el.textContent = formatFieldDisplay(field, newValue);
-          };
-
-          const onBlur = () => finish(true);
-          input.addEventListener('blur', onBlur);
-          input.addEventListener('keydown', (ev) => {
-            if (ev.key === 'Enter') { input.blur(); }
-            if (ev.key === 'Escape') { input.removeEventListener('blur', onBlur); finish(false); }
-          });
-        });
-      });
     }
 
     function renderRevisionFormHtml() {
@@ -3451,8 +3595,6 @@
             return;
           }
 
-          if (!window.confirm('Adicionar esta fase ao projeto?')) return;
-
           const btn = document.getElementById('revision-submit-btn');
           btn.disabled = true;
           btn.textContent = 'A guardar...';
@@ -3482,6 +3624,7 @@
 
             const res = await supabase.from('project_stages').insert(payload);
             if (res.error) throw res.error;
+            showToast('Fase adicionada');
             openDetail(projectId);
           } catch (err) {
             msgEl.textContent = 'Erro ao guardar: ' + err.message;
@@ -3571,8 +3714,6 @@
         <select id="np-client" class="form-input"><option value="">A carregar...</option></select>
         <label class="field-label">Tipo de projeto</label>
         <select id="np-type" class="form-input"><option value="">A carregar...</option></select>
-        <label class="field-label">Equipa</label>
-        <select id="np-team" class="form-input"><option value="">A carregar...</option></select>
         <label class="field-label">Morada</label>
         <input type="text" id="np-address" class="form-input">
         <label class="field-label">Área (m²)</label>
@@ -3582,26 +3723,28 @@
         <label class="field-label">Data de adjudicação</label>
         <input type="date" id="np-awarding" class="form-input">
         <label class="field-label">Estado</label>
-        <input type="text" id="np-status" class="form-input" placeholder="ex: Em curso">
+        <select id="np-status" class="form-input"><option value="">A carregar…</option></select>
         <button id="np-submit" class="primary-btn">Criar projeto</button>
         <div id="np-msg" class="form-msg"></div>
       `;
       openQuickModal('Novo projeto', bodyHtml);
 
-      let clients, types, teams;
+      let clients, types;
       if (devMode) {
-        clients = MOCK_CLIENTS; types = MOCK_PROJECT_TYPES; teams = MOCK_TEAMS;
+        clients = MOCK_CLIENTS; types = MOCK_PROJECT_TYPES;
       } else {
-        const [cRes, tRes, teRes] = await Promise.all([
+        const [cRes, tRes] = await Promise.all([
           supabase.from('clients').select('id, name').order('name'),
-          supabase.from('project_types').select('id, name').order('name'),
-          supabase.from('teams').select('id, name').order('name')
+          supabase.from('project_types').select('id, name').order('name')
         ]);
-        clients = cRes.data || []; types = tRes.data || []; teams = teRes.data || [];
+        clients = cRes.data || []; types = tRes.data || [];
       }
+      await loadProjectStatuses();
+      // Projeto novo começa em 'To Do' (Por iniciar); se não existir, no primeiro estado ativo
+      const firstOpen = (projectStatusCache || []).find(s => s.code === 'To Do') || (projectStatusCache || []).find(s => !s.is_closed);
+      document.getElementById('np-status').innerHTML = statusOptionsHtml(firstOpen?.code ?? null);
       document.getElementById('np-client').innerHTML = '<option value="">Sem cliente</option>' + clients.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
       document.getElementById('np-type').innerHTML = '<option value="">Sem tipo</option>' + types.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('');
-      document.getElementById('np-team').innerHTML = '<option value="">Sem equipa</option>' + teams.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('');
 
       document.getElementById('np-submit').addEventListener('click', async () => {
         const msgEl = document.getElementById('np-msg');
@@ -3618,15 +3761,12 @@
           code: document.getElementById('np-code').value.trim() || null,
           client_id: document.getElementById('np-client').value || null,
           project_type_id: document.getElementById('np-type').value || null,
-          team_id: document.getElementById('np-team').value || null,
           address: document.getElementById('np-address').value.trim() || null,
           area: document.getElementById('np-area').value ? parseFloat(document.getElementById('np-area').value) : null,
           commission_value: document.getElementById('np-value').value ? parseFloat(document.getElementById('np-value').value) : null,
           awarding_date: document.getElementById('np-awarding').value || null,
-          status: document.getElementById('np-status').value.trim() || null
+          status: document.getElementById('np-status').value || null
         };
-
-        if (!window.confirm(`Criar o projeto "${name}"?`)) return;
 
         const btn = document.getElementById('np-submit');
         btn.disabled = true;
@@ -3643,6 +3783,7 @@
           const res = await supabase.from('projects').insert(payload).select('id').single();
           if (res.error) throw res.error;
           closeQuickModal();
+          showToast('Projeto criado');
           openDetail(res.data.id);
         } catch (err) {
           msgEl.textContent = 'Erro ao criar: ' + err.message;
@@ -3840,9 +3981,7 @@
             msgEl.className = 'form-msg error';
             return;
           }
-          const next = revLabel(existing.revision + 1);
-          if (!window.confirm(`Guardar as alterações como ${next}?\n\nA versão ${revLabel(existing.revision)} fica guardada no histórico.`)) return;
-        } else if (!window.confirm('Guardar esta ata de reunião?')) return;
+        }
 
         const btn = document.getElementById('ata-submit');
         btn.disabled = true;
@@ -3873,6 +4012,7 @@
               if (!res.data || res.data.length === 0) throw new Error('a base de dados não aceitou a alteração (sem permissão para editar atas).');
             }
             closeQuickModal();
+            showToast(`Guardada como ${revLabel(existing.revision + 1)} — a ${revLabel(existing.revision)} fica no histórico`);
             if (onSaved) onSaved();
             return;
           }
@@ -3887,7 +4027,9 @@
           const res = await supabase.from('meeting_notes').insert(payload);
           if (res.error) throw res.error;
           closeQuickModal();
+          showToast('Ata guardada');
           if (lockedProjectId) openDetail(lockedProjectId);
+          else if (document.getElementById('atas-view').style.display !== 'none') loadAtas();
         } catch (err) {
           msgEl.textContent = 'Erro ao guardar: ' + err.message;
           msgEl.className = 'form-msg error';
@@ -3989,8 +4131,6 @@
           msgEl.className = 'form-msg error';
           return;
         }
-        if (!window.confirm(isEdit ? 'Guardar as alterações desta despesa?' : `Registar despesa de ${fmtEUR(amount)}?`)) return;
-
         const btn = document.getElementById('exp-submit');
         btn.disabled = true;
         btn.textContent = 'A guardar...';
@@ -4015,6 +4155,7 @@
             : await supabase.from('expenses').insert(payload);
           if (res.error) throw res.error;
           closeQuickModal();
+          showToast(isEdit ? 'Despesa atualizada' : 'Despesa registada');
           if (onSuccess) onSuccess();
           else if (lockedProjectId) openDetail(lockedProjectId);
         } catch (err) {
@@ -4244,8 +4385,7 @@
       switchDespesasTab(btn.dataset.tab);
     });
 
-    async function toggleReimbursed(expenseId, newState) {
-      if (!window.confirm(newState ? 'Marcar esta despesa como reembolsada?' : 'Marcar esta despesa como por reembolsar?')) return;
+    async function toggleReimbursed(expenseId, newState, isUndo = false) {
       try {
         if (!devMode) {
           const payload = { reimbursed: newState, reimbursed_at: newState ? new Date().toISOString() : null };
@@ -4256,8 +4396,10 @@
           if (exp) exp.reimbursed = newState;
         }
         await loadDespesas();
+        if (!isUndo) showToast(newState ? 'Marcada como reembolsada' : 'Marcada como por reembolsar',
+          { undo: () => toggleReimbursed(expenseId, !newState, true) });
       } catch (err) {
-        alert('Erro ao atualizar: ' + err.message);
+        showToast('Não foi possível atualizar: ' + err.message, { type: 'error' });
       }
     }
 
@@ -4630,7 +4772,7 @@
       const promise = (async () => {
         let rows;
         if (devMode) {
-          rows = MOCK_AGENDA_PHASES.map(p => ({ ...p }));
+          rows = MOCK_AGENDA_PHASES.filter(p => p.status !== 'done').map(p => ({ ...p }));
         } else {
           const r = await supabase.from('project_stages')
             .select('id, project_id, status, start_date, end_date, delivery_date, deadline_override, revision_label, stage_types(name), projects(name, code, archived_at)')
@@ -4833,8 +4975,9 @@
             const pct = Math.min(100, Math.max(0, Math.round(diffDays(p.start_date, todayKey) / total * 100)));
             const lateCls = isStageLate(p, todayKey) ? ' late' : '';
             return `
-              <div class="ph-row${lateCls}" data-open-project="${escapeHtml(p.project_id)}">
-                <div class="ph-main"><b>${escapeHtml(p.projects?.name ?? 'Projeto')}</b><span>${escapeHtml(phaseName(p))} · ${escapeHtml(stageStatusLabel(p))}</span></div>
+              <div class="ph-row${lateCls}" data-phase-id="${escapeHtml(p.id)}" title="Editar fase">
+                <div class="ph-main"><b>${escapeHtml(p.projects?.name ?? 'Projeto')}</b><span>${escapeHtml(phaseName(p))}</span></div>
+                <select class="ph-status" data-stage-status="${escapeHtml(p.id)}" aria-label="Estado da fase">${stageStatusOptions(p.status)}</select>
                 <div class="ph-progress" title="${escapeHtml(fmtDayMonth(p.start_date))} → ${escapeHtml(fmtDayMonth(p.end_date || p.start_date))}"><span style="width:${pct}%"></span></div>
                 <div class="ph-due">${escapeHtml(deadlineText(p, todayKey))}</div>
                 <div class="marco-owners">${avatarsHtml(p.assignee_ids, ataMemberNames, me)}</div>
@@ -4842,8 +4985,16 @@
           }).join('');
         }
 
-        document.querySelectorAll('#home-view .today-grid [data-open-project], #today-phases [data-open-project]').forEach(el =>
+        const refreshHome = () => { if (document.getElementById('home-view').style.display !== 'none') { renderToday(); loadAgenda(); } };
+        document.querySelectorAll('#home-view .today-grid [data-open-project]').forEach(el =>
           el.addEventListener('click', () => openDetail(el.dataset.openProject)));
+        phasesEl.querySelectorAll('[data-phase-id]').forEach(el =>
+          el.addEventListener('click', (e) => { if (!e.target.closest('select')) openPhaseModal(el.dataset.phaseId, { onSaved: refreshHome }); }));
+        phasesEl.querySelectorAll('[data-stage-status]').forEach(sel => {
+          const prev = sel.value;
+          sel.addEventListener('click', e => e.stopPropagation());
+          sel.addEventListener('change', () => quickStageStatus(sel.dataset.stageStatus, sel.value, prev, refreshHome));
+        });
         weekEl.querySelectorAll('[data-marco-id]').forEach(el =>
           el.addEventListener('click', () => openMarcoModal({ milestoneId: el.dataset.marcoId, onSuccess: showHome })));
       } catch (err) {
@@ -4985,13 +5136,13 @@
           if (x.barEnd >= wStart && x.s <= wEnd) {
             const b0 = x.c0, b1 = Math.min(6, col(x.barEnd));
             const cls = 'cal-bar' + state + (x.s >= wStart ? ' start' : '') + (x.barEnd <= wEnd ? ' end' : '');
-            html += `<div class="${cls}" style="grid-column:${b0 + 1} / ${b1 + 2}; grid-row:${row}" data-open-project="${escapeHtml(p.project_id)}" title="${escapeHtml(title)}">${escapeHtml(calNarrow.matches ? phaseName(p) : phaseLabel(p))}</div>`;
+            html += `<div class="${cls}" style="grid-column:${b0 + 1} / ${b1 + 2}; grid-row:${row}" data-open-project="${escapeHtml(p.project_id)}" data-phase-id="${escapeHtml(p.id)}" title="${escapeHtml(title)}">${escapeHtml(calNarrow.matches ? phaseName(p) : phaseLabel(p))}</div>`;
           }
           // Ligação tracejada até ao prazo, quando este é depois do fim
           if (x.dl && x.dl > x.barEnd) {
             const l0 = Math.max(0, col(x.barEnd) + 1), l1 = Math.min(6, col(x.dl));
             if (l0 <= l1 && x.dl >= wStart) {
-              html += `<div class="cal-link${state}" style="grid-column:${l0 + 1} / ${l1 + 2}; grid-row:${row}" data-open-project="${escapeHtml(p.project_id)}" title="${escapeHtml(title)}"></div>`;
+              html += `<div class="cal-link${state}" style="grid-column:${l0 + 1} / ${l1 + 2}; grid-row:${row}" data-open-project="${escapeHtml(p.project_id)}" data-phase-id="${escapeHtml(p.id)}" title="${escapeHtml(title)}"></div>`;
             }
           }
           // Marca do prazo
@@ -5025,14 +5176,21 @@
       grid.querySelectorAll('[data-day]').forEach(btn => {
         btn.addEventListener('click', () => { agendaSelected = btn.dataset.day; renderAgenda(); });
       });
+      const afterPhaseEdit = () => { loadAgenda(); if (document.getElementById('home-view').style.display !== 'none') renderToday(); };
       grid.querySelectorAll('[data-open-project]').forEach(el => {
-        el.addEventListener('click', (e) => { e.stopPropagation(); openDetail(el.dataset.openProject); });
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (el.dataset.phaseId) openPhaseModal(el.dataset.phaseId, { onSaved: afterPhaseEdit });
+          else openDetail(el.dataset.openProject);
+        });
       });
       listEl.querySelectorAll('[data-marco-id]').forEach(row => {
         row.addEventListener('click', () => openMarcoModal({ milestoneId: row.dataset.marcoId }));
       });
       listEl.querySelectorAll('[data-open-project]').forEach(row => {
-        row.addEventListener('click', () => openDetail(row.dataset.openProject));
+        row.addEventListener('click', () => row.dataset.phaseId
+          ? openPhaseModal(row.dataset.phaseId, { onSaved: afterPhaseEdit })
+          : openDetail(row.dataset.openProject));
       });
     }
     calNarrow.addEventListener('change', () => {
@@ -5047,7 +5205,7 @@
       const dt = deadlineText(p, todayKey);
       if (dt) bits.push(dt);
       const onDeadline = stageDeadline(p) === dayKey;
-      return '<div class="marco-row" data-open-project="' + escapeHtml(p.project_id) + '">' +
+      return '<div class="marco-row" data-open-project="' + escapeHtml(p.project_id) + '" data-phase-id="' + escapeHtml(p.id) + '">' +
         '<span class="marco-stripe" style="background:' + (late ? 'var(--danger)' : p.status === 'interrupted' ? 'var(--text-3)' : 'var(--accent)') + '"></span>' +
         '<span class="marco-time">' + (onDeadline ? 'Prazo' : 'Fase') + '</span>' +
         '<span class="marco-body">' +
@@ -5071,7 +5229,7 @@
       { group: 'Ir para', label: 'Horas', keys: 'historico imputacoes', run: () => NAV_ACTIONS.horas() },
       { group: 'Ir para', label: 'Atas', keys: 'reunioes', run: () => NAV_ACTIONS.atas() },
       { group: 'Ir para', label: 'Despesas', keys: 'reembolsos', run: () => NAV_ACTIONS.despesas() },
-      { group: 'Ir para', label: 'Equipa', keys: 'planeamento gantt', run: () => NAV_ACTIONS.team() },
+      { group: 'Ir para', label: 'Planeamento', keys: 'equipa gantt fases cronograma', run: () => NAV_ACTIONS.team() },
       { group: 'Ir para', label: 'Definições', keys: 'categorias tipos configuracao', run: () => NAV_ACTIONS.settings() }
     ];
     const cmdk = document.getElementById('cmdk');
@@ -5607,6 +5765,361 @@
       if (tsState && document.getElementById('horas-view').style.display !== 'none') renderTimesheet();
     });
 
+    // ================= EDIÇÃO: fases, projeto, faturas e pausas =================
+    // Estados das fases (valores usados na base de dados)
+    const STAGE_STATUSES = [
+      ['pending', 'Por iniciar'], ['todo', 'A fazer'], ['wip', 'Em curso'],
+      ['interrupted', 'Interrompida'], ['done', 'Concluída']
+    ];
+    const stageStatusOptions = cur => STAGE_STATUSES.map(([v, l]) =>
+      `<option value="${v}"${v === cur ? ' selected' : ''}>${l}</option>`).join('') +
+      (cur && !STAGE_STATUSES.some(([v]) => v === cur) ? `<option value="${escapeHtml(cur)}" selected>${escapeHtml(cur)}</option>` : '');
+
+    // Escritas genéricas (no modo de demonstração, alteram os dados de exemplo)
+    async function dbUpdate(table, id, patch, mockArr) {
+      if (devMode) { const o = (mockArr || []).find(x => String(x.id) === String(id)); if (o) Object.assign(o, patch); return; }
+      const r = await supabase.from(table).update(patch).eq('id', id);
+      if (r.error) throw r.error;
+    }
+    async function dbInsert(table, row, mockArr) {
+      if (devMode) { const o = { id: table + '-' + Date.now(), ...row }; if (mockArr) mockArr.push(o); return o; }
+      const r = await supabase.from(table).insert(row).select().single();
+      if (r.error) throw r.error;
+      return r.data;
+    }
+    async function dbDelete(table, id, mockArr) {
+      if (devMode) { const i = (mockArr || []).findIndex(x => String(x.id) === String(id)); if (i >= 0) mockArr.splice(i, 1); return; }
+      const r = await supabase.from(table).delete().eq('id', id);
+      if (r.error) throw r.error;
+    }
+    const numOrNull = v => (v === '' || v == null ? null : Number(String(v).replace(',', '.')));
+    const valOrNull = v => (v === '' || v == null ? null : v);
+    function formError(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.className = 'form-msg error'; }
+
+    async function loadStageTypes() {
+      if (devMode) return MOCK_STAGE_TYPES;
+      const r = await supabase.from('stage_types').select('id, name').order('name');
+      return r.data || [];
+    }
+
+    // Mudança rápida do estado de uma fase (Home), com Anular
+    async function quickStageStatus(stageId, next, prev, onDone) {
+      try {
+        await dbUpdate('project_stages', stageId, { status: next }, MOCK_STAGES.concat(MOCK_AGENDA_PHASES));
+        invalidateActivePhases();
+        showToast(`Fase: ${STAGE_STATUSES.find(([v]) => v === next)?.[1] ?? next}`, {
+          undo: async () => {
+            try { await dbUpdate('project_stages', stageId, { status: prev }, MOCK_STAGES.concat(MOCK_AGENDA_PHASES)); invalidateActivePhases(); onDone && onDone(); }
+            catch (err) { showToast('Não foi possível anular: ' + err.message, { type: 'error' }); }
+          }
+        });
+        onDone && onDone();
+      } catch (err) {
+        showToast('Não foi possível mudar o estado: ' + err.message, { type: 'error' });
+        onDone && onDone();
+      }
+    }
+
+    // ---------- Fase: todos os parâmetros ----------
+    async function openPhaseModal(stageId, { onSaved = null, fromProject = false } = {}) {
+      openQuickModal('Fase', '<div class="detail-loading">A carregar…</div>');
+      let stage, project;
+      try {
+        if (devMode) {
+          stage = { ...[...MOCK_STAGES, ...MOCK_AGENDA_PHASES].find(s => String(s.id) === String(stageId)) };
+          project = MOCK_PROJECTS.find(p => p.id === stage.project_id) || MOCK_PROJECTS[0];
+        } else {
+          const r = await supabase.from('project_stages').select('*, stage_types(name)').eq('id', stageId).single();
+          if (r.error) throw r.error;
+          stage = r.data;
+          const pr = await supabase.from('projects').select('id, name, commission_value').eq('id', stage.project_id).single();
+          project = pr.data || { id: stage.project_id, name: 'Projeto' };
+        }
+      } catch (err) {
+        document.getElementById('quick-modal-body').innerHTML = `<div class="error-box">Não foi possível abrir a fase: ${escapeHtml(err.message)}</div>`;
+        return;
+      }
+      const [types, members, assigneeMap] = await Promise.all([
+        loadStageTypes(), loadAllMembers(), loadStageAssignees([stage.id])
+      ]);
+      const sel = new Set(assigneeMap[stage.id] || []);
+      const isFixed = stage.pricing_type === 'fixed' || (stage.fixed_value != null && stage.percentage == null);
+      document.getElementById('quick-modal-title').textContent = phaseName(stage);
+      document.getElementById('quick-modal-body').innerHTML = `
+        <div class="field-hint" style="margin:0 0 4px;">${escapeHtml(project?.name ?? '')}
+          ${fromProject ? '' : ` · <button type="button" class="text-btn" id="ph-open-project">Abrir projeto</button>`}</div>
+        <div class="form-grid">
+          <div><label class="field-label">Tipo de fase</label>
+            <select id="ph-type" class="form-input">${types.map(t => `<option value="${escapeHtml(t.id)}"${t.id === stage.stage_type_id ? ' selected' : ''}>${escapeHtml(t.name)}</option>`).join('')}</select></div>
+          <div><label class="field-label">Revisão</label>
+            <input type="text" id="ph-rev" class="form-input" placeholder="ex: R02" value="${escapeHtml(stage.revision_label ?? '')}"></div>
+          <div class="span2"><label class="field-label">Estado</label>
+            <select id="ph-status" class="form-input">${stageStatusOptions(stage.status)}</select></div>
+          <div><label class="field-label">Início</label><input type="date" id="ph-start" class="form-input" value="${escapeHtml(stage.start_date ?? '')}"></div>
+          <div><label class="field-label">Fim previsto</label><input type="date" id="ph-end" class="form-input" value="${escapeHtml(stage.end_date ?? '')}"></div>
+          <div><label class="field-label">Prazo (data limite)</label><input type="date" id="ph-deadline" class="form-input" value="${escapeHtml(stage.deadline_override ?? '')}"></div>
+          <div><label class="field-label">Entrega</label><input type="date" id="ph-delivery" class="form-input" value="${escapeHtml(stage.delivery_date ?? '')}"></div>
+          <div><label class="field-label">Tipo de valor</label>
+            <select id="ph-pricing" class="form-input">
+              <option value="percentage"${isFixed ? '' : ' selected'}>% dos honorários</option>
+              <option value="fixed"${isFixed ? ' selected' : ''}>Valor fixo (€)</option>
+            </select></div>
+          <div><label class="field-label" id="ph-value-label">${isFixed ? 'Valor (€)' : 'Percentagem (%)'}</label>
+            <input type="text" inputmode="decimal" id="ph-value" class="form-input" value="${escapeHtml(String((isFixed ? stage.fixed_value : stage.percentage) ?? '').replace('.', ','))}"></div>
+        </div>
+        <label class="field-label">Pessoas</label>
+        <div class="owner-picker" id="ph-people">${members.map(m => `<button type="button" class="owner-chip${sel.has(m.id) ? ' on' : ''}" data-member="${escapeHtml(m.id)}">${escapeHtml(m.name)}</button>`).join('')}</div>
+        <label class="check-row"><input type="checkbox" id="ph-excluded"${stage.excluded_from_invoicing ? ' checked' : ''}> Fora das contas da NOVA (não entra nos totais)</label>
+        <button type="button" id="ph-save" class="primary-btn">Guardar</button>
+        <button type="button" id="ph-delete" class="secondary-btn danger-btn">Eliminar fase</button>
+        <div id="ph-msg" class="form-msg"></div>`;
+
+      const openProj = document.getElementById('ph-open-project');
+      if (openProj) openProj.addEventListener('click', () => { closeQuickModal(); openDetail(stage.project_id); });
+      document.getElementById('ph-pricing').addEventListener('change', (e) => {
+        document.getElementById('ph-value-label').textContent = e.target.value === 'fixed' ? 'Valor (€)' : 'Percentagem (%)';
+      });
+      document.getElementById('ph-people').addEventListener('click', (e) => {
+        const chip = e.target.closest('[data-member]');
+        if (!chip) return;
+        const id = chip.dataset.member;
+        sel.has(id) ? sel.delete(id) : sel.add(id);
+        chip.classList.toggle('on', sel.has(id));
+      });
+      document.getElementById('ph-delete').addEventListener('click', async () => {
+        if (!window.confirm(`Eliminar a fase "${phaseName(stage)}"? As horas e faturas associadas ficam sem fase.`)) return;
+        try {
+          await dbDelete('project_stages', stage.id, MOCK_STAGES);
+          invalidateActivePhases();
+          closeQuickModal();
+          showToast('Fase eliminada');
+          onSaved && onSaved();
+        } catch (err) { formError('ph-msg', 'Não foi possível eliminar: ' + err.message); }
+      });
+      document.getElementById('ph-save').addEventListener('click', async () => {
+        const start = valOrNull(document.getElementById('ph-start').value);
+        const end = valOrNull(document.getElementById('ph-end').value);
+        const deadline = valOrNull(document.getElementById('ph-deadline').value);
+        const pricing = document.getElementById('ph-pricing').value;
+        const value = numOrNull(document.getElementById('ph-value').value);
+        if (start && end && end < start) return formError('ph-msg', 'O fim previsto é anterior ao início.');
+        if (value != null && (Number.isNaN(value) || value < 0)) return formError('ph-msg', 'Valor inválido.');
+        const patch = {
+          stage_type_id: document.getElementById('ph-type').value,
+          revision_label: valOrNull(document.getElementById('ph-rev').value.trim()),
+          status: document.getElementById('ph-status').value,
+          start_date: start, end_date: end,
+          deadline_override: deadline, is_deadline_fixed: !!deadline,
+          delivery_date: valOrNull(document.getElementById('ph-delivery').value),
+          pricing_type: pricing,
+          percentage: pricing === 'percentage' ? value : null,
+          fixed_value: pricing === 'fixed' ? value : null,
+          excluded_from_invoicing: document.getElementById('ph-excluded').checked
+        };
+        const btn = document.getElementById('ph-save');
+        btn.disabled = true; btn.textContent = 'A guardar…';
+        try {
+          await dbUpdate('project_stages', stage.id, patch, MOCK_STAGES.concat(MOCK_AGENDA_PHASES));
+          if (devMode) {
+            const t = types.find(x => x.id === patch.stage_type_id);
+            const o = MOCK_STAGES.concat(MOCK_AGENDA_PHASES).find(x => String(x.id) === String(stage.id));
+            if (o && t) o.stage_types = { name: t.name };
+          }
+          // Pessoas: substituir o conjunto, se mudou
+          const before = new Set(assigneeMap[stage.id] || []);
+          const changed = before.size !== sel.size || [...sel].some(id => !before.has(id));
+          if (changed && await stagesHaveAssignees()) {
+            if (devMode) mockStageAssignees[stage.id] = [...sel];
+            else {
+              const del = await supabase.from('stage_assignees').delete().eq('stage_id', stage.id);
+              if (del.error) throw del.error;
+              if (sel.size) {
+                const ins = await supabase.from('stage_assignees').insert([...sel].map(mid => ({ stage_id: stage.id, member_id: mid })));
+                if (ins.error) throw ins.error;
+              }
+            }
+          }
+          invalidateActivePhases();
+          closeQuickModal();
+          showToast('Fase guardada');
+          onSaved && onSaved();
+        } catch (err) {
+          formError('ph-msg', 'Não foi possível guardar: ' + err.message);
+          btn.disabled = false; btn.textContent = 'Guardar';
+        }
+      });
+    }
+
+    // ---------- Projeto: todos os dados ----------
+    async function openProjectEditModal(project, onSaved) {
+      openQuickModal('Editar projeto', '<div class="detail-loading">A carregar…</div>');
+      let clients, types;
+      if (devMode) { clients = MOCK_CLIENTS; types = MOCK_PROJECT_TYPES; }
+      else {
+        const [c, t] = await Promise.all([
+          supabase.from('clients').select('id, name').order('name'),
+          supabase.from('project_types').select('id, name').order('name')
+        ]);
+        clients = c.data || []; types = t.data || [];
+      }
+      await loadProjectStatuses();
+      const opt = (list, cur, empty) => `<option value="">${empty}</option>` + list.map(x => `<option value="${escapeHtml(x.id)}"${x.id === cur ? ' selected' : ''}>${escapeHtml(x.name)}</option>`).join('');
+      document.getElementById('quick-modal-body').innerHTML = `
+        <div class="form-grid">
+          <div class="span2"><label class="field-label">Nome</label><input type="text" id="pe-name" class="form-input" value="${escapeHtml(project.name ?? '')}"></div>
+          <div><label class="field-label">Código</label><input type="text" id="pe-code" class="form-input" value="${escapeHtml(project.code ?? '')}"></div>
+          <div><label class="field-label">Estado</label><select id="pe-status" class="form-input">${statusOptionsHtml(project.status)}</select></div>
+          <div><label class="field-label">Cliente</label><select id="pe-client" class="form-input">${opt(clients, project.client_id, 'Sem cliente')}</select></div>
+          <div><label class="field-label">Tipo de projeto</label><select id="pe-type" class="form-input">${opt(types, project.project_type_id, 'Sem tipo')}</select></div>
+          <div class="span2"><label class="field-label">Morada</label><input type="text" id="pe-address" class="form-input" value="${escapeHtml(project.address ?? '')}"></div>
+          <div><label class="field-label">Área (m²)</label><input type="text" inputmode="decimal" id="pe-area" class="form-input" value="${escapeHtml(String(project.area ?? '').replace('.', ','))}"></div>
+          <div><label class="field-label">Honorários (€)</label><input type="text" inputmode="decimal" id="pe-value" class="form-input" value="${escapeHtml(String(project.commission_value ?? '').replace('.', ','))}"></div>
+          <div><label class="field-label">Data de adjudicação</label><input type="date" id="pe-awarding" class="form-input" value="${escapeHtml(project.awarding_date ?? '')}"></div>
+        </div>
+        <div class="field-hint">Os honorários são o valor total do contrato. As fases em percentagem calculam-se a partir deste valor.</div>
+        <button type="button" id="pe-save" class="primary-btn">Guardar</button>
+        <button type="button" id="pe-archive" class="secondary-btn danger-btn">Arquivar projeto</button>
+        <div id="pe-msg" class="form-msg"></div>`;
+
+      document.getElementById('pe-archive').addEventListener('click', async () => {
+        if (!window.confirm(`Arquivar o projeto "${project.name}"? Deixa de aparecer nas listas e no calendário, mas nada é apagado.`)) return;
+        try {
+          await dbUpdate('projects', project.id, { archived_at: new Date().toISOString() }, MOCK_PROJECTS);
+          invalidateActivePhases();
+          closeQuickModal();
+          showToast('Projeto arquivado');
+          navStack = [];
+          openProjectsModule();
+        } catch (err) { formError('pe-msg', 'Não foi possível arquivar: ' + err.message); }
+      });
+      document.getElementById('pe-save').addEventListener('click', async () => {
+        const name = document.getElementById('pe-name').value.trim();
+        const area = numOrNull(document.getElementById('pe-area').value);
+        const value = numOrNull(document.getElementById('pe-value').value);
+        if (!name) return formError('pe-msg', 'O nome é obrigatório.');
+        if ((area != null && (Number.isNaN(area) || area < 0)) || (value != null && (Number.isNaN(value) || value < 0))) return formError('pe-msg', 'Área ou honorários inválidos.');
+        const clientId = valOrNull(document.getElementById('pe-client').value);
+        const patch = {
+          name,
+          code: valOrNull(document.getElementById('pe-code').value.trim()),
+          status: valOrNull(document.getElementById('pe-status').value),
+          client_id: clientId,
+          client: clientId ? (clients.find(c => c.id === clientId)?.name ?? null) : null,
+          project_type_id: valOrNull(document.getElementById('pe-type').value),
+          address: valOrNull(document.getElementById('pe-address').value.trim()),
+          area, commission_value: value,
+          awarding_date: valOrNull(document.getElementById('pe-awarding').value)
+        };
+        const btn = document.getElementById('pe-save');
+        btn.disabled = true; btn.textContent = 'A guardar…';
+        try {
+          await dbUpdate('projects', project.id, patch, MOCK_PROJECTS);
+          cmdkProjects = null;
+          closeQuickModal();
+          showToast('Projeto guardado');
+          onSaved && onSaved();
+        } catch (err) {
+          formError('pe-msg', 'Não foi possível guardar: ' + err.message);
+          btn.disabled = false; btn.textContent = 'Guardar';
+        }
+      });
+    }
+
+    // ---------- Faturas ----------
+    async function openInvoiceModal(invoice, project, stages, onSaved) {
+      const isEdit = !!invoice;
+      const inv = invoice || { issue_date: dateKey(new Date()), amount: '', amount_paid: 0 };
+      openQuickModal(isEdit ? 'Editar fatura' : 'Nova fatura', `
+        <div class="form-grid">
+          <div><label class="field-label">N.º da fatura</label><input type="text" id="iv-number" class="form-input" placeholder="ex: FT 2026/014" value="${escapeHtml(inv.invoice_number ?? '')}"></div>
+          <div><label class="field-label">Fase</label><select id="iv-stage" class="form-input"><option value="">Sem fase</option>${stages.map(s => `<option value="${escapeHtml(s.id)}"${String(s.id) === String(inv.stage_id) ? ' selected' : ''}>${escapeHtml(phaseName(s))}</option>`).join('')}</select></div>
+          <div><label class="field-label">Data de emissão</label><input type="date" id="iv-issue" class="form-input" value="${escapeHtml(inv.issue_date ?? '')}"></div>
+          <div><label class="field-label">Valor (€)</label><input type="text" inputmode="decimal" id="iv-amount" class="form-input" value="${escapeHtml(String(inv.amount ?? '').replace('.', ','))}"></div>
+          <div><label class="field-label">Valor recebido (€)</label><input type="text" inputmode="decimal" id="iv-paid" class="form-input" value="${escapeHtml(String(inv.amount_paid ?? 0).replace('.', ','))}"></div>
+          <div><label class="field-label">Data de pagamento</label><input type="date" id="iv-paydate" class="form-input" value="${escapeHtml(inv.payment_date ?? '')}"></div>
+          <div class="span2"><label class="field-label">Notas</label><input type="text" id="iv-notes" class="form-input" value="${escapeHtml(inv.notes ?? '')}"></div>
+        </div>
+        <button type="button" id="iv-save" class="primary-btn">${isEdit ? 'Guardar' : 'Registar fatura'}</button>
+        ${isEdit ? '<button type="button" id="iv-delete" class="secondary-btn danger-btn">Eliminar fatura</button>' : ''}
+        <div id="iv-msg" class="form-msg"></div>`);
+      // Ao marcar como paga, preencher a data de pagamento
+      document.getElementById('iv-paid').addEventListener('change', () => {
+        const pd = document.getElementById('iv-paydate');
+        if (!pd.value && numOrNull(document.getElementById('iv-paid').value) > 0) pd.value = dateKey(new Date());
+      });
+      if (isEdit) document.getElementById('iv-delete').addEventListener('click', async () => {
+        if (!window.confirm(`Eliminar a fatura ${inv.invoice_number || ''} de ${fmtEUR(inv.amount)}?`)) return;
+        try { await dbDelete('invoices', inv.id, MOCK_INVOICES); closeQuickModal(); showToast('Fatura eliminada'); onSaved && onSaved(); }
+        catch (err) { formError('iv-msg', 'Não foi possível eliminar: ' + err.message); }
+      });
+      document.getElementById('iv-save').addEventListener('click', async () => {
+        const amount = numOrNull(document.getElementById('iv-amount').value);
+        const paid = numOrNull(document.getElementById('iv-paid').value) ?? 0;
+        const issue = document.getElementById('iv-issue').value;
+        if (amount == null || Number.isNaN(amount) || amount < 0) return formError('iv-msg', 'Indica o valor da fatura.');
+        if (Number.isNaN(paid) || paid < 0) return formError('iv-msg', 'Valor recebido inválido.');
+        if (!issue) return formError('iv-msg', 'Indica a data de emissão.');
+        const row = {
+          project_id: project.id,
+          stage_id: valOrNull(document.getElementById('iv-stage').value),
+          invoice_number: valOrNull(document.getElementById('iv-number').value.trim()),
+          issue_date: issue, amount, amount_paid: paid,
+          payment_date: valOrNull(document.getElementById('iv-paydate').value),
+          notes: valOrNull(document.getElementById('iv-notes').value.trim())
+        };
+        try {
+          if (isEdit) await dbUpdate('invoices', inv.id, row, MOCK_INVOICES);
+          else await dbInsert('invoices', row, MOCK_INVOICES);
+          closeQuickModal();
+          showToast(isEdit ? 'Fatura guardada' : 'Fatura registada');
+          onSaved && onSaved();
+        } catch (err) { formError('iv-msg', 'Não foi possível guardar: ' + err.message); }
+      });
+    }
+
+    // ---------- Pausas (à espera da Câmara, do cliente…) ----------
+    const BREAK_TYPES = [['municipality', 'Câmara'], ['client', 'Cliente']];
+    async function openBreakModal(brk, project, breaks, onSaved) {
+      const isEdit = !!brk;
+      const b = brk || {};
+      openQuickModal(isEdit ? 'Editar pausa' : 'Nova pausa', `
+        <div class="form-grid">
+          <div class="span2"><label class="field-label">Descrição</label><input type="text" id="bk-name" class="form-input" placeholder="ex: Aguarda resposta da Câmara" value="${escapeHtml(b.name ?? '')}"></div>
+          <div><label class="field-label">À espera de</label><select id="bk-type" class="form-input">${BREAK_TYPES.map(([v, l]) => `<option value="${v}"${v === b.type ? ' selected' : ''}>${l}</option>`).join('')}${b.type && !BREAK_TYPES.some(([v]) => v === b.type) ? `<option value="${escapeHtml(b.type)}" selected>${escapeHtml(b.type)}</option>` : ''}</select></div>
+          <div></div>
+          <div><label class="field-label">Início</label><input type="date" id="bk-start" class="form-input" value="${escapeHtml(b.start_date ?? '')}"></div>
+          <div><label class="field-label">Fim</label><input type="date" id="bk-end" class="form-input" value="${escapeHtml(b.end_date ?? '')}"></div>
+          <div class="span2"><label class="field-label">Notas</label><input type="text" id="bk-notes" class="form-input" value="${escapeHtml(b.notes ?? '')}"></div>
+        </div>
+        <button type="button" id="bk-save" class="primary-btn">${isEdit ? 'Guardar' : 'Registar pausa'}</button>
+        ${isEdit ? '<button type="button" id="bk-delete" class="secondary-btn danger-btn">Eliminar pausa</button>' : ''}
+        <div id="bk-msg" class="form-msg"></div>`);
+      if (isEdit) document.getElementById('bk-delete').addEventListener('click', async () => {
+        if (!window.confirm(`Eliminar a pausa "${b.name}"?`)) return;
+        try { await dbDelete('project_breaks', b.id, MOCK_BREAKS); closeQuickModal(); showToast('Pausa eliminada'); onSaved && onSaved(); }
+        catch (err) { formError('bk-msg', 'Não foi possível eliminar: ' + err.message); }
+      });
+      document.getElementById('bk-save').addEventListener('click', async () => {
+        const name = document.getElementById('bk-name').value.trim();
+        const start = valOrNull(document.getElementById('bk-start').value);
+        const end = valOrNull(document.getElementById('bk-end').value);
+        if (!name) return formError('bk-msg', 'Indica a descrição.');
+        if (start && end && end < start) return formError('bk-msg', 'O fim é anterior ao início.');
+        const row = {
+          project_id: project.id, name, type: document.getElementById('bk-type').value,
+          start_date: start, end_date: end, notes: valOrNull(document.getElementById('bk-notes').value.trim())
+        };
+        if (!isEdit) row.position_order = breaks.reduce((m, x) => Math.max(m, x.position_order || 0), 0) + 1;
+        try {
+          if (isEdit) await dbUpdate('project_breaks', b.id, row, MOCK_BREAKS);
+          else await dbInsert('project_breaks', row, MOCK_BREAKS);
+          closeQuickModal();
+          showToast(isEdit ? 'Pausa guardada' : 'Pausa registada');
+          onSaved && onSaved();
+        } catch (err) { formError('bk-msg', 'Não foi possível guardar: ' + err.message); }
+      });
+    }
+
     function marcoRowHtml(m, showProject) {
       const type = agendaData.types[m.type_id];
       const color = type?.color || '#714D79';
@@ -5629,6 +6142,110 @@
         '</span>' +
         (owners ? '<span class="marco-owners">' + owners + '</span>' : '') +
       '</div>';
+    }
+
+    // ---------- Estados de projeto (Definições) ----------
+    async function loadProjectStatusSettings() {
+      const box = document.getElementById('settings-statuses-container');
+      box.innerHTML = '<div class="detail-loading">A carregar...</div>';
+      const list = await loadProjectStatuses(true);
+      box.innerHTML = `
+        <div class="field-hint" style="margin:0 0 10px;">Os projetos com um estado <b>fechado</b> saem da lista de projetos ativos. O código entre parênteses é o valor guardado na base de dados e não muda quando mudas o nome.</div>
+        ${list.map((s, i) => `
+          <div class="status-row" data-status-id="${escapeHtml(s.id)}">
+            <label class="type-swatch" style="background:${escapeHtml(s.color)}" title="Mudar cor"><input type="color" value="${escapeHtml(s.color)}" data-st-color hidden></label>
+            <span class="st-name"><span class="editable-value" data-st-rename>${escapeHtml(s.name)}</span> <span class="st-code">(${escapeHtml(s.code)})</span></span>
+            <button type="button" class="chip-toggle${s.is_closed ? ' on' : ''}" data-st-closed title="Fechado: sai da lista de projetos ativos">${s.is_closed ? 'Fechado' : 'Ativo'}</button>
+            <span class="order-btns">
+              <button type="button" data-st-move="-1" ${i === 0 ? 'disabled' : ''} aria-label="Subir">▲</button>
+              <button type="button" data-st-move="1" ${i === list.length - 1 ? 'disabled' : ''} aria-label="Descer">▼</button>
+            </span>
+            <button type="button" class="text-btn danger" data-st-delete>Eliminar</button>
+          </div>`).join('')}
+        <div class="add-type-row">
+          <input type="color" id="new-status-color" value="#714D79" aria-label="Cor do estado">
+          <input type="text" id="new-status-name" class="form-input" placeholder="Novo estado...">
+          <button id="add-status-btn" class="secondary-btn">Adicionar</button>
+        </div>`;
+
+      const byId = id => list.find(s => s.id === id);
+      const saveStatus = async (id, patch) => {
+        if (devMode) { Object.assign(MOCK_PROJECT_STATUSES.find(s => s.id === id), patch); return; }
+        const r = await supabase.from('project_statuses').update(patch).eq('id', id);
+        if (r.error) throw r.error;
+      };
+      const rowOf = el => el.closest('[data-status-id]').dataset.statusId;
+
+      box.querySelectorAll('[data-st-color]').forEach(inp => inp.addEventListener('change', async () => {
+        try { await saveStatus(rowOf(inp), { color: inp.value }); inp.parentElement.style.background = inp.value; await loadProjectStatuses(true); }
+        catch (err) { showToast('Não foi possível mudar a cor: ' + err.message, { type: 'error' }); }
+      }));
+      box.querySelectorAll('[data-st-closed]').forEach(btn => btn.addEventListener('click', async () => {
+        const s = byId(rowOf(btn));
+        try { await saveStatus(s.id, { is_closed: !s.is_closed }); loadProjectStatusSettings(); }
+        catch (err) { showToast('Não foi possível mudar: ' + err.message, { type: 'error' }); }
+      }));
+      box.querySelectorAll('[data-st-move]').forEach(btn => btn.addEventListener('click', async () => {
+        const i = list.findIndex(s => s.id === rowOf(btn));
+        const j = i + Number(btn.dataset.stMove);
+        if (j < 0 || j >= list.length) return;
+        const reordered = [...list];
+        [reordered[i], reordered[j]] = [reordered[j], reordered[i]];
+        try {
+          await Promise.all(reordered.map((s, k) => s.sort_order === k + 1 ? null : saveStatus(s.id, { sort_order: k + 1 })));
+          loadProjectStatusSettings();
+        } catch (err) { showToast('Não foi possível reordenar: ' + err.message, { type: 'error' }); }
+      }));
+      box.querySelectorAll('[data-st-rename]').forEach(el => el.addEventListener('click', () => {
+        if (el.querySelector('input')) return;
+        const s = byId(rowOf(el));
+        const input = document.createElement('input');
+        input.type = 'text'; input.value = s.name; input.className = 'inline-edit-input';
+        el.textContent = ''; el.appendChild(input); input.focus(); input.select();
+        let done = false;
+        const finish = async (commit) => {
+          if (done) return; done = true;
+          const v = input.value.trim();
+          if (!commit || !v || v === s.name) { el.textContent = s.name; return; }
+          try { await saveStatus(s.id, { name: v }); s.name = v; el.textContent = v; await loadProjectStatuses(true); showToast('Estado renomeado'); }
+          catch (err) { el.textContent = s.name; showToast('Não foi possível renomear: ' + err.message, { type: 'error' }); }
+        };
+        input.addEventListener('blur', () => finish(true));
+        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') input.blur(); if (e.key === 'Escape') finish(false); });
+      }));
+      box.querySelectorAll('[data-st-delete]').forEach(btn => btn.addEventListener('click', async () => {
+        const s = byId(rowOf(btn));
+        if (!window.confirm(`Eliminar o estado "${s.name}"?`)) return;
+        try {
+          if (devMode) {
+            if (MOCK_PROJECTS.some(p => p.status === s.code)) throw new Error('em uso');
+            MOCK_PROJECT_STATUSES.splice(MOCK_PROJECT_STATUSES.findIndex(x => x.id === s.id), 1);
+          } else {
+            const r = await supabase.from('project_statuses').delete().eq('id', s.id);
+            if (r.error) throw r.error;
+          }
+          loadProjectStatusSettings();
+        } catch (err) {
+          const emUso = /em uso|foreign key|violates/i.test(err.message);
+          showToast(emUso ? `Há projetos com o estado "${s.name}". Muda-os primeiro para outro estado.` : 'Não foi possível eliminar: ' + err.message, { type: 'error', ms: 6000 });
+        }
+      }));
+      document.getElementById('add-status-btn').addEventListener('click', async () => {
+        const name = document.getElementById('new-status-name').value.trim();
+        const color = document.getElementById('new-status-color').value;
+        if (!name) return;
+        const row = { code: name, name, color, sort_order: list.length + 1, is_closed: false };
+        try {
+          if (devMode) MOCK_PROJECT_STATUSES.push({ id: 'ps-' + Date.now(), ...row });
+          else {
+            const r = await supabase.from('project_statuses').insert(row);
+            if (r.error) throw r.error;
+          }
+          loadProjectStatusSettings();
+        } catch (err) {
+          showToast(/duplicate|unique/i.test(err.message) ? 'Já existe um estado com esse nome.' : 'Não foi possível criar: ' + err.message, { type: 'error' });
+        }
+      });
     }
 
     // ---------- Tipos de marco (Definições) ----------
