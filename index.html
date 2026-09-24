@@ -1789,7 +1789,7 @@
           const rest = deliveries.length - shown.length;
           list.innerHTML = shown.map(d => `
             <div class="delivery-mini-row">
-              <span>${d.name}</span>
+              <span>${escapeHtml(d.name)}</span>
               <span class="d-date">${new Date(d.date).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' })}</span>
             </div>`).join('') + (rest > 0 ? `<div class="delivery-mini-row"><span>+${rest} mais</span></div>` : '');
         }
@@ -1854,7 +1854,7 @@
 
       const selector = document.getElementById('team-selector');
       selector.innerHTML = teams.map(t => `
-        <button data-team-id="${t.id}" class="${t.id === activeTeamId ? 'active' : ''}">${t.name}</button>
+        <button data-team-id="${escapeHtml(t.id)}" class="${t.id === activeTeamId ? 'active' : ''}">${escapeHtml(t.name)}</button>
       `).join('');
       selector.querySelectorAll('button').forEach(btn => {
         btn.addEventListener('click', () => showTeamView(btn.dataset.teamId));
@@ -2006,7 +2006,7 @@
             const projStages = (stagesByProject[p.id] || []).filter(hasDates).filter(notCompleted);
             if (projStages.length === 0) return;
 
-            labelRows.push(`<div class="gantt-label-cell gantt-group-header" data-open-project="${p.id}">${p.name}</div>`);
+            labelRows.push(`<div class="gantt-label-cell gantt-group-header" data-open-project="${escapeHtml(p.id)}">${escapeHtml(p.name)}</div>`);
             trackRows.push(`<div class="gantt-track-row"></div>`);
 
             projStages.forEach(s => {
@@ -2022,9 +2022,9 @@
                   : 'rgba(113,77,121,0.35)';
               const invoiced = stageBudgetValue(s);
 
-              labelRows.push(`<div class="gantt-label-cell" style="padding-left:14px; font-weight:500;" data-open-project="${p.id}">${s.stage_types?.name ?? 'Fase'}</div>`);
+              labelRows.push(`<div class="gantt-label-cell" style="padding-left:14px; font-weight:500;" data-open-project="${escapeHtml(p.id)}">${escapeHtml(s.stage_types?.name ?? 'Fase')}</div>`);
               trackRows.push(`
-                <div class="gantt-track-row" data-open-project="${p.id}">
+                <div class="gantt-track-row" data-open-project="${escapeHtml(p.id)}">
                   <div class="gantt-lane"></div>
                   <div class="gantt-bar" style="left:${left}px; width:${width}px; background:${color};"></div>
                   <div class="gantt-end-date" style="left:${left + width + 6}px;">${fmtDateShort(end)} · ${fmtEUR(invoiced)}</div>
@@ -2133,12 +2133,12 @@
           tableEl.innerHTML = withoutDatesByProject.map(g => `
             <div class="gantt-wrap" style="margin-bottom:12px;">
               <table class="mini-table">
-                <thead><tr><th colspan="2" data-open-project="${g.project.id}">${g.project.name}</th></tr></thead>
+                <thead><tr><th colspan="2" data-open-project="${escapeHtml(g.project.id)}">${escapeHtml(g.project.name)}</th></tr></thead>
                 <tbody>
                   ${g.stages.map(s => `
                     <tr>
-                      <td>${s.stage_types?.name ?? 'Fase'}</td>
-                      <td class="col-value">${s.status ?? '—'}</td>
+                      <td>${escapeHtml(s.stage_types?.name ?? 'Fase')}</td>
+                      <td class="col-value">${escapeHtml(s.status ?? '—')}</td>
                     </tr>`).join('')}
                 </tbody>
               </table>
@@ -2148,7 +2148,7 @@
           });
         }
       } catch (err) {
-        ganttEl.innerHTML = `<div class="error-box">Erro ao carregar planeamento: ${err.message}</div>`;
+        ganttEl.innerHTML = `<div class="error-box">Erro ao carregar planeamento: ${escapeHtml(err.message)}</div>`;
         tableEl.innerHTML = '';
         console.error(err);
       }
@@ -2342,9 +2342,9 @@
       }
 
       projectSelect.innerHTML = '<option value="">Seleciona um projeto</option>' +
-        projects.map(p => `<option value="${p.id}">${p.code ? p.code + ' — ' : ''}${p.name}</option>`).join('');
+        projects.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.code ? p.code + ' — ' : '')}${escapeHtml(p.name)}</option>`).join('');
       categorySelect.innerHTML = '<option value="">Seleciona uma categoria</option>' +
-        categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        categories.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
     }
 
     document.getElementById('horas-project-select').addEventListener('change', async (e) => {
@@ -2370,7 +2370,7 @@
         stages = res.data || [];
       }
       stageSelect.innerHTML = '<option value="">Seleciona a fase</option>' +
-        stages.map(s => `<option value="${s.id}">${s.stage_types?.name ?? 'Fase'}</option>`).join('');
+        stages.map(s => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.stage_types?.name ?? 'Fase')}</option>`).join('');
     }
 
     function resetHorasForm() {
@@ -2534,14 +2534,14 @@
           }
 
           return `
-            <div class="horas-entry" data-id="${e.id}">
+            <div class="horas-entry" data-id="${escapeHtml(e.id)}">
               <div class="horas-entry-main">
                 <span>${fmtDateShort(new Date(e.date + 'T00:00:00'))}</span>
                 <span class="invoice-status ${e.billable ? 'paid' : 'pending'}">${e.billable ? 'Faturável' : 'Não fat.'}</span>
                 <span class="horas-entry-hours">${Number(e.hours).toFixed(2)}h</span>
               </div>
-              <div class="horas-entry-sub">${label}</div>
-              ${e.description ? `<div class="horas-entry-desc">${e.description}</div>` : ''}
+              <div class="horas-entry-sub">${escapeHtml(label)}</div>
+              ${e.description ? `<div class="horas-entry-desc">${escapeHtml(e.description)}</div>` : ''}
               <div class="horas-entry-actions">
                 <button class="text-btn" data-action="edit">Editar</button>
                 <button class="text-btn danger" data-action="delete">Eliminar</button>
@@ -2555,7 +2555,7 @@
           row.querySelector('[data-action="delete"]').addEventListener('click', () => deleteHorasEntry(id));
         });
       } catch (err) {
-        container.innerHTML = `<div class="error-box">Erro ao carregar histórico: ${err.message}</div>`;
+        container.innerHTML = `<div class="error-box">Erro ao carregar histórico: ${escapeHtml(err.message)}</div>`;
       }
     }
 
@@ -2629,15 +2629,15 @@
         }
         renderCategories(categories);
       } catch (err) {
-        container.innerHTML = `<div class="error-box">Erro ao carregar categorias: ${err.message}</div>`;
+        container.innerHTML = `<div class="error-box">Erro ao carregar categorias: ${escapeHtml(err.message)}</div>`;
       }
     }
 
     function renderCategories(categories) {
       const container = document.getElementById('settings-categories-container');
       const rows = categories.map(c => `
-        <div class="category-row" data-id="${c.id}">
-          <span class="editable-value cat-name" data-raw="${c.name}">${c.name}</span>
+        <div class="category-row" data-id="${escapeHtml(c.id)}">
+          <span class="editable-value cat-name" data-raw="${escapeHtml(c.name)}">${escapeHtml(c.name)}</span>
           <div class="cat-actions">
             <button class="text-btn danger" data-action="delete-cat">Eliminar</button>
           </div>
@@ -2824,11 +2824,11 @@
       const rows = data.map(p => {
         const valor = fmtEUR(p.commission_value);
         return `
-          <tr class="project-row" data-id="${p.id}">
-            <td class="col-code">${p.code ?? '—'}</td>
-            <td class="col-name">${p.name ?? 'Sem nome'}</td>
-            <td class="col-area">${p.area != null ? p.area + ' m²' : '—'}</td>
-            <td class="col-type">${p.project_types?.name ?? '—'}</td>
+          <tr class="project-row" data-id="${escapeHtml(p.id)}">
+            <td class="col-code">${escapeHtml(p.code ?? '—')}</td>
+            <td class="col-name">${escapeHtml(p.name ?? 'Sem nome')}</td>
+            <td class="col-area">${escapeHtml(p.area != null ? p.area + ' m²' : '—')}</td>
+            <td class="col-type">${escapeHtml(p.project_types?.name ?? '—')}</td>
             <td class="col-value">${valor}</td>
           </tr>
         `;
@@ -3098,10 +3098,10 @@
               const marcaExcluida = s.excluded_from_invoicing
                 ? ' <span title="Fora das contas da NOVA" style="opacity:.45;">✕</span>'
                 : '';
-              return `<div class="gantt-label-cell">${s.stage_types?.name ?? 'Fase'}${s.revision_label ? ' · ' + s.revision_label : ''}${marcaExcluida}</div>`;
+              return `<div class="gantt-label-cell">${escapeHtml(s.stage_types?.name ?? 'Fase')}${s.revision_label ? ' · ' + escapeHtml(s.revision_label) : ''}${marcaExcluida}</div>`;
             }
             const b = item.data;
-            return `<div class="gantt-label-cell">⏸ ${b.name ?? 'Pausa'}</div>`;
+            return `<div class="gantt-label-cell">⏸ ${escapeHtml(b.name ?? 'Pausa')}</div>`;
           }).join('');
 
           const tracksHtml = timelineItems.map(item => {
@@ -3134,7 +3134,7 @@
               <div class="gantt-track-row">
                 <div class="gantt-lane"></div>
                 <div class="gantt-bar break-bar" style="left:${left}px; width:${width}px;">
-                  <span class="pct">${b.type ?? ''}</span>
+                  <span class="pct">${escapeHtml(b.type ?? '')}</span>
                 </div>
               </div>`;
           }).join('');
@@ -3194,7 +3194,7 @@
             .sort((a, b) => b.h - a.h)
             .map(p => `
               <tr>
-                <td>${p.nome}</td>
+                <td>${escapeHtml(p.nome)}</td>
                 <td class="col-value">${p.h.toFixed(1)}h</td>
                 <td class="col-value">${totalGlobalPessoas > 0 ? Math.round((p.h / totalGlobalPessoas) * 100) : 0}%</td>
               </tr>`).join('');
@@ -3243,7 +3243,7 @@
                   const isPaid = isInvoiced && inv.paid >= inv.amount;
                   const isPartial = inv.paid > 0 && inv.paid < inv.amount;
                   const horas = hoursByStageId[s.id] || 0;
-                  const faseLabel = `${s.stage_types?.name ?? 'Fase'}${s.revision_label ? ' · ' + s.revision_label : ''}`;
+                  const faseLabel = escapeHtml(`${s.stage_types?.name ?? 'Fase'}${s.revision_label ? ' · ' + s.revision_label : ''}`);
                   const invoiceCell = isExcluded
                     ? `<span class="invoice-status neutral" title="Fase excluída: não conta para os totais">Fora das contas</span>`
                     : isInvoiced
@@ -3277,7 +3277,7 @@
             const reimbursed = !!e.reimbursed;
             return `
               <div class="invoice-row">
-                <span>${e.description ?? e.expense_categories?.name ?? 'Despesa'}</span>
+                <span>${escapeHtml(e.description ?? e.expense_categories?.name ?? 'Despesa')}</span>
                 <span class="invoice-status ${reimbursed ? 'paid' : 'pending'}">${reimbursed ? 'Reembolsada' : 'Por reembolsar'}</span>
                 <span class="amount">${fmtEUR(Number(e.amount))}</span>
               </div>`;
@@ -3345,20 +3345,20 @@
         detailBody.innerHTML = `
           <div class="section-label">Detalhes do projeto</div>
           <div class="gantt-wrap">
-            <div class="invoice-row"><span>Cliente</span><span>${clienteNome}</span></div>
+            <div class="invoice-row"><span>Cliente</span><span>${escapeHtml(clienteNome)}</span></div>
             <div class="invoice-row editable-row" data-field="address" data-type="text">
-              <span>Morada</span><span class="editable-value" data-raw="${project.address ?? ''}">${project.address ?? '—'}</span>
+              <span>Morada</span><span class="editable-value" data-raw="${escapeHtml(project.address ?? '')}">${escapeHtml(project.address ?? '—')}</span>
             </div>
-            <div class="invoice-row"><span>Tipo</span><span>${project.project_types?.name ?? '—'}</span></div>
+            <div class="invoice-row"><span>Tipo</span><span>${escapeHtml(project.project_types?.name ?? '—')}</span></div>
             <div class="invoice-row editable-row" data-field="area" data-type="number">
-              <span>Área</span><span class="editable-value" data-raw="${project.area ?? ''}">${project.area != null ? project.area + ' m²' : '—'}</span>
+              <span>Área</span><span class="editable-value" data-raw="${escapeHtml(project.area ?? '')}">${escapeHtml(project.area != null ? project.area + ' m²' : '—')}</span>
             </div>
-            <div class="invoice-row"><span>Equipa</span><span>${project.teams?.name ?? '—'}</span></div>
+            <div class="invoice-row"><span>Equipa</span><span>${escapeHtml(project.teams?.name ?? '—')}</span></div>
             <div class="invoice-row editable-row" data-field="awarding_date" data-type="date">
-              <span>Adjudicação</span><span class="editable-value" data-raw="${project.awarding_date ?? ''}">${project.awarding_date ?? '—'}</span>
+              <span>Adjudicação</span><span class="editable-value" data-raw="${escapeHtml(project.awarding_date ?? '')}">${escapeHtml(project.awarding_date ?? '—')}</span>
             </div>
             <div class="invoice-row editable-row" data-field="status" data-type="text">
-              <span>Estado</span><span class="editable-value" data-raw="${project.status ?? ''}">${project.status ?? '—'}</span>
+              <span>Estado</span><span class="editable-value" data-raw="${escapeHtml(project.status ?? '')}">${escapeHtml(project.status ?? '—')}</span>
             </div>
           </div>
 
@@ -3573,7 +3573,7 @@
         types = res.data || [];
       }
       selectEl.innerHTML = '<option value="">Seleciona o tipo de fase</option>' +
-        types.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+        types.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('');
     }
 
     function attachRevisionFormHandlers(projectId, stages) {
@@ -3744,9 +3744,9 @@
         ]);
         clients = cRes.data || []; types = tRes.data || []; teams = teRes.data || [];
       }
-      document.getElementById('np-client').innerHTML = '<option value="">Sem cliente</option>' + clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-      document.getElementById('np-type').innerHTML = '<option value="">Sem tipo</option>' + types.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
-      document.getElementById('np-team').innerHTML = '<option value="">Sem equipa</option>' + teams.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+      document.getElementById('np-client').innerHTML = '<option value="">Sem cliente</option>' + clients.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
+      document.getElementById('np-type').innerHTML = '<option value="">Sem tipo</option>' + types.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('');
+      document.getElementById('np-team').innerHTML = '<option value="">Sem equipa</option>' + teams.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('');
 
       document.getElementById('np-submit').addEventListener('click', async () => {
         const msgEl = document.getElementById('np-msg');
@@ -3919,7 +3919,7 @@
         <input type="date" id="exp-date" class="form-input">
         <label class="field-label">Quem pagou</label>
         <div class="segmented" id="exp-payer-toggle">
-          <button type="button" data-payer="me" class="active">Eu (${member?.name ?? 'sem nome'})</button>
+          <button type="button" data-payer="me" class="active">Eu (${escapeHtml(member?.name ?? 'sem nome')})</button>
           <button type="button" data-payer="company">A empresa</button>
         </div>
         <div id="exp-reimbursed-wrap">
@@ -3971,10 +3971,10 @@
         ]);
         projects = pr.data || []; categories = cr.data || [];
       }
-      projSelect.innerHTML = '<option value="">Sem projeto</option>' + projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+      projSelect.innerHTML = '<option value="">Sem projeto</option>' + projects.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('');
       if (lockedProjectId) projSelect.value = lockedProjectId;
       else if (isEdit && existingExpense.project_id) projSelect.value = existingExpense.project_id;
-      document.getElementById('exp-category').innerHTML = '<option value="">Sem categoria</option>' + categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+      document.getElementById('exp-category').innerHTML = '<option value="">Sem categoria</option>' + categories.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
       if (isEdit && existingExpense.category_id) document.getElementById('exp-category').value = existingExpense.category_id;
 
       if (isEdit) {
@@ -4041,13 +4041,13 @@
       }
       container.className = '';
       container.innerHTML = data.map(n => `
-        <div class="gantt-wrap ata-entry" data-id="${n.id}" style="margin-bottom:8px;">
+        <div class="gantt-wrap ata-entry" data-id="${escapeHtml(n.id)}" style="margin-bottom:8px;">
           <div class="ata-entry-main">
-            <span class="ata-entry-title">${n.title}</span>
+            <span class="ata-entry-title">${escapeHtml(n.title)}</span>
             <span class="ata-entry-date">${fmtDateShort(new Date(n.meeting_date + 'T00:00:00'))}</span>
           </div>
-          <div class="ata-entry-project">${n.projectName ?? 'Sem projeto'}</div>
-          <div class="ata-entry-body">${n.body ? n.body.replace(/</g, '&lt;') : 'Sem texto.'}</div>
+          <div class="ata-entry-project">${escapeHtml(n.projectName ?? 'Sem projeto')}</div>
+          <div class="ata-entry-body">${escapeHtml(n.body || 'Sem texto.')}</div>
         </div>
       `).join('');
 
@@ -4293,9 +4293,9 @@
 
       const rowHtml = (e) => `
         <div class="invoice-row">
-          <span>${fmtDateShort(new Date(e.date + 'T00:00:00'))} · ${e.description ?? 'Despesa'}</span>
+          <span>${fmtDateShort(new Date(e.date + 'T00:00:00'))} · ${escapeHtml(e.description ?? 'Despesa')}</span>
           <span class="amount">${fmtEUR(Number(e.amount))}</span>
-          <button type="button" class="text-btn" data-toggle-reimburse="${e.id}" data-current="${e.reimbursed ? 'true' : 'false'}">${e.reimbursed ? 'Marcar por reembolsar' : 'Marcar reembolsada'}</button>
+          <button type="button" class="text-btn" data-toggle-reimburse="${escapeHtml(e.id)}" data-current="${e.reimbursed ? 'true' : 'false'}">${e.reimbursed ? 'Marcar por reembolsar' : 'Marcar reembolsada'}</button>
         </div>`;
 
       panel.innerHTML = nomes.map(nome => {
@@ -4307,7 +4307,7 @@
         return `
           <div class="gantt-wrap" style="margin-bottom:12px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-              <strong>${nome}</strong>
+              <strong>${escapeHtml(nome)}</strong>
               <span class="amount">${fmtEUR(totalPorFazer)} por reembolsar</span>
             </div>
             ${porFazer.length ? porFazer.map(rowHtml).join('') : '<div class="gantt-empty">Sem despesas por reembolsar.</div>'}
@@ -4351,12 +4351,12 @@
         return `
         <tr>
           <td>${fmtDateShort(new Date(e.date + 'T00:00:00'))}</td>
-          <td>${e.description ?? e.expense_categories?.name ?? 'Despesa'}</td>
-          <td>${e.project_id ? (projectMap[e.project_id] ?? 'Projeto') : '—'}</td>
-          <td>${payerName(e, memberMap)}</td>
+          <td>${escapeHtml(e.description ?? e.expense_categories?.name ?? 'Despesa')}</td>
+          <td>${escapeHtml(e.project_id ? (projectMap[e.project_id] ?? 'Projeto') : '—')}</td>
+          <td>${escapeHtml(payerName(e, memberMap))}</td>
           <td class="col-value">${fmtEUR(Number(e.amount))}</td>
           <td>${statusCell}</td>
-          <td><button type="button" class="text-btn" data-edit-expense="${e.id}">Editar</button></td>
+          <td><button type="button" class="text-btn" data-edit-expense="${escapeHtml(e.id)}">Editar</button></td>
         </tr>`;
       }).join('');
 
