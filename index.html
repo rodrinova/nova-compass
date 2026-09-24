@@ -882,6 +882,7 @@
   .ts-cell:hover { border-color: var(--border); background: var(--surface); }
   .ts-cell:focus { outline: none; border-color: var(--accent); background: var(--surface); box-shadow: var(--focus); }
   .ts-cell:placeholder-shown { background: var(--surface-2); }
+  .ts-cell.has-note { background-image: linear-gradient(225deg, var(--accent) 5px, transparent 5px); background-repeat: no-repeat; }
   .ts-cell.multi { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
   .ts-cell.saving { opacity: .5; }
   .ts-cell.saved { border-color: var(--success); box-shadow: 0 0 0 3px var(--success-soft); }
@@ -998,6 +999,27 @@
   .form-grid .span2 { grid-column: 1 / -1; }
   .form-grid .field-label, .form-grid .field-label:first-child { margin-top: 14px; }
   @media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } }
+  .nowrap { white-space: nowrap; }
+  #team-phases-table .mini-table { table-layout: fixed; width: 100%; }
+  #team-phases-table th, #team-phases-table td { white-space: normal; overflow-wrap: anywhere; }
+  .late-text { color: var(--danger); font-weight: 600; }
+  .horas-back { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .horas-back b { font-size: 15px; font-weight: 650; }
+  .plan-box { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); }
+  .plan-box b { font-size: 14px; font-weight: 650; }
+  .plan-box span { font-size: 12.5px; color: var(--text-2); }
+  .plan-box em { font-style: normal; color: var(--danger); font-weight: 600; }
+  .plan-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .plan-box .text-btn { font-size: 12.5px; }
+  .plan-edit { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .plan-edit .form-input { margin: 0; }
+  .lt-manual { color: var(--text-3); font-size: 12px; }
+  .plan-box.late { border-color: var(--danger); background: var(--danger-soft); }
+  .more-opts { margin-top: 18px; border-top: 1px solid var(--border); padding-top: 4px; }
+  .more-opts > summary { cursor: pointer; list-style: none; padding: 10px 0 2px; font-size: 13.5px; font-weight: 600; color: var(--accent); }
+  .more-opts > summary::-webkit-details-marker { display: none; }
+  .more-opts > summary::before { content: '+ '; }
+  .more-opts[open] > summary::before { content: '− '; }
   .check-row { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 13.5px; color: var(--text-2); cursor: pointer; }
   .check-row input { width: 16px; height: 16px; accent-color: var(--accent); }
   .danger-btn { color: var(--danger) !important; }
@@ -1050,9 +1072,9 @@
         <button type="button" class="nav-item" data-nav="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/></svg><span>Hoje</span></button>
         <button type="button" class="nav-item" data-nav="projects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg><span>Projetos</span></button>
         <button type="button" class="nav-item" data-nav="horas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span>Horas</span></button>
+        <button type="button" class="nav-item" data-nav="agenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Agenda</span></button>
         <button type="button" class="nav-item" data-nav="atas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h7l4 4v12a1 1 0 01-1 1H7a1 1 0 01-1-1v-15a1 1 0 011-1z"/><path d="M9 11h6M9 14.5h6M9 18h3.5"/></svg><span>Atas</span></button>
         <button type="button" class="nav-item" data-nav="despesas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12v17l-3-2-3 2-3-2-3 2z"/><path d="M9 8.5h6M9 12h6M9 15.5h3"/></svg><span>Despesas</span></button>
-        <button type="button" class="nav-item" data-nav="team"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 6.5h9M8 12h10M6 17.5h8"/><path d="M3.5 3.5v17" opacity=".5"/></svg><span>Planeamento</span></button>
       </nav>
       <div class="side-foot">
         <button type="button" class="nav-item" data-nav="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.5 7.5 0 000-2l1.9-1.5-2-3.4-2.2.9a7.6 7.6 0 00-1.7-1L15 3.5h-4l-.4 2.5a7.6 7.6 0 00-1.7 1l-2.2-.9-2 3.4L6.6 11a7.5 7.5 0 000 2l-1.9 1.5 2 3.4 2.2-.9a7.6 7.6 0 001.7 1L11 20.5h4l.4-2.5a7.6 7.6 0 001.7-1l2.2.9 2-3.4z"/></svg><span>Definições</span></button>
@@ -1065,12 +1087,12 @@
       <button type="button" class="nav-item" data-nav="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/></svg><span>Hoje</span></button>
       <button type="button" class="nav-item" data-nav="projects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg><span>Projetos</span></button>
       <button type="button" class="nav-item" data-nav="horas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span>Horas</span></button>
-      <button type="button" class="nav-item" data-nav="atas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h7l4 4v12a1 1 0 01-1 1H7a1 1 0 01-1-1v-15a1 1 0 011-1z"/><path d="M9 11h6M9 14.5h6M9 18h3.5"/></svg><span>Atas</span></button>
+      <button type="button" class="nav-item" data-nav="agenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Agenda</span></button>
       <button type="button" class="nav-item" id="tab-more"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5.5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18.5" cy="12" r="1.7"/></svg><span>Mais</span></button>
     </nav>
     <div class="more-sheet" id="more-sheet">
+      <button type="button" class="nav-item" data-nav="atas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h7l4 4v12a1 1 0 01-1 1H7a1 1 0 01-1-1v-15a1 1 0 011-1z"/><path d="M9 11h6M9 14.5h6M9 18h3.5"/></svg><span>Atas</span></button>
       <button type="button" class="nav-item" data-nav="despesas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12v17l-3-2-3 2-3-2-3 2z"/><path d="M9 8.5h6M9 12h6M9 15.5h3"/></svg><span>Despesas</span></button>
-      <button type="button" class="nav-item" data-nav="team"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 6.5h9M8 12h10M6 17.5h8"/><path d="M3.5 3.5v17" opacity=".5"/></svg><span>Planeamento</span></button>
       <button type="button" class="nav-item" data-nav="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.5 7.5 0 000-2l1.9-1.5-2-3.4-2.2.9a7.6 7.6 0 00-1.7-1L15 3.5h-4l-.4 2.5a7.6 7.6 0 00-1.7 1l-2.2-.9-2 3.4L6.6 11a7.5 7.5 0 000 2l-1.9 1.5 2 3.4 2.2-.9a7.6 7.6 0 001.7 1L11 20.5h4l.4-2.5a7.6 7.6 0 001.7-1l2.2.9 2-3.4z"/></svg><span>Definições</span></button>
       <button type="button" class="nav-item danger" data-logout><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4.5h4a1.5 1.5 0 011.5 1.5v12a1.5 1.5 0 01-1.5 1.5h-4"/><path d="M10 16l-4-4 4-4M6 12h9"/></svg><span>Sair</span></button>
     </div>
@@ -1099,7 +1121,7 @@
         <div class="home-head"><div id="home-greeting" class="home-greeting">—</div><div class="home-date" id="home-date"></div></div>
         <div class="today-grid">
           <section class="gantt-wrap">
-            <div class="card-head"><h2>Próximos 7 dias</h2><span>os meus marcos e prazos</span></div>
+            <div class="card-head"><h2>Próximos 7 dias</h2><span>os meus marcos e fins de fase</span></div>
             <div id="today-week-list"><div class="gantt-empty">A carregar…</div></div>
           </section>
           <section class="gantt-wrap">
@@ -1111,13 +1133,32 @@
         <div class="section-label">As minhas fases</div>
         <div class="gantt-wrap" id="today-phases"><div class="gantt-empty">A carregar…</div></div>
 
+      </div>
+      <div id="projects-view" style="display:none;">
+        <div class="list-toolbar">
+          <input type="text" id="projects-search" class="search-input" placeholder="Pesquisar por nome ou código..." autocomplete="off">
+          <div class="segmented" id="projects-scope">
+            <button type="button" data-scope="active" class="active">Ativos</button>
+            <button type="button" data-scope="all">Todos</button>
+          </div>
+        </div>
+        <div id="projects-container" class="center-msg">
+          <div class="spinner"></div>
+          A carregar projetos...
+        </div>
+      </div>
+      <div id="agenda-view" style="display:none;">
         <div class="agenda-head">
-          <div class="section-label" style="margin:0;">Calendário</div>
+          <div class="segmented" id="agenda-mode" style="margin:0;">
+            <button type="button" data-mode="month" class="active">Mês</button>
+            <button type="button" data-mode="gantt">Cronograma</button>
+          </div>
           <div class="segmented" id="agenda-scope" style="margin:0;">
             <button type="button" data-scope="mine" class="active">Meus</button>
             <button type="button" data-scope="all">Todos</button>
           </div>
         </div>
+        <div id="agenda-month-panel">
         <div class="gantt-wrap" id="agenda-wrap">
           <div class="cal-main">
           <div class="cal-head">
@@ -1135,21 +1176,8 @@
           <div class="cal-day-list" id="cal-day-list"></div>
         </div>
 
-      </div>
-      <div id="projects-view" style="display:none;">
-        <div class="list-toolbar">
-          <input type="text" id="projects-search" class="search-input" placeholder="Pesquisar por nome ou código..." autocomplete="off">
-          <div class="segmented" id="projects-scope">
-            <button type="button" data-scope="active" class="active">Ativos</button>
-            <button type="button" data-scope="all">Todos</button>
-          </div>
         </div>
-        <div id="projects-container" class="center-msg">
-          <div class="spinner"></div>
-          A carregar projetos...
-        </div>
-      </div>
-      <div id="team-view" style="display:none;">
+        <div id="agenda-gantt-panel" style="display:none;">
         <div class="team-card" id="team-card" style="display:none;">
           <div class="team-card-top">
             <div class="team-card-name" id="team-card-name">NOVA</div>
@@ -1166,18 +1194,17 @@
           </div>
           <div class="team-card-deliveries" id="team-card-deliveries-list"></div>
         </div>
-        <div class="section-label">Planeamento</div>
         <div class="gantt-wrap" id="team-gantt">
           <div class="detail-loading">A carregar...</div>
         </div>
-        <div class="section-label">Fases sem datas atribuídas</div>
+        <div class="section-label">Fases sem lead time</div>
         <div id="team-phases-table"></div>
+        </div>
       </div>
       <div id="horas-view" style="display:none;">
-        <div class="segmented" id="horas-tabs">
-          <button type="button" data-tab="week" class="active">Semana</button>
-          <button type="button" data-tab="new">Registo detalhado</button>
-          <button type="button" data-tab="history">Lista</button>
+        <div class="horas-back" id="horas-back" style="display:none;">
+          <button type="button" class="text-btn" id="horas-back-btn">← Voltar à semana</button>
+          <b id="horas-back-title">Registos</b>
         </div>
 
         <div id="horas-week-panel"><div id="ts-box"></div></div>
@@ -1491,7 +1518,6 @@
       if (s.status === 'completed' || s.status === 'done') return 'Concluída';
       if (['wip', 'in_progress', 'active'].includes(s.status)) return 'Em curso';
       if (s.status === 'interrupted') return 'Interrompida';
-      if (s.status === 'todo') return 'A fazer';
       return 'Por iniciar';
     }
 
@@ -1624,7 +1650,7 @@
       const navKey = newState.name === 'detail' ? 'projects' : newState.name;
       document.querySelectorAll('[data-nav]').forEach(el => el.classList.toggle('active', el.dataset.nav === navKey));
       document.getElementById('more-sheet').classList.remove('open');
-      document.getElementById('tab-more').classList.toggle('active', ['despesas', 'team', 'settings'].includes(navKey));
+      document.getElementById('tab-more').classList.toggle('active', ['atas', 'despesas', 'settings'].includes(navKey));
       window.scrollTo(0, 0);
     }
 
@@ -1638,25 +1664,32 @@
       else if (prev.name === 'settings') openSettingsModule();
       else if (prev.name === 'atas') openAtasModule();
       else if (prev.name === 'despesas') openDespesasModule();
-      else if (prev.name === 'team') showTeamView(prev.teamId);
+      else if (prev.name === 'agenda') openAgendaModule(prev.mode);
       else if (prev.name === 'detail') openDetail(prev.projectId);
       else showHome();
     }
 
     function hideAllViews() {
-      ['home-view', 'projects-view', 'team-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view', 'despesas-view'].forEach(id => {
+      ['home-view', 'projects-view', 'agenda-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view', 'despesas-view'].forEach(id => {
         document.getElementById(id).style.display = 'none';
       });
     }
 
-    // Planeamento de todos os projetos ativos (as equipas deixaram de existir na app)
-    async function showTeamView() {
-      document.getElementById('nav-title').textContent = 'Planeamento';
+    // Agenda: Mês (calendário com faixas) ou Cronograma (todos os projetos ativos)
+    let agendaMode = 'month';
+    const agendaVisibleNow = () => document.getElementById('agenda-view').style.display !== 'none';
+    function openAgendaModule(mode = agendaMode) {
+      agendaMode = mode === 'gantt' ? 'gantt' : 'month';
+      pushCurrentView({ name: 'agenda', mode: agendaMode });
+      document.getElementById('nav-title').textContent = 'Agenda';
       hideAllViews();
-      document.getElementById('team-view').style.display = 'block';
-      pushCurrentView({ name: 'team' });
-      renderTeamCard();
-      await loadTeamPlanning();
+      document.getElementById('agenda-view').style.display = 'block';
+      document.querySelectorAll('#agenda-mode button').forEach(b => b.classList.toggle('active', b.dataset.mode === agendaMode));
+      document.getElementById('agenda-month-panel').style.display = agendaMode === 'month' ? '' : 'none';
+      document.getElementById('agenda-gantt-panel').style.display = agendaMode === 'gantt' ? '' : 'none';
+      document.getElementById('agenda-scope').style.visibility = agendaMode === 'month' ? '' : 'hidden';
+      if (agendaMode === 'month') loadAgenda();
+      else { renderTeamCard(); loadTeamPlanning(); }
     }
 
     function buildMockTeamStages(teamProjects) {
@@ -1717,18 +1750,22 @@
           const projectIds = projects.map(p => p.id);
           stages = [];
           if (projectIds.length > 0) {
-            const stagesRes = await supabase
-              .from('project_stages')
-              .select('id, project_id, stage_order, stage_types(name), start_date, end_date, delivery_date, status, percentage, fixed_value')
-              .in('project_id', projectIds)
-              .order('stage_order');
+            const [stagesRes, breaksRes] = await Promise.all([
+              supabase.from('project_stages')
+                .select('id, project_id, stage_order, stage_types(name, break_immune), start_date, end_date, delivery_date, deadline_override, is_deadline_fixed, expected_lead_time_days, revision_label, status, percentage, fixed_value')
+                .in('project_id', projectIds)
+                .order('stage_order'),
+              supabase.from('project_breaks').select('project_id, start_date, end_date').in('project_id', projectIds)
+            ]);
             if (stagesRes.error) throw stagesRes.error;
             stages = stagesRes.data || [];
+            projects.forEach(p => computeProjectPlan(p, stages.filter(s => s.project_id === p.id),
+              (breaksRes.data || []).filter(b => b.project_id === p.id)));
           }
         }
 
-        // Adjudicação é só o marco de arranque do projeto, não uma fase de trabalho a planear
-        stages = stages.filter(s => (s.stage_types?.name ?? '') !== 'Adjudicação');
+        // Adjudicação e Assistência Técnica não são fases a planear
+        stages = stages.filter(s => !isOffPlanStage(s));
 
         projects.sort((a, b) => {
           if (!a.awarding_date && !b.awarding_date) return 0;
@@ -1752,7 +1789,9 @@
           stagesByProject[s.project_id].push(s);
         });
 
-        const hasDates = s => s.start_date && (s.end_date || s.delivery_date);
+        // Barra = período previsto (calculado); sem cálculo, as datas de trabalho
+        const ganttWindow = s => (s.plan_start && s.plan_end) ? { s: s.plan_start, e: s.plan_end } : phaseWindow(s);
+        const hasDates = s => !!ganttWindow(s);
         const notCompleted = s => s.status !== 'completed' && s.status !== 'done';
 
         function stageBudgetValue(stage) {
@@ -1782,12 +1821,12 @@
                 <button type="button" data-scale="week" class="${scale === 'week' ? 'active' : ''}">Semanas</button>
                 <button type="button" data-scale="month" class="${scale === 'month' ? 'active' : ''}">Meses</button>
               </div>
-              <div class="gantt-empty">Nenhuma fase em curso ou por fazer com datas registadas — consulta a tabela abaixo.</div>`;
+              <div class="gantt-empty">Nenhuma fase por fazer tem lead time. Para o calcular, indica a data de adjudicação do projeto e o lead time (dias úteis) de cada fase.</div>`;
           }
 
           const today = new Date(); today.setHours(0, 0, 0, 0);
-          const allStarts = qualifying.map(s => new Date(s.start_date)).concat([today]);
-          const allEnds = qualifying.map(s => new Date(s.end_date || s.delivery_date)).concat([today]);
+          const allStarts = qualifying.map(s => parseDateKey(ganttWindow(s).s)).concat([today]);
+          const allEnds = qualifying.map(s => parseDateKey(ganttWindow(s).e)).concat([today]);
           const rangeStart = new Date(Math.min(...allStarts));
           const rangeEnd = new Date(Math.max(...allEnds));
           const totalDays = Math.max(1, Math.ceil((rangeEnd - rangeStart) / dayMs)) + 12;
@@ -1805,11 +1844,11 @@
             trackRows.push(`<div class="gantt-track-row"></div>`);
 
             projStages.forEach(s => {
-              const start = new Date(s.start_date);
-              const end = new Date(s.end_date || s.delivery_date);
+              const start = parseDateKey(ganttWindow(s).s);
+              const end = parseDateKey(ganttWindow(s).e);
               const left = dayOffset(start);
               const width = Math.max(10, dayOffset(end) - left);
-              const isOverdue = end < today;
+              const isOverdue = isStageLate(s);
               const color = isOverdue
                 ? 'var(--danger)'
                 : isStageActive(s)
@@ -1817,7 +1856,7 @@
                   : 'var(--accent-muted)';
               const invoiced = stageBudgetValue(s);
 
-              labelRows.push(`<div class="gantt-label-cell" style="padding-left:14px; font-weight:500;" data-open-project="${escapeHtml(p.id)}"><span class="gantt-label-text">${escapeHtml(s.stage_types?.name ?? 'Fase')}</span></div>`);
+              labelRows.push(`<div class="gantt-label-cell" style="padding-left:14px; font-weight:500;" data-open-project="${escapeHtml(p.id)}"><span class="gantt-label-text">${escapeHtml(phaseName(s))}</span></div>`);
               trackRows.push(`
                 <div class="gantt-track-row" data-open-project="${escapeHtml(p.id)}">
                   <div class="gantt-lane"></div>
@@ -1919,11 +1958,11 @@
         scrollGanttToToday();
 
         const withoutDatesByProject = projects
-          .map(p => ({ project: p, stages: (stagesByProject[p.id] || []).filter(s => !hasDates(s)) }))
+          .map(p => ({ project: p, stages: (stagesByProject[p.id] || []).filter(s => !hasDates(s) && notCompleted(s)) }))
           .filter(g => g.stages.length > 0);
 
         if (withoutDatesByProject.length === 0) {
-          tableEl.innerHTML = '<div class="gantt-wrap"><div class="gantt-empty">Todas as fases já têm datas de início e fim.</div></div>';
+          tableEl.innerHTML = '<div class="gantt-wrap"><div class="gantt-empty">Todas as fases por fazer têm lead time.</div></div>';
         } else {
           tableEl.innerHTML = withoutDatesByProject.map(g => `
             <div class="gantt-wrap" style="margin-bottom:12px;">
@@ -2022,7 +2061,6 @@
       document.getElementById('home-view').style.display = 'block';
       renderHomeGreeting();
       renderToday();
-      loadAgenda();
     }
 
     function openProjectsModule() {
@@ -2090,7 +2128,8 @@
     }
 
     function switchHorasTab(tab) {
-      document.querySelectorAll('#horas-tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+      document.getElementById('horas-back').style.display = tab === 'week' ? 'none' : 'flex';
+      document.getElementById('horas-back-title').textContent = tab === 'history' ? 'Todos os registos' : (horasEditingId ? 'Editar registo' : 'Novo registo');
       document.getElementById('horas-week-panel').style.display = tab === 'week' ? 'block' : 'none';
       document.getElementById('horas-new-panel').style.display = tab === 'new' ? 'block' : 'none';
       document.getElementById('horas-history-panel').style.display = tab === 'history' ? 'block' : 'none';
@@ -2098,11 +2137,7 @@
       if (tab === 'history') loadHorasHistory();
     }
 
-    document.getElementById('horas-tabs').addEventListener('click', (e) => {
-      const btn = e.target.closest('button[data-tab]');
-      if (!btn) return;
-      switchHorasTab(btn.dataset.tab);
-    });
+    document.getElementById('horas-back-btn').addEventListener('click', () => switchHorasTab('week'));
 
     document.getElementById('horas-mode-toggle').addEventListener('click', (e) => {
       const btn = e.target.closest('button[data-mode]');
@@ -2308,7 +2343,7 @@
         }
 
         if (!entries || entries.length === 0) {
-          container.innerHTML = '<div class="gantt-empty">Ainda não tens imputações registadas.</div>';
+          container.innerHTML = '<div class="gantt-empty">Ainda não tens horas registadas. Volta à semana e escreve as horas na grelha.</div>';
           return;
         }
 
@@ -2602,7 +2637,7 @@
       atas: openAtasModule,
       despesas: openDespesasModule,
       settings: openSettingsModule,
-      team: () => showTeamView()
+      agenda: () => openAgendaModule()
     };
     document.querySelectorAll('[data-nav]').forEach(el => el.addEventListener('click', () => {
       navStack = [];
@@ -2886,7 +2921,7 @@
         } else {
           const [projectRes, stagesRes, invoicesRes, timeRes, breaksRes, expensesRes, notesRes] = await Promise.all([
             supabase.from('projects').select('*, clients(name), project_types(name)').eq('id', projectId).single(),
-            supabase.from('project_stages').select('*, stage_types(name)').eq('project_id', projectId).order('stage_order'),
+            supabase.from('project_stages').select('*, stage_types(name, break_immune)').eq('project_id', projectId).order('stage_order'),
             supabase.from('invoices').select('*').eq('project_id', projectId).order('issue_date'),
             supabase.from('time_entries').select('hours, billable, stage_id, user_id').eq('project_id', projectId),
             supabase.from('project_breaks').select('*').eq('project_id', projectId).order('position_order'),
@@ -2904,6 +2939,7 @@
           projectNotes = notesRes.data || [];
 
         }
+        computeProjectPlan(project, stages, breaks);
 
         // Marcos do projeto (sempre, em qualquer modo)
         try {
@@ -2987,16 +3023,17 @@
           const pxPerDay = scale === 'month' ? 6 : 20;
           const dayMs = 86400000;
 
-          const stageDates = stages
-            .filter(s => s.start_date && (s.end_date || s.delivery_date))
-            .map(s => ({ start: new Date(s.start_date), end: new Date(s.end_date || s.delivery_date) }));
+          // Barra = período previsto (calculado); sem cálculo, as datas de trabalho
+          const win = s => (s.plan_start && s.plan_end) ? { s: s.plan_start, e: s.plan_end } : phaseWindow(s);
+          const stageDates = stages.filter(win)
+            .map(s => ({ start: parseDateKey(win(s).s), end: parseDateKey(win(s).e) }));
           const breakDates = breaks
             .filter(b => b.start_date && b.end_date)
-            .map(b => ({ start: new Date(b.start_date), end: new Date(b.end_date) }));
+            .map(b => ({ start: parseDateKey(b.start_date), end: parseDateKey(b.end_date) }));
           const allDates = stageDates.concat(breakDates);
 
           if (allDates.length === 0) {
-            return '<div class="gantt-empty">Sem datas suficientes para desenhar o cronograma.</div>';
+            return '<div class="gantt-empty">Sem datas para desenhar o cronograma. Indica a data de adjudicação (em Detalhes → Editar) e o lead time de cada fase (toca na fase → Mais opções).</div>';
           }
 
           const minDate = new Date(Math.min(...allDates.map(d => d.start)));
@@ -3006,8 +3043,8 @@
           const dayOffset = (d) => Math.round((d - minDate) / dayMs) * pxPerDay;
 
           const timelineItems = [
-            ...stages.map(s => ({ kind: 'stage', data: s, sortDate: s.start_date ? new Date(s.start_date) : null })),
-            ...breaks.map(b => ({ kind: 'break', data: b, sortDate: b.start_date ? new Date(b.start_date) : null }))
+            ...stages.map(s => ({ kind: 'stage', data: s, sortDate: win(s) ? parseDateKey(win(s).s) : null })),
+            ...breaks.map(b => ({ kind: 'break', data: b, sortDate: b.start_date ? parseDateKey(b.start_date) : null }))
           ].sort((a, b) => {
             if (!a.sortDate && !b.sortDate) return 0;
             if (!a.sortDate) return 1;
@@ -3030,9 +3067,9 @@
           const tracksHtml = timelineItems.map(item => {
             if (item.kind === 'stage') {
               const s = item.data;
-              if (!s.start_date) return `<div class="gantt-track-row"><div class="gantt-lane"></div></div>`;
-              const start = new Date(s.start_date);
-              const end = new Date(s.end_date || s.delivery_date || s.start_date);
+              if (!win(s)) return `<div class="gantt-track-row"><div class="gantt-lane"></div></div>`;
+              const start = parseDateKey(win(s).s);
+              const end = parseDateKey(win(s).e);
               const left = dayOffset(start);
               const width = Math.max(10, dayOffset(end) - left);
               const color = s.status === 'completed' || s.status === 'done'
@@ -3049,15 +3086,15 @@
             }
             const b = item.data;
             if (!b.start_date || !b.end_date) return `<div class="gantt-track-row"><div class="gantt-lane"></div></div>`;
-            const start = new Date(b.start_date);
-            const end = new Date(b.end_date);
+            const start = parseDateKey(b.start_date);
+            const end = parseDateKey(b.end_date);
             const left = dayOffset(start);
             const width = Math.max(10, dayOffset(end) - left);
             return `
               <div class="gantt-track-row">
                 <div class="gantt-lane"></div>
                 <div class="gantt-bar break-bar" style="left:${left}px; width:${width}px;">
-                  <span class="pct">${escapeHtml(b.type ?? '')}</span>
+                  <span class="pct">${escapeHtml(Object.fromEntries(BREAK_TYPES)[b.type] ?? b.type ?? '')}</span>
                 </div>
               </div>`;
           }).join('');
@@ -3154,7 +3191,7 @@
         if (stages.length > 0) {
           stagesTableHtml = `
             <div class="table-scroll"><table class="mini-table">
-              <thead><tr><th>Fase</th><th>Estado</th>${assignSupport ? '<th>Pessoas</th>' : ''}<th class="col-value">Valor</th><th class="col-value">Horas</th><th>Faturação</th><th>Pagamento</th></tr></thead>
+              <thead><tr><th>Fase</th><th>Estado</th><th>Lead time</th>${assignSupport ? '<th>Pessoas</th>' : ''}<th class="col-value">Valor</th><th class="col-value">Horas</th><th>Faturação</th><th>Pagamento</th></tr></thead>
               <tbody>
                 ${stages.map(s => {
                   const inv = stageInvoiceMap[s.id] || { amount: 0, paid: 0 };
@@ -3183,6 +3220,7 @@
                     <tr class="click-row" data-phase-row="${escapeHtml(s.id)}" title="Editar fase"${isExcluded ? ' style="opacity:.55;"' : ''}>
                       <td>${faseLabel}</td>
                       <td>${stageStatusLabel(s)}</td>
+                      <td class="nowrap${isStageLate(s) ? ' late-text' : ''}">${s.delivery_date ? 'Entregue ' + escapeHtml(fmtDayMonth(s.delivery_date)) : s.plan_end ? escapeHtml(fmtDayMonth(s.plan_end)) + (s.is_deadline_fixed && s.deadline_override && s.plan_auto_end && s.plan_auto_end !== s.plan_end ? ` <span class="lt-manual" title="Alterado à mão · original ${escapeHtml(fmtDayMonth(s.plan_auto_end))}">✎</span>` : '') : '—'}</td>
                       ${assignSupport ? `<td><button type="button" class="assign-cell" data-assign-stage="${escapeHtml(s.id)}" title="Escolher pessoas">${(stageAssignees[s.id] || []).length ? avatarsHtml(stageAssignees[s.id], ataMemberNames, meId) : '<span class="assign-empty">+ Atribuir</span>'}</button></td>` : ''}
                       <td class="col-value">${fmtEUR(budgeted)}</td>
                       <td class="col-value">${fmtHours(horas)}</td>
@@ -4174,7 +4212,7 @@
       const container = document.getElementById('atas-container');
       if (!data || data.length === 0) {
         container.className = 'center-msg';
-        container.textContent = 'Sem atas correspondentes.';
+        container.textContent = 'Sem atas. Para criar uma, usa Novo → Nova ata de reunião.';
         return;
       }
       container.className = '';
@@ -4697,8 +4735,9 @@
     // Estados reais das fases: todo, pending, wip, interrupted, done
     const isStageDone = s => s.status === 'done' || s.status === 'completed';
     const isStageActive = s => ['wip', 'in_progress', 'active'].includes(s.status);
-    // Data limite: prazo fixado (deadline_override) → data de entrega → fim previsto
-    const stageDeadline = s => s.deadline_override || s.delivery_date || s.end_date || null;
+    // Lead time: data calculada a partir da adjudicação (plan_end), ou alterada à mão;
+    // sem cálculo possível, vale o fim do trabalho. A entrega (delivery_date) é o que aconteceu.
+    const stageDeadline = s => s.plan_end || s.deadline_override || s.end_date || null;
     const maxKey = (a, b) => (!a ? b : !b ? a : (a > b ? a : b));
     function diffDays(fromKey, toKey) {
       return Math.round((parseDateKey(toKey) - parseDateKey(fromKey)) / 86400000);
@@ -4713,17 +4752,81 @@
     }
     function isStageLate(s, todayKey = dateKey(new Date())) {
       const dl = stageDeadline(s);
-      return !isStageDone(s) && !!dl && dl < todayKey;
+      return !isStageDone(s) && !s.delivery_date && !!dl && dl < todayKey;
     }
     function deadlineText(s, todayKey = dateKey(new Date())) {
+      if (s.delivery_date) return 'Entregue a ' + fmtDayMonth(s.delivery_date);
       const dl = stageDeadline(s);
       if (!dl) return '';
       const d = diffDays(todayKey, dl);
       if (d < 0) return `Atrasada ${-d} ${d === -1 ? 'dia' : 'dias'}`;
-      if (d === 0) return 'Prazo hoje';
-      if (d === 1) return 'Prazo amanhã';
-      if (d <= 14) return `Prazo em ${d} dias`;
-      return 'Prazo a ' + fmtDayMonth(dl);
+      if (d === 0) return 'Termina hoje';
+      if (d === 1) return 'Termina amanhã';
+      if (d <= 14) return `Termina em ${d} dias`;
+      return 'Termina a ' + fmtDayMonth(dl);
+    }
+    // ---------- Plano: lead time de cada fase ----------
+    // Soma os prazos (dias úteis: seg–sex, sem feriados nacionais) das fases, por ordem,
+    // a partir da data de adjudicação. Um prazo fixado substitui o cálculo. Durante as
+    // pausas do projeto o prazo não corre, exceto nas fases que continuam durante as
+    // pausas (ex.: Licenciamento, PIP). Adjudicação e Assistência Técnica ficam fora.
+    const holidayCache = {};
+    function ptHolidays(y) {
+      if (holidayCache[y]) return holidayCache[y];
+      const a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4;
+      const f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
+      const i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
+      const easter = dateKey(new Date(y, Math.floor((h + l - 7 * m + 114) / 31) - 1, ((h + l - 7 * m + 114) % 31) + 1));
+      holidayCache[y] = new Set([`${y}-01-01`, addDaysKey(easter, -2), easter, `${y}-04-25`, `${y}-05-01`,
+        addDaysKey(easter, 60), `${y}-06-10`, `${y}-08-15`, `${y}-10-05`, `${y}-11-01`, `${y}-12-01`, `${y}-12-08`, `${y}-12-25`]);
+      return holidayCache[y];
+    }
+    function isWorkday(key) {
+      const d = parseDateKey(key), w = d.getDay();
+      return w !== 0 && w !== 6 && !ptHolidays(d.getFullYear()).has(key);
+    }
+    function addWorkdays(fromKey, n, breaks = []) {
+      let key = fromKey, count = 0, guard = 0;
+      while (count < n && guard++ < 5000) {
+        key = addDaysKey(key, 1);
+        if (isWorkday(key) && !breaks.some(b => b.start_date && key >= b.start_date && key <= (b.end_date || '9999-12-31'))) count++;
+      }
+      return key;
+    }
+    const isOffPlanStage = s => /assist[eê]ncia|adjudica/i.test(s.stage_types?.name || '');
+    function computeProjectPlan(project, stages, breaks = []) {
+      let cursor = project?.awarding_date || null;
+      [...stages].sort((a, b) => (a.stage_order ?? 0) - (b.stage_order ?? 0)).forEach(s => {
+        s.plan_start = null; s.plan_end = null; s.plan_auto_end = null;
+        if (isOffPlanStage(s)) return;
+        const lead = Number(s.expected_lead_time_days) || 0;
+        const start = cursor || s.start_date || null;
+        // Lead time original (calculado); uma alteração manual substitui-o e as fases seguintes acompanham
+        if (start && lead > 0) s.plan_auto_end = addWorkdays(start, lead, s.stage_types?.break_immune ? [] : breaks);
+        const end = (s.is_deadline_fixed && s.deadline_override) ? s.deadline_override : s.plan_auto_end;
+        if (!end) return;
+        s.plan_start = start && start <= end ? start : end;
+        s.plan_end = end;
+        cursor = end;
+      });
+      return stages;
+    }
+    // Listas "por fazer": por projeto, só as fases em curso e a seguinte
+    function currentAndNextStages(stages) {
+      const open = stages.filter(s => !isOffPlanStage(s) && !isStageDone(s))
+        .sort((a, b) => (a.stage_order ?? 0) - (b.stage_order ?? 0));
+      const running = open.filter(s => isStageActive(s) || s.status === 'interrupted');
+      const lastOrder = running.length ? Math.max(...running.map(s => s.stage_order ?? 0)) : -Infinity;
+      const next = open.find(s => !running.includes(s) && (s.stage_order ?? 0) > lastOrder)
+        || (running.length ? null : open[0]);
+      return next ? [...running, next] : running;
+    }
+
+    // Faixa desenhada: o trabalho (início → fim); sem datas de trabalho, o período previsto
+    function phaseWindow(p) {
+      if (p.start_date) return { s: p.start_date, e: p.end_date && p.end_date >= p.start_date ? p.end_date : p.start_date };
+      if (p.plan_start && p.plan_end) return { s: p.plan_start, e: p.plan_end };
+      return null;
     }
     const phaseName = p => `${p.stage_types?.name ?? 'Fase'}${p.revision_label ? ' ' + p.revision_label : ''}`;
     const phaseLabel = p => `${p.projects?.name ?? 'Projeto'} · ${phaseName(p)}`;
@@ -4764,7 +4867,7 @@
       return map;
     }
 
-    // Todas as fases por concluir e com datas (são poucas; servem a Home e o calendário)
+    // Fases "por fazer" de cada projeto ativo (em curso + a seguinte), com o lead time calculado
     let activePhasesCache = null;
     function invalidateActivePhases() { activePhasesCache = null; }
     function fetchActivePhases() {
@@ -4774,12 +4877,20 @@
         if (devMode) {
           rows = MOCK_AGENDA_PHASES.filter(p => p.status !== 'done').map(p => ({ ...p }));
         } else {
-          const r = await supabase.from('project_stages')
-            .select('id, project_id, status, start_date, end_date, delivery_date, deadline_override, revision_label, stage_types(name), projects(name, code, archived_at)')
-            .neq('status', 'done')
-            .not('start_date', 'is', null);
-          if (r.error) throw r.error;
-          rows = (r.data || []).filter(p => !p.projects?.archived_at);
+          const [st, br] = await Promise.all([
+            supabase.from('project_stages')
+              .select('id, project_id, stage_order, status, start_date, end_date, delivery_date, deadline_override, is_deadline_fixed, expected_lead_time_days, revision_label, stage_types(name, break_immune), projects(name, code, awarding_date, archived_at)'),
+            supabase.from('project_breaks').select('project_id, start_date, end_date')
+          ]);
+          if (st.error) throw st.error;
+          const all = (st.data || []).filter(p => p.projects && !p.projects.archived_at);
+          const byProject = {};
+          all.forEach(p => (byProject[p.project_id] = byProject[p.project_id] || []).push(p));
+          rows = [];
+          Object.values(byProject).forEach(list => {
+            computeProjectPlan(list[0].projects, list, (br.data || []).filter(b => b.project_id === list[0].project_id));
+            rows.push(...currentAndNextStages(list));
+          });
         }
         const map = await loadStageAssignees(rows.map(p => p.id));
         rows.forEach(p => { p.assignee_ids = map[p.id] || []; });
@@ -4929,12 +5040,12 @@
             </div>`
         }));
         myPhases.forEach(p => {
-          const dl = stageDeadline(p);
+          const dl = p.delivery_date ? null : stageDeadline(p);
           if (!dl || dl < todayKey || dl > lastKey) return;
           (byDay[dl] = byDay[dl] || []).push({
             sort: '99',
             html: `<div class="wk-item" data-open-project="${escapeHtml(p.project_id)}">
-                <span class="wk-time">Prazo</span>
+                <span class="wk-time">Fim</span>
                 <span class="wk-flag"></span>
                 <span class="wk-text"><b>${escapeHtml(phaseName(p))}</b><span>${escapeHtml(p.projects?.name ?? '')}</span></span>
               </div>`
@@ -4961,31 +5072,32 @@
           const items = byDay[key].sort((a, b) => a.sort.localeCompare(b.sort));
           weekHtml += `<div class="wk-group"><div class="wk-day">${escapeHtml(dayTitle(key))}</div>${items.map(i => i.html).join('')}</div>`;
         });
-        weekEl.innerHTML = weekHtml || '<div class="gantt-empty">Nada marcado para os próximos 7 dias.</div>';
+        weekEl.innerHTML = weekHtml || '<div class="gantt-empty">Nada marcado para os próximos 7 dias. Para marcar uma reunião ou visita, usa <b>Novo → Novo marco</b>.</div>';
 
         // --- As minhas fases ---
         if (myPhases.length === 0) {
           phasesEl.innerHTML = phases.length
-            ? '<div class="gantt-empty">Ainda não tens fases atribuídas. Na ficha de cada projeto, em Fases, escolhe quem trabalha em cada fase.</div>'
-            : '<div class="gantt-empty">Sem fases em curso.</div>';
+            ? '<div class="gantt-empty">Ainda não tens fases atribuídas. Abre um projeto, vai a <b>Fases</b> e toca em <b>+ Atribuir</b>.</div>'
+            : '<div class="gantt-empty">Não há fases por fazer. Quando uma fase de um projeto começar, aparece aqui.</div>';
         } else {
           const ordered = [...myPhases].sort((a, b) => (stageDeadline(a) || '9999').localeCompare(stageDeadline(b) || '9999'));
           phasesEl.innerHTML = ordered.map(p => {
-            const total = Math.max(1, diffDays(p.start_date, p.end_date || p.start_date));
-            const pct = Math.min(100, Math.max(0, Math.round(diffDays(p.start_date, todayKey) / total * 100)));
+            const win = phaseWindow(p);
+            const total = win ? Math.max(1, diffDays(win.s, win.e)) : 1;
+            const pct = win ? Math.min(100, Math.max(0, Math.round(diffDays(win.s, todayKey) / total * 100))) : 0;
             const lateCls = isStageLate(p, todayKey) ? ' late' : '';
             return `
               <div class="ph-row${lateCls}" data-phase-id="${escapeHtml(p.id)}" title="Editar fase">
                 <div class="ph-main"><b>${escapeHtml(p.projects?.name ?? 'Projeto')}</b><span>${escapeHtml(phaseName(p))}</span></div>
                 <select class="ph-status" data-stage-status="${escapeHtml(p.id)}" aria-label="Estado da fase">${stageStatusOptions(p.status)}</select>
-                <div class="ph-progress" title="${escapeHtml(fmtDayMonth(p.start_date))} → ${escapeHtml(fmtDayMonth(p.end_date || p.start_date))}"><span style="width:${pct}%"></span></div>
+                <div class="ph-progress" title="${win ? escapeHtml(fmtDayMonth(win.s) + ' → ' + fmtDayMonth(win.e)) : 'Sem datas'}"><span style="width:${pct}%"></span></div>
                 <div class="ph-due">${escapeHtml(deadlineText(p, todayKey))}</div>
                 <div class="marco-owners">${avatarsHtml(p.assignee_ids, ataMemberNames, me)}</div>
               </div>`;
           }).join('');
         }
 
-        const refreshHome = () => { if (document.getElementById('home-view').style.display !== 'none') { renderToday(); loadAgenda(); } };
+        const refreshHome = () => { if (document.getElementById('home-view').style.display !== 'none') renderToday(); };
         document.querySelectorAll('#home-view .today-grid [data-open-project]').forEach(el =>
           el.addEventListener('click', () => openDetail(el.dataset.openProject)));
         phasesEl.querySelectorAll('[data-phase-id]').forEach(el =>
@@ -5078,10 +5190,10 @@
       const maxLanes = calNarrow.matches ? 2 : 3;
 
       // Cada fase ocupa do início até ao fim — ou até ao prazo, se este for depois do fim
-      const spans = phases.map(p => {
-        const barEnd = p.end_date && p.end_date >= p.start_date ? p.end_date : p.start_date;
-        const dl = stageDeadline(p);
-        return { p, s: p.start_date, barEnd, dl, e: maxKey(barEnd, dl && dl >= p.start_date ? dl : null) };
+      const spans = phases.filter(p => phaseWindow(p)).map(p => {
+        const { s, e: barEnd } = phaseWindow(p);
+        const dl = p.delivery_date ? null : stageDeadline(p);
+        return { p, s, barEnd, dl, e: maxKey(barEnd, dl && dl >= s ? dl : null) };
       });
 
       let html = '<div class="cal-dows">' + ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map(d => `<div class="cal-dow">${d}</div>`).join('') + '</div>';
@@ -5131,7 +5243,7 @@
           const row = x.lane + 2;
           const late = isStageLate(p, todayKey);
           const state = late ? ' late' : p.status === 'interrupted' ? ' interrupted' : '';
-          const title = `${phaseLabel(p)} — ${fmtDayMonth(p.start_date)} a ${fmtDayMonth(x.barEnd)}${x.dl ? ' · prazo ' + fmtDayMonth(x.dl) : ''}`;
+          const title = `${phaseLabel(p)} — ${fmtDayMonth(x.s)} a ${fmtDayMonth(x.barEnd)}${x.dl ? ' · lead time ' + fmtDayMonth(x.dl) : ''}`;
           // Faixa (início → fim)
           if (x.barEnd >= wStart && x.s <= wEnd) {
             const b0 = x.c0, b1 = Math.min(6, col(x.barEnd));
@@ -5146,8 +5258,8 @@
             }
           }
           // Marca do prazo
-          if (x.dl && x.dl >= wStart && x.dl <= wEnd && x.dl >= p.start_date) {
-            html += `<div class="cal-flag${late ? ' late' : ''}" style="grid-column:${col(x.dl) + 1}; grid-row:${row}" title="Prazo: ${escapeHtml(fmtDayMonth(x.dl))}"></div>`;
+          if (x.dl && x.dl >= wStart && x.dl <= wEnd && x.dl >= x.s) {
+            html += `<div class="cal-flag${late ? ' late' : ''}" style="grid-column:${col(x.dl) + 1}; grid-row:${row}" title="Lead time: ${escapeHtml(fmtDayMonth(x.dl))}"></div>`;
           }
         });
         if (hasHidden) {
@@ -5176,7 +5288,7 @@
       grid.querySelectorAll('[data-day]').forEach(btn => {
         btn.addEventListener('click', () => { agendaSelected = btn.dataset.day; renderAgenda(); });
       });
-      const afterPhaseEdit = () => { loadAgenda(); if (document.getElementById('home-view').style.display !== 'none') renderToday(); };
+      const afterPhaseEdit = () => loadAgenda();
       grid.querySelectorAll('[data-open-project]').forEach(el => {
         el.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -5194,20 +5306,21 @@
       });
     }
     calNarrow.addEventListener('change', () => {
-      if (document.getElementById('home-view').style.display !== 'none' && agendaData.phases) renderAgenda();
+      if (agendaVisibleNow() && agendaMode === 'month' && agendaData.phases) renderAgenda();
     });
 
     function phaseRowHtml(p, dayKey) {
       const todayKey = dateKey(new Date());
       const late = isStageLate(p, todayKey);
       const bits = [p.projects?.name ?? 'Projeto'];
-      bits.push(`${fmtDayMonth(p.start_date)} → ${fmtDayMonth(p.end_date || p.start_date)}`);
+      const win = phaseWindow(p);
+      if (win) bits.push(`${fmtDayMonth(win.s)} → ${fmtDayMonth(win.e)}`);
       const dt = deadlineText(p, todayKey);
       if (dt) bits.push(dt);
-      const onDeadline = stageDeadline(p) === dayKey;
+      const onDeadline = !p.delivery_date && stageDeadline(p) === dayKey;
       return '<div class="marco-row" data-open-project="' + escapeHtml(p.project_id) + '" data-phase-id="' + escapeHtml(p.id) + '">' +
         '<span class="marco-stripe" style="background:' + (late ? 'var(--danger)' : p.status === 'interrupted' ? 'var(--text-3)' : 'var(--accent)') + '"></span>' +
-        '<span class="marco-time">' + (onDeadline ? 'Prazo' : 'Fase') + '</span>' +
+        '<span class="marco-time">' + (onDeadline ? 'Fim' : 'Fase') + '</span>' +
         '<span class="marco-body">' +
           '<span class="marco-title">' + escapeHtml(phaseName(p)) + (p.status === 'interrupted' ? ' <span class="invoice-status neutral">Interrompida</span>' : '') + '</span>' +
           '<span class="marco-meta' + (late ? ' late' : '') + '">' + escapeHtml(bits.join(' · ')) + '</span>' +
@@ -5224,12 +5337,12 @@
       { group: 'Criar', label: 'Nova ata de reunião', keys: 'ata reuniao notas', run: () => runCreateAction('ata') },
       { group: 'Criar', label: 'Registar despesa', keys: 'despesa gasto recibo', run: () => runCreateAction('despesa') },
       { group: 'Criar', label: 'Novo projeto', keys: 'projeto obra cliente', run: () => runCreateAction('projeto') },
-      { group: 'Ir para', label: 'Hoje', keys: 'home inicio agenda calendario', run: () => NAV_ACTIONS.home() },
+      { group: 'Ir para', label: 'Hoje', keys: 'home inicio', run: () => NAV_ACTIONS.home() },
       { group: 'Ir para', label: 'Projetos', keys: 'lista carteira', run: () => NAV_ACTIONS.projects() },
       { group: 'Ir para', label: 'Horas', keys: 'historico imputacoes', run: () => NAV_ACTIONS.horas() },
       { group: 'Ir para', label: 'Atas', keys: 'reunioes', run: () => NAV_ACTIONS.atas() },
       { group: 'Ir para', label: 'Despesas', keys: 'reembolsos', run: () => NAV_ACTIONS.despesas() },
-      { group: 'Ir para', label: 'Planeamento', keys: 'equipa gantt fases cronograma', run: () => NAV_ACTIONS.team() },
+      { group: 'Ir para', label: 'Agenda', keys: 'calendario mes planeamento gantt fases cronograma', run: () => NAV_ACTIONS.agenda() },
       { group: 'Ir para', label: 'Definições', keys: 'categorias tipos configuracao', run: () => NAV_ACTIONS.settings() }
     ];
     const cmdk = document.getElementById('cmdk');
@@ -5464,9 +5577,10 @@
     function tsInputHtml(l, day, big) {
       const c = tsCell(l.key, day);
       const multi = c.list.length > 1;
-      return `<input class="ts-cell${big ? ' big' : ''}${multi ? ' multi' : ''}" inputmode="decimal" autocomplete="off" placeholder="–"
+      const note = c.list.length === 1 ? (c.list[0].description || '') : '';
+      return `<input class="ts-cell${big ? ' big' : ''}${multi ? ' multi' : ''}${note ? ' has-note' : ''}" inputmode="${big ? 'decimal' : 'text'}" autocomplete="off" placeholder="–"
         data-line="${escapeHtml(l.key)}" data-day="${day}" value="${fmtHoursInput(c.total)}"
-        ${multi ? `readonly title="${c.list.length} registos neste dia — tocar para ver"` : ''}
+        ${multi ? `readonly title="${c.list.length} registos neste dia — tocar para ver"` : note ? `title="${escapeHtml(note)}"` : ''}
         aria-label="${escapeHtml(tsLineName(l).title + ' — ' + fmtDayMonth(day))}">`;
     }
     function tsLineCellHtml(l) {
@@ -5525,7 +5639,8 @@
       }
       html += `<div class="ts-foot">
           <button type="button" class="secondary-btn ts-add" data-ts-add>+ Acrescentar linha</button>
-          <span class="field-hint">Escreve as horas e sai da célula: fica gravado. Aceita 1,5 ou 1:30. Para apagar, deixa vazio.</span>
+          <span class="field-hint">Escreve as horas e sai da célula: fica gravado. Aceita 1,5 ou 1:30${tsNarrow.matches ? '' : ', e uma nota a seguir (ex.: <b>2 revisão de plantas</b>)'}. Para apagar, deixa vazio.</span>
+          <button type="button" class="text-btn" data-ts-list>Ver registos</button>
         </div>`;
       box.innerHTML = html;
       tsBind();
@@ -5544,13 +5659,16 @@
       const key = input.dataset.line, day = input.dataset.day;
       const line = tsState.lines.find(l => l.key === key);
       const cell = tsCell(key, day);
-      const v = parseHoursInput(input.value);
+      // "2 revisão de plantas" → 2 horas com a nota "revisão de plantas"
+      const typed = input.value.trim().match(/^([\d.,:]+)\s+(.+)$/);
+      const note = typed ? typed[2].trim().slice(0, 500) : null;
+      const v = parseHoursInput(typed ? typed[1] : input.value);
       if (Number.isNaN(v) || v < 0 || v > 24) {
         input.value = fmtHoursInput(cell.total);
         showToast('Valor inválido. Escreve horas, por exemplo 1,5 ou 1:30.', { type: 'error' });
         return;
       }
-      if (Math.abs(v - cell.total) < 0.001) { input.value = fmtHoursInput(cell.total); return; }
+      if (Math.abs(v - cell.total) < 0.001 && !(note && cell.list.length === 1)) { input.value = fmtHoursInput(cell.total); return; }
 
       input.classList.add('saving');
       try {
@@ -5576,16 +5694,17 @@
           });
         } else if (cell.list.length === 1) {
           const e = cell.list[0];
-          if (devMode) { const m = mockTimeLog.find(x => x.id === e.id); if (m) m.hours = v; }
+          const patch = note ? { hours: v, description: note } : { hours: v };
+          if (devMode) { const m = mockTimeLog.find(x => x.id === e.id); if (m) Object.assign(m, patch); }
           else {
-            const r = await supabase.from('time_entries').update({ hours: v }).eq('id', e.id);
+            const r = await supabase.from('time_entries').update(patch).eq('id', e.id);
             if (r.error) throw r.error;
           }
-          e.hours = v;
+          Object.assign(e, patch);
         } else if (cell.list.length === 0) {
           const payload = {
             project_id: line.project_id, stage_id: line.stage_id, category_id: line.category_id,
-            hours: v, billable: !!line.billable, date: day, description: null, user_id: tsState.me
+            hours: v, billable: !!line.billable, date: day, description: note, user_id: tsState.me
           };
           let id;
           if (devMode) { id = 'log-' + Date.now(); mockTimeLog.push({ id, ...payload }); }
@@ -5598,6 +5717,11 @@
           line.origin = 'week';
         }
         input.value = fmtHoursInput(v);
+        const saved = tsCell(key, day);
+        const savedNote = saved.list.length === 1 ? (saved.list[0].description || '') : '';
+        input.classList.toggle('has-note', !!savedNote);
+        if (savedNote) input.title = savedNote; else input.removeAttribute('title');
+        if (note) showToast('Nota guardada: ' + note);
         input.classList.add('saved');
         setTimeout(() => input.classList.remove('saved'), 900);
         tsUpdateTotals();
@@ -5737,6 +5861,7 @@
         tsDay = b.dataset.tsDay; renderTimesheet();
       }));
       box.querySelectorAll('[data-ts-add]').forEach(b => b.addEventListener('click', tsAddLineModal));
+      box.querySelectorAll('[data-ts-list]').forEach(b => b.addEventListener('click', () => switchHorasTab('history')));
       box.querySelectorAll('[data-ts-bill]').forEach(b => b.addEventListener('click', () => tsToggleBill(b.dataset.tsBill)));
       box.querySelectorAll('[data-ts-hide]').forEach(b => b.addEventListener('click', () => {
         (tsHidden[tsWeekStart] = tsHidden[tsWeekStart] || new Set()).add(b.dataset.tsHide);
@@ -5767,12 +5892,14 @@
 
     // ================= EDIÇÃO: fases, projeto, faturas e pausas =================
     // Estados das fases (valores usados na base de dados)
+    // "pending" e "todo" querem dizer o mesmo para quem usa a app: Por iniciar
     const STAGE_STATUSES = [
-      ['pending', 'Por iniciar'], ['todo', 'A fazer'], ['wip', 'Em curso'],
+      ['pending', 'Por iniciar'], ['todo', 'Por iniciar'], ['wip', 'Em curso'],
       ['interrupted', 'Interrompida'], ['done', 'Concluída']
     ];
-    const stageStatusOptions = cur => STAGE_STATUSES.map(([v, l]) =>
-      `<option value="${v}"${v === cur ? ' selected' : ''}>${l}</option>`).join('') +
+    const stageStatusOptions = cur => STAGE_STATUSES
+      .filter(([v]) => v === 'todo' ? cur === 'todo' : !(v === 'pending' && cur === 'todo'))
+      .map(([v, l]) => `<option value="${v}"${v === cur ? ' selected' : ''}>${l}</option>`).join('') +
       (cur && !STAGE_STATUSES.some(([v]) => v === cur) ? `<option value="${escapeHtml(cur)}" selected>${escapeHtml(cur)}</option>` : '');
 
     // Escritas genéricas (no modo de demonstração, alteram os dados de exemplo)
@@ -5829,11 +5956,18 @@
           stage = { ...[...MOCK_STAGES, ...MOCK_AGENDA_PHASES].find(s => String(s.id) === String(stageId)) };
           project = MOCK_PROJECTS.find(p => p.id === stage.project_id) || MOCK_PROJECTS[0];
         } else {
-          const r = await supabase.from('project_stages').select('*, stage_types(name)').eq('id', stageId).single();
+          const r = await supabase.from('project_stages').select('*, stage_types(name, break_immune)').eq('id', stageId).single();
           if (r.error) throw r.error;
           stage = r.data;
-          const pr = await supabase.from('projects').select('id, name, commission_value').eq('id', stage.project_id).single();
+          const [pr, sibs, brs] = await Promise.all([
+            supabase.from('projects').select('id, name, commission_value, awarding_date').eq('id', stage.project_id).single(),
+            supabase.from('project_stages').select('id, stage_order, status, start_date, end_date, deadline_override, is_deadline_fixed, expected_lead_time_days, stage_types(name, break_immune)').eq('project_id', stage.project_id),
+            supabase.from('project_breaks').select('start_date, end_date').eq('project_id', stage.project_id)
+          ]);
           project = pr.data || { id: stage.project_id, name: 'Projeto' };
+          const list = computeProjectPlan(project, sibs.data || [], brs.data || []);
+          const me = list.find(x => x.id === stage.id);
+          if (me) Object.assign(stage, { plan_start: me.plan_start, plan_end: me.plan_end, plan_auto_end: me.plan_auto_end });
         }
       } catch (err) {
         document.getElementById('quick-modal-body').innerHTML = `<div class="error-box">Não foi possível abrir a fase: ${escapeHtml(err.message)}</div>`;
@@ -5845,35 +5979,82 @@
       const sel = new Set(assigneeMap[stage.id] || []);
       const isFixed = stage.pricing_type === 'fixed' || (stage.fixed_value != null && stage.percentage == null);
       document.getElementById('quick-modal-title').textContent = phaseName(stage);
+      // Lead time: calculado a partir da adjudicação; pode ser alterado à mão e reposto
+      const fmtLong = k => parseDateKey(k).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' });
+      let ltManual = stage.is_deadline_fixed && stage.deadline_override ? stage.deadline_override : null;
+      let ltEditing = false;
+      function planBoxHtml() {
+        const auto = stage.plan_auto_end;
+        const shown = ltManual || auto;
+        const late = shown && !stage.delivery_date && !isStageDone(stage) && shown < dateKey(new Date());
+        let head, sub = '', orig = '';
+        if (shown) {
+          head = `Lead time: ${escapeHtml(fmtLong(shown))}`;
+          sub = ltManual ? 'Alterado à mão' : `${escapeHtml(String(stage.expected_lead_time_days))} dias úteis a partir de ${escapeHtml(fmtDayMonth(stage.plan_start))}`;
+          if (late) sub += ' · <em>atrasada</em>';
+          if (ltManual && auto && auto !== ltManual) orig = `<span>Original: ${escapeHtml(fmtLong(auto))} · <button type="button" class="text-btn" data-lt-reset>Repor original</button></span>`;
+          else if (ltManual && !auto) orig = `<span><button type="button" class="text-btn" data-lt-reset>Remover alteração</button></span>`;
+        } else if (isOffPlanStage(stage)) {
+          head = 'Sem lead time'; sub = 'Esta fase não entra no plano do projeto.';
+        } else {
+          head = 'Sem lead time'; sub = 'Para ser calculado, o projeto precisa da data de adjudicação e esta fase do lead time em dias úteis (em Mais opções).';
+        }
+        return `<div class="plan-top"><b>${head}</b>${ltEditing ? '' : `<button type="button" class="text-btn" data-lt-edit>${shown ? 'Alterar' : 'Definir à mão'}</button>`}</div>
+          <span>${sub}</span>${orig}
+          ${ltEditing ? `<div class="plan-edit"><input type="date" id="ph-lt-date" class="form-input" value="${escapeHtml(shown || '')}">
+            <span>Muda só esta fase; as fases seguintes acompanham. Fica gravado ao carregar em Guardar.</span></div>` : ''}`;
+      }
       document.getElementById('quick-modal-body').innerHTML = `
-        <div class="field-hint" style="margin:0 0 4px;">${escapeHtml(project?.name ?? '')}
+        <div class="field-hint" style="margin:0 0 10px;">${escapeHtml(project?.name ?? '')}
           ${fromProject ? '' : ` · <button type="button" class="text-btn" id="ph-open-project">Abrir projeto</button>`}</div>
+        <div class="plan-box" id="ph-plan"></div>
+        <label class="field-label">Estado</label>
+        <select id="ph-status" class="form-input">${stageStatusOptions(stage.status)}</select>
         <div class="form-grid">
-          <div><label class="field-label">Tipo de fase</label>
-            <select id="ph-type" class="form-input">${types.map(t => `<option value="${escapeHtml(t.id)}"${t.id === stage.stage_type_id ? ' selected' : ''}>${escapeHtml(t.name)}</option>`).join('')}</select></div>
-          <div><label class="field-label">Revisão</label>
-            <input type="text" id="ph-rev" class="form-input" placeholder="ex: R02" value="${escapeHtml(stage.revision_label ?? '')}"></div>
-          <div class="span2"><label class="field-label">Estado</label>
-            <select id="ph-status" class="form-input">${stageStatusOptions(stage.status)}</select></div>
-          <div><label class="field-label">Início</label><input type="date" id="ph-start" class="form-input" value="${escapeHtml(stage.start_date ?? '')}"></div>
-          <div><label class="field-label">Fim previsto</label><input type="date" id="ph-end" class="form-input" value="${escapeHtml(stage.end_date ?? '')}"></div>
-          <div><label class="field-label">Prazo (data limite)</label><input type="date" id="ph-deadline" class="form-input" value="${escapeHtml(stage.deadline_override ?? '')}"></div>
-          <div><label class="field-label">Entrega</label><input type="date" id="ph-delivery" class="form-input" value="${escapeHtml(stage.delivery_date ?? '')}"></div>
-          <div><label class="field-label">Tipo de valor</label>
-            <select id="ph-pricing" class="form-input">
-              <option value="percentage"${isFixed ? '' : ' selected'}>% dos honorários</option>
-              <option value="fixed"${isFixed ? ' selected' : ''}>Valor fixo (€)</option>
-            </select></div>
-          <div><label class="field-label" id="ph-value-label">${isFixed ? 'Valor (€)' : 'Percentagem (%)'}</label>
-            <input type="text" inputmode="decimal" id="ph-value" class="form-input" value="${escapeHtml(String((isFixed ? stage.fixed_value : stage.percentage) ?? '').replace('.', ','))}"></div>
+          <div><label class="field-label">Início do trabalho</label><input type="date" id="ph-start" class="form-input" value="${escapeHtml(stage.start_date ?? '')}"></div>
+          <div><label class="field-label">Fim do trabalho</label><input type="date" id="ph-end" class="form-input" value="${escapeHtml(stage.end_date ?? '')}"></div>
+          <div class="span2"><label class="field-label">Entregue a</label><input type="date" id="ph-delivery" class="form-input" value="${escapeHtml(stage.delivery_date ?? '')}">
+            <div class="field-hint">Preenche no dia em que a fase foi efetivamente entregue.</div></div>
         </div>
         <label class="field-label">Pessoas</label>
         <div class="owner-picker" id="ph-people">${members.map(m => `<button type="button" class="owner-chip${sel.has(m.id) ? ' on' : ''}" data-member="${escapeHtml(m.id)}">${escapeHtml(m.name)}</button>`).join('')}</div>
-        <label class="check-row"><input type="checkbox" id="ph-excluded"${stage.excluded_from_invoicing ? ' checked' : ''}> Fora das contas da NOVA (não entra nos totais)</label>
+        <details class="more-opts">
+          <summary>Mais opções</summary>
+          <div class="form-grid">
+            <div><label class="field-label">Tipo de fase</label>
+              <select id="ph-type" class="form-input">${types.map(t => `<option value="${escapeHtml(t.id)}"${t.id === stage.stage_type_id ? ' selected' : ''}>${escapeHtml(t.name)}</option>`).join('')}</select></div>
+            <div><label class="field-label">Revisão</label>
+              <input type="text" id="ph-rev" class="form-input" placeholder="ex: R02" value="${escapeHtml(stage.revision_label ?? '')}"></div>
+            <div class="span2"><label class="field-label">Lead time (dias úteis)</label>
+              <input type="text" inputmode="numeric" id="ph-lead" class="form-input" value="${escapeHtml(String(stage.expected_lead_time_days ?? ''))}">
+              <div class="field-hint">Conta a partir do lead time da fase anterior (a primeira, desde a adjudicação).</div></div>
+            <div><label class="field-label">Tipo de valor</label>
+              <select id="ph-pricing" class="form-input">
+                <option value="percentage"${isFixed ? '' : ' selected'}>% dos honorários</option>
+                <option value="fixed"${isFixed ? ' selected' : ''}>Valor fixo (€)</option>
+              </select></div>
+            <div><label class="field-label" id="ph-value-label">${isFixed ? 'Valor (€)' : 'Percentagem (%)'}</label>
+              <input type="text" inputmode="decimal" id="ph-value" class="form-input" value="${escapeHtml(String((isFixed ? stage.fixed_value : stage.percentage) ?? '').replace('.', ','))}"></div>
+          </div>
+          <label class="check-row"><input type="checkbox" id="ph-excluded"${stage.excluded_from_invoicing ? ' checked' : ''}> Fora das contas da NOVA (não entra nos totais)</label>
+          <button type="button" id="ph-delete" class="secondary-btn danger-btn">Eliminar fase</button>
+        </details>
         <button type="button" id="ph-save" class="primary-btn">Guardar</button>
-        <button type="button" id="ph-delete" class="secondary-btn danger-btn">Eliminar fase</button>
         <div id="ph-msg" class="form-msg"></div>`;
 
+      const planEl = document.getElementById('ph-plan');
+      const drawPlan = () => {
+        const shown = ltManual || stage.plan_auto_end;
+        planEl.className = 'plan-box' + (shown && !stage.delivery_date && !isStageDone(stage) && shown < dateKey(new Date()) ? ' late' : '');
+        planEl.innerHTML = planBoxHtml();
+        const inp = document.getElementById('ph-lt-date');
+        if (inp) inp.addEventListener('change', () => { ltManual = inp.value && inp.value !== stage.plan_auto_end ? inp.value : null; });
+      };
+      planEl.addEventListener('click', (e) => {
+        if (e.target.closest('[data-lt-edit]')) { ltEditing = true; drawPlan(); document.getElementById('ph-lt-date').focus(); }
+        if (e.target.closest('[data-lt-reset]')) { ltManual = null; ltEditing = false; drawPlan(); showToast('Lead time original reposto — carrega em Guardar'); }
+      });
+      drawPlan();
       const openProj = document.getElementById('ph-open-project');
       if (openProj) openProj.addEventListener('click', () => { closeQuickModal(); openDetail(stage.project_id); });
       document.getElementById('ph-pricing').addEventListener('change', (e) => {
@@ -5899,16 +6080,21 @@
       document.getElementById('ph-save').addEventListener('click', async () => {
         const start = valOrNull(document.getElementById('ph-start').value);
         const end = valOrNull(document.getElementById('ph-end').value);
-        const deadline = valOrNull(document.getElementById('ph-deadline').value);
+        const ltInput = document.getElementById('ph-lt-date');
+        if (ltInput) ltManual = ltInput.value && ltInput.value !== stage.plan_auto_end ? ltInput.value : null;
+        const deadline = ltManual;
         const pricing = document.getElementById('ph-pricing').value;
         const value = numOrNull(document.getElementById('ph-value').value);
-        if (start && end && end < start) return formError('ph-msg', 'O fim previsto é anterior ao início.');
+        const lead = numOrNull(document.getElementById('ph-lead').value);
+        if (start && end && end < start) return formError('ph-msg', 'O fim do trabalho é anterior ao início.');
+        if (lead != null && (!Number.isInteger(lead) || lead < 0)) return formError('ph-msg', 'O lead time tem de ser um número inteiro de dias úteis.');
         if (value != null && (Number.isNaN(value) || value < 0)) return formError('ph-msg', 'Valor inválido.');
         const patch = {
           stage_type_id: document.getElementById('ph-type').value,
           revision_label: valOrNull(document.getElementById('ph-rev').value.trim()),
           status: document.getElementById('ph-status').value,
           start_date: start, end_date: end,
+          expected_lead_time_days: lead,
           deadline_override: deadline, is_deadline_fixed: !!deadline,
           delivery_date: valOrNull(document.getElementById('ph-delivery').value),
           pricing_type: pricing,
@@ -6150,11 +6336,11 @@
       box.innerHTML = '<div class="detail-loading">A carregar...</div>';
       const list = await loadProjectStatuses(true);
       box.innerHTML = `
-        <div class="field-hint" style="margin:0 0 10px;">Os projetos com um estado <b>fechado</b> saem da lista de projetos ativos. O código entre parênteses é o valor guardado na base de dados e não muda quando mudas o nome.</div>
+        <div class="field-hint" style="margin:0 0 10px;">Toca no nome para o mudar. Os projetos com um estado <b>fechado</b> saem da lista de projetos ativos.</div>
         ${list.map((s, i) => `
           <div class="status-row" data-status-id="${escapeHtml(s.id)}">
             <label class="type-swatch" style="background:${escapeHtml(s.color)}" title="Mudar cor"><input type="color" value="${escapeHtml(s.color)}" data-st-color hidden></label>
-            <span class="st-name"><span class="editable-value" data-st-rename>${escapeHtml(s.name)}</span> <span class="st-code">(${escapeHtml(s.code)})</span></span>
+            <span class="st-name"><span class="editable-value" data-st-rename>${escapeHtml(s.name)}</span></span>
             <button type="button" class="chip-toggle${s.is_closed ? ' on' : ''}" data-st-closed title="Fechado: sai da lista de projetos ativos">${s.is_closed ? 'Fechado' : 'Ativo'}</button>
             <span class="order-btns">
               <button type="button" data-st-move="-1" ${i === 0 ? 'disabled' : ''} aria-label="Subir">▲</button>
@@ -6333,8 +6519,6 @@
       openQuickModal(isEdit ? 'Editar marco' : 'Novo marco', `
         <label class="field-label" style="margin-top:0;">Título</label>
         <input type="text" id="mk-title" class="form-input" placeholder="ex: Reunião de licenciamento">
-        <label class="field-label">Tipo</label>
-        <select id="mk-type" class="form-input"><option value="">A carregar…</option></select>
         <label class="field-label">Associado a</label>
         <div class="segmented" id="mk-link-toggle" style="margin-bottom:8px;${lockedProjectId ? ' display:none;' : ''}">
           <button type="button" data-link="project" class="active">Projeto</button>
@@ -6364,20 +6548,26 @@
             <input type="time" id="mk-end" class="form-input">
           </div>
         </div>
-        <label class="field-label">Local (opcional)</label>
-        <input type="text" id="mk-location" class="form-input" placeholder="ex: Câmara de Gaia">
-        <label class="field-label">Em que calendários aparece</label>
+        <label class="field-label">Quem vai</label>
         <div class="owner-picker" id="mk-owners"></div>
-        <label class="field-label">Notas (opcional)</label>
-        <textarea id="mk-notes" class="form-input" rows="2"></textarea>
+        <div class="field-hint">Aparece na agenda de quem estiver escolhido.</div>
         ${isEdit ? `
         <label class="field-label">Estado</label>
         <div class="segmented" id="mk-done-toggle">
           <button type="button" data-done="false" class="active">Por realizar</button>
           <button type="button" data-done="true">Realizado</button>
         </div>` : ''}
+        <details class="more-opts"${isEdit && (existing.type_id || existing.location || existing.notes) ? ' open' : ''}>
+          <summary>Mais opções</summary>
+          <label class="field-label">Tipo</label>
+          <select id="mk-type" class="form-input"><option value="">A carregar…</option></select>
+          <label class="field-label">Local</label>
+          <input type="text" id="mk-location" class="form-input" placeholder="ex: Câmara de Gaia">
+          <label class="field-label">Notas</label>
+          <textarea id="mk-notes" class="form-input" rows="2"></textarea>
+          ${isEdit ? '<button id="mk-delete" class="secondary-btn danger-btn">Eliminar marco</button>' : ''}
+        </details>
         <button id="mk-submit" class="primary-btn">${isEdit ? 'Guardar alterações' : 'Criar marco'}</button>
-        ${isEdit ? '<button id="mk-delete" class="secondary-btn">Eliminar marco</button>' : ''}
         <div id="mk-msg" class="form-msg"></div>
       `);
 
@@ -6573,7 +6763,8 @@
           }
           closeQuickModal();
           if (onSuccess) onSuccess();
-          else if (document.getElementById('home-view').style.display !== 'none') loadAgenda();
+          else if (agendaVisibleNow()) loadAgenda();
+          else if (document.getElementById('home-view').style.display !== 'none') renderToday();
         } catch (err) {
           msgEl.textContent = 'Erro ao guardar: ' + err.message;
           msgEl.className = 'form-msg error';
@@ -6589,6 +6780,10 @@
       agendaScope = btn.dataset.scope;
       document.querySelectorAll('#agenda-scope button').forEach(b => b.classList.toggle('active', b === btn));
       renderAgenda();
+    });
+    document.getElementById('agenda-mode').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-mode]');
+      if (btn && btn.dataset.mode !== agendaMode) { suppressNavPush = true; openAgendaModule(btn.dataset.mode); }
     });
     document.getElementById('cal-prev').addEventListener('click', () => {
       agendaMonth = new Date(agendaMonth.getFullYear(), agendaMonth.getMonth() - 1, 1);
