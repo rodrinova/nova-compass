@@ -2081,7 +2081,9 @@
         }
 
         ganttEl.innerHTML = renderTeamGanttSection(teamScale);
-        ganttEl.addEventListener('click', (e) => {
+        // onclick (e não addEventListener): ganttEl é permanente e esta função corre a cada
+        // troca de equipa — atribuir substitui o handler anterior em vez de o acumular.
+        ganttEl.onclick = (e) => {
           const scaleBtn = e.target.closest('[data-scale]');
           if (scaleBtn) {
             teamScale = scaleBtn.dataset.scale;
@@ -2096,7 +2098,7 @@
           }
           const openBtn = e.target.closest('[data-open-project]');
           if (openBtn) openDetail(openBtn.dataset.openProject);
-        });
+        };
 
         function scrollGanttToToday() {
           const scrollEl = ganttEl.querySelector('.gantt-scroll');
