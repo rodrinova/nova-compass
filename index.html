@@ -914,12 +914,35 @@
   .ata-entry-project { font-size: 12px; color: var(--purple); margin-top: 2px; font-weight: 600; }
   .ata-entry-body {
     font-size: 12.5px;
+    line-height: 1.5;
     color: var(--text-dark);
     margin-top: 8px;
-    white-space: pre-wrap;
     display: none;
+    overflow-wrap: anywhere;
   }
   .ata-entry.expanded .ata-entry-body { display: block; }
+  .ata-entry-body p { margin: 0 0 6px; }
+  .ata-entry-body p:last-child { margin-bottom: 0; }
+  .ata-entry-body ul, .ata-entry-body ol { margin: 0 0 6px; padding-left: 20px; }
+  .ata-entry-body li { margin: 2px 0; }
+  .ata-entry-body li > ul, .ata-entry-body li > ol { margin: 2px 0 0; }
+  .ata-entry-body ul ul { list-style-type: circle; }
+  .ata-entry-body ul ul ul { list-style-type: square; }
+
+  /* Editor de atas: barra de formatação (essencial em iPad/telemóvel, onde não há Tab) */
+  .ata-toolbar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+  .ata-toolbar button {
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    border-radius: 10px;
+    min-width: 40px; min-height: 36px;
+    padding: 6px 10px;
+    font-family: inherit; font-size: 13px; font-weight: 600;
+    color: var(--text-dark);
+    cursor: pointer;
+  }
+  .ata-toolbar button:active { background: white; }
+  .field-hint { font-size: 11.5px; color: var(--text-muted); margin-top: 6px; line-height: 1.4; }
 
   /* ---------- Agenda / calendário ---------- */
   .agenda-head {
@@ -2925,6 +2948,108 @@
         .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
+    // Corpo das atas: texto simples com uma sintaxe mínima, desenhado com segurança.
+    //   "- " ou "* " no início da linha → ponto de lista; "1. " → lista numerada
+    //   indentação (Tab ou 2 espaços por nível) → sub-níveis;  **texto** → negrito
+    // O texto é sempre escapado primeiro; só depois se acrescentam as tags de lista/negrito.
+    function renderAtaBody(text) {
+      if (!text || !text.trim()) return '<p>Sem texto.</p>';
+      const inline = s => escapeHtml(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      const indentLevel = ws => (ws.match(/\t/g) || []).length + Math.floor((ws.match(/ /g) || []).length / 2);
+      let html = '';
+      const stack = [];      // listas abertas; cada nível tem sempre um <li> aberto
+      let para = [];
+      const flushPara = () => { if (para.length) { html += '<p>' + para.join('<br>') + '</p>'; para = []; } };
+      const closeTo = depth => { while (stack.length > depth) html += '</li></' + stack.pop() + '>'; };
+
+      text.replace(/\r\n?/g, '\n').split('\n').forEach(line => {
+        const m = line.match(/^([ \t]*)([-*•]|\d+[.)])\s+(.*)$/);
+        if (m) {
+          flushPara();
+          const type = /\d/.test(m[2]) ? 'ol' : 'ul';
+          const lvl = Math.min(indentLevel(m[1]) + 1, stack.length + 1);
+          if (lvl > stack.length) {
+            html += '<' + type + '>'; stack.push(type);
+          } else {
+            closeTo(lvl);
+            html += '</li>';
+            if (stack[lvl - 1] !== type) { html += '</' + stack.pop() + '><' + type + '>'; stack.push(type); }
+          }
+          html += '<li>' + inline(m[3]);
+        } else {
+          closeTo(0);
+          if (line.trim()) para.push(inline(line.trim()));
+          else flushPara();
+        }
+      });
+      closeTo(0);
+      flushPara();
+      return html;
+    }
+
+    // Liga a barra de formatação e os atalhos de teclado a um textarea de ata.
+    function attachAtaEditor(textarea, toolbar) {
+      const lineBounds = () => {
+        const v = textarea.value;
+        const start = v.lastIndexOf('\n', textarea.selectionStart - 1) + 1;
+        let end = v.indexOf('\n', textarea.selectionEnd);
+        if (end === -1) end = v.length;
+        return { start, end };
+      };
+      // Aplica fn a cada linha tocada pela seleção
+      const mapLines = fn => {
+        const { start, end } = lineBounds();
+        const v = textarea.value;
+        const lines = v.slice(start, end).split('\n');
+        const out = lines.map(fn).join('\n');
+        textarea.value = v.slice(0, start) + out + v.slice(end);
+        if (lines.length === 1) textarea.setSelectionRange(start + out.length, start + out.length);
+        else textarea.setSelectionRange(start, start + out.length);
+        textarea.focus();
+      };
+      const BULLET = /^([ \t]*)([-*•]|\d+[.)])\s+/;
+      const actions = {
+        bullet: () => mapLines(l => BULLET.test(l) ? l.replace(BULLET, '$1') : l.replace(/^([ \t]*)/, '$1- ')),
+        indent: () => mapLines(l => '  ' + l),
+        outdent: () => mapLines(l => l.replace(/^(\t| {1,2})/, '')),
+        bold: () => {
+          const { selectionStart: a, selectionEnd: b, value: v } = textarea;
+          const sel = v.slice(a, b) || 'texto';
+          textarea.value = v.slice(0, a) + '**' + sel + '**' + v.slice(b);
+          textarea.setSelectionRange(a + 2, a + 2 + sel.length);
+          textarea.focus();
+        }
+      };
+      toolbar.addEventListener('click', e => {
+        const btn = e.target.closest('[data-ata-fmt]');
+        if (btn) actions[btn.dataset.ataFmt]();
+      });
+      // Evita que tocar na barra tire o foco (e feche o teclado) no telemóvel
+      toolbar.addEventListener('mousedown', e => e.preventDefault());
+
+      textarea.addEventListener('keydown', e => {
+        if (e.key === 'Tab') {
+          e.preventDefault();
+          e.shiftKey ? actions.outdent() : actions.indent();
+          return;
+        }
+        if (e.key === 'Enter' && !e.shiftKey && textarea.selectionStart === textarea.selectionEnd) {
+          const { start } = lineBounds();
+          const line = textarea.value.slice(start, textarea.selectionStart);
+          const m = line.match(/^([ \t]*)([-*•]|(\d+)([.)]))\s+(.*)$/);
+          if (!m) return;
+          e.preventDefault();
+          if (!m[5].trim()) {
+            // Ponto vazio + Enter: termina a lista
+            textarea.setRangeText('', start, textarea.selectionStart, 'end');
+            return;
+          }
+          const marker = m[3] ? (Number(m[3]) + 1) + m[4] : m[2];
+          textarea.setRangeText('\n' + m[1] + marker + ' ', textarea.selectionStart, textarea.selectionEnd, 'end');
+        }
+      });
+    }
+
     function round2(n) {
       return Math.round((Number(n) || 0) * 100) / 100;
     }
@@ -3296,7 +3421,7 @@
               <span class="ata-entry-title">${escapeHtml(n.title)}</span>
               <span class="ata-entry-date">${escapeHtml(fmtDateShort(new Date(n.meeting_date + 'T00:00:00')))}</span>
             </div>
-            <div class="ata-entry-body">${escapeHtml(n.body || 'Sem texto.')}</div>
+            <div class="ata-entry-body">${renderAtaBody(n.body)}</div>
           </div>`;
 
         const hojeKey = dateKey(new Date());
@@ -3813,13 +3938,21 @@
         <input type="text" id="ata-title" class="form-input" placeholder="ex: Reunião de arranque">
         <label class="field-label">Data</label>
         <input type="date" id="ata-date" class="form-input">
-        <label class="field-label">Texto da ata</label>
-        <textarea id="ata-body" class="form-input" rows="6" placeholder="Notas da reunião..."></textarea>
+        <label class="field-label" for="ata-body">Texto da ata</label>
+        <div class="ata-toolbar" id="ata-toolbar" role="toolbar" aria-label="Formatação">
+          <button type="button" data-ata-fmt="bullet" title="Lista">• Lista</button>
+          <button type="button" data-ata-fmt="outdent" title="Subir nível (Shift+Tab)" aria-label="Subir nível">⇤</button>
+          <button type="button" data-ata-fmt="indent" title="Descer nível (Tab)" aria-label="Descer nível">⇥</button>
+          <button type="button" data-ata-fmt="bold" title="Negrito" aria-label="Negrito"><strong>B</strong></button>
+        </div>
+        <textarea id="ata-body" class="form-input" rows="8" placeholder="Notas da reunião...&#10;- ponto&#10;  - sub-ponto"></textarea>
+        <div class="field-hint">Começa uma linha com <strong>-</strong> para criar um ponto. Tab / Shift+Tab (ou ⇥ / ⇤) muda o nível. <strong>**texto**</strong> fica a negrito.</div>
         <button id="ata-submit" class="primary-btn">Guardar ata</button>
         <div id="ata-msg" class="form-msg"></div>
       `;
       openQuickModal('Nova ata de reunião', bodyHtml);
       document.getElementById('ata-date').value = fmtDateInput(new Date());
+      attachAtaEditor(document.getElementById('ata-body'), document.getElementById('ata-toolbar'));
 
       const projSelect = document.getElementById('ata-project');
       let projects;
@@ -4047,7 +4180,7 @@
             <span class="ata-entry-date">${fmtDateShort(new Date(n.meeting_date + 'T00:00:00'))}</span>
           </div>
           <div class="ata-entry-project">${escapeHtml(n.projectName ?? 'Sem projeto')}</div>
-          <div class="ata-entry-body">${escapeHtml(n.body || 'Sem texto.')}</div>
+          <div class="ata-entry-body">${renderAtaBody(n.body)}</div>
         </div>
       `).join('');
 
