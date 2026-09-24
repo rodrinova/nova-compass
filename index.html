@@ -922,6 +922,16 @@
     overflow-wrap: anywhere;
   }
   .ata-entry.expanded .ata-entry-body { display: block; }
+  .ata-entry-meta { font-size: 11.5px; color: var(--text-muted); margin-top: 3px; }
+  .rev-badge {
+    display: inline-block;
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em;
+    color: var(--purple); background: rgba(113, 77, 121, 0.1);
+    border-radius: 6px; padding: 1px 6px; margin-right: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+  .ata-entry-actions { display: none; gap: 18px; margin-top: 10px; flex-wrap: wrap; }
+  .ata-entry.expanded .ata-entry-actions { display: flex; }
   .ata-entry-body p { margin: 0 0 6px; }
   .ata-entry-body p:last-child { margin-bottom: 0; }
   .ata-entry-body ul, .ata-entry-body ol { margin: 0 0 6px; padding-left: 20px; }
@@ -1730,9 +1740,10 @@
     ];
 
     let mockMeetingNotes = [
-      { id: 'note-1', project_id: 'mock-1', title: 'Reunião de arranque com cliente', body: 'Discutido o programa base e prazos de licenciamento. Cliente confirmou orçamento de 48 mil euros.', meeting_date: '2026-02-05', created_by: 'mock-member-1' },
-      { id: 'note-2', project_id: null, title: 'Reunião interna — planeamento trimestral', body: 'Revisão da carga de trabalho das equipas para o próximo trimestre.', meeting_date: '2026-01-20', created_by: 'mock-member-1' }
+      { id: 'note-1', project_id: 'mock-1', title: 'Reunião de arranque com cliente', body: 'Discutido o programa base e prazos de licenciamento. Cliente confirmou orçamento de 48 mil euros.', meeting_date: '2026-02-05', created_by: 'mock-member-1', created_at: '2026-02-05T18:10:00Z', revision: 0 },
+      { id: 'note-2', project_id: null, title: 'Reunião interna — planeamento trimestral', body: 'Revisão da carga de trabalho das equipas para o próximo trimestre.', meeting_date: '2026-01-20', created_by: 'mock-member-1', created_at: '2026-01-20T12:00:00Z', revision: 0 }
     ];
+    let mockNoteRevisions = [];
 
     const MOCK_STAGE_TYPES = [
       { id: 'st-1', name: 'Estudo Prévio' },
@@ -3532,13 +3543,17 @@
           if (n.milestone_id) (notesByMarco[n.milestone_id] = notesByMarco[n.milestone_id] || []).push(n);
         });
 
+        if (!(await atasHaveVersioning())) projectNotes.forEach(n => { delete n.revision; });
+        await loadMemberNames(projectNotes.flatMap(n => [n.created_by, n.updated_by]));
         const ataEntryHtml = (n, nested) => `
           <div class="ata-entry" data-note-id="${escapeHtml(n.id)}"${nested ? ' style="padding-left:13px; border-left:2px solid var(--border);"' : ''}>
             <div class="ata-entry-main">
               <span class="ata-entry-title">${escapeHtml(n.title)}</span>
               <span class="ata-entry-date">${escapeHtml(fmtDateShort(new Date(n.meeting_date + 'T00:00:00')))}</span>
             </div>
+            ${ataMetaHtml(n)}
             <div class="ata-entry-body">${renderAtaBody(n.body)}</div>
+            ${ataActionsHtml(n)}
           </div>`;
 
         const hojeKey = dateKey(new Date());
@@ -3687,6 +3702,7 @@
           row.addEventListener('click', () => row.classList.toggle('expanded'));
         });
         document.getElementById('add-ata-btn').addEventListener('click', () => openNewAtaModal(project.id ?? projectId));
+        attachAtaActions(detailBody, projectNotes, () => openDetail(project.id ?? projectId));
 
         const pid = project.id ?? projectId;
         document.getElementById('add-marco-btn').addEventListener('click', () =>
@@ -4056,8 +4072,106 @@
       });
     }
 
-    // ---------- Nova ata de reunião ----------
-    async function openNewAtaModal(lockedProjectId, preselectMilestoneId = null) {
+    // ---------- Versões das atas (atas_versoes.sql) ----------
+    // A base de dados regista cada versão (R00, R01, …), quem editou e quando (trigger).
+    // Enquanto esse SQL não tiver corrido, a app não deixa editar — para não se perder texto.
+    let ataVersioningSupport = null;
+    async function atasHaveVersioning() {
+      if (devMode) return true;
+      if (ataVersioningSupport === null) {
+        const r = await supabase.from('meeting_notes').select('revision').limit(1);
+        ataVersioningSupport = !r.error;
+      }
+      return ataVersioningSupport;
+    }
+
+    const revLabel = n => 'R' + String(n || 0).padStart(2, '0');
+    function fmtDateTime(iso) {
+      if (!iso) return '';
+      return new Date(iso).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    const ataMemberNames = {};
+    async function loadMemberNames(ids) {
+      const missing = [...new Set(ids.filter(id => id && !(id in ataMemberNames)))];
+      if (missing.length === 0) return;
+      if (devMode) {
+        [MOCK_MEMBER, { id: 'm2', name: 'Nuno' }, { id: 'm3', name: 'Rute' }].forEach(m => { ataMemberNames[m.id] = m.name; });
+        return;
+      }
+      const r = await supabase.from('team_members').select('id, name').in('id', missing);
+      (r.data || []).forEach(m => { ataMemberNames[m.id] = m.name; });
+    }
+
+    // "R02 · editada por Rute a 24/09/2026, 14:32"  |  "R00 · criada por Rodrigo a …"
+    function ataVersionText(revision, who, when, edited) {
+      const nome = ataMemberNames[who];
+      return (edited ? 'editada' : 'criada') + (nome ? ' por ' + nome : '') + (when ? ' a ' + fmtDateTime(when) : '');
+    }
+    function ataMetaHtml(n) {
+      if (n.revision === undefined || n.revision === null) return '';
+      const edited = n.revision > 0;
+      const text = ataVersionText(n.revision, edited ? n.updated_by : n.created_by, edited ? n.updated_at : n.created_at, edited);
+      return `<div class="ata-entry-meta"><span class="rev-badge">${revLabel(n.revision)}</span> ${escapeHtml(text)}</div>`;
+    }
+    function ataActionsHtml(n) {
+      if (n.revision === undefined || n.revision === null) return '';
+      return `<div class="ata-entry-actions">
+          <button type="button" class="text-btn" data-ata-edit="${escapeHtml(n.id)}">Editar</button>
+          ${n.revision > 0 ? `<button type="button" class="text-btn" data-ata-versions="${escapeHtml(n.id)}">Versões anteriores (${n.revision})</button>` : ''}
+        </div>`;
+    }
+    function attachAtaActions(root, notes, onChanged) {
+      const byId = Object.fromEntries(notes.map(n => [String(n.id), n]));
+      root.querySelectorAll('[data-ata-edit]').forEach(btn => btn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        openNewAtaModal(null, null, byId[btn.dataset.ataEdit], onChanged);
+      }));
+      root.querySelectorAll('[data-ata-versions]').forEach(btn => btn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        openAtaVersionsModal(byId[btn.dataset.ataVersions]);
+      }));
+    }
+
+    async function openAtaVersionsModal(note) {
+      openQuickModal('Versões da ata', '<div class="detail-loading">A carregar…</div>');
+      const body = document.getElementById('quick-modal-body');
+      try {
+        let revs;
+        if (devMode) {
+          revs = mockNoteRevisions.filter(r => r.note_id === note.id);
+        } else {
+          const r = await supabase.from('meeting_note_revisions')
+            .select('revision, title, body, meeting_date, edited_by, edited_at')
+            .eq('note_id', note.id);
+          if (r.error) throw r.error;
+          revs = r.data || [];
+        }
+        const edited = note.revision > 0;
+        const all = [
+          { revision: note.revision, title: note.title, body: note.body, meeting_date: note.meeting_date,
+            edited_by: edited ? note.updated_by : note.created_by, edited_at: edited ? note.updated_at : note.created_at, current: true },
+          ...revs.sort((a, b) => b.revision - a.revision)
+        ];
+        await loadMemberNames(all.map(v => v.edited_by));
+        body.innerHTML = all.map(v => `
+          <div class="ata-entry${v.current ? ' expanded' : ''}">
+            <div class="ata-entry-main">
+              <span class="ata-entry-title"><span class="rev-badge">${revLabel(v.revision)}</span> ${escapeHtml(v.title)}</span>
+              <span class="ata-entry-date">${v.current ? 'atual' : ''}</span>
+            </div>
+            <div class="ata-entry-meta">${escapeHtml(ataVersionText(v.revision, v.edited_by, v.edited_at, v.revision > 0))}</div>
+            <div class="ata-entry-body">${renderAtaBody(v.body)}</div>
+          </div>`).join('');
+        body.querySelectorAll('.ata-entry').forEach(row => row.addEventListener('click', () => row.classList.toggle('expanded')));
+      } catch (err) {
+        body.innerHTML = `<div class="error-box">Não foi possível carregar as versões: ${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    // ---------- Nova ata / editar ata ----------
+    async function openNewAtaModal(lockedProjectId, preselectMilestoneId = null, existing = null, onSaved = null) {
+      const isEdit = !!existing;
       const bodyHtml = `
         <label class="field-label" style="margin-top:0;">Projeto (opcional)</label>
         <select id="ata-project" class="form-input" ${lockedProjectId ? 'disabled' : ''}>
@@ -4080,11 +4194,15 @@
         </div>
         <textarea id="ata-body" class="form-input" rows="8" placeholder="Notas da reunião...&#10;- ponto&#10;  - sub-ponto"></textarea>
         <div class="field-hint">Começa uma linha com <strong>-</strong> para criar um ponto. Tab / Shift+Tab (ou ⇥ / ⇤) muda o nível. <strong>**texto**</strong> fica a negrito.</div>
-        <button id="ata-submit" class="primary-btn">Guardar ata</button>
+        <button id="ata-submit" class="primary-btn">${isEdit ? 'Guardar como ' + revLabel(existing.revision + 1) : 'Guardar ata'}</button>
         <div id="ata-msg" class="form-msg"></div>
       `;
-      openQuickModal('Nova ata de reunião', bodyHtml);
-      document.getElementById('ata-date').value = fmtDateInput(new Date());
+      openQuickModal(isEdit ? `Editar ata · ${revLabel(existing.revision)}` : 'Nova ata de reunião', bodyHtml);
+      document.getElementById('ata-date').value = isEdit ? existing.meeting_date : fmtDateInput(new Date());
+      if (isEdit) {
+        document.getElementById('ata-title').value = existing.title ?? '';
+        document.getElementById('ata-body').value = existing.body ?? '';
+      }
       attachAtaEditor(document.getElementById('ata-body'), document.getElementById('ata-toolbar'));
 
       const projSelect = document.getElementById('ata-project');
@@ -4097,6 +4215,7 @@
       }
       projSelect.innerHTML = '<option value="">Sem projeto</option>' + projects.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('');
       if (lockedProjectId) projSelect.value = lockedProjectId;
+      else if (isEdit) projSelect.value = existing.project_id ?? '';
 
       // Marcos do projeto escolhido, para associar a ata
       const mkSelect = document.getElementById('ata-milestone');
@@ -4118,6 +4237,7 @@
       projSelect.addEventListener('change', () => refreshAtaMilestones(projSelect.value));
       await refreshAtaMilestones(projSelect.value);
       if (preselectMilestoneId) mkSelect.value = preselectMilestoneId;
+      else if (isEdit) mkSelect.value = existing.milestone_id ?? '';
 
       document.getElementById('ata-submit').addEventListener('click', async () => {
         const msgEl = document.getElementById('ata-msg');
@@ -4130,7 +4250,18 @@
           msgEl.className = 'form-msg error';
           return;
         }
-        if (!window.confirm('Guardar esta ata de reunião?')) return;
+        if (isEdit) {
+          const unchanged = title === (existing.title ?? '') && body === (existing.body ?? '').trim() &&
+            date === existing.meeting_date && (projSelect.value || null) === (existing.project_id ?? null) &&
+            (mkSelect.value || null) === (existing.milestone_id ?? null);
+          if (unchanged) {
+            msgEl.textContent = 'Não há alterações para guardar.';
+            msgEl.className = 'form-msg error';
+            return;
+          }
+          const next = revLabel(existing.revision + 1);
+          if (!window.confirm(`Guardar as alterações como ${next}?\n\nA versão ${revLabel(existing.revision)} fica guardada no histórico.`)) return;
+        } else if (!window.confirm('Guardar esta ata de reunião?')) return;
 
         const btn = document.getElementById('ata-submit');
         btn.disabled = true;
@@ -4143,11 +4274,30 @@
             milestone_id: mkSelect.value || null,
             title,
             body: body || null,
-            meeting_date: date,
-            created_by: member?.id || null
+            meeting_date: date
           };
+          if (isEdit) {
+            // A versão, quem editou e quando são definidos pela base de dados (trigger);
+            // updated_by segue só como indicação caso a sessão não identifique o membro.
+            payload.updated_by = member?.id || null;
+            if (devMode) {
+              const i = mockMeetingNotes.findIndex(n => n.id === existing.id);
+              const old = mockMeetingNotes[i];
+              mockNoteRevisions.push({ note_id: old.id, revision: old.revision, title: old.title, body: old.body, meeting_date: old.meeting_date,
+                edited_by: old.revision > 0 ? old.updated_by : old.created_by, edited_at: old.revision > 0 ? old.updated_at : old.created_at });
+              mockMeetingNotes[i] = { ...old, ...payload, revision: old.revision + 1, updated_at: new Date().toISOString() };
+            } else {
+              const res = await supabase.from('meeting_notes').update(payload).eq('id', existing.id).select('id, revision');
+              if (res.error) throw res.error;
+              if (!res.data || res.data.length === 0) throw new Error('a base de dados não aceitou a alteração (sem permissão para editar atas).');
+            }
+            closeQuickModal();
+            if (onSaved) onSaved();
+            return;
+          }
+          payload.created_by = member?.id || null;
           if (devMode) {
-            mockMeetingNotes.unshift({ id: 'note-' + Date.now(), ...payload });
+            mockMeetingNotes.unshift({ id: 'note-' + Date.now(), ...payload, revision: 0, created_at: new Date().toISOString() });
             msgEl.textContent = 'Ata guardada (modo de demonstração).';
             msgEl.className = 'form-msg success';
             setTimeout(closeQuickModal, 800);
@@ -4161,7 +4311,7 @@
           msgEl.textContent = 'Erro ao guardar: ' + err.message;
           msgEl.className = 'form-msg error';
           btn.disabled = false;
-          btn.textContent = 'Guardar ata';
+          btn.textContent = isEdit ? 'Guardar como ' + revLabel(existing.revision + 1) : 'Guardar ata';
         }
       });
     }
@@ -4313,13 +4463,16 @@
             <span class="ata-entry-date">${fmtDateShort(new Date(n.meeting_date + 'T00:00:00'))}</span>
           </div>
           <div class="ata-entry-project">${escapeHtml(n.projectName ?? 'Sem projeto')}</div>
+          ${ataMetaHtml(n)}
           <div class="ata-entry-body">${renderAtaBody(n.body)}</div>
+          ${ataActionsHtml(n)}
         </div>
       `).join('');
 
       container.querySelectorAll('.ata-entry').forEach(row => {
         row.addEventListener('click', () => row.classList.toggle('expanded'));
       });
+      attachAtaActions(container, data, loadAtas);
     }
 
     async function loadAtas() {
@@ -4336,13 +4489,15 @@
             projectName: n.project_id ? (MOCK_PROJECTS.find(p => p.id === n.project_id)?.name ?? 'Projeto') : null
           }));
         } else {
+          const versionCols = (await atasHaveVersioning()) ? ', revision, created_by, created_at, updated_by, updated_at' : '';
           const res = await supabase
             .from('meeting_notes')
-            .select('id, project_id, title, body, meeting_date, projects(name)')
+            .select('id, project_id, milestone_id, title, body, meeting_date' + versionCols + ', projects(name)')
             .order('meeting_date', { ascending: false });
           if (res.error) throw res.error;
           notes = (res.data || []).map(n => ({ ...n, projectName: n.projects?.name ?? null }));
         }
+        await loadMemberNames(notes.flatMap(n => [n.created_by, n.updated_by]));
 
         notes.sort((a, b) => new Date(b.meeting_date) - new Date(a.meeting_date));
         allAtasData = notes;
