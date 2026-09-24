@@ -923,6 +923,47 @@
   .toast.show { opacity: 1; transform: none; }
   .toast.error { background: var(--danger); color: #fff; }
   .toast-undo { background: none; border: none; color: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; padding: 0; font-size: 13.5px; opacity: .9; }
+
+  /* ---------- Ficha do projeto: indicadores + separadores ---------- */
+  .kpi-strip {
+    display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    margin-bottom: 14px;
+  }
+  .kpi { padding: 12px 16px; border-left: 1px solid var(--border); min-width: 0; }
+  .kpi:first-child { border-left: none; }
+  .kpi span { display: block; font-size: 12px; color: var(--text-2); }
+  .kpi b { display: block; font-size: 18px; font-weight: 650; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; margin-top: 2px; }
+  .kpi i { display: block; font-style: normal; font-size: 12px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpi b.late { color: var(--danger); }
+  .kpi b.warn { color: var(--warning); }
+  @media (max-width: 760px) {
+    .kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .kpi { border-left: none; border-top: 1px solid var(--border); }
+    .kpi:nth-child(-n+2) { border-top: none; }
+    .kpi:nth-child(even) { border-left: 1px solid var(--border); }
+    .kpi:last-child { grid-column: 1 / -1; border-left: none; }
+  }
+  .detail-tabs {
+    position: sticky; top: 52px; z-index: 5;
+    display: flex; gap: 2px; margin: 0 0 16px; padding: 8px 0;
+    background: var(--bg); border-bottom: 1px solid var(--border);
+    overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  }
+  .detail-tabs::-webkit-scrollbar { display: none; }
+  .detail-tabs button {
+    border: none; background: none; cursor: pointer; white-space: nowrap;
+    height: 32px; padding: 0 12px; border-radius: 6px;
+    font-size: 13.5px; font-weight: 550; color: var(--text-2);
+  }
+  .detail-tabs button:hover { background: var(--surface-2); color: var(--text); }
+  .detail-tabs button.active { background: var(--surface); color: var(--text); box-shadow: 0 0 0 1px var(--border); }
+  .detail-tabs button em { font-style: normal; color: var(--text-3); margin-left: 4px; font-variant-numeric: tabular-nums; }
+  @media (max-width: 899px) {
+    .detail-tabs { top: calc(52px + env(safe-area-inset-top, 0px)); margin: 0 -16px 14px; padding: 8px 16px; }
+  }
+  [data-dpanel] > .gantt-wrap + .gantt-wrap, [data-dpanel] > * + .gantt-wrap { margin-top: 12px; }
+  .card-head .text-btn { font-size: 13px; }
 </style>
 </head>
 <body>
@@ -2367,11 +2408,6 @@
               el.textContent = rawValue;
               return;
             }
-            if (!window.confirm(`Renomear categoria de "${rawValue}" para "${newValue}"?`)) {
-              el.classList.remove('editing');
-              el.textContent = rawValue;
-              return;
-            }
             if (devMode) {
               const cat = MOCK_CATEGORIES.find(c => c.id === catId);
               if (cat) cat.name = newValue;
@@ -2630,6 +2666,7 @@
 
     // ---------- Página de detalhe de projeto ----------
     const detailPanel = document.getElementById('detail-panel');
+    const detailTabByProject = {};   // separador aberto em cada ficha (mantém-se ao gravar)
     const detailBody = document.getElementById('detail-body');
 
     // Escapa texto vindo da base de dados antes de ir para innerHTML.
@@ -3163,9 +3200,35 @@
           atasProjetoHtml = soltas.map(n => ataEntryHtml(n, false)).join('');
         }
 
+        // --- Indicadores do topo e contagens dos separadores ---
+        const porReceber = round2(totalFaturado - totalRecebido);
+        const hojeKeyDet = dateKey(new Date());
+        const proxima = stages.filter(s => !isStageDone(s) && stageDeadline(s))
+          .sort((x, y) => stageDeadline(x).localeCompare(stageDeadline(y)))[0];
+        const nAtas = projectNotes.length;
+        const pid0 = project.id ?? projectId;
+
         detailBody.innerHTML = `
-          <div class="section-label">Detalhes do projeto</div>
+          <div class="kpi-strip">
+            <div class="kpi"><span>Honorários${valorExcluido > 0 ? ' NOVA' : ''}</span><b>${fmtEURShort(totalHonorarios)}</b></div>
+            <div class="kpi"><span>Faturado</span><b>${pctFaturado}%</b><i>${fmtEURShort(totalFaturado)}</i></div>
+            <div class="kpi"><span>Por receber</span><b class="${porReceber > 0 ? 'warn' : ''}">${fmtEURShort(porReceber)}</b></div>
+            <div class="kpi"><span>Horas</span><b>${fmtHours(totalHoras)}</b><i>${fmtHours(horasFaturaveis)} faturáveis</i></div>
+            <div class="kpi"><span>Próximo prazo</span>${proxima
+              ? `<b class="${isStageLate(proxima, hojeKeyDet) ? 'late' : ''}">${escapeHtml(deadlineText(proxima, hojeKeyDet))}</b><i>${escapeHtml(phaseName(proxima))}</i>`
+              : '<b>—</b><i>sem fases por concluir</i>'}</div>
+          </div>
+
+          <nav class="detail-tabs" role="tablist">
+            <button type="button" data-dtab="resumo" role="tab">Resumo</button>
+            <button type="button" data-dtab="fases" role="tab">Fases<em>${stages.length}</em></button>
+            <button type="button" data-dtab="marcos" role="tab">Marcos e atas<em>${projectMarcos.length + nAtas}</em></button>
+            <button type="button" data-dtab="financas" role="tab">Finanças</button>
+          </nav>
+
+          <section data-dpanel="resumo">
           <div class="gantt-wrap">
+            <div class="card-head"><h2>Detalhes</h2><span>toca num valor para o alterar</span></div>
             <div class="invoice-row"><span>Cliente</span><span>${escapeHtml(clienteNome)}</span></div>
             <div class="invoice-row editable-row" data-field="address" data-type="text">
               <span>Morada</span><span class="editable-value" data-raw="${escapeHtml(project.address ?? '')}">${escapeHtml(project.address ?? '—')}</span>
@@ -3182,8 +3245,30 @@
               <span>Estado</span><span class="editable-value" data-raw="${escapeHtml(project.status ?? '')}">${escapeHtml(project.status ?? '—')}</span>
             </div>
           </div>
+            <div class="gantt-wrap"><div class="card-head"><h2>Participação</h2><span>horas por pessoa</span></div>${participacaoHtml}</div>
+          </section>
 
-          <div class="section-label">Financeiro</div>
+          <section data-dpanel="fases" hidden>
+            <div class="gantt-wrap"><div class="card-head"><h2>Cronograma</h2></div><div id="detail-gantt">${ganttHtml}</div></div>
+            <div class="gantt-wrap">
+              <div class="card-head"><h2>Fases</h2><button type="button" id="add-revision-btn" class="text-btn">+ Nova revisão de fase</button></div>
+              <div id="revision-form-wrap" style="display:none;"></div>
+              ${stagesTableHtml}
+            </div>
+          </section>
+
+          <section data-dpanel="marcos" hidden>
+            <div class="gantt-wrap">
+              <div class="card-head"><h2>Marcos</h2><button type="button" id="add-marco-btn" class="text-btn">+ Novo marco</button></div>
+              ${marcosHtml}
+            </div>
+            <div class="gantt-wrap">
+              <div class="card-head"><h2>Atas sem marco</h2><button type="button" id="add-ata-btn" class="text-btn">+ Nova ata</button></div>
+              ${atasProjetoHtml}
+            </div>
+          </section>
+
+          <section data-dpanel="financas" hidden>
           <div class="ring-row">
             <svg width="64" height="64" viewBox="0 0 64 64">
               <circle cx="32" cy="32" r="27" fill="none" stroke="var(--track)" stroke-width="6"/>
@@ -3236,29 +3321,29 @@
               <span><span class="dot nonbillable"></span>Não faturáveis: ${fmtHours(horasNaoFaturaveis)}</span>
             </div>
           </div>
-
-          <div class="section-label">Marcos</div>
-          <button type="button" id="add-marco-btn" class="secondary-btn" style="margin-top:0; margin-bottom:10px;">+ Novo marco</button>
-          <div class="gantt-wrap">${marcosHtml}</div>
-
-          <div class="section-label">Cronograma</div>
-          <div class="gantt-wrap">${ganttHtml}</div>
-
-          <div class="section-label">Participação</div>
-          <div class="gantt-wrap">${participacaoHtml}</div>
-
-          <div class="section-label">Fases</div>
-          <button type="button" id="add-revision-btn" class="secondary-btn" style="margin-top:0; margin-bottom:10px;">+ Nova revisão de fase</button>
-          <div id="revision-form-wrap" style="display:none;"></div>
-          <div class="gantt-wrap">${stagesTableHtml}</div>
-
-          <div class="section-label">Despesas</div>
-          <div class="gantt-wrap">${expensesHtml}</div>
-
-          <div class="section-label">Atas sem marco</div>
-          <button type="button" id="add-ata-btn" class="secondary-btn" style="margin-top:0; margin-bottom:10px;">+ Nova ata</button>
-          <div class="gantt-wrap">${atasProjetoHtml}</div>
+            <div class="gantt-wrap"><div class="card-head"><h2>Despesas</h2></div>${expensesHtml}</div>
+          </section>
         `;
+
+        // Separadores
+        const showDTab = (t) => {
+          detailTabByProject[pid0] = t;
+          detailBody.querySelectorAll('[data-dtab]').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.dtab === t);
+            btn.setAttribute('aria-selected', btn.dataset.dtab === t ? 'true' : 'false');
+          });
+          detailBody.querySelectorAll('[data-dpanel]').forEach(p => { p.hidden = p.dataset.dpanel !== t; });
+        };
+        showDTab(detailTabByProject[pid0] || 'resumo');
+        detailBody.querySelectorAll('[data-dtab]').forEach(btn => btn.addEventListener('click', () => showDTab(btn.dataset.dtab)));
+
+        // Cronograma: Semanas / Meses (os botões existiam mas não estavam ligados)
+        const ganttBox = document.getElementById('detail-gantt');
+        ganttBox.addEventListener('click', (e) => {
+          const b = e.target.closest('[data-scale]');
+          if (!b) return;
+          ganttBox.innerHTML = renderGanttSection(b.dataset.scale);
+        });
 
         attachEditableHandlers(project.id ?? projectId, project);
         attachRevisionFormHandlers(project.id ?? projectId, stages);
@@ -3330,18 +3415,12 @@
               el.textContent = formatFieldDisplay(field, rawValue);
               return;
             }
-            const ok = window.confirm(`Guardar alteração?\n\n${formatFieldDisplay(field, rawValue)} → ${formatFieldDisplay(field, newValue)}`);
-            if (!ok) {
-              el.classList.remove('editing');
-              el.textContent = formatFieldDisplay(field, rawValue);
-              return;
-            }
             if (!devMode) {
               const updatePayload = {};
               updatePayload[field] = newValue === '' ? null : newValue;
               const res = await supabase.from('projects').update(updatePayload).eq('id', projectId);
               if (res.error) {
-                alert('Erro ao guardar: ' + res.error.message);
+                showToast('Não foi possível guardar: ' + res.error.message, { type: 'error' });
                 el.classList.remove('editing');
                 el.textContent = formatFieldDisplay(field, rawValue);
                 return;
@@ -3350,6 +3429,17 @@
             el.dataset.raw = newValue;
             el.classList.remove('editing');
             el.textContent = formatFieldDisplay(field, newValue);
+            showToast('Guardado', {
+              undo: async () => {
+                if (!devMode) {
+                  const back = {}; back[field] = rawValue === '' ? null : rawValue;
+                  const r = await supabase.from('projects').update(back).eq('id', projectId);
+                  if (r.error) { showToast('Não foi possível anular: ' + r.error.message, { type: 'error' }); return; }
+                }
+                el.dataset.raw = rawValue;
+                el.textContent = formatFieldDisplay(field, rawValue);
+              }
+            });
           };
 
           const onBlur = () => finish(true);
@@ -3451,8 +3541,6 @@
             return;
           }
 
-          if (!window.confirm('Adicionar esta fase ao projeto?')) return;
-
           const btn = document.getElementById('revision-submit-btn');
           btn.disabled = true;
           btn.textContent = 'A guardar...';
@@ -3482,6 +3570,7 @@
 
             const res = await supabase.from('project_stages').insert(payload);
             if (res.error) throw res.error;
+            showToast('Fase adicionada');
             openDetail(projectId);
           } catch (err) {
             msgEl.textContent = 'Erro ao guardar: ' + err.message;
@@ -3626,8 +3715,6 @@
           status: document.getElementById('np-status').value.trim() || null
         };
 
-        if (!window.confirm(`Criar o projeto "${name}"?`)) return;
-
         const btn = document.getElementById('np-submit');
         btn.disabled = true;
         btn.textContent = 'A criar...';
@@ -3643,6 +3730,7 @@
           const res = await supabase.from('projects').insert(payload).select('id').single();
           if (res.error) throw res.error;
           closeQuickModal();
+          showToast('Projeto criado');
           openDetail(res.data.id);
         } catch (err) {
           msgEl.textContent = 'Erro ao criar: ' + err.message;
@@ -3840,9 +3928,7 @@
             msgEl.className = 'form-msg error';
             return;
           }
-          const next = revLabel(existing.revision + 1);
-          if (!window.confirm(`Guardar as alterações como ${next}?\n\nA versão ${revLabel(existing.revision)} fica guardada no histórico.`)) return;
-        } else if (!window.confirm('Guardar esta ata de reunião?')) return;
+        }
 
         const btn = document.getElementById('ata-submit');
         btn.disabled = true;
@@ -3873,6 +3959,7 @@
               if (!res.data || res.data.length === 0) throw new Error('a base de dados não aceitou a alteração (sem permissão para editar atas).');
             }
             closeQuickModal();
+            showToast(`Guardada como ${revLabel(existing.revision + 1)} — a ${revLabel(existing.revision)} fica no histórico`);
             if (onSaved) onSaved();
             return;
           }
@@ -3887,7 +3974,9 @@
           const res = await supabase.from('meeting_notes').insert(payload);
           if (res.error) throw res.error;
           closeQuickModal();
+          showToast('Ata guardada');
           if (lockedProjectId) openDetail(lockedProjectId);
+          else if (document.getElementById('atas-view').style.display !== 'none') loadAtas();
         } catch (err) {
           msgEl.textContent = 'Erro ao guardar: ' + err.message;
           msgEl.className = 'form-msg error';
@@ -3989,8 +4078,6 @@
           msgEl.className = 'form-msg error';
           return;
         }
-        if (!window.confirm(isEdit ? 'Guardar as alterações desta despesa?' : `Registar despesa de ${fmtEUR(amount)}?`)) return;
-
         const btn = document.getElementById('exp-submit');
         btn.disabled = true;
         btn.textContent = 'A guardar...';
@@ -4015,6 +4102,7 @@
             : await supabase.from('expenses').insert(payload);
           if (res.error) throw res.error;
           closeQuickModal();
+          showToast(isEdit ? 'Despesa atualizada' : 'Despesa registada');
           if (onSuccess) onSuccess();
           else if (lockedProjectId) openDetail(lockedProjectId);
         } catch (err) {
@@ -4244,8 +4332,7 @@
       switchDespesasTab(btn.dataset.tab);
     });
 
-    async function toggleReimbursed(expenseId, newState) {
-      if (!window.confirm(newState ? 'Marcar esta despesa como reembolsada?' : 'Marcar esta despesa como por reembolsar?')) return;
+    async function toggleReimbursed(expenseId, newState, isUndo = false) {
       try {
         if (!devMode) {
           const payload = { reimbursed: newState, reimbursed_at: newState ? new Date().toISOString() : null };
@@ -4256,8 +4343,10 @@
           if (exp) exp.reimbursed = newState;
         }
         await loadDespesas();
+        if (!isUndo) showToast(newState ? 'Marcada como reembolsada' : 'Marcada como por reembolsar',
+          { undo: () => toggleReimbursed(expenseId, !newState, true) });
       } catch (err) {
-        alert('Erro ao atualizar: ' + err.message);
+        showToast('Não foi possível atualizar: ' + err.message, { type: 'error' });
       }
     }
 
