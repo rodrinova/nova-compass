@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>NOVA Compass v1.1</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -438,7 +438,8 @@
     .nav-bar, .content-area { padding-left: 18px; padding-right: 18px; }
     .project-card { grid-template-columns: 1fr; }
     .status-pill { justify-self: start; }
-    .stat-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .stat-grid > .stat-tile:last-child:nth-child(odd) { grid-column: 1 / -1; }
   }
 
   @media (max-width: 380px) {
@@ -914,12 +915,35 @@
   .ata-entry-project { font-size: 12px; color: var(--purple); margin-top: 2px; font-weight: 600; }
   .ata-entry-body {
     font-size: 12.5px;
+    line-height: 1.5;
     color: var(--text-dark);
     margin-top: 8px;
-    white-space: pre-wrap;
     display: none;
+    overflow-wrap: anywhere;
   }
   .ata-entry.expanded .ata-entry-body { display: block; }
+  .ata-entry-body p { margin: 0 0 6px; }
+  .ata-entry-body p:last-child { margin-bottom: 0; }
+  .ata-entry-body ul, .ata-entry-body ol { margin: 0 0 6px; padding-left: 20px; }
+  .ata-entry-body li { margin: 2px 0; }
+  .ata-entry-body li > ul, .ata-entry-body li > ol { margin: 2px 0 0; }
+  .ata-entry-body ul ul { list-style-type: circle; }
+  .ata-entry-body ul ul ul { list-style-type: square; }
+
+  /* Editor de atas: barra de formatação (essencial em iPad/telemóvel, onde não há Tab) */
+  .ata-toolbar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+  .ata-toolbar button {
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    border-radius: 10px;
+    min-width: 40px; min-height: 36px;
+    padding: 6px 10px;
+    font-family: inherit; font-size: 13px; font-weight: 600;
+    color: var(--text-dark);
+    cursor: pointer;
+  }
+  .ata-toolbar button:active { background: white; }
+  .field-hint { font-size: 11.5px; color: var(--text-muted); margin-top: 6px; line-height: 1.4; }
 
   /* ---------- Agenda / calendário ---------- */
   .agenda-head {
@@ -1241,6 +1265,116 @@
     background: linear-gradient(rgba(255,255,255,0.4), transparent);
     pointer-events: none;
   }
+
+  /* ================= Afinações de layout e responsividade ================= */
+
+  /* iPhone: sem zoom por duplo toque, sem pan lateral por conteúdo mais largo que o ecrã */
+  html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  /* Só no html (propaga ao viewport): no body criaria um contentor de scroll e partia a nav sticky */
+  html { overflow-x: hidden; }
+  @supports (overflow: clip) { html { overflow-x: clip; } }
+
+  /* Texto longo (nomes, moradas) nunca empurra o layout */
+  .detail-header h2, .project-name, .ata-entry-title, .marco-title, .gantt-label-cell,
+  .projects-table td.col-name, .mini-table td { overflow-wrap: anywhere; }
+
+  /* Espaço livre no fim da página para o botão + não tapar conteúdo */
+  #home-view { padding-bottom: 72px; }
+
+  /* Marcos: título e detalhes em linhas próprias */
+  .marco-title, .marco-meta { display: block; }
+
+  /* Calendário: altura fixa por dia (antes era quadrado e ficava gigante em ecrãs largos) */
+  .cal-cell { aspect-ratio: auto; height: 44px; }
+  .cal-title { text-transform: none; }
+  @media (min-width: 700px) { .cal-cell { height: 50px; } }
+  @media (min-width: 960px) {
+    #agenda-wrap { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); column-gap: 28px; }
+    #agenda-wrap .cal-day-list {
+      margin-top: 0; border-top: none; padding-top: 4px;
+      border-left: 1px solid var(--border); padding-left: 24px;
+      max-height: 380px; overflow-y: auto;
+    }
+  }
+
+  /* Módulos: os 5 cabem numa linha a partir do iPad */
+  .module-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+
+  /* Linhas "rótulo | valor": valores e etiquetas não partem a meio */
+  .invoice-row { gap: 10px; }
+  .invoice-row > :first-child { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+  .invoice-row > :last-child { text-align: right; }
+  .invoice-status, .amount, .invoice-row .text-btn, .col-value { white-space: nowrap; }
+  .invoice-row .text-btn { flex-shrink: 0; }
+
+  /* Tabelas largas: scroll próprio, nunca da página */
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table-scroll > .mini-table { min-width: 520px; }
+
+  /* Repositório de despesas: tabela no ecrã largo, cartões no telemóvel */
+  @media (max-width: 640px) {
+    .stack-table thead { display: none; }
+    .stack-table, .stack-table tbody { display: block; }
+    .stack-table tr {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      column-gap: 12px; row-gap: 3px;
+      padding: 12px 0;
+      border-top: 1px solid var(--border);
+    }
+    .stack-table tr:first-child { border-top: none; }
+    .stack-table td { border: none; padding: 0; }
+    .stack-table .c-desc { grid-column: 1; grid-row: 1; font-weight: 650; }
+    .stack-table .c-value { grid-column: 2; grid-row: 1; text-align: right; font-weight: 650; }
+    .stack-table .c-proj { grid-column: 1; grid-row: 2; color: var(--purple); font-size: 12px; }
+    .stack-table .c-status { grid-column: 2; grid-row: 2; text-align: right; }
+    .stack-table .c-date, .stack-table .c-payer { grid-column: 1; font-size: 12px; color: var(--text-muted); }
+    .stack-table .c-date { grid-row: 3; }
+    .stack-table .c-payer { grid-row: 4; }
+    .stack-table .c-payer::before { content: 'Pago por '; }
+    .stack-table .c-edit { grid-column: 2; grid-row: 3 / span 2; text-align: right; align-self: end; }
+  }
+
+  /* Gantt: linhas de altura fixa para rótulos e barras ficarem sempre alinhados */
+  .gantt-label-cell { height: 42px; min-height: 0; display: flex; align-items: center; }
+  .gantt-label-text {
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+    overflow: hidden; max-height: 2.4em;
+  }
+  .gantt-track-row { height: 42px; min-height: 0; }
+  @media (max-width: 560px) { .gantt-labels-col { width: 118px; } }
+
+  /* Mosaicos de valores: número numa só linha */
+  .stat-tile .stat-value { white-space: nowrap; font-size: clamp(15px, 4.2vw, 18px); }
+
+  /* Atas no repositório: margem interior (antes o texto encostava ao cartão) */
+  .gantt-wrap.ata-entry { padding: 14px 18px; }
+
+  /* Definições: mesmo tamanho de letra que o resto da app */
+  .category-row, .type-row { font-size: 14px; }
+
+  /* Lista de projetos no telemóvel: esconde Área para o Valor ficar visível */
+  @media (max-width: 480px) { .projects-table .col-area { display: none; } }
+
+  /* Modal: mais altura útil no telemóvel */
+  @media (max-width: 560px) {
+    #quick-modal { width: calc(100% - 20px); max-height: calc(100% - 24px); }
+    .quick-modal-body { padding: 16px 16px 22px; }
+  }
+
+  /* Ecrãs tácteis (iPad, telemóvel): campos a 16px (o iOS faz zoom abaixo disso)
+     e alvos de toque maiores */
+  @media (pointer: coarse), (max-width: 1024px) {
+    input, select, textarea, .form-input, .search-input, .field-group input, .inline-edit-input { font-size: 16px; }
+  }
+  @media (pointer: coarse), (hover: none), (max-width: 820px) {
+    .nav-icon-btn { width: 38px; height: 38px; }
+    .text-btn { padding: 8px 2px; }
+    .segmented button { padding: 10px 16px; }
+    #logout-btn { padding: 10px 16px; }
+    .owner-chip { padding: 9px 14px; }
+    .horas-entry-actions { gap: 22px; }
+  }
 </style>
 </head>
 <body>
@@ -1266,9 +1400,6 @@
       </div>
       <button id="login-btn">Entrar</button>
       <div id="login-msg" class="login-msg"></div>
-      <button id="dev-skip-btn" style="margin-top:10px; width:100%; background:none; border:none; color:var(--text-muted); font-size:12px; cursor:pointer; text-decoration:underline; font-family:inherit;">
-        Modo desenvolvimento (saltar login)
-      </button>
     </div>
   </div>
 
@@ -1276,7 +1407,7 @@
   <div id="app-screen">
     <div class="nav-bar">
       <div class="nav-left">
-        <button id="nav-back-btn" class="nav-icon-btn" aria-label="Voltar" style="visibility:hidden;">
+        <button id="nav-back-btn" class="nav-icon-btn" aria-label="Voltar" style="display:none;">
           <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <button id="nav-home-btn" class="nav-icon-btn" aria-label="Home">
@@ -1328,6 +1459,7 @@
           </div>
         </div>
         <div class="gantt-wrap" id="agenda-wrap">
+          <div class="cal-main">
           <div class="cal-head">
             <button type="button" class="nav-icon-btn" id="cal-prev" aria-label="Mês anterior">
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -1339,6 +1471,7 @@
             <button type="button" class="text-btn" id="cal-today">Hoje</button>
           </div>
           <div class="cal-grid" id="cal-grid"></div>
+          </div>
           <div class="cal-day-list" id="cal-day-list"></div>
         </div>
 
@@ -1558,7 +1691,8 @@
 
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    let devMode = false;
+    // Dados de demonstração (MOCK_*) ficam inativos: não há forma de ligar este modo no build publicado.
+    const devMode = false;
 
     const MOCK_PROJECTS = [
       { id: 'mock-1', name: 'Edifício Miradouro', code: 'NOVA-001', client: 'Promotora Atlântico', address: 'Rua do Miradouro 12, Vila Nova de Gaia', status: 'Em curso', area: 1240, awarding_date: '2025-11-03', commission_value: 48000, team_id: 'mock-team-alpha', project_types: { name: 'Habitação Coletiva' }, teams: { name: 'Team Alpha' } },
@@ -1719,8 +1853,17 @@
       const y = date.getFullYear(), m = date.getMonth();
       const first = new Date(y, m, 1);
       const last = new Date(y, m + 1, 0);
-      const fmt = d => d.toISOString().slice(0, 10);
-      return { first: fmt(first), last: fmt(last), label: date.toLocaleDateString('pt-PT', { month: 'long' }) };
+      return { first: dateKey(first), last: dateKey(last), label: date.toLocaleDateString('pt-PT', { month: 'long' }) };
+    }
+
+    function stageStatusLabel(s) {
+      if (s.status === 'completed' || s.status === 'done') return 'Concluída';
+      if (s.status === 'in_progress' || s.status === 'active') return 'Em curso';
+      return 'Por iniciar';
+    }
+
+    function fmtHours(n, decimals = 1) {
+      return Number(n || 0).toLocaleString('pt-PT', { minimumFractionDigits: decimals, maximumFractionDigits: 2 }) + 'h';
     }
 
     function fmtEURShort(n) {
@@ -1751,7 +1894,7 @@
         } else {
           const [invRes, stagesRes] = await Promise.all([
             supabase.from('invoices')
-              .select('amount, issue_date, projects!inner(team_id)')
+              .select('amount, issue_date, stage_id, projects!inner(team_id)')
               .eq('projects.team_id', member.team_id)
               .gte('issue_date', first).lte('issue_date', last),
             supabase.from('project_stages')
@@ -1761,7 +1904,20 @@
               .gte('delivery_date', first).lte('delivery_date', last)
               .order('delivery_date')
           ]);
-          invoicesTotal = (invRes.data || []).reduce((s, i) => s + Number(i.amount || 0), 0);
+          if (invRes.error) throw invRes.error;
+          // Faturas de fases excluídas das contas da NOVA não entram no total
+          const monthInvoices = invRes.data || [];
+          const invStageIds = [...new Set(monthInvoices.map(i => i.stage_id).filter(Boolean))];
+          let excludedIds = new Set();
+          if (invStageIds.length > 0) {
+            const exRes = await supabase.from('project_stages').select('id')
+              .in('id', invStageIds).eq('excluded_from_invoicing', true);
+            if (exRes.error) throw exRes.error;
+            excludedIds = new Set((exRes.data || []).map(s => s.id));
+          }
+          invoicesTotal = monthInvoices
+            .filter(i => !excludedIds.has(i.stage_id))
+            .reduce((s, i) => s + Number(i.amount || 0), 0);
           deliveries = (stagesRes.data || []).map(s => ({
             name: `${s.projects?.name ?? 'Projeto'} — ${s.stage_types?.name ?? 'Fase'}`,
             date: s.delivery_date
@@ -1779,7 +1935,7 @@
           const rest = deliveries.length - shown.length;
           list.innerHTML = shown.map(d => `
             <div class="delivery-mini-row">
-              <span>${d.name}</span>
+              <span>${escapeHtml(d.name)}</span>
               <span class="d-date">${new Date(d.date).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' })}</span>
             </div>`).join('') + (rest > 0 ? `<div class="delivery-mini-row"><span>+${rest} mais</span></div>` : '');
         }
@@ -1802,7 +1958,7 @@
       suppressNavPush = false;
       currentViewState = newState;
       const backBtn = document.getElementById('nav-back-btn');
-      if (backBtn) backBtn.style.visibility = navStack.length > 0 ? 'visible' : 'hidden';
+      if (backBtn) backBtn.style.display = navStack.length > 0 ? '' : 'none';
     }
 
     function setNavChrome(showBrand) {
@@ -1844,7 +2000,7 @@
 
       const selector = document.getElementById('team-selector');
       selector.innerHTML = teams.map(t => `
-        <button data-team-id="${t.id}" class="${t.id === activeTeamId ? 'active' : ''}">${t.name}</button>
+        <button data-team-id="${escapeHtml(t.id)}" class="${t.id === activeTeamId ? 'active' : ''}">${escapeHtml(t.name)}</button>
       `).join('');
       selector.querySelectorAll('button').forEach(btn => {
         btn.addEventListener('click', () => showTeamView(btn.dataset.teamId));
@@ -1986,7 +2142,7 @@
           const rangeStart = new Date(Math.min(...allStarts));
           const rangeEnd = new Date(Math.max(...allEnds));
           const totalDays = Math.max(1, Math.ceil((rangeEnd - rangeStart) / dayMs)) + 12;
-          const totalPx = totalDays * pxPerDay;
+          const totalPx = totalDays * pxPerDay + 150; // folga para o rótulo "data · valor" da última barra
           const dayOffset = (d) => Math.round((d - rangeStart) / dayMs) * pxPerDay;
 
           const labelRows = [];
@@ -1996,7 +2152,7 @@
             const projStages = (stagesByProject[p.id] || []).filter(hasDates).filter(notCompleted);
             if (projStages.length === 0) return;
 
-            labelRows.push(`<div class="gantt-label-cell gantt-group-header" data-open-project="${p.id}">${p.name}</div>`);
+            labelRows.push(`<div class="gantt-label-cell gantt-group-header" data-open-project="${escapeHtml(p.id)}"><span class="gantt-label-text">${escapeHtml(p.name)}</span></div>`);
             trackRows.push(`<div class="gantt-track-row"></div>`);
 
             projStages.forEach(s => {
@@ -2012,9 +2168,9 @@
                   : 'rgba(113,77,121,0.35)';
               const invoiced = stageBudgetValue(s);
 
-              labelRows.push(`<div class="gantt-label-cell" style="padding-left:14px; font-weight:500;" data-open-project="${p.id}">${s.stage_types?.name ?? 'Fase'}</div>`);
+              labelRows.push(`<div class="gantt-label-cell" style="padding-left:14px; font-weight:500;" data-open-project="${escapeHtml(p.id)}"><span class="gantt-label-text">${escapeHtml(s.stage_types?.name ?? 'Fase')}</span></div>`);
               trackRows.push(`
-                <div class="gantt-track-row" data-open-project="${p.id}">
+                <div class="gantt-track-row" data-open-project="${escapeHtml(p.id)}">
                   <div class="gantt-lane"></div>
                   <div class="gantt-bar" style="left:${left}px; width:${width}px; background:${color};"></div>
                   <div class="gantt-end-date" style="left:${left + width + 6}px;">${fmtDateShort(end)} · ${fmtEUR(invoiced)}</div>
@@ -2084,7 +2240,9 @@
         }
 
         ganttEl.innerHTML = renderTeamGanttSection(teamScale);
-        ganttEl.addEventListener('click', (e) => {
+        // onclick (e não addEventListener): ganttEl é permanente e esta função corre a cada
+        // troca de equipa — atribuir substitui o handler anterior em vez de o acumular.
+        ganttEl.onclick = (e) => {
           const scaleBtn = e.target.closest('[data-scale]');
           if (scaleBtn) {
             teamScale = scaleBtn.dataset.scale;
@@ -2099,7 +2257,7 @@
           }
           const openBtn = e.target.closest('[data-open-project]');
           if (openBtn) openDetail(openBtn.dataset.openProject);
-        });
+        };
 
         function scrollGanttToToday() {
           const scrollEl = ganttEl.querySelector('.gantt-scroll');
@@ -2121,12 +2279,12 @@
           tableEl.innerHTML = withoutDatesByProject.map(g => `
             <div class="gantt-wrap" style="margin-bottom:12px;">
               <table class="mini-table">
-                <thead><tr><th colspan="2" data-open-project="${g.project.id}">${g.project.name}</th></tr></thead>
+                <thead><tr><th colspan="2" data-open-project="${escapeHtml(g.project.id)}">${escapeHtml(g.project.name)}</th></tr></thead>
                 <tbody>
                   ${g.stages.map(s => `
                     <tr>
-                      <td>${s.stage_types?.name ?? 'Fase'}</td>
-                      <td class="col-value">${s.status ?? '—'}</td>
+                      <td>${escapeHtml(s.stage_types?.name ?? 'Fase')}</td>
+                      <td class="col-value">${stageStatusLabel(s)}</td>
                     </tr>`).join('')}
                 </tbody>
               </table>
@@ -2136,7 +2294,7 @@
           });
         }
       } catch (err) {
-        ganttEl.innerHTML = `<div class="error-box">Erro ao carregar planeamento: ${err.message}</div>`;
+        ganttEl.innerHTML = `<div class="error-box">Erro ao carregar planeamento: ${escapeHtml(err.message)}</div>`;
         tableEl.innerHTML = '';
         console.error(err);
       }
@@ -2330,9 +2488,9 @@
       }
 
       projectSelect.innerHTML = '<option value="">Seleciona um projeto</option>' +
-        projects.map(p => `<option value="${p.id}">${p.code ? p.code + ' — ' : ''}${p.name}</option>`).join('');
+        projects.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.code ? p.code + ' — ' : '')}${escapeHtml(p.name)}</option>`).join('');
       categorySelect.innerHTML = '<option value="">Seleciona uma categoria</option>' +
-        categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        categories.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
     }
 
     document.getElementById('horas-project-select').addEventListener('change', async (e) => {
@@ -2358,7 +2516,7 @@
         stages = res.data || [];
       }
       stageSelect.innerHTML = '<option value="">Seleciona a fase</option>' +
-        stages.map(s => `<option value="${s.id}">${s.stage_types?.name ?? 'Fase'}</option>`).join('');
+        stages.map(s => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.stage_types?.name ?? 'Fase')}</option>`).join('');
     }
 
     function resetHorasForm() {
@@ -2522,14 +2680,14 @@
           }
 
           return `
-            <div class="horas-entry" data-id="${e.id}">
+            <div class="horas-entry" data-id="${escapeHtml(e.id)}">
               <div class="horas-entry-main">
                 <span>${fmtDateShort(new Date(e.date + 'T00:00:00'))}</span>
                 <span class="invoice-status ${e.billable ? 'paid' : 'pending'}">${e.billable ? 'Faturável' : 'Não fat.'}</span>
-                <span class="horas-entry-hours">${Number(e.hours).toFixed(2)}h</span>
+                <span class="horas-entry-hours">${fmtHours(e.hours)}</span>
               </div>
-              <div class="horas-entry-sub">${label}</div>
-              ${e.description ? `<div class="horas-entry-desc">${e.description}</div>` : ''}
+              <div class="horas-entry-sub">${escapeHtml(label)}</div>
+              ${e.description ? `<div class="horas-entry-desc">${escapeHtml(e.description)}</div>` : ''}
               <div class="horas-entry-actions">
                 <button class="text-btn" data-action="edit">Editar</button>
                 <button class="text-btn danger" data-action="delete">Eliminar</button>
@@ -2543,7 +2701,7 @@
           row.querySelector('[data-action="delete"]').addEventListener('click', () => deleteHorasEntry(id));
         });
       } catch (err) {
-        container.innerHTML = `<div class="error-box">Erro ao carregar histórico: ${err.message}</div>`;
+        container.innerHTML = `<div class="error-box">Erro ao carregar histórico: ${escapeHtml(err.message)}</div>`;
       }
     }
 
@@ -2617,15 +2775,15 @@
         }
         renderCategories(categories);
       } catch (err) {
-        container.innerHTML = `<div class="error-box">Erro ao carregar categorias: ${err.message}</div>`;
+        container.innerHTML = `<div class="error-box">Erro ao carregar categorias: ${escapeHtml(err.message)}</div>`;
       }
     }
 
     function renderCategories(categories) {
       const container = document.getElementById('settings-categories-container');
       const rows = categories.map(c => `
-        <div class="category-row" data-id="${c.id}">
-          <span class="editable-value cat-name" data-raw="${c.name}">${c.name}</span>
+        <div class="category-row" data-id="${escapeHtml(c.id)}">
+          <span class="editable-value cat-name" data-raw="${escapeHtml(c.name)}">${escapeHtml(c.name)}</span>
           <div class="cat-actions">
             <button class="text-btn danger" data-action="delete-cat">Eliminar</button>
           </div>
@@ -2784,14 +2942,8 @@
     });
 
     document.getElementById('logout-btn').addEventListener('click', async () => {
-      devMode = false;
       await supabase.auth.signOut();
       showLogin();
-    });
-
-    document.getElementById('dev-skip-btn').addEventListener('click', () => {
-      devMode = true;
-      showApp();
     });
 
     document.getElementById('nav-home-btn').addEventListener('click', showHome);
@@ -2818,11 +2970,11 @@
       const rows = data.map(p => {
         const valor = fmtEUR(p.commission_value);
         return `
-          <tr class="project-row" data-id="${p.id}">
-            <td class="col-code">${p.code ?? '—'}</td>
-            <td class="col-name">${p.name ?? 'Sem nome'}</td>
-            <td class="col-area">${p.area != null ? p.area + ' m²' : '—'}</td>
-            <td class="col-type">${p.project_types?.name ?? '—'}</td>
+          <tr class="project-row" data-id="${escapeHtml(p.id)}">
+            <td class="col-code">${escapeHtml(p.code ?? '—')}</td>
+            <td class="col-name">${escapeHtml(p.name ?? 'Sem nome')}</td>
+            <td class="col-area">${escapeHtml(p.area != null ? p.area + ' m²' : '—')}</td>
+            <td class="col-type">${escapeHtml(p.project_types?.name ?? '—')}</td>
             <td class="col-value">${valor}</td>
           </tr>
         `;
@@ -2835,7 +2987,7 @@
             <tr>
               <th>Código</th>
               <th>Nome</th>
-              <th>Área</th>
+              <th class="col-area">Área</th>
               <th class="col-type">Tipo</th>
               <th class="col-value">Valor</th>
             </tr>
@@ -2872,12 +3024,30 @@
         if (devMode) {
           data = MOCK_PROJECTS;
         } else {
-          const res = await supabase
-            .from('projects')
-            .select('id, name, code, area, commission_value, project_types(name)')
-            .order('created_at', { ascending: false });
+          const [res, exRes] = await Promise.all([
+            supabase
+              .from('projects')
+              .select('id, name, code, area, commission_value, project_types(name)')
+              .order('created_at', { ascending: false }),
+            supabase
+              .from('project_stages')
+              .select('project_id, fixed_value, percentage')
+              .eq('excluded_from_invoicing', true)
+          ]);
           if (res.error) throw res.error;
-          data = res.data;
+          if (exRes.error) throw exRes.error;
+          data = res.data || [];
+          // Valor apresentado = honorários da NOVA (sem as fases excluídas das contas)
+          const excludedByProject = {};
+          (exRes.data || []).forEach(s => (excludedByProject[s.project_id] = excludedByProject[s.project_id] || []).push(s));
+          data.forEach(p => {
+            const excl = excludedByProject[p.id];
+            if (!excl || p.commission_value == null) return;
+            const contrato = Number(p.commission_value);
+            const valorExcluido = excl.reduce((sum, s) => sum + (s.fixed_value != null ? Number(s.fixed_value)
+              : s.percentage != null ? contrato * Number(s.percentage) / 100 : 0), 0);
+            p.commission_value = Math.max(0, contrato - valorExcluido);
+          });
         }
 
         allProjectsData = data || [];
@@ -2899,6 +3069,108 @@
       return String(v)
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    // Corpo das atas: texto simples com uma sintaxe mínima, desenhado com segurança.
+    //   "- " ou "* " no início da linha → ponto de lista; "1. " → lista numerada
+    //   indentação (Tab ou 2 espaços por nível) → sub-níveis;  **texto** → negrito
+    // O texto é sempre escapado primeiro; só depois se acrescentam as tags de lista/negrito.
+    function renderAtaBody(text) {
+      if (!text || !text.trim()) return '<p>Sem texto.</p>';
+      const inline = s => escapeHtml(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      const indentLevel = ws => (ws.match(/\t/g) || []).length + Math.floor((ws.match(/ /g) || []).length / 2);
+      let html = '';
+      const stack = [];      // listas abertas; cada nível tem sempre um <li> aberto
+      let para = [];
+      const flushPara = () => { if (para.length) { html += '<p>' + para.join('<br>') + '</p>'; para = []; } };
+      const closeTo = depth => { while (stack.length > depth) html += '</li></' + stack.pop() + '>'; };
+
+      text.replace(/\r\n?/g, '\n').split('\n').forEach(line => {
+        const m = line.match(/^([ \t]*)([-*•]|\d+[.)])\s+(.*)$/);
+        if (m) {
+          flushPara();
+          const type = /\d/.test(m[2]) ? 'ol' : 'ul';
+          const lvl = Math.min(indentLevel(m[1]) + 1, stack.length + 1);
+          if (lvl > stack.length) {
+            html += '<' + type + '>'; stack.push(type);
+          } else {
+            closeTo(lvl);
+            html += '</li>';
+            if (stack[lvl - 1] !== type) { html += '</' + stack.pop() + '><' + type + '>'; stack.push(type); }
+          }
+          html += '<li>' + inline(m[3]);
+        } else {
+          closeTo(0);
+          if (line.trim()) para.push(inline(line.trim()));
+          else flushPara();
+        }
+      });
+      closeTo(0);
+      flushPara();
+      return html;
+    }
+
+    // Liga a barra de formatação e os atalhos de teclado a um textarea de ata.
+    function attachAtaEditor(textarea, toolbar) {
+      const lineBounds = () => {
+        const v = textarea.value;
+        const start = v.lastIndexOf('\n', textarea.selectionStart - 1) + 1;
+        let end = v.indexOf('\n', textarea.selectionEnd);
+        if (end === -1) end = v.length;
+        return { start, end };
+      };
+      // Aplica fn a cada linha tocada pela seleção
+      const mapLines = fn => {
+        const { start, end } = lineBounds();
+        const v = textarea.value;
+        const lines = v.slice(start, end).split('\n');
+        const out = lines.map(fn).join('\n');
+        textarea.value = v.slice(0, start) + out + v.slice(end);
+        if (lines.length === 1) textarea.setSelectionRange(start + out.length, start + out.length);
+        else textarea.setSelectionRange(start, start + out.length);
+        textarea.focus();
+      };
+      const BULLET = /^([ \t]*)([-*•]|\d+[.)])\s+/;
+      const actions = {
+        bullet: () => mapLines(l => BULLET.test(l) ? l.replace(BULLET, '$1') : l.replace(/^([ \t]*)/, '$1- ')),
+        indent: () => mapLines(l => '  ' + l),
+        outdent: () => mapLines(l => l.replace(/^(\t| {1,2})/, '')),
+        bold: () => {
+          const { selectionStart: a, selectionEnd: b, value: v } = textarea;
+          const sel = v.slice(a, b) || 'texto';
+          textarea.value = v.slice(0, a) + '**' + sel + '**' + v.slice(b);
+          textarea.setSelectionRange(a + 2, a + 2 + sel.length);
+          textarea.focus();
+        }
+      };
+      toolbar.addEventListener('click', e => {
+        const btn = e.target.closest('[data-ata-fmt]');
+        if (btn) actions[btn.dataset.ataFmt]();
+      });
+      // Evita que tocar na barra tire o foco (e feche o teclado) no telemóvel
+      toolbar.addEventListener('mousedown', e => e.preventDefault());
+
+      textarea.addEventListener('keydown', e => {
+        if (e.key === 'Tab') {
+          e.preventDefault();
+          e.shiftKey ? actions.outdent() : actions.indent();
+          return;
+        }
+        if (e.key === 'Enter' && !e.shiftKey && textarea.selectionStart === textarea.selectionEnd) {
+          const { start } = lineBounds();
+          const line = textarea.value.slice(start, textarea.selectionStart);
+          const m = line.match(/^([ \t]*)([-*•]|(\d+)([.)]))\s+(.*)$/);
+          if (!m) return;
+          e.preventDefault();
+          if (!m[5].trim()) {
+            // Ponto vazio + Enter: termina a lista
+            textarea.setRangeText('', start, textarea.selectionStart, 'end');
+            return;
+          }
+          const marker = m[3] ? (Number(m[3]) + 1) + m[4] : m[2];
+          textarea.setRangeText('\n' + m[1] + marker + ' ', textarea.selectionStart, textarea.selectionEnd, 'end');
+        }
+      });
     }
 
     function round2(n) {
@@ -2993,17 +3265,25 @@
         document.getElementById('detail-code').textContent = project.code ?? '—';
         document.getElementById('detail-client').textContent = clienteNome;
 
+        // --- Fases excluídas das contas da NOVA (escolhidas a dedo; não confundir com fases concluídas) ---
+        // Faturas e horas dessas fases, e o seu valor, saem de todos os totais abaixo.
+        const excludedStages = stages.filter(s => s.excluded_from_invoicing);
+        const excludedStageIds = new Set(excludedStages.map(s => s.id));
+        const invoicesNova = invoices.filter(i => !excludedStageIds.has(i.stage_id));
+        const timeEntriesNova = timeEntries.filter(t => !excludedStageIds.has(t.stage_id));
+        const valorExcluido = round2(excludedStages.reduce((s, st) => s + stageBudgetValue(st), 0));
+
         // --- Financeiro ---
-        const totalHonorarios = round2(project.commission_value ?? 0);
-        const totalFaturado = round2(invoices.reduce((s, i) => s + Number(i.amount ?? 0), 0));
-        const totalRecebido = round2(invoices.reduce((s, i) => s + Number(i.amount_paid ?? 0), 0));
+        const totalHonorarios = round2(Math.max(0, (project.commission_value ?? 0) - valorExcluido));
+        const totalFaturado = round2(invoicesNova.reduce((s, i) => s + Number(i.amount ?? 0), 0));
+        const totalRecebido = round2(invoicesNova.reduce((s, i) => s + Number(i.amount_paid ?? 0), 0));
         const totalDespesas = round2(expenses.reduce((s, e) => s + Number(e.amount ?? 0), 0));
         const margem = round2(totalFaturado - totalDespesas);
         const pctFaturado = totalHonorarios > 0 ? Math.min(100, Math.round((totalFaturado / totalHonorarios) * 100)) : 0;
 
         // --- Horas ---
-        const horasFaturaveis = timeEntries.filter(t => t.billable).reduce((s, t) => s + Number(t.hours ?? 0), 0);
-        const horasNaoFaturaveis = timeEntries.filter(t => !t.billable).reduce((s, t) => s + Number(t.hours ?? 0), 0);
+        const horasFaturaveis = timeEntriesNova.filter(t => t.billable).reduce((s, t) => s + Number(t.hours ?? 0), 0);
+        const horasNaoFaturaveis = timeEntriesNova.filter(t => !t.billable).reduce((s, t) => s + Number(t.hours ?? 0), 0);
         const totalHoras = horasFaturaveis + horasNaoFaturaveis;
         const pctFaturavel = totalHoras > 0 ? (horasFaturaveis / totalHoras) * 100 : 0;
         const taxaEfetiva = horasFaturaveis > 0 ? round2(totalFaturado / horasFaturaveis) : null;
@@ -3014,6 +3294,7 @@
         timeEntries.forEach(t => {
           const h = Number(t.hours ?? 0);
           if (t.stage_id) hoursByStageId[t.stage_id] = (hoursByStageId[t.stage_id] || 0) + h;
+          if (excludedStageIds.has(t.stage_id)) return;
           const nome = t.member_name || 'Sem nome';
           hoursByPerson[nome] = (hoursByPerson[nome] || 0) + h;
         });
@@ -3046,7 +3327,7 @@
           const minDate = new Date(Math.min(...allDates.map(d => d.start)));
           const maxDate = new Date(Math.max(...allDates.map(d => d.end)));
           const totalDays = Math.max(1, Math.ceil((maxDate - minDate) / dayMs)) + 12;
-          const totalPx = totalDays * pxPerDay;
+          const totalPx = totalDays * pxPerDay + 150; // folga para o rótulo "data · valor" da última barra
           const dayOffset = (d) => Math.round((d - minDate) / dayMs) * pxPerDay;
 
           const timelineItems = [
@@ -3063,12 +3344,12 @@
             if (item.kind === 'stage') {
               const s = item.data;
               const marcaExcluida = s.excluded_from_invoicing
-                ? ' <span title="Excluída da faturação" style="opacity:.45;">✕</span>'
+                ? ' <span title="Fora das contas da NOVA" style="opacity:.45;">✕</span>'
                 : '';
-              return `<div class="gantt-label-cell">${s.stage_types?.name ?? 'Fase'}${s.revision_label ? ' · ' + s.revision_label : ''}${marcaExcluida}</div>`;
+              return `<div class="gantt-label-cell"><span class="gantt-label-text">${escapeHtml(s.stage_types?.name ?? 'Fase')}${s.revision_label ? ' · ' + escapeHtml(s.revision_label) : ''}${marcaExcluida}</span></div>`;
             }
             const b = item.data;
-            return `<div class="gantt-label-cell">⏸ ${b.name ?? 'Pausa'}</div>`;
+            return `<div class="gantt-label-cell"><span class="gantt-label-text">⏸ ${escapeHtml(b.name ?? 'Pausa')}</span></div>`;
           }).join('');
 
           const tracksHtml = timelineItems.map(item => {
@@ -3101,7 +3382,7 @@
               <div class="gantt-track-row">
                 <div class="gantt-lane"></div>
                 <div class="gantt-bar break-bar" style="left:${left}px; width:${width}px;">
-                  <span class="pct">${b.type ?? ''}</span>
+                  <span class="pct">${escapeHtml(b.type ?? '')}</span>
                 </div>
               </div>`;
           }).join('');
@@ -3161,8 +3442,8 @@
             .sort((a, b) => b.h - a.h)
             .map(p => `
               <tr>
-                <td>${p.nome}</td>
-                <td class="col-value">${p.h.toFixed(1)}h</td>
+                <td>${escapeHtml(p.nome)}</td>
+                <td class="col-value">${fmtHours(p.h)}</td>
                 <td class="col-value">${totalGlobalPessoas > 0 ? Math.round((p.h / totalGlobalPessoas) * 100) : 0}%</td>
               </tr>`).join('');
           participacaoHtml = `
@@ -3172,7 +3453,7 @@
                 ${linhasPessoas}
                 <tr class="mini-table-total">
                   <td>Total geral</td>
-                  <td class="col-value">${totalGlobalPessoas.toFixed(1)}h</td>
+                  <td class="col-value">${fmtHours(totalGlobalPessoas)}</td>
                   <td class="col-value">100%</td>
                 </tr>
               </tbody>
@@ -3188,32 +3469,29 @@
           stageInvoiceMap[inv.stage_id].paid += Number(inv.amount_paid ?? 0);
         });
 
-        function stageStatusLabel(s) {
-          if (s.status === 'completed' || s.status === 'done') return 'Concluída';
-          if (s.status === 'in_progress' || s.status === 'active') return 'Em curso';
-          return 'Por iniciar';
-        }
-
         let stagesTableHtml = '<div class="gantt-empty">Este projeto ainda não tem fases registadas.</div>';
         if (stages.length > 0) {
           stagesTableHtml = `
-            <table class="mini-table">
+            <div class="table-scroll"><table class="mini-table">
               <thead><tr><th>Fase</th><th>Estado</th><th class="col-value">Valor</th><th class="col-value">Horas</th><th>Faturação</th><th>Pagamento</th></tr></thead>
               <tbody>
                 ${stages.map(s => {
                   const inv = stageInvoiceMap[s.id] || { amount: 0, paid: 0 };
                   const budgeted = stageBudgetValue(s);
                   const isCompleted = s.status === 'completed' || s.status === 'done';
-                  const shouldFlag = budgeted > 0 && isCompleted;
+                  const isExcluded = !!s.excluded_from_invoicing;
+                  const shouldFlag = budgeted > 0 && isCompleted && !isExcluded;
                   const isInvoiced = inv.amount > 0;
                   const isPaid = isInvoiced && inv.paid >= inv.amount;
                   const isPartial = inv.paid > 0 && inv.paid < inv.amount;
                   const horas = hoursByStageId[s.id] || 0;
-                  const faseLabel = `${s.stage_types?.name ?? 'Fase'}${s.revision_label ? ' · ' + s.revision_label : ''}`;
-                  const invoiceCell = isInvoiced
-                    ? `<span class="invoice-status paid">Faturada · ${fmtEUR(inv.amount)}</span>`
-                    : `<span class="invoice-status ${shouldFlag ? 'pending' : 'neutral'}">Por faturar</span>`;
-                  const paymentCell = !isInvoiced
+                  const faseLabel = escapeHtml(`${s.stage_types?.name ?? 'Fase'}${s.revision_label ? ' · ' + s.revision_label : ''}`);
+                  const invoiceCell = isExcluded
+                    ? `<span class="invoice-status neutral" title="Fase excluída: não conta para os totais">Fora das contas</span>`
+                    : isInvoiced
+                      ? `<span class="invoice-status paid">Faturada · ${fmtEUR(inv.amount)}</span>`
+                      : `<span class="invoice-status ${shouldFlag ? 'pending' : 'neutral'}">Por faturar</span>`;
+                  const paymentCell = (isExcluded || !isInvoiced)
                     ? '—'
                     : isPaid
                       ? `<span class="invoice-status paid">Paga</span>`
@@ -3221,17 +3499,17 @@
                         ? `<span class="invoice-status partial">Parcial</span>`
                         : `<span class="invoice-status ${shouldFlag ? 'pending' : 'neutral'}">Não paga</span>`;
                   return `
-                    <tr>
+                    <tr${isExcluded ? ' style="opacity:.55;"' : ''}>
                       <td>${faseLabel}</td>
                       <td>${stageStatusLabel(s)}</td>
                       <td class="col-value">${fmtEUR(budgeted)}</td>
-                      <td class="col-value">${horas.toFixed(1)}h</td>
+                      <td class="col-value">${fmtHours(horas)}</td>
                       <td>${invoiceCell}</td>
                       <td>${paymentCell}</td>
                     </tr>`;
                 }).join('')}
               </tbody>
-            </table>`;
+            </table></div>`;
         }
 
         // --- Despesas ---
@@ -3241,7 +3519,7 @@
             const reimbursed = !!e.reimbursed;
             return `
               <div class="invoice-row">
-                <span>${e.description ?? e.expense_categories?.name ?? 'Despesa'}</span>
+                <span>${escapeHtml(e.description ?? e.expense_categories?.name ?? 'Despesa')}</span>
                 <span class="invoice-status ${reimbursed ? 'paid' : 'pending'}">${reimbursed ? 'Reembolsada' : 'Por reembolsar'}</span>
                 <span class="amount">${fmtEUR(Number(e.amount))}</span>
               </div>`;
@@ -3260,7 +3538,7 @@
               <span class="ata-entry-title">${escapeHtml(n.title)}</span>
               <span class="ata-entry-date">${escapeHtml(fmtDateShort(new Date(n.meeting_date + 'T00:00:00')))}</span>
             </div>
-            <div class="ata-entry-body">${escapeHtml(n.body || 'Sem texto.')}</div>
+            <div class="ata-entry-body">${renderAtaBody(n.body)}</div>
           </div>`;
 
         const hojeKey = dateKey(new Date());
@@ -3309,20 +3587,20 @@
         detailBody.innerHTML = `
           <div class="section-label">Detalhes do projeto</div>
           <div class="gantt-wrap">
-            <div class="invoice-row"><span>Cliente</span><span>${clienteNome}</span></div>
+            <div class="invoice-row"><span>Cliente</span><span>${escapeHtml(clienteNome)}</span></div>
             <div class="invoice-row editable-row" data-field="address" data-type="text">
-              <span>Morada</span><span class="editable-value" data-raw="${project.address ?? ''}">${project.address ?? '—'}</span>
+              <span>Morada</span><span class="editable-value" data-raw="${escapeHtml(project.address ?? '')}">${escapeHtml(project.address ?? '—')}</span>
             </div>
-            <div class="invoice-row"><span>Tipo</span><span>${project.project_types?.name ?? '—'}</span></div>
+            <div class="invoice-row"><span>Tipo</span><span>${escapeHtml(project.project_types?.name ?? '—')}</span></div>
             <div class="invoice-row editable-row" data-field="area" data-type="number">
-              <span>Área</span><span class="editable-value" data-raw="${project.area ?? ''}">${project.area != null ? project.area + ' m²' : '—'}</span>
+              <span>Área</span><span class="editable-value" data-raw="${escapeHtml(project.area ?? '')}">${escapeHtml(project.area != null ? project.area + ' m²' : '—')}</span>
             </div>
-            <div class="invoice-row"><span>Equipa</span><span>${project.teams?.name ?? '—'}</span></div>
+            <div class="invoice-row"><span>Equipa</span><span>${escapeHtml(project.teams?.name ?? '—')}</span></div>
             <div class="invoice-row editable-row" data-field="awarding_date" data-type="date">
-              <span>Adjudicação</span><span class="editable-value" data-raw="${project.awarding_date ?? ''}">${project.awarding_date ?? '—'}</span>
+              <span>Adjudicação</span><span class="editable-value" data-raw="${escapeHtml(project.awarding_date ?? '')}">${escapeHtml(project.awarding_date ?? '—')}</span>
             </div>
             <div class="invoice-row editable-row" data-field="status" data-type="text">
-              <span>Estado</span><span class="editable-value" data-raw="${project.status ?? ''}">${project.status ?? '—'}</span>
+              <span>Estado</span><span class="editable-value" data-raw="${escapeHtml(project.status ?? '')}">${escapeHtml(project.status ?? '—')}</span>
             </div>
           </div>
 
@@ -3340,12 +3618,13 @@
             <div class="ring-text">
               <div class="ring-title">Faturado do total</div>
               <div class="ring-sub">${fmtEUR(totalFaturado)} de ${fmtEUR(totalHonorarios)}</div>
+              ${valorExcluido > 0 ? `<div class="ring-sub">Exclui ${excludedStages.length} fase${excludedStages.length > 1 ? 's' : ''} fora das contas (${fmtEUR(valorExcluido)})</div>` : ''}
             </div>
           </div>
           <div class="stat-grid" style="margin-top:10px;">
             <div class="stat-tile">
               <div class="stat-value">${fmtEUR(totalHonorarios)}</div>
-              <div class="stat-label">Honorários</div>
+              <div class="stat-label">Honorários${valorExcluido > 0 ? ' NOVA' : ''}</div>
             </div>
             <div class="stat-tile">
               <div class="stat-value">${fmtEUR(totalRecebido)}</div>
@@ -3355,8 +3634,6 @@
               <div class="stat-value">${fmtEUR(totalDespesas)}</div>
               <div class="stat-label">Despesas</div>
             </div>
-          </div>
-          <div class="stat-grid" style="margin-top:10px;">
             <div class="stat-tile">
               <div class="stat-value">${fmtEUR(margem)}</div>
               <div class="stat-label">Margem</div>
@@ -3366,7 +3643,7 @@
               <div class="stat-label">Taxa efetiva</div>
             </div>
             <div class="stat-tile">
-              <div class="stat-value">${totalHoras.toFixed(1)}h</div>
+              <div class="stat-value">${fmtHours(totalHoras)}</div>
               <div class="stat-label">Horas totais</div>
             </div>
           </div>
@@ -3376,8 +3653,8 @@
               <div class="time-bar-seg nonbillable" style="width:${100 - pctFaturavel}%;"></div>
             </div>
             <div class="time-legend">
-              <span><span class="dot billable"></span>Faturáveis: ${horasFaturaveis.toFixed(1)}h</span>
-              <span><span class="dot nonbillable"></span>Não faturáveis: ${horasNaoFaturaveis.toFixed(1)}h</span>
+              <span><span class="dot billable"></span>Faturáveis: ${fmtHours(horasFaturaveis)}</span>
+              <span><span class="dot nonbillable"></span>Não faturáveis: ${fmtHours(horasNaoFaturaveis)}</span>
             </div>
           </div>
 
@@ -3536,7 +3813,7 @@
         types = res.data || [];
       }
       selectEl.innerHTML = '<option value="">Seleciona o tipo de fase</option>' +
-        types.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+        types.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('');
     }
 
     function attachRevisionFormHandlers(projectId, stages) {
@@ -3638,28 +3915,46 @@
       document.getElementById('quick-modal-body').innerHTML = bodyHtml;
       document.getElementById('quick-modal-overlay').style.display = 'block';
       document.getElementById('quick-modal').style.display = 'flex';
+      document.body.style.overflow = 'hidden';
     }
     function closeQuickModal() {
       document.getElementById('quick-modal-overlay').style.display = 'none';
       document.getElementById('quick-modal').style.display = 'none';
       document.getElementById('quick-modal-body').innerHTML = '';
+      document.body.style.overflow = '';
     }
     document.getElementById('quick-modal-close').addEventListener('click', closeQuickModal);
     document.getElementById('quick-modal-overlay').addEventListener('click', closeQuickModal);
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      if (document.getElementById('quick-modal').style.display === 'flex') closeQuickModal();
+      else if (fabMenu.style.display === 'flex') closeFabMenu();
+    });
+
+    // iPhone/iPad: o Safari ignora user-scalable=no; bloqueia a pinça diretamente
+    // para a página não sair do enquadramento.
+    ['gesturestart', 'gesturechange', 'gestureend'].forEach(ev =>
+      document.addEventListener(ev, e => e.preventDefault(), { passive: false }));
 
     // ---------- Botão + e menu de ações rápidas ----------
     const homeFab = document.getElementById('home-fab');
     const fabMenu = document.getElementById('fab-menu');
+    function closeFabMenu() {
+      fabMenu.style.display = 'none';
+      homeFab.classList.remove('open');
+    }
     homeFab.addEventListener('click', () => {
       const isOpen = fabMenu.style.display === 'flex';
       fabMenu.style.display = isOpen ? 'none' : 'flex';
       homeFab.classList.toggle('open', !isOpen);
     });
+    document.addEventListener('click', (e) => {
+      if (fabMenu.style.display === 'flex' && !e.target.closest('#fab-menu, #home-fab')) closeFabMenu();
+    });
     fabMenu.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-fab-action]');
       if (!btn) return;
-      fabMenu.style.display = 'none';
-      homeFab.classList.remove('open');
+      closeFabMenu();
       const action = btn.dataset.fabAction;
       if (action === 'marco') openMarcoModal({});
       else if (action === 'horas') openHorasModule();
@@ -3707,9 +4002,9 @@
         ]);
         clients = cRes.data || []; types = tRes.data || []; teams = teRes.data || [];
       }
-      document.getElementById('np-client').innerHTML = '<option value="">Sem cliente</option>' + clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-      document.getElementById('np-type').innerHTML = '<option value="">Sem tipo</option>' + types.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
-      document.getElementById('np-team').innerHTML = '<option value="">Sem equipa</option>' + teams.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+      document.getElementById('np-client').innerHTML = '<option value="">Sem cliente</option>' + clients.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
+      document.getElementById('np-type').innerHTML = '<option value="">Sem tipo</option>' + types.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('');
+      document.getElementById('np-team').innerHTML = '<option value="">Sem equipa</option>' + teams.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('');
 
       document.getElementById('np-submit').addEventListener('click', async () => {
         const msgEl = document.getElementById('np-msg');
@@ -3776,13 +4071,21 @@
         <input type="text" id="ata-title" class="form-input" placeholder="ex: Reunião de arranque">
         <label class="field-label">Data</label>
         <input type="date" id="ata-date" class="form-input">
-        <label class="field-label">Texto da ata</label>
-        <textarea id="ata-body" class="form-input" rows="6" placeholder="Notas da reunião..."></textarea>
+        <label class="field-label" for="ata-body">Texto da ata</label>
+        <div class="ata-toolbar" id="ata-toolbar" role="toolbar" aria-label="Formatação">
+          <button type="button" data-ata-fmt="bullet" title="Lista">• Lista</button>
+          <button type="button" data-ata-fmt="outdent" title="Subir nível (Shift+Tab)" aria-label="Subir nível">⇤</button>
+          <button type="button" data-ata-fmt="indent" title="Descer nível (Tab)" aria-label="Descer nível">⇥</button>
+          <button type="button" data-ata-fmt="bold" title="Negrito" aria-label="Negrito"><strong>B</strong></button>
+        </div>
+        <textarea id="ata-body" class="form-input" rows="8" placeholder="Notas da reunião...&#10;- ponto&#10;  - sub-ponto"></textarea>
+        <div class="field-hint">Começa uma linha com <strong>-</strong> para criar um ponto. Tab / Shift+Tab (ou ⇥ / ⇤) muda o nível. <strong>**texto**</strong> fica a negrito.</div>
         <button id="ata-submit" class="primary-btn">Guardar ata</button>
         <div id="ata-msg" class="form-msg"></div>
       `;
       openQuickModal('Nova ata de reunião', bodyHtml);
       document.getElementById('ata-date').value = fmtDateInput(new Date());
+      attachAtaEditor(document.getElementById('ata-body'), document.getElementById('ata-toolbar'));
 
       const projSelect = document.getElementById('ata-project');
       let projects;
@@ -3882,7 +4185,7 @@
         <input type="date" id="exp-date" class="form-input">
         <label class="field-label">Quem pagou</label>
         <div class="segmented" id="exp-payer-toggle">
-          <button type="button" data-payer="me" class="active">Eu (${member?.name ?? 'sem nome'})</button>
+          <button type="button" data-payer="me" class="active">Eu (${escapeHtml(member?.name ?? 'sem nome')})</button>
           <button type="button" data-payer="company">A empresa</button>
         </div>
         <div id="exp-reimbursed-wrap">
@@ -3934,10 +4237,10 @@
         ]);
         projects = pr.data || []; categories = cr.data || [];
       }
-      projSelect.innerHTML = '<option value="">Sem projeto</option>' + projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+      projSelect.innerHTML = '<option value="">Sem projeto</option>' + projects.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('');
       if (lockedProjectId) projSelect.value = lockedProjectId;
       else if (isEdit && existingExpense.project_id) projSelect.value = existingExpense.project_id;
-      document.getElementById('exp-category').innerHTML = '<option value="">Sem categoria</option>' + categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+      document.getElementById('exp-category').innerHTML = '<option value="">Sem categoria</option>' + categories.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
       if (isEdit && existingExpense.category_id) document.getElementById('exp-category').value = existingExpense.category_id;
 
       if (isEdit) {
@@ -4004,13 +4307,13 @@
       }
       container.className = '';
       container.innerHTML = data.map(n => `
-        <div class="gantt-wrap ata-entry" data-id="${n.id}" style="margin-bottom:8px;">
+        <div class="gantt-wrap ata-entry" data-id="${escapeHtml(n.id)}" style="margin-bottom:8px;">
           <div class="ata-entry-main">
-            <span class="ata-entry-title">${n.title}</span>
+            <span class="ata-entry-title">${escapeHtml(n.title)}</span>
             <span class="ata-entry-date">${fmtDateShort(new Date(n.meeting_date + 'T00:00:00'))}</span>
           </div>
-          <div class="ata-entry-project">${n.projectName ?? 'Sem projeto'}</div>
-          <div class="ata-entry-body">${n.body ? n.body.replace(/</g, '&lt;') : 'Sem texto.'}</div>
+          <div class="ata-entry-project">${escapeHtml(n.projectName ?? 'Sem projeto')}</div>
+          <div class="ata-entry-body">${renderAtaBody(n.body)}</div>
         </div>
       `).join('');
 
@@ -4108,7 +4411,7 @@
           const d = new Date(e.date + 'T00:00:00');
           const dow = d.getDay();
           d.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1));
-          key = d.toISOString().slice(0, 10);
+          key = dateKey(d);
         }
         map[key] = (map[key] || 0) + Number(e.amount || 0);
       });
@@ -4120,7 +4423,11 @@
     function renderExpenseLineChart(buckets, granularity) {
       if (buckets.length === 0) return '<div class="gantt-empty">Sem despesas suficientes para o gráfico.</div>';
       const chartHeight = 168;
-      const slotWidth = granularity === 'week' ? 54 : 64;
+      // Largura útil do cartão; com poucos pontos, espalha-os em vez de os encostar à esquerda
+      const panel = document.getElementById('despesas-todas-panel');
+      const available = panel && panel.clientWidth ? panel.clientWidth - 40 : 0;
+      const minSlot = granularity === 'week' ? 54 : 64;
+      const slotWidth = Math.max(minSlot, Math.floor(available / buckets.length));
       const topPad = 26, bottomPad = 26;
       const usableHeight = chartHeight - topPad - bottomPad;
       const svgWidth = Math.max(slotWidth * buckets.length, 160);
@@ -4256,9 +4563,9 @@
 
       const rowHtml = (e) => `
         <div class="invoice-row">
-          <span>${fmtDateShort(new Date(e.date + 'T00:00:00'))} · ${e.description ?? 'Despesa'}</span>
+          <span>${fmtDateShort(new Date(e.date + 'T00:00:00'))} · ${escapeHtml(e.description ?? 'Despesa')}</span>
           <span class="amount">${fmtEUR(Number(e.amount))}</span>
-          <button type="button" class="text-btn" data-toggle-reimburse="${e.id}" data-current="${e.reimbursed ? 'true' : 'false'}">${e.reimbursed ? 'Marcar por reembolsar' : 'Marcar reembolsada'}</button>
+          <button type="button" class="text-btn" data-toggle-reimburse="${escapeHtml(e.id)}" data-current="${e.reimbursed ? 'true' : 'false'}">${e.reimbursed ? 'Marcar por reembolsar' : 'Marcar reembolsada'}</button>
         </div>`;
 
       panel.innerHTML = nomes.map(nome => {
@@ -4270,7 +4577,7 @@
         return `
           <div class="gantt-wrap" style="margin-bottom:12px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-              <strong>${nome}</strong>
+              <strong>${escapeHtml(nome)}</strong>
               <span class="amount">${fmtEUR(totalPorFazer)} por reembolsar</span>
             </div>
             ${porFazer.length ? porFazer.map(rowHtml).join('') : '<div class="gantt-empty">Sem despesas por reembolsar.</div>'}
@@ -4313,13 +4620,13 @@
           : `<span class="invoice-status ${e.reimbursed ? 'paid' : 'pending'}">${e.reimbursed ? 'Reembolsada' : 'Por reembolsar'}</span>`;
         return `
         <tr>
-          <td>${fmtDateShort(new Date(e.date + 'T00:00:00'))}</td>
-          <td>${e.description ?? e.expense_categories?.name ?? 'Despesa'}</td>
-          <td>${e.project_id ? (projectMap[e.project_id] ?? 'Projeto') : '—'}</td>
-          <td>${payerName(e, memberMap)}</td>
-          <td class="col-value">${fmtEUR(Number(e.amount))}</td>
-          <td>${statusCell}</td>
-          <td><button type="button" class="text-btn" data-edit-expense="${e.id}">Editar</button></td>
+          <td class="c-date">${fmtDateShort(new Date(e.date + 'T00:00:00'))}</td>
+          <td class="c-desc">${escapeHtml(e.description ?? e.expense_categories?.name ?? 'Despesa')}</td>
+          <td class="c-proj">${escapeHtml(e.project_id ? (projectMap[e.project_id] ?? 'Projeto') : '—')}</td>
+          <td class="c-payer">${escapeHtml(payerName(e, memberMap))}</td>
+          <td class="col-value c-value">${fmtEUR(Number(e.amount))}</td>
+          <td class="c-status">${statusCell}</td>
+          <td class="c-edit"><button type="button" class="text-btn" data-edit-expense="${escapeHtml(e.id)}">Editar</button></td>
         </tr>`;
       }).join('');
 
@@ -4341,7 +4648,7 @@
 
         <div class="section-label">Todas as despesas</div>
         <div class="gantt-wrap">
-          <table class="mini-table">
+          <table class="mini-table stack-table">
             <thead><tr><th>Data</th><th>Descrição</th><th>Projeto</th><th>Pago por</th><th class="col-value">Valor</th><th>Estado</th><th></th></tr></thead>
             <tbody>${rows}</tbody>
           </table>
@@ -4435,18 +4742,40 @@
         location: 'Escritório', notes: null, done: false, owner_ids: ['mock-member-1'] },
       { id: 'mk-2', project_id: 'mock-2', type_id: 'mt-4', title: 'Entrega do projeto de execução',
         event_date: dateKey(new Date(Date.now() + 4 * 86400000)), all_day: true, start_time: null, end_time: null,
-        location: null, notes: null, done: false, owner_ids: [] }
+        location: null, notes: null, done: false, owner_ids: [] },
+      { id: 'mk-3', project_id: null, category_id: 'cat-3', type_id: 'mt-2', title: 'Visita a terreno em Matosinhos',
+        event_date: dateKey(new Date()), all_day: false, start_time: '15:00:00', end_time: null,
+        location: 'Matosinhos', notes: null, done: false, owner_ids: ['mock-member-1'] }
     ];
 
     let agendaScope = 'mine';
     let agendaMonth = new Date();
     let agendaSelected = dateKey(new Date());
-    let agendaData = { milestones: [], types: {}, members: {}, projects: {}, memberId: null };
+    let agendaData = { milestones: [], types: {}, members: {}, projects: {}, categories: {}, memberId: null };
 
     async function loadMilestoneTypes() {
       if (devMode) return MOCK_MILESTONE_TYPES;
       const res = await supabase.from('milestone_types').select('id, name, color, sort_order').order('sort_order');
       if (res.error) throw res.error;
+      return res.data || [];
+    }
+
+    // Marcos podem estar ligados a uma categoria de horas (marcos_categorias.sql).
+    // Enquanto esse SQL não tiver corrido, a coluna não existe: a app continua a
+    // funcionar e simplesmente não oferece a opção "Categoria".
+    let milestoneCategorySupport = null;
+    async function milestonesHaveCategory() {
+      if (devMode) return true;
+      if (milestoneCategorySupport === null) {
+        const r = await supabase.from('project_milestones').select('category_id').limit(1);
+        milestoneCategorySupport = !r.error;
+      }
+      return milestoneCategorySupport;
+    }
+
+    async function loadTimeCategories() {
+      if (devMode) return MOCK_CATEGORIES;
+      const res = await supabase.from('time_categories').select('id, name').order('name');
       return res.data || [];
     }
 
@@ -4457,8 +4786,9 @@
           (!projectId || m.project_id === projectId) &&
           (!from || m.event_date >= from) && (!to || m.event_date <= to));
       }
-      let q = supabase.from('project_milestones')
-        .select('id, project_id, type_id, title, event_date, all_day, start_time, end_time, location, notes, done');
+      const cols = 'id, project_id, type_id, title, event_date, all_day, start_time, end_time, location, notes, done' +
+        (await milestonesHaveCategory() ? ', category_id' : '');
+      let q = supabase.from('project_milestones').select(cols);
       if (projectId) q = q.eq('project_id', projectId);
       if (from) q = q.gte('event_date', from);
       if (to) q = q.lte('event_date', to);
@@ -4497,10 +4827,11 @@
         const from = dateKey(new Date(agendaMonth.getFullYear(), agendaMonth.getMonth() - 1, 1));
         const to = dateKey(new Date(agendaMonth.getFullYear(), agendaMonth.getMonth() + 2, 0));
 
-        const [milestones, types, members] = await Promise.all([
+        const [milestones, types, members, categories] = await Promise.all([
           fetchMilestones({ from, to }),
           loadMilestoneTypes(),
-          loadAllMembers()
+          loadAllMembers(),
+          loadTimeCategories()
         ]);
 
         const projectIds = [...new Set(milestones.map(m => m.project_id).filter(Boolean))];
@@ -4519,6 +4850,7 @@
           types: Object.fromEntries(types.map(t => [t.id, t])),
           members: Object.fromEntries(members.map(m => [m.id, m.name])),
           projects: projMap,
+          categories: Object.fromEntries(categories.map(c => [c.id, c.name])),
           memberId: member?.id ?? null
         };
         renderAgenda();
@@ -4539,8 +4871,8 @@
       visible.forEach(m => { (byDay[m.event_date] = byDay[m.event_date] || []).push(m); });
 
       const y = agendaMonth.getFullYear(), mo = agendaMonth.getMonth();
-      document.getElementById('cal-title').textContent =
-        agendaMonth.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' });
+      const calTitle = agendaMonth.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' });
+      document.getElementById('cal-title').textContent = calTitle.charAt(0).toUpperCase() + calTitle.slice(1);
 
       const first = new Date(y, mo, 1);
       const offset = (first.getDay() + 6) % 7; // semana começa à segunda
@@ -4599,6 +4931,7 @@
       const bits = [];
       if (type) bits.push(escapeHtml(type.name));
       if (showProject && m.project_id && agendaData.projects[m.project_id]) bits.push(escapeHtml(agendaData.projects[m.project_id]));
+      if (showProject && m.category_id && agendaData.categories[m.category_id]) bits.push(escapeHtml(agendaData.categories[m.category_id]));
       if (m.location) bits.push(escapeHtml(m.location));
       return '<div class="marco-row" data-marco-id="' + escapeHtml(m.id) + '">' +
         '<span class="marco-stripe" style="background:' + escapeHtml(color) + '"></span>' +
@@ -4698,8 +5031,18 @@
         <input type="text" id="mk-title" class="form-input" placeholder="ex: Reunião de licenciamento">
         <label class="field-label">Tipo</label>
         <select id="mk-type" class="form-input"><option value="">A carregar…</option></select>
-        <label class="field-label">Projeto (opcional)</label>
-        <select id="mk-project" class="form-input" ${lockedProjectId ? 'disabled' : ''}><option value="">A carregar…</option></select>
+        <label class="field-label">Associado a</label>
+        <div class="segmented" id="mk-link-toggle" style="margin-bottom:8px;${lockedProjectId ? ' display:none;' : ''}">
+          <button type="button" data-link="project" class="active">Projeto</button>
+          <button type="button" data-link="category">Categoria</button>
+          <button type="button" data-link="none">Interno</button>
+        </div>
+        <div id="mk-project-wrap">
+          <select id="mk-project" class="form-input" aria-label="Projeto" ${lockedProjectId ? 'disabled' : ''}><option value="">A carregar…</option></select>
+        </div>
+        <div id="mk-category-wrap" style="display:none;">
+          <select id="mk-category" class="form-input" aria-label="Categoria de horas"><option value="">A carregar…</option></select>
+        </div>
         <label class="field-label">Data</label>
         <input type="date" id="mk-date" class="form-input">
         <label class="field-label">Duração</label>
@@ -4735,17 +5078,42 @@
       `);
 
       // Opções
-      const [types, members, projects] = await Promise.all([
+      const [types, members, projects, categories, hasCategory] = await Promise.all([
         loadMilestoneTypes(),
         loadAllMembers(),
         devMode ? Promise.resolve(MOCK_PROJECTS)
-                : supabase.from('projects').select('id, name').is('archived_at', null).order('name').then(r => r.data || [])
+                : supabase.from('projects').select('id, name').is('archived_at', null).order('name').then(r => r.data || []),
+        loadTimeCategories(),
+        milestonesHaveCategory()
       ]);
 
       document.getElementById('mk-type').innerHTML = '<option value="">Sem tipo</option>' +
         types.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('');
-      document.getElementById('mk-project').innerHTML = '<option value="">Sem projeto (interno)</option>' +
+      document.getElementById('mk-project').innerHTML = '<option value="">Escolhe o projeto</option>' +
         projects.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('');
+      document.getElementById('mk-category').innerHTML = '<option value="">Escolhe a categoria</option>' +
+        categories.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
+
+      // Projeto / Categoria de horas / Interno — mutuamente exclusivos
+      let link = lockedProjectId ? 'project'
+        : isEdit ? (existing.category_id ? 'category' : existing.project_id ? 'project' : 'none')
+        : 'project';
+      if (!hasCategory) {
+        document.querySelector('#mk-link-toggle [data-link="category"]').remove();
+        if (link === 'category') link = 'none';
+      }
+      const syncLink = () => {
+        document.querySelectorAll('#mk-link-toggle button').forEach(b => b.classList.toggle('active', b.dataset.link === link));
+        document.getElementById('mk-project-wrap').style.display = link === 'project' ? 'block' : 'none';
+        document.getElementById('mk-category-wrap').style.display = link === 'category' ? 'block' : 'none';
+      };
+      syncLink();
+      document.getElementById('mk-link-toggle').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-link]');
+        if (!btn) return;
+        link = btn.dataset.link;
+        syncLink();
+      });
 
       let ownerIds = isEdit ? [...(existing.owner_ids || [])] : (member?.id ? [member.id] : []);
       const ownersEl = document.getElementById('mk-owners');
@@ -4790,6 +5158,7 @@
         document.getElementById('mk-title').value = existing.title ?? '';
         document.getElementById('mk-type').value = existing.type_id ?? '';
         document.getElementById('mk-project').value = existing.project_id ?? '';
+        document.getElementById('mk-category').value = existing.category_id ?? '';
         document.getElementById('mk-date').value = existing.event_date ?? '';
         document.getElementById('mk-start').value = (existing.start_time || '').slice(0, 5);
         document.getElementById('mk-end').value = (existing.end_time || '').slice(0, 5);
@@ -4829,6 +5198,18 @@
           msgEl.className = 'form-msg error';
           return;
         }
+        const projectValue = lockedProjectId || document.getElementById('mk-project').value;
+        const categoryValue = document.getElementById('mk-category').value;
+        if (link === 'project' && !projectValue) {
+          msgEl.textContent = 'Escolhe o projeto, ou marca como interno.';
+          msgEl.className = 'form-msg error';
+          return;
+        }
+        if (link === 'category' && !categoryValue) {
+          msgEl.textContent = 'Escolhe a categoria de horas.';
+          msgEl.className = 'form-msg error';
+          return;
+        }
         if (!allDay && !startTime) {
           msgEl.textContent = 'Indica a hora de início, ou marca como dia inteiro.';
           msgEl.className = 'form-msg error';
@@ -4845,7 +5226,7 @@
         btn.textContent = 'A guardar…';
 
         const payload = {
-          project_id: (lockedProjectId || document.getElementById('mk-project').value) || null,
+          project_id: link === 'project' ? projectValue : null,
           type_id: document.getElementById('mk-type').value || null,
           title,
           event_date: eventDate,
@@ -4856,6 +5237,7 @@
           notes: document.getElementById('mk-notes').value.trim() || null,
           done
         };
+        if (hasCategory) payload.category_id = link === 'category' ? categoryValue : null;
 
         try {
           if (devMode) {
