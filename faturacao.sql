@@ -39,3 +39,22 @@ drop policy if exists "Só a equipa" on invoice_imports;
 create policy "Só a equipa" on invoice_imports for all to authenticated
   using (private.is_team_member()) with check (private.is_team_member());
 revoke all on invoice_imports from anon;
+
+-- Recibos (um registo por recibo × fatura paga). O valor pago de cada fatura importada é a soma
+-- dos seus recibos — assim um recibo de 2026 que paga uma fatura de 2025 conta, seja qual for a
+-- ordem em que os ficheiros SAF-T são importados, e importar duas vezes não soma a dobrar.
+create table if not exists invoice_payments (
+  id          uuid primary key default gen_random_uuid(),
+  invoice_id  uuid not null references invoices(id) on delete cascade,
+  receipt_ref text not null,          -- ex.: "RG 2026/5"
+  amount      numeric not null,       -- sem IVA
+  paid_at     date,
+  created_at  timestamptz not null default now(),
+  unique (receipt_ref, invoice_id)
+);
+create index if not exists invoice_payments_invoice_idx on invoice_payments(invoice_id);
+alter table invoice_payments enable row level security;
+drop policy if exists "Só a equipa" on invoice_payments;
+create policy "Só a equipa" on invoice_payments for all to authenticated
+  using (private.is_team_member()) with check (private.is_team_member());
+revoke all on invoice_payments from anon;

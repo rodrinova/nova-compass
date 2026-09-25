@@ -1219,6 +1219,7 @@
   .saft-summary { margin-top: 12px; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); font-size: 13.5px; }
   .saft-summary > div b { display: block; } .saft-summary > div span { font-size: 12.5px; color: var(--text-2); }
   .saft-summary ul { margin: 8px 0 0; padding-left: 18px; }
+  .saft-warn { color: var(--warning); }
   .plan-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
   .plan-box .text-btn { font-size: 12.5px; }
   .plan-edit { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
@@ -5354,7 +5355,8 @@
     // As faturas são emitidas no weoInvoice (certificado); a app importa o SAF-T (PT) exportado.
     // amount / amount_paid sem IVA (como o valor das fases); gross_amount com IVA — faturacao.sql.
     const normTxt = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-    const invShortNo = ref => String(ref || '').trim().split(/\s+/).pop();   // "FT 2026/18" → "2026/18"
+    // "FT 2026/18", "1 2026/1" ou "2026/01" → "2026/18" / "2026/1" (sem série nem zeros à esquerda)
+    const invShortNo = ref => String(ref || '').trim().split(/\s+/).pop().split('/').map(p => /^\d+$/.test(p) ? String(Number(p)) : p).join('/');
     const invBalance = i => i.status === 'cancelled' ? 0 : Math.round((Number(i.amount || 0) - Number(i.amount_paid || 0)) * 100) / 100;
     function stageBudget(stage, project) {
       if (stage.fixed_value != null) return Number(stage.fixed_value);
@@ -5433,35 +5435,33 @@
       return { project, stage };
     }
 
+    const SETTLED_ON_ISSUE = t => t === 'FR' || t === 'FS' || t === 'NC';
     function buildImportPlan(saft, base) {
       const byExt = Object.fromEntries(base.invoices.filter(i => i.external_ref).map(i => [i.external_ref, i]));
       const usedManual = new Set();
-      // Pagamentos por documento de origem (sem IVA), e a data do último
-      const paid = {};
-      saft.payments.forEach(p => p.lines.forEach(l => {
-        if (!l.orig) return;
-        const x = paid[l.orig] = paid[l.orig] || { amount: 0, date: null };
-        x.amount += l.amount; if (!x.date || p.date > x.date) x.date = p.date;
-      }));
-      const plan = { updates: [], inserts: [], unmatched: 0, cancelled: 0, payments: saft.payments.length };
+      const plan = { updates: [], inserts: [], unmatched: 0, cancelled: 0, receipts: saft.payments.length, payLines: [], orphanPayments: 0 };
       const refInfo = {};   // para as notas de crédito herdarem projeto/fase da fatura de origem
+      const inFile = new Set(saft.invoices.map(d => d.ref));
       for (const d of saft.invoices) {
         const credit = d.type === 'NC';
         const sign = credit ? -1 : 1;
         const net = Math.round(d.net * sign * 100) / 100;
-        const settledOnIssue = d.type === 'FR' || d.type === 'FS' || credit;
-        const pay = paid[d.ref];
-        const amountPaid = d.cancelled ? 0 : settledOnIssue ? net : Math.min(net, Math.round((pay?.amount || 0) * 100) / 100);
         const row = {
           external_ref: d.ref, doc_type: d.type, source: 'saft', invoice_number: invShortNo(d.ref),
           issue_date: d.date, amount: d.cancelled ? 0 : net, gross_amount: d.cancelled ? 0 : Math.round(d.gross * sign * 100) / 100,
-          amount_paid: amountPaid, payment_date: d.cancelled ? null : settledOnIssue ? d.date : (pay?.date || null),
           customer_nif: d.nif, customer_name: d.customer, description: d.description || null,
           status: d.cancelled ? 'cancelled' : 'normal', imported_at: new Date().toISOString()
         };
+        // Fatura-recibo, simplificada e nota de crédito ficam liquidadas na emissão; as outras pelos recibos
+        if (d.cancelled) { row.amount_paid = 0; row.payment_date = null; }
+        else if (SETTLED_ON_ISSUE(d.type)) { row.amount_paid = net; row.payment_date = d.date; }
         if (d.cancelled) plan.cancelled++;
-        const existing = byExt[d.ref] || base.invoices.find(i => !i.external_ref && !usedManual.has(i.id)
-          && i.invoice_number && invShortNo(i.invoice_number) === invShortNo(d.ref) && Math.abs(Number(i.amount) - net) < 0.02);
+        // Fatura já registada à mão: mesmo número e valor; senão, mesmo valor com data a ≤ 3 dias (se for a única)
+        const manual = base.invoices.filter(i => !i.external_ref && !usedManual.has(i.id) && Math.abs(Number(i.amount) - net) < 0.02);
+        const byDate = manual.filter(i => i.issue_date && d.date && Math.abs(diffDays(i.issue_date, d.date)) <= 3);
+        const existing = byExt[d.ref]
+          || manual.find(i => i.invoice_number && invShortNo(i.invoice_number) === invShortNo(d.ref))
+          || (byDate.length === 1 ? byDate[0] : null);
         if (existing) {
           usedManual.add(existing.id);
           refInfo[d.ref] = { project_id: existing.project_id, stage_id: existing.stage_id };
@@ -5475,38 +5475,85 @@
         else { const m = matchInvoice(d.description, base); project_id = m.project?.id ?? null; stage_id = m.stage?.id ?? null; }
         if (!project_id) plan.unmatched++;
         refInfo[d.ref] = { project_id, stage_id };
-        plan.inserts.push({ ...row, project_id, stage_id });
+        plan.inserts.push({ ...row, project_id, stage_id, amount_paid: row.amount_paid ?? 0, payment_date: row.payment_date ?? null });
       }
+      // Recibos: uma linha por fatura paga (a fatura pode estar noutro ficheiro já importado)
+      saft.payments.forEach(p => p.lines.forEach(l => {
+        if (!l.orig) return;
+        if (!inFile.has(l.orig) && !byExt[l.orig]) { plan.orphanPayments++; return; }
+        plan.payLines.push({ receipt_ref: p.ref, orig: l.orig, amount: Math.round(l.amount * 100) / 100, paid_at: p.date });
+      }));
       return plan;
     }
+    const planChanges = plan => plan.updates.filter(u => ['amount', 'amount_paid', 'payment_date', 'status', 'gross_amount', 'external_ref']
+      .some(k => k in u.row && String(u.before[k] ?? '') !== String(u.row[k] ?? ''))).length;
 
     async function applyImportPlan(plan, saft, fileName) {
-      let nNew = 0, nUpd = 0;
+      let nNew = 0;
+      const updated = new Set(), idByRef = {};
+      const mockInv = () => window.__mockInv || MOCK_INVOICES;
       for (const u of plan.updates) {
+        idByRef[u.row.external_ref] = u.id;
         const changed = ['amount', 'amount_paid', 'payment_date', 'status', 'gross_amount', 'external_ref', 'customer_nif', 'description']
-          .some(k => String(u.before[k] ?? '') !== String(u.row[k] ?? ''));
+          .some(k => k in u.row && String(u.before[k] ?? '') !== String(u.row[k] ?? ''));
         if (!changed) continue;
         const patch = { ...u.row };
         if (u.before.invoice_number) delete patch.invoice_number;   // mantém o número como foi escrito
-        await dbUpdate('invoices', u.id, patch, window.__mockInv || MOCK_INVOICES);
-        nUpd++;
+        await dbUpdate('invoices', u.id, patch, mockInv());
+        updated.add(u.id);
       }
       if (plan.inserts.length) {
-        if (devMode) plan.inserts.forEach(r => (window.__mockInv = window.__mockInv || []).push({ id: 'inv-' + Math.random(), ...r }));
+        if (devMode) plan.inserts.forEach(r => { const o = { id: 'inv-' + Math.random(), ...r }; (window.__mockInv = window.__mockInv || []).push(o); idByRef[r.external_ref] = o.id; });
         else {
-          const r = await supabase.from('invoices').insert(plan.inserts);
+          const r = await supabase.from('invoices').insert(plan.inserts).select('id, external_ref');
           if (r.error) throw r.error;
+          (r.data || []).forEach(x => { idByRef[x.external_ref] = x.id; });
         }
         nNew = plan.inserts.length;
       }
+      // Faturas de ficheiros anteriores pagas por recibos deste ficheiro
+      const missing = [...new Set(plan.payLines.map(l => l.orig).filter(o => !idByRef[o]))];
+      if (missing.length) {
+        if (devMode) mockInv().forEach(i => { if (missing.includes(i.external_ref)) idByRef[i.external_ref] = i.id; });
+        else {
+          const r = await supabase.from('invoices').select('id, external_ref').in('external_ref', missing);
+          (r.data || []).forEach(x => { idByRef[x.external_ref] = x.id; });
+        }
+      }
+      const payRows = plan.payLines.filter(l => idByRef[l.orig]).map(l => ({ invoice_id: idByRef[l.orig], receipt_ref: l.receipt_ref, amount: l.amount, paid_at: l.paid_at }));
+      const touched = [...new Set(payRows.map(p => p.invoice_id))];
+      if (payRows.length) {
+        if (devMode) {
+          window.__mockPay = window.__mockPay || [];
+          payRows.forEach(p => { const k = window.__mockPay.findIndex(x => x.receipt_ref === p.receipt_ref && x.invoice_id === p.invoice_id); if (k >= 0) window.__mockPay[k] = p; else window.__mockPay.push(p); });
+        } else {
+          const r = await supabase.from('invoice_payments').upsert(payRows, { onConflict: 'receipt_ref,invoice_id' });
+          if (r.error) throw r.error;
+        }
+        // Valor pago = soma dos recibos (nunca acima do valor da fatura); data = último recibo
+        const all = devMode ? window.__mockPay.filter(p => touched.includes(p.invoice_id))
+          : ((await supabase.from('invoice_payments').select('invoice_id, amount, paid_at').in('invoice_id', touched)).data || []);
+        const cur = devMode ? mockInv() : ((await supabase.from('invoices').select('id, amount, amount_paid, payment_date, doc_type, status').in('id', touched)).data || []);
+        for (const inv of cur.filter(i => touched.includes(i.id))) {
+          if (inv.status === 'cancelled' || SETTLED_ON_ISSUE(inv.doc_type)) continue;
+          const ps = all.filter(p => p.invoice_id === inv.id);
+          const paid = Math.min(Number(inv.amount), Math.round(ps.reduce((t, p) => t + Number(p.amount), 0) * 100) / 100);
+          const date = ps.map(p => p.paid_at).filter(Boolean).sort().pop() || null;
+          if (Math.abs(Number(inv.amount_paid) - paid) > 0.005 || (inv.payment_date || null) !== date) {
+            await dbUpdate('invoices', inv.id, { amount_paid: paid, payment_date: date }, mockInv());
+            if (!plan.inserts.some(r => idByRef[r.external_ref] === inv.id)) updated.add(inv.id);
+          }
+        }
+      }
+      const nUpd = updated.size;
       if (!devMode) {
         const me = (await getCurrentMember())?.id ?? null;
         await supabase.from('invoice_imports').insert({
           file_name: fileName, period_from: saft.from, period_to: saft.to, n_new: nNew, n_updated: nUpd,
-          n_payments: plan.payments, n_unmatched: plan.unmatched, imported_by: me
+          n_payments: payRows.length, n_unmatched: plan.unmatched, imported_by: me
         });
       }
-      return { nNew, nUpd };
+      return { nNew, nUpd, nPay: payRows.length };
     }
 
     function openSaftImport(onDone) {
@@ -5527,28 +5574,34 @@
         prev.innerHTML = '<div class="detail-loading">A ler o ficheiro…</div>';
         try {
           if (file.size > 30 * 1024 * 1024) throw new Error('Ficheiro demasiado grande (máx. 30 MB).');
-          const saft = parseSaft(await file.text());
+          const buf = await file.arrayBuffer();
+          const head = new TextDecoder('ascii').decode(buf.slice(0, 200));
+          const enc = (head.match(/encoding=["']([^"']+)["']/i) || [])[1] || 'utf-8';
+          let xmlText;
+          try { xmlText = new TextDecoder(enc.toLowerCase()).decode(buf); } catch { xmlText = new TextDecoder('utf-8').decode(buf); }
+          const saft = parseSaft(xmlText);
           const base = await loadBillingBase();
           const plan = buildImportPlan(saft, base);
-          const real = plan.updates.filter(u => ['amount', 'amount_paid', 'payment_date', 'status', 'gross_amount', 'external_ref']
-            .some(k => String(u.before[k] ?? '') !== String(u.row[k] ?? ''))).length;
+          const real = planChanges(plan);
           prev.innerHTML = `
             <div class="saft-summary">
               <div><b>${escapeHtml(saft.company || 'SAF-T')}</b><span>${escapeHtml([saft.from, saft.to].filter(Boolean).map(fmtDayMonth).join(' → '))} · ${saft.invoices.length} documentos · ${saft.payments.length} recibos</span></div>
               <ul>
                 <li><b>${plan.inserts.length}</b> faturas novas${plan.unmatched ? ` (<b>${plan.unmatched}</b> ficam em "Por associar")` : ''}</li>
                 <li><b>${real}</b> faturas já existentes a atualizar (pagamentos, anulações)</li>
+                <li><b>${plan.payLines.length}</b> pagamentos de ${plan.receipts} recibo(s)</li>
                 ${plan.cancelled ? `<li>${plan.cancelled} documento(s) anulado(s)</li>` : ''}
+                ${plan.orphanPayments ? `<li class="saft-warn">${plan.orphanPayments} pagamento(s) de faturas que ainda não estão na app (de outro ano?). Importa também esse ficheiro e depois volta a importar este.</li>` : ''}
               </ul>
             </div>
-            <button type="button" class="primary-btn" id="saft-go"${plan.inserts.length || real ? '' : ' disabled'}>${plan.inserts.length || real ? 'Importar' : 'Nada de novo neste ficheiro'}</button>`;
+            <button type="button" class="primary-btn" id="saft-go">${plan.inserts.length || real ? 'Importar' : 'Atualizar pagamentos'}</button>`;
           const go = document.getElementById('saft-go');
           if (go) go.addEventListener('click', async () => {
             go.disabled = true; go.textContent = 'A importar…';
             try {
               const r = await applyImportPlan(plan, saft, file.name);
               closeQuickModal();
-              showToast(`Importado: ${r.nNew} novas, ${r.nUpd} atualizadas`, { ms: 5000 });
+              showToast(`Importado: ${r.nNew} novas, ${r.nUpd} atualizadas, ${r.nPay} pagamentos`, { ms: 5000 });
               onDone && onDone();
             } catch (err) { formError('saft-msg', 'A importação falhou: ' + err.message); go.disabled = false; go.textContent = 'Importar'; }
           });
