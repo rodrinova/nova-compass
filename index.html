@@ -1089,6 +1089,40 @@
   .tl-top b { font-size: 13.5px; font-weight: 650; }
   .tl-top span { font-size: 12.5px; color: var(--text-3); }
   .tl-notes { margin-top: 3px; font-size: 13.5px; color: var(--text-2); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .toolbar-btn { width: auto; margin: 0; padding: 0 14px; height: 38px; white-space: nowrap; flex-shrink: 0; }
+  .clients-table td small { display: block; font-size: 12px; font-weight: 400; color: var(--text-3); margin-top: 2px; }
+  .clients-table .col-score { width: 150px; }
+  .score-cell { display: flex; align-items: center; gap: 8px; }
+  .score-cell b { min-width: 26px; text-align: right; font-variant-numeric: tabular-nums; }
+  .score-bar { flex: 1; height: 6px; background: var(--track); border-radius: 3px; overflow: hidden; display: block; min-width: 50px; }
+  .score-bar span { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+  @media (max-width: 700px) { .clients-table .col-inv, .clients-table .col-rate { display: none; } .clients-table .col-score { width: 110px; } }
+  .client-score .cs-main { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+  .cs-num { font-size: 40px; font-weight: 700; letter-spacing: -0.03em; color: var(--accent); min-width: 64px; line-height: 1; }
+  .cs-main b { display: block; font-size: 14px; } .cs-main span { font-size: 12.5px; color: var(--text-2); }
+  .cs-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  @media (max-width: 800px) { .cs-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .cs-metric { display: flex; flex-direction: column; gap: 5px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; min-width: 0; }
+  .cs-metric > span { font-size: 12px; color: var(--text-2); }
+  .cs-metric b { font-size: 16px; font-weight: 650; }
+  .cs-metric i { font-style: normal; font-size: 11.5px; color: var(--text-3); }
+  .nif-warn { color: var(--warning); }
+  .weights-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; margin-bottom: 12px; }
+  @media (max-width: 600px) { .weights-grid { grid-template-columns: 1fr; } }
+  .weights-grid label { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .weights-grid label span { display: flex; flex-direction: column; } .weights-grid small { font-size: 12px; color: var(--text-3); }
+  .weights-grid .form-input { width: 80px; margin: 0; text-align: center; }
+  .client-picker { position: relative; }
+  .client-picker .form-input { padding-right: 34px; }
+  .cp-clear { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); border: none; background: none; font-size: 18px; color: var(--text-3); cursor: pointer; padding: 4px 8px; }
+  .client-picker .form-input { margin-bottom: 0; }
+  .cp-list { position: absolute; z-index: 5; left: 0; right: 0; top: calc(100% + 4px); max-height: 260px; overflow-y: auto;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow-pop); padding: 4px; }
+  .cp-opt { display: flex; flex-direction: column; padding: 7px 10px; border-radius: 6px; cursor: pointer; }
+  .cp-opt b { font-size: 13.5px; font-weight: 600; } .cp-opt span { font-size: 12px; color: var(--text-2); }
+  .cp-opt.active, .cp-opt:hover { background: var(--accent-soft); }
+  .cp-new b { color: var(--accent); }
+  .cp-empty { padding: 10px; font-size: 13px; color: var(--text-2); }
   .plan-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
   .plan-box .text-btn { font-size: 12.5px; }
   .plan-edit { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
@@ -1175,6 +1209,7 @@
       <nav class="side-nav">
         <button type="button" class="nav-item" data-nav="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/></svg><span>Hoje</span></button>
         <button type="button" class="nav-item" data-nav="projects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg><span>Projetos</span></button>
+        <button type="button" class="nav-item" data-nav="clients"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 19.5c.8-3.3 3.4-5 6.5-5s5.7 1.7 6.5 5"/><path d="M15.5 5.2a3.5 3.5 0 010 6.6M17.8 14.8c1.9.7 3.2 2.3 3.7 4.7"/></svg><span>Clientes</span></button>
         <button type="button" class="nav-item" data-nav="horas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span>Horas</span></button>
         <button type="button" class="nav-item" data-nav="agenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Agenda</span></button>
         <button type="button" class="nav-item" data-nav="atas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h7l4 4v12a1 1 0 01-1 1H7a1 1 0 01-1-1v-15a1 1 0 011-1z"/><path d="M9 11h6M9 14.5h6M9 18h3.5"/></svg><span>Atas</span></button>
@@ -1195,6 +1230,7 @@
       <button type="button" class="nav-item" id="tab-more"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5.5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18.5" cy="12" r="1.7"/></svg><span>Mais</span></button>
     </nav>
     <div class="more-sheet" id="more-sheet">
+      <button type="button" class="nav-item" data-nav="clients"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 19.5c.8-3.3 3.4-5 6.5-5s5.7 1.7 6.5 5"/><path d="M15.5 5.2a3.5 3.5 0 010 6.6M17.8 14.8c1.9.7 3.2 2.3 3.7 4.7"/></svg><span>Clientes</span></button>
       <button type="button" class="nav-item" data-nav="atas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h7l4 4v12a1 1 0 01-1 1H7a1 1 0 01-1-1v-15a1 1 0 011-1z"/><path d="M9 11h6M9 14.5h6M9 18h3.5"/></svg><span>Atas</span></button>
       <button type="button" class="nav-item" data-nav="despesas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12v17l-3-2-3 2-3-2-3 2z"/><path d="M9 8.5h6M9 12h6M9 15.5h3"/></svg><span>Despesas</span></button>
       <button type="button" class="nav-item" data-nav="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.5 7.5 0 000-2l1.9-1.5-2-3.4-2.2.9a7.6 7.6 0 00-1.7-1L15 3.5h-4l-.4 2.5a7.6 7.6 0 00-1.7 1l-2.2-.9-2 3.4L6.6 11a7.5 7.5 0 000 2l-1.9 1.5 2 3.4 2.2-.9a7.6 7.6 0 001.7 1L11 20.5h4l.4-2.5a7.6 7.6 0 001.7-1l2.2.9 2-3.4z"/></svg><span>Definições</span></button>
@@ -1239,6 +1275,19 @@
         <div class="gantt-wrap" id="today-phases"><div class="gantt-empty">A carregar…</div></div>
 
       </div>
+      <div id="clients-view" style="display:none;">
+        <div class="list-toolbar">
+          <input type="text" id="clients-search" class="search-input" placeholder="Pesquisar por nome, empresa ou NIF..." autocomplete="off">
+          <div class="segmented" id="clients-sort">
+            <button type="button" data-sort="score" class="active">Score</button>
+            <button type="button" data-sort="invoiced">Faturado</button>
+            <button type="button" data-sort="name">Nome</button>
+          </div>
+          <button type="button" class="secondary-btn toolbar-btn" id="clients-new">+ Novo cliente</button>
+        </div>
+        <div id="clients-container"></div>
+      </div>
+      <div id="client-view" style="display:none;"></div>
       <div id="projects-view" style="display:none;">
         <div class="list-toolbar">
           <input type="text" id="projects-search" class="search-input" placeholder="Pesquisar por nome ou código..." autocomplete="off">
@@ -1374,6 +1423,10 @@
         </div>
         <div class="section-label">Categorias de imputação de horas</div>
         <div class="gantt-wrap" id="settings-categories-container">
+          <div class="detail-loading">A carregar...</div>
+        </div>
+        <div class="section-label">Score de clientes</div>
+        <div class="gantt-wrap" id="settings-clientscore-container">
           <div class="detail-loading">A carregar...</div>
         </div>
         <div class="section-label">Checklists por tipo de fase</div>
@@ -1798,11 +1851,11 @@
       currentViewState = newState;
       // Voltar só faz sentido dentro de uma ficha (os módulos estão sempre na barra lateral)
       const backBtn = document.getElementById('nav-back-btn');
-      if (backBtn) backBtn.style.display = (newState.name === 'detail' && navStack.length > 0) ? '' : 'none';
-      const navKey = newState.name === 'detail' ? 'projects' : newState.name;
+      if (backBtn) backBtn.style.display = ((newState.name === 'detail' || newState.name === 'client') && navStack.length > 0) ? '' : 'none';
+      const navKey = newState.name === 'detail' ? 'projects' : newState.name === 'client' ? 'clients' : newState.name;
       document.querySelectorAll('[data-nav]').forEach(el => el.classList.toggle('active', el.dataset.nav === navKey));
       document.getElementById('more-sheet').classList.remove('open');
-      document.getElementById('tab-more').classList.toggle('active', ['atas', 'despesas', 'settings'].includes(navKey));
+      document.getElementById('tab-more').classList.toggle('active', ['clients', 'atas', 'despesas', 'settings'].includes(navKey));
       window.scrollTo(0, 0);
     }
 
@@ -1816,13 +1869,15 @@
       else if (prev.name === 'settings') openSettingsModule();
       else if (prev.name === 'atas') openAtasModule();
       else if (prev.name === 'despesas') openDespesasModule();
+      else if (prev.name === 'clients') openClientsModule();
+      else if (prev.name === 'client') openClientDetail(prev.clientId);
       else if (prev.name === 'agenda') openAgendaModule(prev.mode);
       else if (prev.name === 'detail') openDetail(prev.projectId);
       else showHome();
     }
 
     function hideAllViews() {
-      ['home-view', 'projects-view', 'agenda-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view', 'despesas-view'].forEach(id => {
+      ['home-view', 'projects-view', 'clients-view', 'client-view', 'agenda-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view', 'despesas-view'].forEach(id => {
         document.getElementById(id).style.display = 'none';
       });
     }
@@ -2240,6 +2295,7 @@
       loadMilestoneTypeSettings();
       loadProjectStatusSettings();
       loadChecklistTemplateSettings();
+      loadClientScoreSettings();
     }
 
     function openAtasModule() {
@@ -2786,6 +2842,7 @@
     const NAV_ACTIONS = {
       home: showHome,
       projects: openProjectsModule,
+      clients: openClientsModule,
       horas: openHorasModule,
       atas: openAtasModule,
       despesas: openDespesasModule,
@@ -3080,7 +3137,7 @@
           projectNotes = mockMeetingNotes.filter(n => n.project_id === project.id);
         } else {
           const [projectRes, stagesRes, invoicesRes, timeRes, breaksRes, expensesRes, notesRes] = await Promise.all([
-            supabase.from('projects').select('*, clients(name), project_types(name)').eq('id', projectId).single(),
+            supabase.from('projects').select('*, clients(name), project_types(name), client_entities(kind, name, nif)').eq('id', projectId).single(),
             supabase.from('project_stages').select('*, stage_types(name, break_immune)').eq('project_id', projectId).order('stage_order'),
             supabase.from('invoices').select('*').eq('project_id', projectId).order('issue_date'),
             supabase.from('time_entries').select('hours, billable, stage_id, user_id').eq('project_id', projectId),
@@ -3503,7 +3560,8 @@
           <div class="gantt-wrap">
             <div class="card-head"><h2>Detalhes</h2><button type="button" class="text-btn" id="edit-project-btn">Editar</button></div>
             <div class="invoice-row"><span>Código</span><span>${escapeHtml(project.code ?? '—')}</span></div>
-            <div class="invoice-row"><span>Cliente</span><span>${escapeHtml(clienteNome)}</span></div>
+            <div class="invoice-row"><span>Cliente</span><span>${project.client_id ? `<button type="button" class="text-btn" data-open-client="${escapeHtml(project.client_id)}">${escapeHtml(clienteNome)}</button>` : escapeHtml(clienteNome)}</span></div>
+            ${project.client_entities ? `<div class="invoice-row"><span>Faturar a</span><span>${escapeHtml(project.client_entities.kind === 'company' ? project.client_entities.name : clienteNome + ' (a título pessoal)')}${project.client_entities.nif ? ' · NIF ' + escapeHtml(project.client_entities.nif) : ''}</span></div>` : ''}
             <div class="invoice-row"><span>Tipo</span><span>${escapeHtml(project.project_types?.name ?? '—')}</span></div>
             <div class="invoice-row"><span>Morada</span><span>${escapeHtml(project.address ?? '—')}</span></div>
             <div class="invoice-row"><span>Área</span><span>${escapeHtml(project.area != null ? String(project.area).replace('.', ',') + ' m²' : '—')}</span></div>
@@ -3652,6 +3710,7 @@
         });
 
         const reopen = () => openDetail(project.id ?? projectId);
+        detailBody.querySelectorAll('[data-open-client]').forEach(b => b.addEventListener('click', () => openClientDetail(b.dataset.openClient)));
         document.getElementById('edit-project-btn').addEventListener('click', () => openProjectEditModal(project, reopen));
         // Arquivar / desarquivar (onclick: os botões são fixos e a ficha é redesenhada a cada abertura)
         const archBtn = document.getElementById('detail-archive-btn');
@@ -3901,7 +3960,7 @@
         <label class="field-label">Código</label>
         <input type="text" id="np-code" class="form-input" placeholder="ex: NOVA-004">
         <label class="field-label">Cliente</label>
-        <select id="np-client" class="form-input"><option value="">A carregar...</option></select>
+        ${clientPickerHtml('np-client')}
         <label class="field-label">Tipo de projeto</label>
         <select id="np-type" class="form-input"><option value="">A carregar...</option></select>
         <label class="field-label">Morada</label>
@@ -3919,21 +3978,17 @@
       `;
       openQuickModal('Novo projeto', bodyHtml);
 
-      let clients, types;
-      if (devMode) {
-        clients = MOCK_CLIENTS; types = MOCK_PROJECT_TYPES;
-      } else {
-        const [cRes, tRes] = await Promise.all([
-          supabase.from('clients').select('id, name').order('name'),
-          supabase.from('project_types').select('id, name').order('name')
-        ]);
-        clients = cRes.data || []; types = tRes.data || [];
-      }
+      let types;
+      const [picker] = await Promise.all([
+        mountClientPicker('np-client'),
+        (async () => {
+          types = devMode ? MOCK_PROJECT_TYPES : ((await supabase.from('project_types').select('id, name').order('name')).data || []);
+        })()
+      ]);
       await loadProjectStatuses();
       // Projeto novo começa em 'To Do' (Por iniciar); se não existir, no primeiro estado ativo
       const firstOpen = (projectStatusCache || []).find(s => s.code === 'To Do') || (projectStatusCache || []).find(s => !s.is_closed);
       document.getElementById('np-status').innerHTML = statusOptionsHtml(firstOpen?.code ?? null);
-      document.getElementById('np-client').innerHTML = '<option value="">Sem cliente</option>' + clients.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
       document.getElementById('np-type').innerHTML = '<option value="">Sem tipo</option>' + types.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('');
 
       document.getElementById('np-submit').addEventListener('click', async () => {
@@ -3949,7 +4004,9 @@
         const payload = {
           name,
           code: document.getElementById('np-code').value.trim() || null,
-          client_id: document.getElementById('np-client').value || null,
+          client_id: picker.get().clientId,
+          client_entity_id: picker.get().entityId,
+          client: picker.get().name,
           project_type_id: document.getElementById('np-type').value || null,
           address: document.getElementById('np-address').value.trim() || null,
           area: document.getElementById('np-area').value ? parseFloat(document.getElementById('np-area').value) : null,
@@ -5110,6 +5167,482 @@
       });
     }
 
+    // ================= CLIENTES: repositório, ficha, entidades de faturação e score =================
+    // Um cliente tem várias entidades de faturação: a título pessoal (NIF pessoal) e/ou empresas.
+    // Cada projeto aponta para o cliente e para a entidade usada (clientes.sql).
+    const MOCK_CLIENT_ROWS = [
+      { id: 'cl-1', name: 'Promotora Atlântico', email: 'geral@atlantico.pt', phone: '+351 220 000 000', address: 'Porto', notes: null },
+      { id: 'cl-2', name: 'Família Sousa', email: null, phone: '+351 910 000 000', address: null, notes: 'Contacto preferencial: Ana Sousa' },
+      { id: 'cl-3', name: 'Município de Gaia', email: null, phone: null, address: null, notes: null }
+    ];
+    const MOCK_CLIENT_ENTITIES = [
+      { id: 'ce-1', client_id: 'cl-1', kind: 'company', name: 'Promotora Atlântico, S.A.', nif: '503504564', address: 'Av. da Boavista 100, Porto' },
+      { id: 'ce-2', client_id: 'cl-1', kind: 'company', name: 'Atlântico Gaia Invest, Lda', nif: '514512345', address: null },
+      { id: 'ce-3', client_id: 'cl-2', kind: 'personal', name: null, nif: '123456789', address: 'Rua das Flores 8, Matosinhos' }
+    ];
+    const MOCK_CLIENT_LINKS = { 'mock-1': ['cl-1', 'ce-1'], 'mock-2': ['cl-2', 'ce-3'], 'mock-3': ['cl-3', null] };
+    const CLIENT_SCORE_DEFAULT = { recurrence: 25, projects: 25, invoiced: 25, rate: 25 };
+    const CLIENT_METRICS = [
+      ['recurrence', 'Recorrência', 'intervalo médio entre adjudicações'],
+      ['projects', 'Projetos', 'adjudicados nos últimos 3 anos'],
+      ['invoiced', 'Faturação', 'faturado nos últimos 3 anos'],
+      ['rate', '€ / hora', 'faturado ÷ horas, últimos 3 anos']
+    ];
+    let clientsSupport = null;
+    async function clientsTablesReady() {
+      if (devMode) return true;
+      if (clientsSupport === null) clientsSupport = !(await supabase.from('client_entities').select('id').limit(1)).error;
+      return clientsSupport;
+    }
+
+    // NIF português: 9 dígitos com dígito de controlo (os estrangeiros só dão aviso)
+    function nifLooksValid(nif) {
+      const d = String(nif || '').replace(/\s/g, '');
+      if (!/^\d{9}$/.test(d)) return false;
+      const sum = [...d.slice(0, 8)].reduce((s, c, i) => s + Number(c) * (9 - i), 0);
+      const check = 11 - (sum % 11);
+      return (check >= 10 ? 0 : check) === Number(d[8]);
+    }
+    const entityLabel = (e, client) => e
+      ? (e.kind === 'company' ? e.name : `${client?.name ?? 'Cliente'} (a título pessoal)`)
+      : (client?.name ?? '');
+
+    async function loadClientScoreWeights() {
+      if (devMode) return { ...CLIENT_SCORE_DEFAULT, ...(window.__mockWeights || {}) };
+      const r = await supabase.from('app_settings').select('value').eq('key', 'client_score_weights').maybeSingle();
+      return { ...CLIENT_SCORE_DEFAULT, ...((r.data && r.data.value) || {}) };
+    }
+
+    // Tudo o que é preciso para a lista, as fichas e o score (poucas dezenas de clientes)
+    async function loadClientsData() {
+      const from = dateKey(new Date(new Date().getFullYear() - 3, new Date().getMonth(), new Date().getDate()));
+      if (devMode) {
+        const projects = MOCK_PROJECTS.map(p => ({ ...p, client_id: MOCK_CLIENT_LINKS[p.id]?.[0] ?? null, client_entity_id: MOCK_CLIENT_LINKS[p.id]?.[1] ?? null }));
+        return {
+          from, clients: MOCK_CLIENT_ROWS, entities: MOCK_CLIENT_ENTITIES, projects,
+          invoices: MOCK_INVOICES.map((i, k) => ({ ...i, project_id: ['mock-1', 'mock-1', 'mock-2'][k] })),
+          hours: [{ project_id: 'mock-1', hours: 90 }, { project_id: 'mock-2', hours: 60 }, { project_id: 'mock-3', hours: 12 }],
+          weights: await loadClientScoreWeights()
+        };
+      }
+      const [c, e, p, inv, ex, t, w] = await Promise.all([
+        supabase.from('clients').select('id, name, email, phone, address, notes, nif').order('name'),
+        supabase.from('client_entities').select('*').order('created_at'),
+        supabase.from('projects').select('id, name, code, status, awarding_date, client_id, client_entity_id, archived_at, commission_value'),
+        supabase.from('invoices').select('project_id, stage_id, amount, issue_date').gte('issue_date', from),
+        supabase.from('project_stages').select('id').eq('excluded_from_invoicing', true),
+        supabase.from('time_entries').select('project_id, stage_id, hours').gte('date', from).not('project_id', 'is', null),
+        loadClientScoreWeights()
+      ]);
+      for (const r of [c, e, p, inv, t]) if (r.error) throw r.error;
+      const excluded = new Set((ex.data || []).map(s => s.id));
+      return {
+        from, clients: c.data || [], entities: e.data || [], projects: p.data || [],
+        invoices: (inv.data || []).filter(i => !excluded.has(i.stage_id)),
+        hours: (t.data || []).filter(h => !excluded.has(h.stage_id)),
+        weights: w
+      };
+    }
+
+    // Indicadores e score relativo: cada indicador compara o cliente com o melhor (0–100)
+    function computeClientScores(data) {
+      const byClient = {};
+      data.clients.forEach(c => { byClient[c.id] = { client: c, projects: [], awards: [], invoiced: 0, hours: 0 }; });
+      const projClient = {};
+      data.projects.forEach(p => {
+        if (!p.client_id || !byClient[p.client_id]) return;
+        projClient[p.id] = p.client_id;
+        byClient[p.client_id].projects.push(p);
+        if (p.awarding_date && p.awarding_date >= data.from) byClient[p.client_id].awards.push(p.awarding_date);
+      });
+      data.invoices.forEach(i => { const c = projClient[i.project_id]; if (c) byClient[c].invoiced += Number(i.amount || 0); });
+      data.hours.forEach(h => { const c = projClient[h.project_id]; if (c) byClient[c].hours += Number(h.hours || 0); });
+      const rows = Object.values(byClient).map(r => {
+        const awards = [...r.awards].sort();
+        let recurrence = null;   // meses entre adjudicações (menos = melhor)
+        if (awards.length >= 2) recurrence = diffDays(awards[0], awards[awards.length - 1]) / (awards.length - 1) / 30.44;
+        return {
+          ...r, recurrence, projects3: awards.length,
+          rate: r.hours > 0 && r.invoiced > 0 ? r.invoiced / r.hours : null
+        };
+      });
+      const best = {
+        recurrence: Math.min(...rows.map(r => r.recurrence).filter(v => v != null && v > 0)),
+        projects: Math.max(0, ...rows.map(r => r.projects3)),
+        invoiced: Math.max(0, ...rows.map(r => r.invoiced)),
+        rate: Math.max(0, ...rows.map(r => r.rate || 0))
+      };
+      const w = data.weights, wSum = CLIENT_METRICS.reduce((s, [k]) => s + Math.max(0, Number(w[k]) || 0), 0) || 1;
+      rows.forEach(r => {
+        r.sub = {
+          recurrence: r.recurrence != null && Number.isFinite(best.recurrence) ? Math.round(100 * Math.min(1, best.recurrence / Math.max(r.recurrence, 0.01))) : 0,
+          projects: best.projects ? Math.round(100 * r.projects3 / best.projects) : 0,
+          invoiced: best.invoiced ? Math.round(100 * r.invoiced / best.invoiced) : 0,
+          rate: best.rate && r.rate ? Math.round(100 * r.rate / best.rate) : 0
+        };
+        r.score = Math.round(CLIENT_METRICS.reduce((s, [k]) => s + r.sub[k] * Math.max(0, Number(w[k]) || 0), 0) / wSum);
+        r.active = r.projects3 > 0 || r.invoiced > 0;
+      });
+      return Object.fromEntries(rows.map(r => [r.client.id, r]));
+    }
+    const fmtRecurrence = m => m == null ? '—' : m < 1.5 ? 'todos os meses' : `a cada ${Math.round(m)} meses`;
+    const metricValueText = (k, r) => k === 'recurrence' ? (r.recurrence == null ? (r.projects3 === 1 ? '1 adjudicação' : '—') : fmtRecurrence(r.recurrence))
+      : k === 'projects' ? String(r.projects3)
+      : k === 'invoiced' ? fmtEURShort(r.invoiced)
+      : (r.rate == null ? '—' : fmtEURShort(r.rate) + '/h');
+    const scoreBarHtml = v => `<span class="score-bar"><span style="width:${Math.max(0, Math.min(100, v))}%"></span></span>`;
+
+    // ---------- Lista de clientes ----------
+    let clientsCache = null, clientsSort = 'score';
+    async function openClientsModule() {
+      pushCurrentView({ name: 'clients' });
+      document.getElementById('nav-title').textContent = 'Clientes';
+      hideAllViews();
+      document.getElementById('clients-view').style.display = 'block';
+      document.getElementById('clients-search').value = '';
+      await loadClients();
+    }
+    async function loadClients() {
+      const box = document.getElementById('clients-container');
+      box.innerHTML = '<div class="gantt-wrap"><div class="detail-loading">A carregar…</div></div>';
+      if (!(await clientsTablesReady())) { box.innerHTML = '<div class="error-box">Para usar o repositório de clientes, corre clientes.sql no Supabase.</div>'; return; }
+      try {
+        const data = await loadClientsData();
+        clientsCache = { data, scores: computeClientScores(data) };
+        renderClientsList();
+      } catch (err) {
+        box.innerHTML = `<div class="error-box">Não foi possível carregar os clientes: ${escapeHtml(err.message)}</div>`;
+      }
+    }
+    function renderClientsList() {
+      const box = document.getElementById('clients-container');
+      const { data, scores } = clientsCache;
+      const term = document.getElementById('clients-search').value.trim().toLowerCase();
+      const entsBy = {};
+      data.entities.forEach(e => (entsBy[e.client_id] = entsBy[e.client_id] || []).push(e));
+      let list = data.clients.filter(c => !term || [c.name, c.email, ...(entsBy[c.id] || []).flatMap(e => [e.name, e.nif])]
+        .some(v => (v || '').toLowerCase().includes(term)));
+      list.sort((a, b) => clientsSort === 'name' ? a.name.localeCompare(b.name, 'pt')
+        : clientsSort === 'invoiced' ? scores[b.id].invoiced - scores[a.id].invoiced
+        : (scores[b.id].score - scores[a.id].score) || a.name.localeCompare(b.name, 'pt'));
+      if (!list.length) {
+        box.innerHTML = `<div class="gantt-wrap"><div class="gantt-empty">${term ? 'Nenhum cliente encontrado.' : 'Ainda não há clientes. Toca em <b>+ Novo cliente</b> para criar o primeiro.'}</div></div>`;
+        return;
+      }
+      const sub = c => {
+        const es = entsBy[c.id] || [];
+        const nC = es.filter(e => e.kind === 'company').length, nP = es.filter(e => e.kind === 'personal').length;
+        return [nP ? 'particular' : '', nC ? (nC === 1 ? '1 empresa' : `${nC} empresas`) : ''].filter(Boolean).join(' · ') || 'sem dados de faturação';
+      };
+      box.innerHTML = `
+        <div class="projects-table-wrap"><table class="projects-table clients-table">
+          <thead><tr><th>Cliente</th><th class="col-value">Projetos</th><th class="col-value col-inv">Faturado 3 anos</th><th class="col-value col-rate">€ / hora</th><th class="col-score">Score</th></tr></thead>
+          <tbody>${list.map(c => {
+            const r = scores[c.id];
+            return `<tr class="project-row" data-client-id="${escapeHtml(c.id)}">
+              <td class="col-name">${escapeHtml(c.name)}<small>${escapeHtml(sub(c))}</small></td>
+              <td class="col-value">${r.projects.length}${r.projects3 ? `<small>${r.projects3} em 3 anos</small>` : ''}</td>
+              <td class="col-value col-inv">${r.invoiced ? escapeHtml(fmtEURShort(r.invoiced)) : '—'}</td>
+              <td class="col-value col-rate">${r.rate ? escapeHtml(fmtEURShort(r.rate)) : '—'}</td>
+              <td class="col-score">${r.active ? `<span class="score-cell">${scoreBarHtml(r.score)}<b>${r.score}</b></span>` : '<small>sem atividade</small>'}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table></div>
+        <div class="field-hint">Score 0–100: cada indicador compara o cliente com o melhor dos últimos 3 anos (100 = o melhor); o score junta os quatro com os pesos das Definições.</div>`;
+      box.querySelectorAll('[data-client-id]').forEach(r => r.addEventListener('click', () => openClientDetail(r.dataset.clientId)));
+    }
+    document.getElementById('clients-search').addEventListener('input', () => { if (clientsCache) renderClientsList(); });
+    document.getElementById('clients-sort').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-sort]');
+      if (!b) return;
+      clientsSort = b.dataset.sort;
+      document.querySelectorAll('#clients-sort button').forEach(x => x.classList.toggle('active', x === b));
+      if (clientsCache) renderClientsList();
+    });
+    document.getElementById('clients-new').addEventListener('click', () => openClientModal(null, id => openClientDetail(id)));
+
+    // ---------- Ficha do cliente ----------
+    async function openClientDetail(clientId) {
+      pushCurrentView({ name: 'client', clientId });
+      hideAllViews();
+      const view = document.getElementById('client-view');
+      view.style.display = 'block';
+      view.innerHTML = '<div class="gantt-wrap"><div class="detail-loading">A carregar…</div></div>';
+      try {
+        const data = await loadClientsData();
+        const scores = computeClientScores(data);
+        clientsCache = { data, scores };
+        const c = data.clients.find(x => String(x.id) === String(clientId));
+        if (!c) { view.innerHTML = '<div class="error-box">Cliente não encontrado.</div>'; return; }
+        document.getElementById('nav-title').textContent = c.name;
+        const r = scores[c.id];
+        const ents = data.entities.filter(e => e.client_id === c.id);
+        const entById = Object.fromEntries(ents.map(e => [e.id, e]));
+        const invByProject = {};
+        data.invoices.forEach(i => { invByProject[i.project_id] = (invByProject[i.project_id] || 0) + Number(i.amount || 0); });
+        await loadProjectStatuses();
+        const projs = [...r.projects].sort((a, b) => (b.awarding_date || '').localeCompare(a.awarding_date || '') || (b.code || '').localeCompare(a.code || ''));
+        view.innerHTML = `
+          <div class="detail-header">
+            <div class="titles"><h2>${escapeHtml(c.name)}</h2>
+              <div class="sub">${[c.email, c.phone].filter(Boolean).map(escapeHtml).join(' · ') || 'Sem contactos'}</div></div>
+            <button type="button" class="secondary-btn" id="cl-edit">Editar</button>
+          </div>
+          <div class="gantt-wrap client-score">
+            <div class="cs-main">
+              <div class="cs-num">${r.active ? r.score : '—'}</div>
+              <div><b>Score do cliente</b><span>${r.active ? 'comparado com os outros clientes, últimos 3 anos' : 'sem adjudicações nem faturação nos últimos 3 anos'}</span></div>
+            </div>
+            <div class="cs-grid">${CLIENT_METRICS.map(([k, label, hint]) => `
+              <div class="cs-metric"><span>${escapeHtml(label)}</span><b>${escapeHtml(metricValueText(k, r))}</b>
+                ${scoreBarHtml(r.sub[k])}<i>${escapeHtml(hint)} · ${r.sub[k]}/100 · peso ${Number(data.weights[k]) || 0}</i></div>`).join('')}</div>
+          </div>
+          <div class="gantt-wrap">
+            <div class="card-head"><h2>Entidades de faturação</h2><button type="button" class="text-btn" id="cl-add-entity">+ Adicionar</button></div>
+            ${ents.length ? ents.map(e => `
+              <div class="invoice-row click-row" data-entity-id="${escapeHtml(e.id)}">
+                <span>${escapeHtml(e.kind === 'company' ? e.name : 'A título pessoal')}<br><small style="color:var(--text-3)">${escapeHtml([e.kind === 'company' ? 'Empresa' : 'Particular', e.address].filter(Boolean).join(' · '))}</small></span>
+                <span class="amount" style="font-weight:500">${e.nif ? 'NIF ' + escapeHtml(e.nif) + (nifLooksValid(e.nif) ? '' : ' <span class="nif-warn" title="Não parece um NIF português válido">⚠</span>') : '<span style="color:var(--text-3)">sem NIF</span>'}</span>
+              </div>`).join('') : '<div class="gantt-empty">Sem entidades. Acrescenta o NIF pessoal e/ou as empresas deste cliente — depois escolhes qual usar em cada projeto.</div>'}
+          </div>
+          <div class="gantt-wrap">
+            <div class="card-head"><h2>Projetos</h2><span>${projs.length}</span></div>
+            ${projs.length ? projs.map(p => `
+              <div class="invoice-row click-row" data-open-project="${escapeHtml(p.id)}">
+                <span>${escapeHtml([p.code, p.name].filter(Boolean).join(' — '))}<br><small style="color:var(--text-3)">${escapeHtml([p.client_entity_id && entById[p.client_entity_id] ? entityLabel(entById[p.client_entity_id], c) : null, p.awarding_date ? 'adjudicado a ' + fmtDayMonth(p.awarding_date) + ' ' + p.awarding_date.slice(0, 4) : 'sem adjudicação', p.archived_at ? 'arquivado' : null].filter(Boolean).join(' · '))}</small></span>
+                <span>${statusPillHtml(p.status)}</span>
+                <span class="amount">${invByProject[p.id] ? escapeHtml(fmtEURShort(invByProject[p.id])) : ''}</span>
+              </div>`).join('') : '<div class="gantt-empty">Sem projetos. Ao criar um projeto, escolhe este cliente.</div>'}
+          </div>
+          <div class="gantt-wrap">
+            <div class="card-head"><h2>Contactos</h2></div>
+            <div class="invoice-row"><span>Email</span><span>${c.email ? `<a class="text-btn" href="mailto:${escapeHtml(c.email)}">${escapeHtml(c.email)}</a>` : '—'}</span></div>
+            <div class="invoice-row"><span>Telefone</span><span>${c.phone ? `<a class="text-btn" href="tel:${escapeHtml(c.phone.replace(/[^\d+]/g, ''))}">${escapeHtml(c.phone)}</a>` : '—'}</span></div>
+            <div class="invoice-row"><span>Morada</span><span>${escapeHtml(c.address || '—')}</span></div>
+            ${c.notes ? `<div class="invoice-row"><span>Notas</span><span style="white-space:pre-wrap;text-align:right">${escapeHtml(c.notes)}</span></div>` : ''}
+          </div>`;
+        const reopen = () => { suppressNavPush = true; openClientDetail(c.id); };
+        document.getElementById('cl-edit').addEventListener('click', () => openClientModal(c, reopen));
+        document.getElementById('cl-add-entity').addEventListener('click', () => openEntityModal(c, null, reopen));
+        view.querySelectorAll('[data-entity-id]').forEach(row => row.addEventListener('click', () =>
+          openEntityModal(c, ents.find(e => String(e.id) === row.dataset.entityId), reopen)));
+        view.querySelectorAll('[data-open-project]').forEach(row => row.addEventListener('click', () => openDetail(row.dataset.openProject)));
+      } catch (err) {
+        view.innerHTML = `<div class="error-box">Não foi possível abrir o cliente: ${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    function openClientModal(client, onSaved) {
+      const isEdit = !!client;
+      openQuickModal(isEdit ? 'Editar cliente' : 'Novo cliente', `
+        <label class="field-label" style="margin-top:0;">Nome</label>
+        <input type="text" id="cl-name" class="form-input" placeholder="ex: João Silva ou Promotora X" value="${escapeHtml(client?.name ?? '')}">
+        <div class="form-grid">
+          <div><label class="field-label">Email</label><input type="email" id="cl-email" class="form-input" value="${escapeHtml(client?.email ?? '')}"></div>
+          <div><label class="field-label">Telefone</label><input type="tel" id="cl-phone" class="form-input" value="${escapeHtml(client?.phone ?? '')}"></div>
+        </div>
+        <label class="field-label">Morada</label>
+        <input type="text" id="cl-address" class="form-input" value="${escapeHtml(client?.address ?? '')}">
+        <label class="field-label">Notas</label>
+        <textarea id="cl-notes" class="form-input" rows="2">${escapeHtml(client?.notes ?? '')}</textarea>
+        ${isEdit ? '' : '<div class="field-hint">Depois de criar, acrescenta na ficha o NIF pessoal e/ou as empresas do cliente.</div>'}
+        <button type="button" id="cl-save" class="primary-btn">${isEdit ? 'Guardar' : 'Criar cliente'}</button>
+        ${isEdit ? '<button type="button" id="cl-delete" class="secondary-btn danger-btn">Eliminar cliente</button>' : ''}
+        <div id="cl-msg" class="form-msg"></div>`);
+      document.getElementById('cl-save').addEventListener('click', async () => {
+        const row = {
+          name: document.getElementById('cl-name').value.trim(),
+          email: valOrNull(document.getElementById('cl-email').value.trim()),
+          phone: valOrNull(document.getElementById('cl-phone').value.trim()),
+          address: valOrNull(document.getElementById('cl-address').value.trim()),
+          notes: valOrNull(document.getElementById('cl-notes').value.trim())
+        };
+        if (!row.name) return formError('cl-msg', 'O nome é obrigatório.');
+        try {
+          let id = client?.id;
+          if (isEdit) {
+            await dbUpdate('clients', id, row, MOCK_CLIENT_ROWS);
+            // O nome também fica em projects.client (usado por outras ferramentas)
+            if (!devMode && row.name !== client.name) await supabase.from('projects').update({ client: row.name }).eq('client_id', id);
+          } else id = (await dbInsert('clients', row, MOCK_CLIENT_ROWS)).id;
+          closeQuickModal(); showToast(isEdit ? 'Cliente guardado' : 'Cliente criado'); onSaved && onSaved(id);
+        } catch (err) { formError('cl-msg', 'Não foi possível guardar: ' + err.message); }
+      });
+      const del = document.getElementById('cl-delete');
+      if (del) del.addEventListener('click', async () => {
+        const n = (clientsCache?.scores?.[client.id]?.projects || []).length;
+        if (n) return formError('cl-msg', `Este cliente tem ${n} projeto(s). Muda-os primeiro para outro cliente.`);
+        if (!window.confirm(`Eliminar o cliente "${client.name}" e as suas entidades de faturação?`)) return;
+        try { await dbDelete('clients', client.id, MOCK_CLIENT_ROWS); closeQuickModal(); showToast('Cliente eliminado'); navStack = []; openClientsModule(); }
+        catch (err) { formError('cl-msg', 'Não foi possível eliminar: ' + err.message); }
+      });
+    }
+
+    function openEntityModal(client, ent, onSaved) {
+      const isEdit = !!ent;
+      let kind = ent?.kind ?? 'personal';
+      openQuickModal(isEdit ? 'Entidade de faturação' : 'Nova entidade de faturação', `
+        <div class="segmented" id="en-kind" style="margin-bottom:4px;">
+          <button type="button" data-kind="personal">A título pessoal</button>
+          <button type="button" data-kind="company">Empresa</button>
+        </div>
+        <div id="en-company-wrap"><label class="field-label">Nome da empresa</label>
+          <input type="text" id="en-name" class="form-input" placeholder="ex: Promotora X, Lda" value="${escapeHtml(ent?.kind === 'company' ? ent.name ?? '' : '')}"></div>
+        <label class="field-label">NIF</label>
+        <input type="text" id="en-nif" class="form-input" inputmode="numeric" autocomplete="off" value="${escapeHtml(ent?.nif ?? '')}">
+        <div class="field-hint" id="en-nif-hint"></div>
+        <label class="field-label">Morada fiscal</label>
+        <input type="text" id="en-address" class="form-input" value="${escapeHtml(ent?.address ?? '')}">
+        <button type="button" id="en-save" class="primary-btn">Guardar</button>
+        ${isEdit ? '<button type="button" id="en-delete" class="secondary-btn danger-btn">Eliminar</button>' : ''}
+        <div id="en-msg" class="form-msg"></div>`);
+      const sync = () => {
+        document.querySelectorAll('#en-kind button').forEach(b => b.classList.toggle('active', b.dataset.kind === kind));
+        document.getElementById('en-company-wrap').style.display = kind === 'company' ? '' : 'none';
+      };
+      sync();
+      document.getElementById('en-kind').addEventListener('click', e => { const b = e.target.closest('[data-kind]'); if (b) { kind = b.dataset.kind; sync(); } });
+      const nifEl = document.getElementById('en-nif');
+      const nifHint = () => {
+        const v = nifEl.value.trim();
+        document.getElementById('en-nif-hint').textContent = v && !nifLooksValid(v) ? 'Não parece um NIF português válido (confirma, ou ignora se for estrangeiro).' : '';
+      };
+      nifEl.addEventListener('input', nifHint); nifHint();
+      document.getElementById('en-save').addEventListener('click', async () => {
+        const row = {
+          kind,
+          name: kind === 'company' ? document.getElementById('en-name').value.trim() : null,
+          nif: valOrNull(nifEl.value.replace(/\s/g, '')),
+          address: valOrNull(document.getElementById('en-address').value.trim())
+        };
+        if (kind === 'company' && !row.name) return formError('en-msg', 'Indica o nome da empresa.');
+        try {
+          if (isEdit) await dbUpdate('client_entities', ent.id, row, MOCK_CLIENT_ENTITIES);
+          else await dbInsert('client_entities', { ...row, client_id: client.id }, MOCK_CLIENT_ENTITIES);
+          closeQuickModal(); showToast('Guardado'); onSaved && onSaved();
+        } catch (err) { formError('en-msg', 'Não foi possível guardar: ' + err.message); }
+      });
+      const del = document.getElementById('en-delete');
+      if (del) del.addEventListener('click', async () => {
+        if (!window.confirm('Eliminar esta entidade? Os projetos que a usam ficam só com o cliente.')) return;
+        try { await dbDelete('client_entities', ent.id, MOCK_CLIENT_ENTITIES); closeQuickModal(); showToast('Eliminada'); onSaved && onSaved(); }
+        catch (err) { formError('en-msg', 'Não foi possível eliminar: ' + err.message); }
+      });
+    }
+
+    // ---------- Escolher cliente (novo projeto / editar projeto) ----------
+    // Uma caixa de pesquisa: filtra por cliente, empresa ou NIF e escolhe "cliente + entidade".
+    function clientPickerHtml(id) {
+      return `<div class="client-picker" id="${id}">
+        <input type="text" class="form-input" autocomplete="off" placeholder="Escreve o nome do cliente, empresa ou NIF…" role="combobox" aria-expanded="false">
+        <button type="button" class="cp-clear" aria-label="Limpar" hidden>×</button>
+        <div class="cp-list" role="listbox" hidden></div>
+      </div>`;
+    }
+    async function mountClientPicker(id, { clientId = null, entityId = null } = {}) {
+      const root = document.getElementById(id);
+      const input = root.querySelector('input'), list = root.querySelector('.cp-list'), clear = root.querySelector('.cp-clear');
+      let clients, entities;
+      if (devMode) { clients = MOCK_CLIENT_ROWS; entities = MOCK_CLIENT_ENTITIES; }
+      else {
+        const [c, e] = await Promise.all([
+          supabase.from('clients').select('id, name').order('name'),
+          (await clientsTablesReady()) ? supabase.from('client_entities').select('id, client_id, kind, name, nif') : Promise.resolve({ data: [] })
+        ]);
+        clients = c.data || []; entities = e.data || [];
+      }
+      const byId = Object.fromEntries(clients.map(c => [c.id, c]));
+      // Opções: uma por entidade; cliente sem entidades → uma opção só com o cliente
+      const options = [];
+      clients.forEach(c => {
+        const es = entities.filter(e => e.client_id === c.id);
+        if (!es.length) options.push({ clientId: c.id, entityId: null, title: c.name, sub: 'sem NIF nem empresa' });
+        es.forEach(e => options.push({
+          clientId: c.id, entityId: e.id,
+          title: e.kind === 'company' ? e.name : c.name,
+          sub: [e.kind === 'company' ? c.name !== e.name ? 'de ' + c.name : 'empresa' : 'a título pessoal', e.nif ? 'NIF ' + e.nif : null].filter(Boolean).join(' · '),
+          search: [c.name, e.name, e.nif].join(' ')
+        }));
+      });
+      let value = { clientId, entityId }, active = 0, shown = [];
+      const labelOf = v => {
+        if (!v.clientId) return '';
+        const o = options.find(x => x.clientId === v.clientId && x.entityId === v.entityId) || options.find(x => x.clientId === v.clientId);
+        return o ? `${o.title}${o.sub && o.entityId ? ' — ' + o.sub : ''}` : (byId[v.clientId]?.name ?? '');
+      };
+      const setValue = v => { value = v; input.value = labelOf(v); clear.hidden = !v.clientId; close(); };
+      const close = () => { list.hidden = true; input.setAttribute('aria-expanded', 'false'); };
+      const norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+      const draw = () => {
+        const q = norm(input.value.trim());
+        shown = options.filter(o => !q || norm(o.search || o.title).includes(q) || norm(o.title).includes(q)).slice(0, 30);
+        const exact = clients.some(c => norm(c.name) === q);
+        const total = shown.length + (q && !exact ? 1 : 0);
+        active = Math.max(0, Math.min(active, total - 1));
+        list.innerHTML = shown.map((o, i) => `<div class="cp-opt${i === active ? ' active' : ''}" role="option" data-i="${i}"><b>${escapeHtml(o.title)}</b><span>${escapeHtml(o.sub)}</span></div>`).join('') +
+          (q && !exact ? `<div class="cp-opt cp-new${shown.length === active ? ' active' : ''}" data-new="1"><b>+ Criar cliente «${escapeHtml(input.value.trim())}»</b><span>a título pessoal; completa depois na ficha</span></div>` : '') +
+          (!shown.length && !q ? '<div class="cp-empty">Sem clientes. Escreve um nome para criar.</div>' : '');
+        list.hidden = false; input.setAttribute('aria-expanded', 'true');
+      };
+      const pick = async (el) => {
+        if (!el) return;
+        if (el.dataset.new) {
+          const name = input.value.trim();
+          try {
+            const c = await dbInsert('clients', { name }, MOCK_CLIENT_ROWS);
+            clients.push(c); byId[c.id] = c;
+            options.unshift({ clientId: c.id, entityId: null, title: c.name, sub: 'sem NIF nem empresa' });
+            setValue({ clientId: c.id, entityId: null });
+            showToast('Cliente criado: ' + name);
+          } catch (err) { showToast('Não foi possível criar o cliente: ' + err.message, { type: 'error' }); }
+          return;
+        }
+        const o = shown[Number(el.dataset.i)];
+        setValue({ clientId: o.clientId, entityId: o.entityId });
+      };
+      input.addEventListener('focus', () => { input.select(); active = 0; draw(); });
+      input.addEventListener('input', () => { active = 0; draw(); });
+      input.addEventListener('keydown', (e) => {
+        const n = list.querySelectorAll('.cp-opt').length;
+        if (e.key === 'ArrowDown') { e.preventDefault(); active = Math.min(n - 1, active + 1); draw(); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); active = Math.max(0, active - 1); draw(); }
+        else if (e.key === 'Enter') { e.preventDefault(); pick(list.querySelectorAll('.cp-opt')[active]); }
+        else if (e.key === 'Escape') { if (!list.hidden) { e.stopPropagation(); close(); input.value = labelOf(value); } }
+      });
+      list.addEventListener('mousedown', (e) => { e.preventDefault(); pick(e.target.closest('.cp-opt')); });
+      input.addEventListener('blur', () => setTimeout(() => { if (!root.contains(document.activeElement)) { close(); input.value = labelOf(value); } }, 120));
+      clear.addEventListener('click', () => { setValue({ clientId: null, entityId: null }); input.focus(); });
+      setValue(value);
+      return { get: () => ({ ...value, name: value.clientId ? byId[value.clientId]?.name ?? null : null }) };
+    }
+
+    // Definições: pesos do score de clientes
+    async function loadClientScoreSettings() {
+      const box = document.getElementById('settings-clientscore-container');
+      if (!(await clientsTablesReady())) { box.innerHTML = '<div class="gantt-empty">Para usar o score de clientes, corre clientes.sql no Supabase.</div>'; return; }
+      const w = await loadClientScoreWeights();
+      box.innerHTML = `
+        <div class="field-hint" style="margin:0 0 10px;">Quanto pesa cada indicador no score (0 = não conta). Os pesos não precisam de somar 100 — contam em proporção.</div>
+        <div class="weights-grid">${CLIENT_METRICS.map(([k, label, hint]) => `
+          <label><span><b>${escapeHtml(label)}</b><small>${escapeHtml(hint)}</small></span>
+            <input type="number" class="form-input" min="0" max="100" step="5" data-weight="${k}" value="${Number(w[k]) || 0}"></label>`).join('')}</div>
+        <button type="button" class="secondary-btn" id="weights-save" style="width:auto;padding:0 16px;">Guardar pesos</button>`;
+      document.getElementById('weights-save').addEventListener('click', async () => {
+        const value = {};
+        box.querySelectorAll('[data-weight]').forEach(i => { value[i.dataset.weight] = Math.max(0, Math.min(100, Math.round(Number(i.value) || 0))); });
+        if (!Object.values(value).some(v => v > 0)) { showToast('Pelo menos um indicador tem de ter peso.', { type: 'error' }); return; }
+        try {
+          if (devMode) window.__mockWeights = value;
+          else {
+            const r = await supabase.from('app_settings').upsert({ key: 'client_score_weights', value, updated_at: new Date().toISOString() });
+            if (r.error) throw r.error;
+          }
+          clientsCache = null;
+          showToast('Pesos guardados');
+        } catch (err) { showToast('Não foi possível guardar: ' + err.message, { type: 'error' }); }
+      });
+    }
+
     // ================= CÂMARA: processo, acesso à plataforma, prazos e tramitação =================
     const FOLLOWUP_STATUSES = ['Submetido', 'Em apreciação', 'Pedido de elementos', 'Elementos entregues', 'Audiência prévia',
       'Deferido', 'Indeferido', 'Alvará emitido', 'Outro'];
@@ -5999,8 +6532,10 @@
       { group: 'Criar', label: 'Nova ata de reunião', keys: 'ata reuniao notas', run: () => runCreateAction('ata') },
       { group: 'Criar', label: 'Registar despesa', keys: 'despesa gasto recibo', run: () => runCreateAction('despesa') },
       { group: 'Criar', label: 'Novo projeto', keys: 'projeto obra cliente', run: () => runCreateAction('projeto') },
+      { group: 'Criar', label: 'Novo cliente', keys: 'cliente nif empresa', run: () => openClientModal(null, id => openClientDetail(id)) },
       { group: 'Ir para', label: 'Hoje', keys: 'home inicio', run: () => NAV_ACTIONS.home() },
       { group: 'Ir para', label: 'Projetos', keys: 'lista carteira', run: () => NAV_ACTIONS.projects() },
+      { group: 'Ir para', label: 'Clientes', keys: 'clientes nif empresas score', run: () => NAV_ACTIONS.clients() },
       { group: 'Ir para', label: 'Horas', keys: 'historico imputacoes', run: () => NAV_ACTIONS.horas() },
       { group: 'Ir para', label: 'Atas', keys: 'reunioes', run: () => NAV_ACTIONS.atas() },
       { group: 'Ir para', label: 'Despesas', keys: 'reembolsos', run: () => NAV_ACTIONS.despesas() },
@@ -6829,15 +7364,7 @@
     // ---------- Projeto: todos os dados ----------
     async function openProjectEditModal(project, onSaved) {
       openQuickModal('Editar projeto', '<div class="detail-loading">A carregar…</div>');
-      let clients, types;
-      if (devMode) { clients = MOCK_CLIENTS; types = MOCK_PROJECT_TYPES; }
-      else {
-        const [c, t] = await Promise.all([
-          supabase.from('clients').select('id, name').order('name'),
-          supabase.from('project_types').select('id, name').order('name')
-        ]);
-        clients = c.data || []; types = t.data || [];
-      }
+      const types = devMode ? MOCK_PROJECT_TYPES : ((await supabase.from('project_types').select('id, name').order('name')).data || []);
       await loadProjectStatuses();
       const opt = (list, cur, empty) => `<option value="">${empty}</option>` + list.map(x => `<option value="${escapeHtml(x.id)}"${x.id === cur ? ' selected' : ''}>${escapeHtml(x.name)}</option>`).join('');
       document.getElementById('quick-modal-body').innerHTML = `
@@ -6845,7 +7372,7 @@
           <div class="span2"><label class="field-label">Nome</label><input type="text" id="pe-name" class="form-input" value="${escapeHtml(project.name ?? '')}"></div>
           <div><label class="field-label">Código</label><input type="text" id="pe-code" class="form-input" value="${escapeHtml(project.code ?? '')}"></div>
           <div><label class="field-label">Estado</label><select id="pe-status" class="form-input">${statusOptionsHtml(project.status)}</select></div>
-          <div><label class="field-label">Cliente</label><select id="pe-client" class="form-input">${opt(clients, project.client_id, 'Sem cliente')}</select></div>
+          <div class="span2"><label class="field-label">Cliente</label>${clientPickerHtml('pe-client')}</div>
           <div><label class="field-label">Tipo de projeto</label><select id="pe-type" class="form-input">${opt(types, project.project_type_id, 'Sem tipo')}</select></div>
           <div class="span2"><label class="field-label">Morada</label><input type="text" id="pe-address" class="form-input" value="${escapeHtml(project.address ?? '')}"></div>
           <div><label class="field-label">Área (m²)</label><input type="text" inputmode="decimal" id="pe-area" class="form-input" value="${escapeHtml(String(project.area ?? '').replace('.', ','))}"></div>
@@ -6855,6 +7382,7 @@
         <div class="field-hint">Os honorários são o valor total do contrato. As fases em percentagem calculam-se a partir deste valor.</div>
         <button type="button" id="pe-save" class="primary-btn">Guardar</button>
         <div id="pe-msg" class="form-msg"></div>`;
+      const pePicker = await mountClientPicker('pe-client', { clientId: project.client_id ?? null, entityId: project.client_entity_id ?? null });
 
       document.getElementById('pe-save').addEventListener('click', async () => {
         const name = document.getElementById('pe-name').value.trim();
@@ -6862,13 +7390,14 @@
         const value = numOrNull(document.getElementById('pe-value').value);
         if (!name) return formError('pe-msg', 'O nome é obrigatório.');
         if ((area != null && (Number.isNaN(area) || area < 0)) || (value != null && (Number.isNaN(value) || value < 0))) return formError('pe-msg', 'Área ou honorários inválidos.');
-        const clientId = valOrNull(document.getElementById('pe-client').value);
+        const cp = pePicker.get();
         const patch = {
           name,
           code: valOrNull(document.getElementById('pe-code').value.trim()),
           status: valOrNull(document.getElementById('pe-status').value),
-          client_id: clientId,
-          client: clientId ? (clients.find(c => c.id === clientId)?.name ?? null) : null,
+          client_id: cp.clientId,
+          client_entity_id: cp.entityId,
+          client: cp.name,
           project_type_id: valOrNull(document.getElementById('pe-type').value),
           address: valOrNull(document.getElementById('pe-address').value.trim()),
           area, commission_value: value,
