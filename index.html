@@ -1126,6 +1126,100 @@
   .cp-opt.active, .cp-opt:hover { background: var(--accent-soft); }
   .cp-new b { color: var(--accent); }
   .cp-empty { padding: 10px; font-size: 13px; color: var(--text-2); }
+  .settings-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 24px; align-items: start; }
+  .settings-nav { position: sticky; top: 76px; display: flex; flex-direction: column; gap: 2px; }
+  .settings-group { font-size: 11px; font-weight: 650; text-transform: uppercase; letter-spacing: .05em; color: var(--text-3); padding: 14px 10px 4px; }
+  .settings-group:first-child { padding-top: 0; }
+  .settings-link { display: flex; align-items: center; justify-content: space-between; gap: 8px; border: none; background: none; text-align: left;
+    padding: 8px 10px; border-radius: 6px; font: inherit; font-size: 13.5px; font-weight: 550; color: var(--text-2); cursor: pointer; }
+  .settings-link svg { width: 14px; height: 14px; opacity: 0; }
+  .settings-link:hover { background: var(--surface-2); color: var(--text); }
+  .settings-link.active { background: var(--surface); color: var(--text); box-shadow: 0 0 0 1px var(--border); }
+  .settings-title { font-size: 18px; font-weight: 650; margin: 0 0 12px; }
+  .settings-back { display: none; margin-bottom: 12px; font-size: 14px; }
+  @media (max-width: 759px) {
+    .settings-layout { display: block; }
+    .settings-nav { position: static; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 6px; }
+    .settings-link { padding: 12px 10px; font-size: 15px; color: var(--text); border-top: 1px solid var(--border); border-radius: 0; }
+    .settings-group + .settings-link { border-top: none; }
+    .settings-link svg { opacity: .5; }
+    .settings-layout .settings-panel { display: none; }
+    .settings-layout.show-panel .settings-nav { display: none; }
+    .settings-layout.show-panel .settings-panel { display: block; }
+    .settings-back { display: inline-block; }
+  }
+  .models-head { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+  .models-head select { width: auto; flex: 1 1 220px; margin: 0; }
+  .models-head .segmented { margin: 0; }
+  .band-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 12px; }
+  .band-chip { border: 1px solid var(--border); background: var(--surface); border-radius: 999px; padding: 5px 12px; font: inherit; font-size: 13px; font-weight: 550; color: var(--text-2); cursor: pointer; white-space: nowrap; }
+  .band-chip em { font-style: normal; color: var(--text-3); margin-left: 6px; font-size: 12px; }
+  .band-chip.on { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+  .band-chip:hover { border-color: var(--border-strong); }
+  .models-table { min-width: 560px; }
+  .models-table td { vertical-align: top; }
+  .models-table .form-input { margin: 0; height: 34px; padding: 4px 8px; font-size: 13.5px; }
+  .models-table select.form-input { min-width: 170px; }
+  .md-num { width: 64px; text-align: right; }
+  .md-num.warn, .md-total.warn { color: var(--warning); border-color: var(--warning); }
+  .md-num.saved { border-color: var(--success); }
+  .md-hist { font-size: 11.5px; color: var(--text-3); margin-top: 4px; line-height: 1.35; max-width: 420px; }
+  .md-order { white-space: nowrap; width: 1%; padding-top: 12px !important; }
+  .md-order button { border: none; background: none; color: var(--text-3); cursor: pointer; font-size: 10px; padding: 2px 3px; }
+  .md-order button:disabled { opacity: .3; cursor: default; }
+  .md-total { font-weight: 650; }
+  /* Telemóvel: cada fase do modelo é um cartão (nome em cima, três valores por baixo) */
+  @media (max-width: 700px) {
+    .table-scroll > .models-table { min-width: 0; }
+    .models-table thead { display: none; }
+    .models-table, .models-table tbody, .models-table tfoot { display: block; }
+    .models-table tbody tr { display: grid; grid-template-columns: auto repeat(3, minmax(0, 1fr)) auto; column-gap: 8px; row-gap: 6px; padding: 10px 0; border-top: 1px solid var(--border); }
+    .models-table td { border: none !important; padding: 0 !important; }
+    .models-table td:nth-child(2) { grid-column: 2 / 5; grid-row: 1; }
+    .models-table td.md-order { grid-column: 1; grid-row: 1 / 3; display: flex; flex-direction: column; justify-content: center; }
+    .models-table td:last-child { grid-column: 5; grid-row: 1; }
+    .models-table td[data-label] { grid-row: 2; text-align: left; }
+    .models-table td[data-label]::before { content: attr(data-label); display: block; font-size: 11px; color: var(--text-3); margin-bottom: 2px; }
+    .models-table td[data-label]:nth-child(3) { grid-column: 2; } .models-table td[data-label]:nth-child(4) { grid-column: 3; } .models-table td[data-label]:nth-child(5) { grid-column: 4; }
+    .models-table .md-num { width: 100%; }
+    .models-table select.form-input { min-width: 0; width: 100%; }
+    .models-table tfoot tr { display: flex; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--border); }
+    .models-table tfoot td:empty { display: none; }
+  }
+  .md-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+  .md-warn { color: var(--warning); font-weight: 600; }
+  .bd-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) auto; gap: 8px; align-items: center; margin-bottom: 8px; font-size: 13px; color: var(--text-2); }
+  .bd-row .form-input { margin: 0; }
+  .np-model { margin-top: 14px; padding: 12px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); }
+  .np-model:empty { display: none; }
+  .np-model-list { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; margin-top: 8px; font-size: 12.5px; }
+  .np-model-list span { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 3px 8px; white-space: nowrap; }
+  .np-model-list em { font-style: normal; color: var(--text-3); margin-left: 6px; }
+  .np-model-list i { font-style: normal; color: var(--text-3); }
+  .billing-bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin: 4px 0 12px; }
+  .billing-bar .segmented { margin: 0; }
+  .billing-bar .segmented em { font-style: normal; font-size: 11.5px; color: var(--text-3); margin-left: 5px; }
+  .billing-bar .segmented em.alert { color: var(--on-accent); background: var(--danger); border-radius: 999px; padding: 0 6px; }
+  .kpi-strip.billing-kpis { margin-bottom: 12px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  @media (max-width: 760px) {
+    .kpi-strip.billing-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .kpi-strip.billing-kpis .kpi:last-child { grid-column: auto; border-left: 1px solid var(--border); }
+    .billing-bar .segmented { width: 100%; overflow-x: auto; scrollbar-width: none; }
+    .billing-bar .segmented::-webkit-scrollbar { display: none; }
+    .billing-bar .segmented button { white-space: nowrap; flex: 1 0 auto; }
+  }
+  .bl-title { color: var(--text); font-weight: 600; }
+  .invoice-row small { color: var(--text-3); }
+  .bl-age { font-size: 12.5px; font-weight: 600; color: var(--text-2); white-space: nowrap; }
+  .bl-age.warn { color: var(--warning); } .bl-age.late { color: var(--danger); }
+  .bl-src { font-size: 10.5px; font-weight: 650; padding: 1px 6px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); vertical-align: 1px; }
+  .file-drop { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 22px 12px; border: 1.5px dashed var(--border-strong); border-radius: 10px; cursor: pointer; text-align: center; margin-bottom: 8px; }
+  .file-drop b { color: var(--accent); font-size: 14px; } .file-drop span { font-size: 12.5px; color: var(--text-3); }
+  .file-drop.over { background: var(--accent-soft); border-color: var(--accent); }
+  .saft-summary { margin-top: 12px; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); font-size: 13.5px; }
+  .saft-summary > div b { display: block; } .saft-summary > div span { font-size: 12.5px; color: var(--text-2); }
+  .saft-summary ul { margin: 8px 0 0; padding-left: 18px; }
+  .saft-warn { color: var(--warning); }
   .plan-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
   .plan-box .text-btn { font-size: 12.5px; }
   .plan-edit { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
@@ -1213,6 +1307,7 @@
         <button type="button" class="nav-item" data-nav="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/></svg><span>Hoje</span></button>
         <button type="button" class="nav-item" data-nav="projects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg><span>Projetos</span></button>
         <button type="button" class="nav-item" data-nav="clients"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 19.5c.8-3.3 3.4-5 6.5-5s5.7 1.7 6.5 5"/><path d="M15.5 5.2a3.5 3.5 0 010 6.6M17.8 14.8c1.9.7 3.2 2.3 3.7 4.7"/></svg><span>Clientes</span></button>
+        <button type="button" class="nav-item" data-nav="billing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 6.5A7 7 0 1 0 17.5 17.5"/><path d="M4.5 10.5h9M4.5 13.5h9"/></svg><span>Faturação</span></button>
         <button type="button" class="nav-item" data-nav="horas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span>Horas</span></button>
         <button type="button" class="nav-item" data-nav="agenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Agenda</span></button>
         <button type="button" class="nav-item" data-nav="atas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h7l4 4v12a1 1 0 01-1 1H7a1 1 0 01-1-1v-15a1 1 0 011-1z"/><path d="M9 11h6M9 14.5h6M9 18h3.5"/></svg><span>Atas</span></button>
@@ -1234,6 +1329,7 @@
     </nav>
     <div class="more-sheet" id="more-sheet">
       <button type="button" class="nav-item" data-nav="clients"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 19.5c.8-3.3 3.4-5 6.5-5s5.7 1.7 6.5 5"/><path d="M15.5 5.2a3.5 3.5 0 010 6.6M17.8 14.8c1.9.7 3.2 2.3 3.7 4.7"/></svg><span>Clientes</span></button>
+      <button type="button" class="nav-item" data-nav="billing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 6.5A7 7 0 1 0 17.5 17.5"/><path d="M4.5 10.5h9M4.5 13.5h9"/></svg><span>Faturação</span></button>
       <button type="button" class="nav-item" data-nav="atas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h7l4 4v12a1 1 0 01-1 1H7a1 1 0 01-1-1v-15a1 1 0 011-1z"/><path d="M9 11h6M9 14.5h6M9 18h3.5"/></svg><span>Atas</span></button>
       <button type="button" class="nav-item" data-nav="despesas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12v17l-3-2-3 2-3-2-3 2z"/><path d="M9 8.5h6M9 12h6M9 15.5h3"/></svg><span>Despesas</span></button>
       <button type="button" class="nav-item" data-nav="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.5 7.5 0 000-2l1.9-1.5-2-3.4-2.2.9a7.6 7.6 0 00-1.7-1L15 3.5h-4l-.4 2.5a7.6 7.6 0 00-1.7 1l-2.2-.9-2 3.4L6.6 11a7.5 7.5 0 000 2l-1.9 1.5 2 3.4 2.2-.9a7.6 7.6 0 001.7 1L11 20.5h4l.4-2.5a7.6 7.6 0 001.7-1l2.2.9 2-3.4z"/></svg><span>Definições</span></button>
@@ -1291,6 +1387,7 @@
         <div id="clients-container"></div>
       </div>
       <div id="client-view" style="display:none;"></div>
+      <div id="billing-view" style="display:none;"><div id="billing-container"></div></div>
       <div id="projects-view" style="display:none;">
         <div class="list-toolbar">
           <input type="text" id="projects-search" class="search-input" placeholder="Pesquisar por nome ou código..." autocomplete="off">
@@ -1420,25 +1517,45 @@
         </div>
       </div>
       <div id="settings-view" style="display:none;">
-        <div class="section-label">Estados de projeto</div>
-        <div class="gantt-wrap" id="settings-statuses-container">
-          <div class="detail-loading">A carregar...</div>
-        </div>
-        <div class="section-label">Categorias de imputação de horas</div>
-        <div class="gantt-wrap" id="settings-categories-container">
-          <div class="detail-loading">A carregar...</div>
-        </div>
-        <div class="section-label">Score de clientes</div>
-        <div class="gantt-wrap" id="settings-clientscore-container">
-          <div class="detail-loading">A carregar...</div>
-        </div>
-        <div class="section-label">Checklists por tipo de fase</div>
-        <div class="gantt-wrap" id="settings-checklists-container">
-          <div class="detail-loading">A carregar...</div>
-        </div>
-        <div class="section-label">Tipos de marco</div>
-        <div class="gantt-wrap" id="settings-mtypes-container">
-          <div class="detail-loading">A carregar...</div>
+        <div class="settings-layout" id="settings-layout">
+          <nav class="settings-nav" aria-label="Secções das definições">
+            <div class="settings-group">Projetos</div>
+            <button type="button" class="settings-link" data-sec="models"><span>Modelos de fases</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+            <button type="button" class="settings-link" data-sec="statuses"><span>Estados de projeto</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+            <button type="button" class="settings-link" data-sec="checklists"><span>Checklists das fases</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+            <div class="settings-group">Equipa e agenda</div>
+            <button type="button" class="settings-link" data-sec="categories"><span>Categorias de horas</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+            <button type="button" class="settings-link" data-sec="mtypes"><span>Tipos de marco</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+            <div class="settings-group">Clientes</div>
+            <button type="button" class="settings-link" data-sec="clientscore"><span>Score de clientes</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+          </nav>
+          <div class="settings-panel">
+            <button type="button" class="text-btn settings-back" id="settings-back">‹ Definições</button>
+          <section class="settings-sec" data-sec-panel="models" hidden>
+            <h2 class="settings-title">Modelos de fases</h2>
+            <div class="gantt-wrap" id="settings-models-container"><div class="detail-loading">A carregar...</div></div>
+          </section>
+          <section class="settings-sec" data-sec-panel="statuses" hidden>
+            <h2 class="settings-title">Estados de projeto</h2>
+            <div class="gantt-wrap" id="settings-statuses-container"><div class="detail-loading">A carregar...</div></div>
+          </section>
+          <section class="settings-sec" data-sec-panel="checklists" hidden>
+            <h2 class="settings-title">Checklists das fases</h2>
+            <div class="gantt-wrap" id="settings-checklists-container"><div class="detail-loading">A carregar...</div></div>
+          </section>
+          <section class="settings-sec" data-sec-panel="categories" hidden>
+            <h2 class="settings-title">Categorias de horas</h2>
+            <div class="gantt-wrap" id="settings-categories-container"><div class="detail-loading">A carregar...</div></div>
+          </section>
+          <section class="settings-sec" data-sec-panel="mtypes" hidden>
+            <h2 class="settings-title">Tipos de marco</h2>
+            <div class="gantt-wrap" id="settings-mtypes-container"><div class="detail-loading">A carregar...</div></div>
+          </section>
+          <section class="settings-sec" data-sec-panel="clientscore" hidden>
+            <h2 class="settings-title">Score de clientes</h2>
+            <div class="gantt-wrap" id="settings-clientscore-container"><div class="detail-loading">A carregar...</div></div>
+          </section>
+          </div>
         </div>
       </div>
       <div id="detail-panel" style="display:none;">
@@ -1858,7 +1975,7 @@
       const navKey = newState.name === 'detail' ? 'projects' : newState.name === 'client' ? 'clients' : newState.name;
       document.querySelectorAll('[data-nav]').forEach(el => el.classList.toggle('active', el.dataset.nav === navKey));
       document.getElementById('more-sheet').classList.remove('open');
-      document.getElementById('tab-more').classList.toggle('active', ['clients', 'atas', 'despesas', 'settings'].includes(navKey));
+      document.getElementById('tab-more').classList.toggle('active', ['clients', 'billing', 'atas', 'despesas', 'settings'].includes(navKey));
       window.scrollTo(0, 0);
     }
 
@@ -1873,6 +1990,7 @@
       else if (prev.name === 'atas') openAtasModule();
       else if (prev.name === 'despesas') openDespesasModule();
       else if (prev.name === 'clients') openClientsModule();
+      else if (prev.name === 'billing') openBillingModule();
       else if (prev.name === 'client') openClientDetail(prev.clientId);
       else if (prev.name === 'agenda') openAgendaModule(prev.mode);
       else if (prev.name === 'detail') openDetail(prev.projectId);
@@ -1880,7 +1998,7 @@
     }
 
     function hideAllViews() {
-      ['home-view', 'projects-view', 'clients-view', 'client-view', 'agenda-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view', 'despesas-view'].forEach(id => {
+      ['home-view', 'projects-view', 'clients-view', 'client-view', 'billing-view', 'agenda-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view', 'despesas-view'].forEach(id => {
         document.getElementById(id).style.display = 'none';
       });
     }
@@ -2294,12 +2412,31 @@
       document.getElementById('nav-title').textContent = 'Definições';
       hideAllViews();
       document.getElementById('settings-view').style.display = 'block';
-      loadCategories();
-      loadMilestoneTypeSettings();
-      loadProjectStatusSettings();
-      loadChecklistTemplateSettings();
-      loadClientScoreSettings();
+      // No telemóvel abre a lista de secções; no computador, a última secção vista
+      showSettingsSection(settingsNarrow.matches ? null : settingsSection);
     }
+    const SETTINGS_LOADERS = {
+      models: () => loadPhaseModelSettings(), statuses: () => loadProjectStatusSettings(),
+      checklists: () => loadChecklistTemplateSettings(), categories: () => loadCategories(),
+      mtypes: () => loadMilestoneTypeSettings(), clientscore: () => loadClientScoreSettings()
+    };
+    let settingsSection = 'models';
+    const settingsNarrow = window.matchMedia('(max-width: 759px)');
+    function showSettingsSection(key) {
+      const layout = document.getElementById('settings-layout');
+      layout.classList.toggle('show-panel', !!key);
+      if (!key) { document.querySelectorAll('.settings-link').forEach(l => l.classList.remove('active')); return; }
+      settingsSection = key;
+      document.querySelectorAll('.settings-link').forEach(l => l.classList.toggle('active', l.dataset.sec === key));
+      document.querySelectorAll('[data-sec-panel]').forEach(p => { p.hidden = p.dataset.secPanel !== key; });
+      SETTINGS_LOADERS[key]();
+      if (settingsNarrow.matches) window.scrollTo(0, 0);
+    }
+    document.querySelectorAll('.settings-link').forEach(l => l.addEventListener('click', () => showSettingsSection(l.dataset.sec)));
+    document.getElementById('settings-back').addEventListener('click', () => showSettingsSection(null));
+    settingsNarrow.addEventListener('change', () => {
+      if (document.getElementById('settings-view').style.display !== 'none' && !settingsNarrow.matches) showSettingsSection(settingsSection);
+    });
 
     function openAtasModule() {
       pushCurrentView({ name: 'atas' });
@@ -2846,6 +2983,7 @@
       home: showHome,
       projects: openProjectsModule,
       clients: openClientsModule,
+      billing: () => openBillingModule(),
       horas: openHorasModule,
       atas: openAtasModule,
       despesas: openDespesasModule,
@@ -3570,6 +3708,7 @@
             <div class="invoice-row"><span>Tipo</span><span>${escapeHtml(project.project_types?.name ?? '—')}</span></div>
             <div class="invoice-row"><span>Morada</span><span>${escapeHtml(project.address ?? '—')}</span></div>
             <div class="invoice-row"><span>Área</span><span>${escapeHtml(project.area != null ? String(project.area).replace('.', ',') + ' m²' : '—')}</span></div>
+            ${project.fractions != null ? `<div class="invoice-row"><span>Frações</span><span>${escapeHtml(String(project.fractions))}</span></div>` : ''}
             <div class="invoice-row"><span>Honorários (contrato)</span><span>${fmtEUR(project.commission_value)}</span></div>
             <div class="invoice-row"><span>Adjudicação</span><span>${project.awarding_date ? escapeHtml(parseDateKey(project.awarding_date).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })) : '—'}</span></div>
           </div>
@@ -3970,14 +4109,17 @@
         <select id="np-type" class="form-input"><option value="">A carregar...</option></select>
         <label class="field-label">Morada</label>
         <input type="text" id="np-address" class="form-input">
-        <label class="field-label">Área (m²)</label>
-        <input type="number" id="np-area" class="form-input" step="0.01" min="0">
+        <div class="form-grid">
+          <div><label class="field-label">Área (m²)</label><input type="text" inputmode="decimal" id="np-area" class="form-input"></div>
+          <div><label class="field-label">Frações</label><input type="text" inputmode="numeric" id="np-fractions" class="form-input"></div>
+        </div>
         <label class="field-label">Valor de adjudicação (€)</label>
         <input type="number" id="np-value" class="form-input" step="0.01" min="0">
         <label class="field-label">Data de adjudicação</label>
         <input type="date" id="np-awarding" class="form-input">
         <label class="field-label">Estado</label>
         <select id="np-status" class="form-input"><option value="">A carregar…</option></select>
+        <div class="np-model" id="np-model"></div>
         <button id="np-submit" class="primary-btn">Criar projeto</button>
         <div id="np-msg" class="form-msg"></div>
       `;
@@ -3995,6 +4137,31 @@
       const firstOpen = (projectStatusCache || []).find(s => s.code === 'To Do') || (projectStatusCache || []).find(s => !s.is_closed);
       document.getElementById('np-status').innerHTML = statusOptionsHtml(firstOpen?.code ?? null);
       document.getElementById('np-type').innerHTML = '<option value="">Sem tipo</option>' + types.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('');
+
+      // Fases do modelo (tipo × dimensão): pré-visualização antes de criar
+      let modelCache = null, currentModel = null, useModel = true;
+      const modelEl = document.getElementById('np-model');
+      const refreshModel = async () => {
+        if (!(await phaseModelsReady())) { modelEl.innerHTML = ''; return; }
+        const typeId = document.getElementById('np-type').value;
+        const area = numOrNull(document.getElementById('np-area').value), fr = numOrNull(document.getElementById('np-fractions').value);
+        if (!typeId) { currentModel = null; modelEl.innerHTML = '<div class="field-hint" style="margin:0;">Escolhe o tipo de projeto para ver as fases que vão ser criadas.</div>'; return; }
+        try { modelCache = modelCache || await loadPhaseModelData(); } catch { modelEl.innerHTML = ''; return; }
+        currentModel = await modelFor(typeId, area, fr, modelCache);
+        const m = currentModel, unit = sizeUnit(m.type?.size_measure);
+        document.getElementById('np-fractions').closest('div').style.opacity = m.type?.size_measure === 'fractions' ? '1' : '.55';
+        document.getElementById('np-area').closest('div').style.opacity = m.type?.size_measure === 'fractions' ? '.55' : '1';
+        if (m.size == null) { modelEl.innerHTML = `<div class="field-hint" style="margin:0;">Indica ${m.type?.size_measure === 'fractions' ? 'o número de frações' : 'a área'} para escolher o modelo de fases.</div>`; return; }
+        if (!m.band) { modelEl.innerHTML = `<div class="field-hint" style="margin:0;">Não há intervalo para ${escapeHtml(fmtNum(m.size))} ${unit} neste tipo — o projeto é criado sem fases (define os intervalos em Definições → Modelos de fases).</div>`; return; }
+        const names = Object.fromEntries(m.data.stageTypes.map(x => [x.id, x.name]));
+        modelEl.innerHTML = `
+          <label class="check-row" style="margin-top:0;"><input type="checkbox" id="np-use-model"${useModel ? ' checked' : ''}> Criar as ${m.rows.length} fases do modelo <b>${escapeHtml(bandLabel(m.band, m.type.size_measure))}</b></label>
+          <div class="np-model-list">${m.rows.map(r => `<span>${escapeHtml(names[r.stage_type_id] ?? 'Fase')}<em>${[r.lead_days != null ? r.lead_days + 'd' : null, r.percentage != null ? fmtNum(r.percentage) + '%' : null].filter(Boolean).join(' · ')}</em></span>`).join('<i>→</i>') || '<span>(modelo vazio)</span>'}</div>
+          <div class="field-hint" style="margin:6px 0 0;">Com data de adjudicação, as datas do trabalho de cada fase ficam logo calculadas.</div>`;
+        document.getElementById('np-use-model').addEventListener('change', e => { useModel = e.target.checked; });
+      };
+      ['np-type', 'np-area', 'np-fractions'].forEach(id => document.getElementById(id).addEventListener(id === 'np-type' ? 'change' : 'input', refreshModel));
+      refreshModel();
 
       document.getElementById('np-submit').addEventListener('click', async () => {
         const msgEl = document.getElementById('np-msg');
@@ -4014,12 +4181,18 @@
           client: picker.get().name,
           project_type_id: document.getElementById('np-type').value || null,
           address: document.getElementById('np-address').value.trim() || null,
-          area: document.getElementById('np-area').value ? parseFloat(document.getElementById('np-area').value) : null,
+          area: numOrNull(document.getElementById('np-area').value),
+          fractions: numOrNull(document.getElementById('np-fractions').value),
           commission_value: document.getElementById('np-value').value ? parseFloat(document.getElementById('np-value').value) : null,
           awarding_date: document.getElementById('np-awarding').value || null,
           status: document.getElementById('np-status').value || null
         };
 
+        if ((payload.area != null && (Number.isNaN(payload.area) || payload.area < 0)) || (payload.fractions != null && (Number.isNaN(payload.fractions) || payload.fractions < 0 || !Number.isInteger(payload.fractions)))) {
+          msgEl.textContent = 'Área ou frações inválidas.';
+          msgEl.className = 'form-msg error';
+          return;
+        }
         const btn = document.getElementById('np-submit');
         btn.disabled = true;
         btn.textContent = 'A criar...';
@@ -4034,8 +4207,14 @@
           }
           const res = await supabase.from('projects').insert(payload).select('id').single();
           if (res.error) throw res.error;
+          let nFases = 0;
+          if (useModel && currentModel?.band) {
+            try { nFases = await createStagesFromModel(res.data.id, payload.awarding_date, currentModel); }
+            catch (err) { showToast('Projeto criado, mas as fases não: ' + err.message, { type: 'error', ms: 7000 }); }
+          }
           closeQuickModal();
-          showToast('Projeto criado');
+          showToast(nFases ? `Projeto criado com ${nFases} fases` : 'Projeto criado');
+          invalidateActivePhases();
           openDetail(res.data.id);
         } catch (err) {
           msgEl.textContent = 'Erro ao criar: ' + err.message;
@@ -5170,6 +5349,712 @@
           btn.disabled = false; btn.textContent = 'Guardar';
         }
       });
+    }
+
+    // ================= FATURAÇÃO: importação do SAF-T do weoInvoice e controlo =================
+    // As faturas são emitidas no weoInvoice (certificado); a app importa o SAF-T (PT) exportado.
+    // amount / amount_paid sem IVA (como o valor das fases); gross_amount com IVA — faturacao.sql.
+    const normTxt = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    // "FT 2026/18", "1 2026/1" ou "2026/01" → "2026/18" / "2026/1" (sem série nem zeros à esquerda)
+    const invShortNo = ref => String(ref || '').trim().split(/\s+/).pop().split('/').map(p => /^\d+$/.test(p) ? String(Number(p)) : p).join('/');
+    const invBalance = i => i.status === 'cancelled' ? 0 : Math.round((Number(i.amount || 0) - Number(i.amount_paid || 0)) * 100) / 100;
+    function stageBudget(stage, project) {
+      if (stage.fixed_value != null) return Number(stage.fixed_value);
+      if (stage.percentage != null && project?.commission_value != null) return Number(project.commission_value) * Number(stage.percentage) / 100;
+      return 0;
+    }
+
+    // ---------- Ler o SAF-T (PT) ----------
+    function parseSaft(xmlText) {
+      const doc = new DOMParser().parseFromString(xmlText, 'application/xml');
+      if (doc.getElementsByTagName('parsererror').length) throw new Error('O ficheiro não é um XML válido.');
+      const all = (el, tag) => [...el.getElementsByTagNameNS('*', tag)];
+      const kid = (el, tag) => [...el.children].find(c => c.localName === tag) || null;
+      const txt = (el, tag) => { const c = el && kid(el, tag); return c ? c.textContent.trim() : null; };
+      const num = v => (v == null || v === '' ? 0 : Number(v));
+      const header = all(doc, 'Header')[0];
+      if (!header || !all(doc, 'AuditFileVersion').length) throw new Error('Não parece um ficheiro SAF-T (PT).');
+      const customers = {};
+      all(doc, 'Customer').forEach(c => { customers[txt(c, 'CustomerID')] = { nif: txt(c, 'CustomerTaxID'), name: txt(c, 'CompanyName') }; });
+      const invoices = all(doc, 'Invoice').map(inv => {
+        const st = kid(inv, 'DocumentStatus'), tot = kid(inv, 'DocumentTotals');
+        const lines = [...inv.children].filter(c => c.localName === 'Line');
+        const cust = customers[txt(inv, 'CustomerID')] || {};
+        return {
+          ref: txt(inv, 'InvoiceNo'), type: txt(inv, 'InvoiceType'), date: txt(inv, 'InvoiceDate'),
+          cancelled: txt(st, 'InvoiceStatus') === 'A',
+          nif: cust.nif && cust.nif !== '999999990' ? cust.nif : null, customer: cust.name,
+          net: num(txt(tot, 'NetTotal')), gross: num(txt(tot, 'GrossTotal')),
+          description: lines.map(l => txt(l, 'Description') || txt(l, 'ProductDescription')).filter(Boolean).join(' · '),
+          references: lines.flatMap(l => all(l, 'Reference').map(r => r.textContent.trim())).filter(Boolean)
+        };
+      }).filter(i => i.ref);
+      const payments = all(doc, 'Payment').map(p => ({
+        ref: txt(p, 'PaymentRefNo'),
+        date: txt(kid(p, 'PaymentMethod'), 'PaymentDate') || txt(p, 'TransactionDate'),
+        cancelled: txt(kid(p, 'DocumentStatus'), 'PaymentStatus') === 'A',
+        lines: [...p.children].filter(c => c.localName === 'Line').map(l => ({
+          orig: txt(kid(l, 'SourceDocumentID'), 'OriginatingON'), amount: num(txt(l, 'CreditAmount')) - num(txt(l, 'DebitAmount'))
+        }))
+      })).filter(p => p.ref && !p.cancelled);
+      return {
+        from: txt(header, 'StartDate'), to: txt(header, 'EndDate'), company: txt(header, 'CompanyName'),
+        invoices, payments
+      };
+    }
+
+    // ---------- Juntar com o que já existe (sem duplicar) ----------
+    async function loadBillingBase() {
+      if (devMode) {
+        const projects = MOCK_PROJECTS.map(p => ({ ...p, client_id: MOCK_CLIENT_LINKS[p.id]?.[0] ?? null }));
+        const stages = MOCK_PROJECTS.flatMap(p => MOCK_STAGES.map(s => ({ ...s, id: p.id + '-' + s.id, project_id: p.id, stage_order: MOCK_STAGES.indexOf(s) + 1 })));
+        if (!window.__mockInv) window.__mockInv = MOCK_INVOICES.map((i, k) => ({ ...i, project_id: 'mock-1', stage_id: 'mock-1-stg-' + (k + 1), status: 'normal', source: 'manual' }));
+        return { projects, stages, invoices: window.__mockInv, entities: MOCK_CLIENT_ENTITIES };
+      }
+      const [p, s, i, e] = await Promise.all([
+        supabase.from('projects').select('id, code, name, client_id, commission_value, archived_at, clients(name)'),
+        supabase.from('project_stages').select('id, project_id, stage_order, status, percentage, fixed_value, excluded_from_invoicing, delivery_date, end_date, revision_label, stage_types(name)'),
+        supabase.from('invoices').select('*').order('issue_date', { ascending: false }),
+        (await clientsTablesReady()) ? supabase.from('client_entities').select('client_id, nif') : Promise.resolve({ data: [] })
+      ]);
+      for (const r of [p, s, i]) if (r.error) throw r.error;
+      return { projects: p.data || [], stages: s.data || [], invoices: i.data || [], entities: e.data || [] };
+    }
+
+    // Projeto e fase a partir da descrição (código do projeto + nome da fase)
+    function matchInvoice(desc, base) {
+      const d = normTxt(desc);
+      const project = base.projects
+        .filter(p => p.code && new RegExp(`(^|[^\\d])${normTxt(String(p.code)).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^\\d]|$)`).test(d))
+        .sort((a, b) => String(b.code).length - String(a.code).length)[0] || null;
+      if (!project) return { project: null, stage: null };
+      const stages = base.stages.filter(s => s.project_id === project.id).sort((a, b) => (a.stage_order ?? 0) - (b.stage_order ?? 0));
+      const named = stages.filter(s => s.stage_types?.name && d.includes(normTxt(s.stage_types.name)));
+      const invoiced = id => base.invoices.filter(i => i.stage_id === id && i.status !== 'cancelled').reduce((t, i) => t + Number(i.amount || 0), 0);
+      const stage = named.find(s => invoiced(s.id) < stageBudget(s, project) - 0.5) || named[0] || null;
+      return { project, stage };
+    }
+
+    const SETTLED_ON_ISSUE = t => t === 'FR' || t === 'FS' || t === 'NC';
+    function buildImportPlan(saft, base) {
+      const byExt = Object.fromEntries(base.invoices.filter(i => i.external_ref).map(i => [i.external_ref, i]));
+      const usedManual = new Set();
+      const plan = { updates: [], inserts: [], unmatched: 0, cancelled: 0, receipts: saft.payments.length, payLines: [], orphanPayments: 0 };
+      const refInfo = {};   // para as notas de crédito herdarem projeto/fase da fatura de origem
+      const inFile = new Set(saft.invoices.map(d => d.ref));
+      for (const d of saft.invoices) {
+        const credit = d.type === 'NC';
+        const sign = credit ? -1 : 1;
+        const net = Math.round(d.net * sign * 100) / 100;
+        const row = {
+          external_ref: d.ref, doc_type: d.type, source: 'saft', invoice_number: invShortNo(d.ref),
+          issue_date: d.date, amount: d.cancelled ? 0 : net, gross_amount: d.cancelled ? 0 : Math.round(d.gross * sign * 100) / 100,
+          customer_nif: d.nif, customer_name: d.customer, description: d.description || null,
+          status: d.cancelled ? 'cancelled' : 'normal', imported_at: new Date().toISOString()
+        };
+        // Fatura-recibo, simplificada e nota de crédito ficam liquidadas na emissão; as outras pelos recibos
+        if (d.cancelled) { row.amount_paid = 0; row.payment_date = null; }
+        else if (SETTLED_ON_ISSUE(d.type)) { row.amount_paid = net; row.payment_date = d.date; }
+        if (d.cancelled) plan.cancelled++;
+        // Fatura já registada à mão: mesmo número e valor; senão, mesmo valor com data a ≤ 3 dias (se for a única)
+        const manual = base.invoices.filter(i => !i.external_ref && !usedManual.has(i.id) && Math.abs(Number(i.amount) - net) < 0.02);
+        const byDate = manual.filter(i => i.issue_date && d.date && Math.abs(diffDays(i.issue_date, d.date)) <= 3);
+        const existing = byExt[d.ref]
+          || manual.find(i => i.invoice_number && invShortNo(i.invoice_number) === invShortNo(d.ref))
+          || (byDate.length === 1 ? byDate[0] : null);
+        if (existing) {
+          usedManual.add(existing.id);
+          refInfo[d.ref] = { project_id: existing.project_id, stage_id: existing.stage_id };
+          plan.updates.push({ id: existing.id, row, before: existing });
+          continue;
+        }
+        if (d.cancelled) continue;   // anulado e nunca importado: não entra
+        let project_id = null, stage_id = null;
+        const orig = credit && d.references.map(r => refInfo[r] || byExt[r]).find(Boolean);
+        if (orig) { project_id = orig.project_id; stage_id = orig.stage_id; }
+        else { const m = matchInvoice(d.description, base); project_id = m.project?.id ?? null; stage_id = m.stage?.id ?? null; }
+        if (!project_id) plan.unmatched++;
+        refInfo[d.ref] = { project_id, stage_id };
+        plan.inserts.push({ ...row, project_id, stage_id, amount_paid: row.amount_paid ?? 0, payment_date: row.payment_date ?? null });
+      }
+      // Recibos: uma linha por fatura paga (a fatura pode estar noutro ficheiro já importado)
+      saft.payments.forEach(p => p.lines.forEach(l => {
+        if (!l.orig) return;
+        if (!inFile.has(l.orig) && !byExt[l.orig]) { plan.orphanPayments++; return; }
+        plan.payLines.push({ receipt_ref: p.ref, orig: l.orig, amount: Math.round(l.amount * 100) / 100, paid_at: p.date });
+      }));
+      return plan;
+    }
+    const planChanges = plan => plan.updates.filter(u => ['amount', 'amount_paid', 'payment_date', 'status', 'gross_amount', 'external_ref']
+      .some(k => k in u.row && String(u.before[k] ?? '') !== String(u.row[k] ?? ''))).length;
+
+    async function applyImportPlan(plan, saft, fileName) {
+      let nNew = 0;
+      const updated = new Set(), idByRef = {};
+      const mockInv = () => window.__mockInv || MOCK_INVOICES;
+      for (const u of plan.updates) {
+        idByRef[u.row.external_ref] = u.id;
+        const changed = ['amount', 'amount_paid', 'payment_date', 'status', 'gross_amount', 'external_ref', 'customer_nif', 'description']
+          .some(k => k in u.row && String(u.before[k] ?? '') !== String(u.row[k] ?? ''));
+        if (!changed) continue;
+        const patch = { ...u.row };
+        if (u.before.invoice_number) delete patch.invoice_number;   // mantém o número como foi escrito
+        await dbUpdate('invoices', u.id, patch, mockInv());
+        updated.add(u.id);
+      }
+      if (plan.inserts.length) {
+        if (devMode) plan.inserts.forEach(r => { const o = { id: 'inv-' + Math.random(), ...r }; (window.__mockInv = window.__mockInv || []).push(o); idByRef[r.external_ref] = o.id; });
+        else {
+          const r = await supabase.from('invoices').insert(plan.inserts).select('id, external_ref');
+          if (r.error) throw r.error;
+          (r.data || []).forEach(x => { idByRef[x.external_ref] = x.id; });
+        }
+        nNew = plan.inserts.length;
+      }
+      // Faturas de ficheiros anteriores pagas por recibos deste ficheiro
+      const missing = [...new Set(plan.payLines.map(l => l.orig).filter(o => !idByRef[o]))];
+      if (missing.length) {
+        if (devMode) mockInv().forEach(i => { if (missing.includes(i.external_ref)) idByRef[i.external_ref] = i.id; });
+        else {
+          const r = await supabase.from('invoices').select('id, external_ref').in('external_ref', missing);
+          (r.data || []).forEach(x => { idByRef[x.external_ref] = x.id; });
+        }
+      }
+      const payRows = plan.payLines.filter(l => idByRef[l.orig]).map(l => ({ invoice_id: idByRef[l.orig], receipt_ref: l.receipt_ref, amount: l.amount, paid_at: l.paid_at }));
+      const touched = [...new Set(payRows.map(p => p.invoice_id))];
+      if (payRows.length) {
+        if (devMode) {
+          window.__mockPay = window.__mockPay || [];
+          payRows.forEach(p => { const k = window.__mockPay.findIndex(x => x.receipt_ref === p.receipt_ref && x.invoice_id === p.invoice_id); if (k >= 0) window.__mockPay[k] = p; else window.__mockPay.push(p); });
+        } else {
+          const r = await supabase.from('invoice_payments').upsert(payRows, { onConflict: 'receipt_ref,invoice_id' });
+          if (r.error) throw r.error;
+        }
+        // Valor pago = soma dos recibos (nunca acima do valor da fatura); data = último recibo
+        const all = devMode ? window.__mockPay.filter(p => touched.includes(p.invoice_id))
+          : ((await supabase.from('invoice_payments').select('invoice_id, amount, paid_at').in('invoice_id', touched)).data || []);
+        const cur = devMode ? mockInv() : ((await supabase.from('invoices').select('id, amount, amount_paid, payment_date, doc_type, status').in('id', touched)).data || []);
+        for (const inv of cur.filter(i => touched.includes(i.id))) {
+          if (inv.status === 'cancelled' || SETTLED_ON_ISSUE(inv.doc_type)) continue;
+          const ps = all.filter(p => p.invoice_id === inv.id);
+          const paid = Math.min(Number(inv.amount), Math.round(ps.reduce((t, p) => t + Number(p.amount), 0) * 100) / 100);
+          const date = ps.map(p => p.paid_at).filter(Boolean).sort().pop() || null;
+          if (Math.abs(Number(inv.amount_paid) - paid) > 0.005 || (inv.payment_date || null) !== date) {
+            await dbUpdate('invoices', inv.id, { amount_paid: paid, payment_date: date }, mockInv());
+            if (!plan.inserts.some(r => idByRef[r.external_ref] === inv.id)) updated.add(inv.id);
+          }
+        }
+      }
+      const nUpd = updated.size;
+      if (!devMode) {
+        const me = (await getCurrentMember())?.id ?? null;
+        await supabase.from('invoice_imports').insert({
+          file_name: fileName, period_from: saft.from, period_to: saft.to, n_new: nNew, n_updated: nUpd,
+          n_payments: payRows.length, n_unmatched: plan.unmatched, imported_by: me
+        });
+      }
+      return { nNew, nUpd, nPay: payRows.length };
+    }
+
+    function openSaftImport(onDone) {
+      openQuickModal('Importar do weoInvoice', `
+        <div class="field-hint" style="margin:0 0 10px;">
+          No weoInvoice, exporta o <b>SAF-T (PT)</b> do período (por exemplo o mês ou o ano até hoje) e escolhe aqui o ficheiro .xml.
+          Importar o mesmo período outra vez não duplica nada: atualiza pagamentos e anulações.
+        </div>
+        <label class="file-drop" id="saft-drop"><input type="file" id="saft-file" accept=".xml,text/xml,application/xml" hidden>
+          <b>Escolher ficheiro SAF-T</b><span>ou arrasta-o para aqui</span></label>
+        <div class="field-hint">Para a app ligar cada fatura ao projeto e à fase sozinha, escreve na descrição da linha, no weoInvoice, o código do projeto e a fase (ex.: <b>26003 Licenciamento</b>).</div>
+        <div id="saft-preview"></div>
+        <div id="saft-msg" class="form-msg"></div>`);
+      const drop = document.getElementById('saft-drop'), input = document.getElementById('saft-file');
+      const handle = async (file) => {
+        if (!file) return;
+        const prev = document.getElementById('saft-preview');
+        prev.innerHTML = '<div class="detail-loading">A ler o ficheiro…</div>';
+        try {
+          if (file.size > 30 * 1024 * 1024) throw new Error('Ficheiro demasiado grande (máx. 30 MB).');
+          const buf = await file.arrayBuffer();
+          const head = new TextDecoder('ascii').decode(buf.slice(0, 200));
+          const enc = (head.match(/encoding=["']([^"']+)["']/i) || [])[1] || 'utf-8';
+          let xmlText;
+          try { xmlText = new TextDecoder(enc.toLowerCase()).decode(buf); } catch { xmlText = new TextDecoder('utf-8').decode(buf); }
+          const saft = parseSaft(xmlText);
+          const base = await loadBillingBase();
+          const plan = buildImportPlan(saft, base);
+          const real = planChanges(plan);
+          prev.innerHTML = `
+            <div class="saft-summary">
+              <div><b>${escapeHtml(saft.company || 'SAF-T')}</b><span>${escapeHtml([saft.from, saft.to].filter(Boolean).map(fmtDayMonth).join(' → '))} · ${saft.invoices.length} documentos · ${saft.payments.length} recibos</span></div>
+              <ul>
+                <li><b>${plan.inserts.length}</b> faturas novas${plan.unmatched ? ` (<b>${plan.unmatched}</b> ficam em "Por associar")` : ''}</li>
+                <li><b>${real}</b> faturas já existentes a atualizar (pagamentos, anulações)</li>
+                <li><b>${plan.payLines.length}</b> pagamentos de ${plan.receipts} recibo(s)</li>
+                ${plan.cancelled ? `<li>${plan.cancelled} documento(s) anulado(s)</li>` : ''}
+                ${plan.orphanPayments ? `<li class="saft-warn">${plan.orphanPayments} pagamento(s) de faturas que ainda não estão na app (de outro ano?). Importa também esse ficheiro e depois volta a importar este.</li>` : ''}
+              </ul>
+            </div>
+            <button type="button" class="primary-btn" id="saft-go">${plan.inserts.length || real ? 'Importar' : 'Atualizar pagamentos'}</button>`;
+          const go = document.getElementById('saft-go');
+          if (go) go.addEventListener('click', async () => {
+            go.disabled = true; go.textContent = 'A importar…';
+            try {
+              const r = await applyImportPlan(plan, saft, file.name);
+              closeQuickModal();
+              showToast(`Importado: ${r.nNew} novas, ${r.nUpd} atualizadas, ${r.nPay} pagamentos`, { ms: 5000 });
+              onDone && onDone();
+            } catch (err) { formError('saft-msg', 'A importação falhou: ' + err.message); go.disabled = false; go.textContent = 'Importar'; }
+          });
+        } catch (err) { prev.innerHTML = ''; formError('saft-msg', err.message); }
+      };
+      input.addEventListener('change', () => handle(input.files[0]));
+      drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+      drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+      drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); handle(e.dataTransfer.files[0]); });
+    }
+
+    // ---------- Módulo Faturação ----------
+    let billingTab = 'tobill', billingCache = null;
+    async function openBillingModule(tab) {
+      if (tab) billingTab = tab;
+      pushCurrentView({ name: 'billing' });
+      document.getElementById('nav-title').textContent = 'Faturação';
+      hideAllViews();
+      document.getElementById('billing-view').style.display = 'block';
+      await loadBilling();
+    }
+    async function loadBilling() {
+      const box = document.getElementById('billing-container');
+      box.innerHTML = '<div class="gantt-wrap"><div class="detail-loading">A carregar…</div></div>';
+      try { billingCache = await loadBillingBase(); renderBilling(); }
+      catch (err) { box.innerHTML = `<div class="error-box">Não foi possível carregar a faturação: ${escapeHtml(err.message)}</div>`; }
+    }
+    function billingData() {
+      const b = billingCache, today = dateKey(new Date());
+      const projById = Object.fromEntries(b.projects.map(p => [p.id, p]));
+      const valid = b.invoices.filter(i => i.status !== 'cancelled');
+      const invByStage = {};
+      valid.forEach(i => { if (i.stage_id) invByStage[i.stage_id] = (invByStage[i.stage_id] || 0) + Number(i.amount || 0); });
+      const toBill = b.stages.filter(s => isStageDone(s) && !s.excluded_from_invoicing).map(s => {
+        const p = projById[s.project_id]; const budget = stageBudget(s, p);
+        return { s, p, budget, invoiced: invByStage[s.id] || 0, remaining: Math.round((budget - (invByStage[s.id] || 0)) * 100) / 100, doneAt: s.delivery_date || s.end_date || null };
+      }).filter(x => x.p && x.remaining > 0.5).sort((a, b) => (a.doneAt || '9999').localeCompare(b.doneAt || '9999'));
+      const toReceive = valid.filter(i => i.project_id && invBalance(i) > 0.5)
+        .map(i => ({ i, p: projById[i.project_id], age: diffDays(i.issue_date, today) })).sort((a, b) => b.age - a.age);
+      const unmatched = b.invoices.filter(i => !i.project_id && i.status !== 'cancelled');
+      const yearAgo = addDaysKey(today, -365);
+      const last12 = valid.filter(i => i.issue_date >= yearAgo);
+      return { projById, toBill, toReceive, unmatched, today,
+        kpi: {
+          toBill: toBill.reduce((t, x) => t + x.remaining, 0), toReceive: toReceive.reduce((t, x) => t + invBalance(x.i), 0),
+          overdue: toReceive.filter(x => x.age > 60).reduce((t, x) => t + invBalance(x.i), 0),
+          invoiced12: last12.reduce((t, i) => t + Number(i.amount || 0), 0), received12: last12.reduce((t, i) => t + Number(i.amount_paid || 0), 0)
+        } };
+    }
+    function renderBilling() {
+      const box = document.getElementById('billing-container');
+      const d = billingData();
+      const projLabel = p => p ? [p.code, p.name].filter(Boolean).join(' — ') : 'Sem projeto';
+      const ageCls = a => a > 90 ? 'late' : a > 60 ? 'warn' : '';
+      const tabs = [['tobill', 'Por faturar', d.toBill.length], ['toreceive', 'Por receber', d.toReceive.length], ['all', 'Faturas', null], ['unmatched', 'Por associar', d.unmatched.length]];
+      let body = '';
+      if (billingTab === 'tobill') {
+        body = d.toBill.length ? d.toBill.map(x => `
+          <div class="invoice-row click-row" data-open-project-fin="${escapeHtml(x.p.id)}">
+            <span><b class="bl-title">${escapeHtml(phaseName(x.s))}</b><br><small>${escapeHtml(projLabel(x.p))}${x.p.archived_at ? ' · arquivado' : ''}${x.doneAt ? ' · concluída a ' + escapeHtml(fmtDayMonth(x.doneAt)) : ''}${x.invoiced > 0 ? ' · já faturado ' + escapeHtml(fmtEURShort(x.invoiced)) : ''}</small></span>
+            <span class="amount">${escapeHtml(fmtEURShort(x.remaining))}</span>
+          </div>`).join('') : '<div class="gantt-empty">Não há fases concluídas por faturar. 🎉</div>';
+      } else if (billingTab === 'toreceive') {
+        body = d.toReceive.length ? d.toReceive.map(x => `
+          <div class="invoice-row click-row" data-invoice="${escapeHtml(x.i.id)}">
+            <span><b class="bl-title">${escapeHtml(x.i.external_ref || x.i.invoice_number || 'Sem número')}</b><br><small>${escapeHtml(projLabel(x.p))} · emitida a ${escapeHtml(fmtDayMonth(x.i.issue_date))}</small></span>
+            <span class="bl-age ${ageCls(x.age)}">${x.age} dias</span>
+            <span class="amount">${escapeHtml(fmtEURShort(invBalance(x.i)))}</span>
+          </div>`).join('') : '<div class="gantt-empty">Tudo recebido. Não há faturas por liquidar.</div>';
+      } else if (billingTab === 'unmatched') {
+        body = d.unmatched.length ? `<div class="field-hint" style="margin:0 0 8px;">Faturas importadas que a app não conseguiu ligar a um projeto. Toca para escolher projeto e fase.</div>` + d.unmatched.map(i => `
+          <div class="invoice-row click-row" data-assoc="${escapeHtml(i.id)}">
+            <span><b class="bl-title">${escapeHtml(i.external_ref || i.invoice_number || 'Sem número')}</b><br><small>${escapeHtml([i.customer_name, i.customer_nif ? 'NIF ' + i.customer_nif : null, i.description].filter(Boolean).join(' · '))}</small></span>
+            <span class="amount">${escapeHtml(fmtEURShort(i.amount))}</span>
+          </div>`).join('') : '<div class="gantt-empty">Nada por associar.</div>';
+      } else {
+        const q = normTxt(document.getElementById('billing-search')?.value || '');
+        const list = billingCache.invoices.filter(i => !q || normTxt([i.external_ref, i.invoice_number, i.customer_name, i.description, projLabel(d.projById[i.project_id])].join(' ')).includes(q));
+        body = `<input type="text" id="billing-search" class="search-input" placeholder="Pesquisar n.º, cliente, projeto…" value="${escapeHtml(document.getElementById('billing-search')?.value || '')}" style="margin-bottom:10px;">` +
+          (list.length ? list.map(i => {
+            const bal = invBalance(i);
+            const st = i.status === 'cancelled' ? ['neutral', 'Anulada'] : bal <= 0.5 ? ['paid', 'Paga'] : Number(i.amount_paid) > 0 ? ['partial', 'Parcial'] : ['pending', 'Por receber'];
+            return `<div class="invoice-row click-row" data-invoice="${escapeHtml(i.id)}">
+              <span><b class="bl-title">${escapeHtml(i.external_ref || i.invoice_number || 'Sem número')}</b>${i.source === 'saft' ? ' <span class="bl-src">weoInvoice</span>' : ''}<br><small>${escapeHtml(projLabel(d.projById[i.project_id]))} · ${escapeHtml(fmtDayMonth(i.issue_date))} ${escapeHtml(String(i.issue_date).slice(0, 4))}</small></span>
+              <span class="invoice-status ${st[0]}">${st[1]}</span>
+              <span class="amount">${escapeHtml(fmtEURShort(i.amount))}</span>
+            </div>`;
+          }).join('') : '<div class="gantt-empty">Sem faturas.</div>');
+      }
+      box.innerHTML = `
+        <div class="kpi-strip billing-kpis">
+          <div class="kpi"><span>Por faturar</span><b class="${d.kpi.toBill > 0 ? 'warn' : ''}">${fmtEURShort(d.kpi.toBill)}</b><i>${d.toBill.length} fases concluídas</i></div>
+          <div class="kpi"><span>Por receber</span><b class="${d.kpi.toReceive > 0 ? 'warn' : ''}">${fmtEURShort(d.kpi.toReceive)}</b><i>${d.toReceive.length} faturas${d.kpi.overdue > 0 ? ` · ${fmtEURShort(d.kpi.overdue)} há +60 dias` : ''}</i></div>
+          <div class="kpi"><span>Faturado 12 meses</span><b>${fmtEURShort(d.kpi.invoiced12)}</b><i>sem IVA</i></div>
+          <div class="kpi"><span>Recebido 12 meses</span><b>${fmtEURShort(d.kpi.received12)}</b><i>das faturas desse período</i></div>
+        </div>
+        <div class="billing-bar">
+          <div class="segmented" id="billing-tabs">${tabs.map(([k, l, n]) => `<button type="button" data-btab="${k}" class="${k === billingTab ? 'active' : ''}">${l}${n ? `<em class="${k === 'unmatched' ? 'alert' : ''}">${n}</em>` : ''}</button>`).join('')}</div>
+          <button type="button" class="secondary-btn toolbar-btn" id="billing-import">Importar do weoInvoice</button>
+        </div>
+        <div class="gantt-wrap">${body}</div>`;
+      box.querySelectorAll('[data-btab]').forEach(b => b.addEventListener('click', () => { billingTab = b.dataset.btab; renderBilling(); }));
+      document.getElementById('billing-import').addEventListener('click', () => openSaftImport(loadBilling));
+      const search = document.getElementById('billing-search');
+      if (search) search.addEventListener('input', () => { const pos = search.selectionStart; renderBilling(); const s2 = document.getElementById('billing-search'); s2.focus(); s2.setSelectionRange(pos, pos); });
+      box.querySelectorAll('[data-open-project-fin]').forEach(r => r.addEventListener('click', () => { detailTabByProject[r.dataset.openProjectFin] = 'financas'; openDetail(r.dataset.openProjectFin); }));
+      box.querySelectorAll('[data-invoice]').forEach(r => r.addEventListener('click', () => {
+        const inv = billingCache.invoices.find(i => String(i.id) === r.dataset.invoice);
+        if (!inv.project_id) return openAssociateModal(inv, loadBilling);
+        openInvoiceModal(inv, d.projById[inv.project_id] || { id: inv.project_id }, billingCache.stages.filter(s => s.project_id === inv.project_id), loadBilling);
+      }));
+      box.querySelectorAll('[data-assoc]').forEach(r => r.addEventListener('click', () =>
+        openAssociateModal(billingCache.invoices.find(i => String(i.id) === r.dataset.assoc), loadBilling)));
+    }
+
+    // Associar uma fatura importada a projeto e fase (sugere os projetos do cliente pelo NIF)
+    function openAssociateModal(inv, onSaved) {
+      const b = billingCache;
+      const clientIds = new Set(b.entities.filter(e => inv.customer_nif && e.nif === inv.customer_nif).map(e => e.client_id));
+      const projects = [...b.projects].sort((x, y) => (clientIds.has(y.client_id) - clientIds.has(x.client_id)) || String(y.code || '').localeCompare(String(x.code || '')));
+      openQuickModal('Associar fatura', `
+        <div class="field-hint" style="margin:0 0 10px;"><b>${escapeHtml(inv.external_ref || inv.invoice_number || '')}</b> · ${escapeHtml(fmtEUR(inv.amount))}<br>${escapeHtml([inv.customer_name, inv.customer_nif ? 'NIF ' + inv.customer_nif : null].filter(Boolean).join(' · '))}${inv.description ? '<br>' + escapeHtml(inv.description) : ''}</div>
+        <label class="field-label">Projeto</label>
+        <select id="as-project" class="form-input"><option value="">Escolhe o projeto</option>${projects.map(p => `<option value="${escapeHtml(p.id)}">${clientIds.has(p.client_id) ? '★ ' : ''}${escapeHtml([p.code, p.name].filter(Boolean).join(' — '))}</option>`).join('')}</select>
+        ${clientIds.size ? '<div class="field-hint">★ projetos do cliente com este NIF</div>' : ''}
+        <label class="field-label">Fase</label>
+        <select id="as-stage" class="form-input"><option value="">Sem fase</option></select>
+        <button type="button" class="primary-btn" id="as-go">Associar</button>
+        <div id="as-msg" class="form-msg"></div>`);
+      const ps = document.getElementById('as-project'), ss = document.getElementById('as-stage');
+      ps.addEventListener('change', () => {
+        const st = b.stages.filter(s => s.project_id === ps.value).sort((x, y) => (x.stage_order ?? 0) - (y.stage_order ?? 0));
+        ss.innerHTML = '<option value="">Sem fase</option>' + st.map(s => `<option value="${escapeHtml(s.id)}">${escapeHtml(phaseName(s))}${isStageDone(s) ? ' ✓' : ''}</option>`).join('');
+      });
+      document.getElementById('as-go').addEventListener('click', async () => {
+        if (!ps.value) return formError('as-msg', 'Escolhe o projeto.');
+        try {
+          await dbUpdate('invoices', inv.id, { project_id: ps.value, stage_id: valOrNull(ss.value) }, window.__mockInv || MOCK_INVOICES);
+          closeQuickModal(); showToast('Fatura associada'); onSaved && onSaved();
+        } catch (err) { formError('as-msg', 'Não foi possível associar: ' + err.message); }
+      });
+    }
+
+    // ================= MODELOS DE FASES (por tipo de projeto e intervalo de dimensão) =================
+    // Cada tipo mede a dimensão em m² ou em frações e tem intervalos; cada tipo × intervalo tem um
+    // modelo de fases (ordem, lead time, work time, % dos honorários) — modelos_fases.sql.
+    const MOCK_PT_EXTRA = { 'pt-1': 'fractions' };
+    const MOCK_BANDS = [
+      { id: 'b-1', project_type_id: 'pt-1', min_value: 0, max_value: 10 }, { id: 'b-2', project_type_id: 'pt-1', min_value: 10, max_value: null },
+      { id: 'b-3', project_type_id: 'pt-2', min_value: 0, max_value: 150 }, { id: 'b-4', project_type_id: 'pt-2', min_value: 150, max_value: 300 },
+      { id: 'b-5', project_type_id: 'pt-2', min_value: 300, max_value: null }
+    ];
+    const MOCK_PHASE_TEMPLATES = [
+      { id: 'pt-t1', band_id: 'b-4', stage_type_id: 'st-1', sort_order: 1, lead_days: 45, work_days: 30, percentage: 30 },
+      { id: 'pt-t2', band_id: 'b-4', stage_type_id: 'st-3', sort_order: 2, lead_days: 45, work_days: 20, percentage: 30 },
+      { id: 'pt-t3', band_id: 'b-4', stage_type_id: 'st-4', sort_order: 3, lead_days: 90, work_days: 60, percentage: 40 }
+    ];
+    let modelsSupport = null;
+    async function phaseModelsReady() {
+      if (devMode) return true;
+      if (modelsSupport === null) modelsSupport = !(await supabase.from('phase_templates').select('id').limit(1)).error;
+      return modelsSupport;
+    }
+    const sizeUnit = m => m === 'fractions' ? 'frações' : 'm²';
+    const fmtNum = n => Number(n).toLocaleString('pt-PT', { maximumFractionDigits: 2 });
+    function bandLabel(b, measure) {
+      const u = sizeUnit(measure);
+      if (b.max_value == null) return `mais de ${fmtNum(b.min_value)} ${u}`;
+      if (!Number(b.min_value)) return `até ${fmtNum(b.max_value)} ${u}`;
+      return `${fmtNum(b.min_value)}–${fmtNum(b.max_value)} ${u}`;
+    }
+    // Intervalo de um projeto: (mín, máx]; o primeiro inclui o 0
+    function bandFor(bands, size) {
+      if (size == null || size === '' || Number.isNaN(Number(size))) return null;
+      const v = Number(size);
+      return [...bands].sort((a, b) => a.min_value - b.min_value)
+        .find(b => (v > Number(b.min_value) || (v === 0 && Number(b.min_value) === 0)) && (b.max_value == null || v <= Number(b.max_value))) || null;
+    }
+    function countWorkdays(fromKey, toKey) {
+      if (!fromKey || !toKey || toKey < fromKey) return null;
+      let n = 0, k = fromKey, guard = 0;
+      while (k < toKey && guard++ < 5000) { k = addDaysKey(k, 1); if (isWorkday(k)) n++; }
+      return n;
+    }
+
+    async function loadPhaseModelData() {
+      if (devMode) {
+        return {
+          types: MOCK_PROJECT_TYPES.map(t => ({ ...t, size_measure: MOCK_PT_EXTRA[t.id] || 'area' })),
+          bands: MOCK_BANDS, templates: MOCK_PHASE_TEMPLATES,
+          stageTypes: MOCK_STAGE_TYPES.map(s => ({ ...s, break_immune: /Licenc/.test(s.name) }))
+        };
+      }
+      const [t, b, tp, st] = await Promise.all([
+        supabase.from('project_types').select('id, name, size_measure').order('name'),
+        supabase.from('project_type_size_bands').select('*').order('min_value'),
+        supabase.from('phase_templates').select('*').order('sort_order'),
+        supabase.from('stage_types').select('id, name, break_immune').order('name')
+      ]);
+      for (const r of [t, b, tp, st]) if (r.error) throw r.error;
+      return { types: t.data || [], bands: b.data || [], templates: tp.data || [], stageTypes: st.data || [] };
+    }
+
+    // O que o histórico indica: fases concluídas de projetos do mesmo tipo (e intervalo)
+    async function loadPhaseHistory() {
+      if (devMode) {
+        return { projects: [{ id: 'h1', project_type_id: 'pt-2', area: 200, fractions: null }],
+          stages: [{ id: 'hs1', project_id: 'h1', stage_type_id: 'st-1', start_date: '2025-03-03', end_date: '2025-04-11', delivery_date: '2025-04-18' }],
+          hoursByStage: { hs1: 86 } };
+      }
+      const [p, s, t] = await Promise.all([
+        supabase.from('projects').select('id, project_type_id, area, fractions'),
+        supabase.from('project_stages').select('id, project_id, stage_type_id, start_date, end_date, delivery_date').eq('status', 'done'),
+        supabase.from('time_entries').select('stage_id, hours').not('stage_id', 'is', null)
+      ]);
+      const hoursByStage = {};
+      (t.data || []).forEach(e => { hoursByStage[e.stage_id] = (hoursByStage[e.stage_id] || 0) + Number(e.hours || 0); });
+      return { projects: p.data || [], stages: s.data || [], hoursByStage };
+    }
+    function historyFor(hist, type, band, bands, stageTypeId) {
+      const sizeOf = p => type.size_measure === 'fractions' ? p.fractions : p.area;
+      const pick = (inBand) => hist.stages.filter(s => {
+        if (s.stage_type_id !== stageTypeId) return false;
+        const p = hist.projects.find(x => x.id === s.project_id);
+        if (!p || p.project_type_id !== type.id) return false;
+        return !inBand || bandFor(bands, sizeOf(p))?.id === band.id;
+      });
+      let list = pick(true), scope = 'neste intervalo';
+      if (!list.length) { list = pick(false); scope = 'em todos os tamanhos deste tipo'; }
+      if (!list.length) return null;
+      const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+      const hours = avg(list.map(s => hist.hoursByStage[s.id] || 0));
+      const work = avg(list.map(s => countWorkdays(s.start_date, s.end_date)).filter(v => v != null));
+      const lead = avg(list.map(s => countWorkdays(s.start_date, s.delivery_date || s.end_date)).filter(v => v != null));
+      return { n: list.length, scope, hours, work, lead };
+    }
+    function historyText(h) {
+      if (!h) return 'Sem histórico: ainda não há fases concluídas deste tipo.';
+      const bits = [];
+      if (h.hours) bits.push(`${fmtHours(h.hours, 0)} imputadas (≈ ${Math.round(h.hours / 8)} dias de 8 h)`);
+      if (h.work != null) bits.push(`trabalho real ${Math.round(h.work)} dias úteis`);
+      if (h.lead != null) bits.push(`lead real ${Math.round(h.lead)} dias úteis`);
+      return `Histórico (${h.n} ${h.n === 1 ? 'fase concluída' : 'fases concluídas'} ${h.scope}): ${bits.join(' · ') || 'sem horas nem datas registadas'}`;
+    }
+
+    // ---------- Definições → Modelos de fases ----------
+    let modelsTypeId = null, modelsBandId = null;
+    async function loadPhaseModelSettings() {
+      const box = document.getElementById('settings-models-container');
+      if (!(await phaseModelsReady())) { box.innerHTML = '<div class="gantt-empty">Para usar modelos de fases, corre modelos_fases.sql no Supabase.</div>'; return; }
+      let data, hist;
+      try { [data, hist] = await Promise.all([loadPhaseModelData(), loadPhaseHistory()]); }
+      catch (err) { box.innerHTML = `<div class="error-box">Não foi possível carregar: ${escapeHtml(err.message)}</div>`; return; }
+      if (!data.types.length) { box.innerHTML = '<div class="gantt-empty">Não há tipos de projeto.</div>'; return; }
+      if (!data.types.some(t => t.id === modelsTypeId)) modelsTypeId = data.types[0].id;
+      const type = data.types.find(t => t.id === modelsTypeId);
+      const bands = data.bands.filter(b => b.project_type_id === type.id).sort((a, b) => a.min_value - b.min_value);
+      if (!bands.some(b => b.id === modelsBandId)) modelsBandId = bands[0]?.id ?? null;
+      const band = bands.find(b => b.id === modelsBandId);
+      const rows = band ? data.templates.filter(t => t.band_id === band.id).sort((a, b) => a.sort_order - b.sort_order) : [];
+      const stName = Object.fromEntries(data.stageTypes.map(s => [s.id, s.name]));
+      const total = rows.reduce((s, r) => s + Number(r.percentage || 0), 0);
+      const stOptions = cur => data.stageTypes.map(s => `<option value="${escapeHtml(s.id)}"${s.id === cur ? ' selected' : ''}>${escapeHtml(s.name)}</option>`).join('');
+      box.innerHTML = `
+        <div class="field-hint" style="margin:0 0 12px;">Ao criar um projeto, a app cria as fases do modelo que corresponde ao tipo e à dimensão do projeto. Lead time e work time em dias úteis; o trabalho começa com a fase e o resto do lead time é folga/aprovação.</div>
+        <div class="models-head">
+          <select class="form-input" id="md-type" aria-label="Tipo de projeto">${data.types.map(t => `<option value="${escapeHtml(t.id)}"${t.id === type.id ? ' selected' : ''}>${escapeHtml(t.name)}</option>`).join('')}</select>
+          <div class="segmented" id="md-measure" title="Como se mede a dimensão deste tipo de projeto">
+            <button type="button" data-measure="area" class="${type.size_measure !== 'fractions' ? 'active' : ''}">Área (m²)</button>
+            <button type="button" data-measure="fractions" class="${type.size_measure === 'fractions' ? 'active' : ''}">Frações</button>
+          </div>
+        </div>
+        <div class="band-chips">${bands.map(b => `<button type="button" class="band-chip${b.id === modelsBandId ? ' on' : ''}" data-band="${escapeHtml(b.id)}">${escapeHtml(bandLabel(b, type.size_measure))}<em>${data.templates.filter(t => t.band_id === b.id).length}</em></button>`).join('')}
+          <button type="button" class="text-btn" id="md-bands-edit">Editar intervalos</button></div>
+        ${!band ? '<div class="gantt-empty">Este tipo ainda não tem intervalos. Toca em <b>Editar intervalos</b> para os criar.</div>' : `
+        <div class="table-scroll"><table class="mini-table models-table">
+          <thead><tr><th></th><th>Fase</th><th class="col-value">Lead time</th><th class="col-value">Work time</th><th class="col-value">% honor.</th><th></th></tr></thead>
+          <tbody>${rows.map((r, i) => {
+            const h = historyFor(hist, type, band, bands, r.stage_type_id);
+            const warn = r.work_days != null && r.lead_days != null && Number(r.work_days) > Number(r.lead_days);
+            return `<tr data-tpl="${escapeHtml(r.id)}">
+              <td class="md-order"><button type="button" data-md-move="-1" ${i === 0 ? 'disabled' : ''} aria-label="Subir">▲</button><button type="button" data-md-move="1" ${i === rows.length - 1 ? 'disabled' : ''} aria-label="Descer">▼</button></td>
+              <td><select class="form-input md-in" data-f="stage_type_id" aria-label="Fase">${stOptions(r.stage_type_id)}</select>
+                <div class="md-hist">${escapeHtml(historyText(h))}</div></td>
+              <td class="col-value" data-label="Lead time"><input class="form-input md-in md-num" data-f="lead_days" inputmode="numeric" value="${escapeHtml(r.lead_days ?? '')}" aria-label="Lead time (dias úteis)"></td>
+              <td class="col-value" data-label="Work time"><input class="form-input md-in md-num${warn ? ' warn' : ''}" data-f="work_days" inputmode="numeric" value="${escapeHtml(r.work_days ?? '')}" aria-label="Work time (dias úteis)" ${warn ? 'title="O work time é maior do que o lead time"' : ''}></td>
+              <td class="col-value" data-label="% honor."><input class="form-input md-in md-num" data-f="percentage" inputmode="decimal" value="${escapeHtml(r.percentage == null ? '' : String(Number(r.percentage)).replace('.', ','))}" aria-label="% dos honorários"></td>
+              <td><button type="button" class="ck-x" data-md-del aria-label="Tirar fase do modelo">×</button></td>
+            </tr>`;
+          }).join('')}</tbody>
+          <tfoot><tr><td></td><td><button type="button" class="text-btn" id="md-add">+ Acrescentar fase</button></td><td></td><td></td>
+            <td class="col-value md-total${rows.length && Math.abs(total - 100) > 0.01 ? ' warn' : ''}" title="Soma das percentagens">${fmtNum(total)}%</td><td></td></tr></tfoot>
+        </table></div>
+        <div class="md-foot">
+          <span class="field-hint" style="margin:0;">Dias úteis (seg–sex, sem feriados). ${rows.length && Math.abs(total - 100) > 0.01 ? '<b class="md-warn">A soma das percentagens não dá 100%.</b>' : ''}</span>
+          ${bands.length > 1 ? `<button type="button" class="text-btn" id="md-copy">Copiar este modelo para outros intervalos…</button>` : ''}
+        </div>`}`;
+
+      const reload = () => loadPhaseModelSettings();
+      box.querySelector('#md-type').addEventListener('change', e => { modelsTypeId = e.target.value; modelsBandId = null; reload(); });
+      box.querySelectorAll('#md-measure [data-measure]').forEach(b => b.addEventListener('click', async () => {
+        if (b.dataset.measure === type.size_measure) return;
+        try {
+          if (devMode) MOCK_PT_EXTRA[type.id] = b.dataset.measure;
+          else { const r = await supabase.from('project_types').update({ size_measure: b.dataset.measure }).eq('id', type.id); if (r.error) throw r.error; }
+          showToast(`${type.name}: dimensão em ${sizeUnit(b.dataset.measure)}`); reload();
+        } catch (err) { showToast('Não foi possível mudar: ' + err.message, { type: 'error' }); }
+      }));
+      box.querySelectorAll('[data-band]').forEach(b => b.addEventListener('click', () => { modelsBandId = b.dataset.band; reload(); }));
+      box.querySelector('#md-bands-edit').addEventListener('click', () => openBandsModal(type, bands, reload));
+      if (!band) return;
+      box.querySelectorAll('.md-in').forEach(inp => inp.addEventListener('change', async () => {
+        const id = inp.closest('[data-tpl]').dataset.tpl, f = inp.dataset.f;
+        let v = inp.value;
+        if (f !== 'stage_type_id') {
+          v = numOrNull(v);
+          if (v != null && (Number.isNaN(v) || v < 0 || (f !== 'percentage' && !Number.isInteger(v)) || (f === 'percentage' && v > 100))) {
+            showToast(f === 'percentage' ? 'Percentagem entre 0 e 100.' : 'Número inteiro de dias úteis.', { type: 'error' }); inp.focus(); return;
+          }
+        }
+        try { await dbUpdate('phase_templates', id, { [f]: v }, MOCK_PHASE_TEMPLATES); inp.classList.add('saved'); setTimeout(reload, 350); }
+        catch (err) { showToast('Não foi possível guardar: ' + err.message, { type: 'error' }); }
+      }));
+      box.querySelectorAll('[data-md-move]').forEach(b => b.addEventListener('click', async () => {
+        const i = rows.findIndex(r => r.id === b.closest('[data-tpl]').dataset.tpl), j = i + Number(b.dataset.mdMove);
+        const re = [...rows]; [re[i], re[j]] = [re[j], re[i]];
+        try { await Promise.all(re.map((r, k) => r.sort_order === k + 1 ? null : dbUpdate('phase_templates', r.id, { sort_order: k + 1 }, MOCK_PHASE_TEMPLATES))); reload(); }
+        catch (err) { showToast('Não foi possível reordenar: ' + err.message, { type: 'error' }); }
+      }));
+      box.querySelectorAll('[data-md-del]').forEach(b => b.addEventListener('click', async () => {
+        const r = rows.find(x => x.id === b.closest('[data-tpl]').dataset.tpl);
+        try {
+          await dbDelete('phase_templates', r.id, MOCK_PHASE_TEMPLATES); reload();
+          showToast(`${stName[r.stage_type_id] ?? 'Fase'} saiu do modelo`, { undo: async () => {
+            const { id, created_at, ...rest } = r;
+            try { await dbInsert('phase_templates', rest, MOCK_PHASE_TEMPLATES); reload(); } catch (err) { showToast('Não foi possível anular: ' + err.message, { type: 'error' }); }
+          } });
+        } catch (err) { showToast('Não foi possível tirar: ' + err.message, { type: 'error' }); }
+      }));
+      box.querySelector('#md-add').addEventListener('click', async () => {
+        const used = new Set(rows.map(r => r.stage_type_id));
+        const st = data.stageTypes.find(s => !used.has(s.id)) || data.stageTypes[0];
+        try { await dbInsert('phase_templates', { band_id: band.id, stage_type_id: st.id, sort_order: rows.length + 1, lead_days: null, work_days: null, percentage: 0 }, MOCK_PHASE_TEMPLATES); reload(); }
+        catch (err) { showToast('Não foi possível acrescentar: ' + err.message, { type: 'error' }); }
+      });
+      const copyBtn = box.querySelector('#md-copy');
+      if (copyBtn) copyBtn.addEventListener('click', () => {
+        const others = bands.filter(b => b.id !== band.id);
+        openQuickModal('Copiar modelo', `
+          <div class="field-hint" style="margin:0 0 8px;">Copia as ${rows.length} fases de <b>${escapeHtml(bandLabel(band, type.size_measure))}</b> para os intervalos escolhidos. O modelo que esses intervalos tinham é substituído.</div>
+          <div class="owner-picker" id="cp-bands">${others.map(b => `<button type="button" class="owner-chip" data-b="${escapeHtml(b.id)}">${escapeHtml(bandLabel(b, type.size_measure))}</button>`).join('')}</div>
+          <button type="button" class="primary-btn" id="cp-go">Copiar</button><div id="cp-msg" class="form-msg"></div>`);
+        const sel = new Set();
+        document.getElementById('cp-bands').addEventListener('click', e => { const c = e.target.closest('[data-b]'); if (!c) return; sel.has(c.dataset.b) ? sel.delete(c.dataset.b) : sel.add(c.dataset.b); c.classList.toggle('on', sel.has(c.dataset.b)); });
+        document.getElementById('cp-go').addEventListener('click', async () => {
+          if (!sel.size) return formError('cp-msg', 'Escolhe pelo menos um intervalo.');
+          try {
+            for (const bid of sel) {
+              const old = data.templates.filter(t => t.band_id === bid);
+              if (devMode) old.forEach(o => MOCK_PHASE_TEMPLATES.splice(MOCK_PHASE_TEMPLATES.indexOf(o), 1));
+              else if (old.length) { const d = await supabase.from('phase_templates').delete().eq('band_id', bid); if (d.error) throw d.error; }
+              const copy = rows.map(({ id, created_at, band_id, ...rest }) => ({ ...rest, band_id: bid }));
+              if (devMode) copy.forEach(c => MOCK_PHASE_TEMPLATES.push({ id: 'pt-' + Math.random(), ...c }));
+              else if (copy.length) { const r = await supabase.from('phase_templates').insert(copy); if (r.error) throw r.error; }
+            }
+            closeQuickModal(); showToast('Modelo copiado'); reload();
+          } catch (err) { formError('cp-msg', 'Não foi possível copiar: ' + err.message); }
+        });
+      });
+    }
+
+    function openBandsModal(type, bands, onSaved) {
+      const u = sizeUnit(type.size_measure);
+      openQuickModal(`Intervalos · ${type.name}`, `
+        <div class="field-hint" style="margin:0 0 10px;">Cada intervalo vai de "mais de" até "até" (${escapeHtml(u)}). Deixa o "até" vazio no último para não ter limite. Apagar um intervalo apaga o seu modelo de fases.</div>
+        <div id="bd-rows">${bands.map(b => `
+          <div class="bd-row" data-bd="${escapeHtml(b.id)}">
+            <span>mais de</span><input class="form-input" inputmode="decimal" data-k="min_value" value="${escapeHtml(fmtNum(b.min_value).replace(/\s/g, ''))}">
+            <span>até</span><input class="form-input" inputmode="decimal" data-k="max_value" value="${b.max_value == null ? '' : escapeHtml(fmtNum(b.max_value).replace(/\s/g, ''))}" placeholder="sem limite">
+            <button type="button" class="ck-x" data-bd-del aria-label="Apagar intervalo">×</button>
+          </div>`).join('')}</div>
+        <button type="button" class="text-btn" id="bd-add" style="margin-top:8px;">+ Acrescentar intervalo</button>
+        <button type="button" class="primary-btn" id="bd-save">Guardar</button>
+        <div id="bd-msg" class="form-msg"></div>`);
+      const rowsEl = document.getElementById('bd-rows');
+      const toDelete = new Set();
+      rowsEl.addEventListener('click', e => { const d = e.target.closest('[data-bd-del]'); if (!d) return; const r = d.closest('[data-bd]'); if (!r.dataset.bd.startsWith('new')) toDelete.add(r.dataset.bd); r.remove(); });
+      document.getElementById('bd-add').addEventListener('click', () => {
+        const last = [...rowsEl.querySelectorAll('[data-bd]')].pop();
+        const lo = last ? (last.querySelector('[data-k="max_value"]').value || '') : '0';
+        rowsEl.insertAdjacentHTML('beforeend', `<div class="bd-row" data-bd="new-${Date.now()}"><span>mais de</span><input class="form-input" inputmode="decimal" data-k="min_value" value="${escapeHtml(lo)}"><span>até</span><input class="form-input" inputmode="decimal" data-k="max_value" placeholder="sem limite"><button type="button" class="ck-x" data-bd-del aria-label="Apagar intervalo">×</button></div>`);
+      });
+      document.getElementById('bd-save').addEventListener('click', async () => {
+        const list = [...rowsEl.querySelectorAll('[data-bd]')].map(r => ({
+          id: r.dataset.bd, min_value: numOrNull(r.querySelector('[data-k="min_value"]').value.replace(/\s/g, '')) ?? 0,
+          max_value: numOrNull(r.querySelector('[data-k="max_value"]').value.replace(/\s/g, ''))
+        })).sort((a, b) => a.min_value - b.min_value);
+        for (let i = 0; i < list.length; i++) {
+          const b = list[i];
+          if (Number.isNaN(b.min_value) || Number.isNaN(b.max_value) || b.min_value < 0) return formError('bd-msg', 'Valores inválidos.');
+          if (b.max_value != null && b.max_value <= b.min_value) return formError('bd-msg', 'Em cada intervalo, o "até" tem de ser maior do que o "mais de".');
+          if (i < list.length - 1 && (b.max_value == null || b.max_value > list[i + 1].min_value)) return formError('bd-msg', 'Os intervalos sobrepõem-se ou há um sem limite antes do fim.');
+        }
+        if (toDelete.size && !window.confirm(`Apagar ${toDelete.size} intervalo(s) e os respetivos modelos de fases?`)) return;
+        try {
+          for (const id of toDelete) await dbDelete('project_type_size_bands', id, MOCK_BANDS);
+          for (const b of list) {
+            const row = { min_value: b.min_value, max_value: b.max_value };
+            if (b.id.startsWith('new')) await dbInsert('project_type_size_bands', { ...row, project_type_id: type.id }, MOCK_BANDS);
+            else await dbUpdate('project_type_size_bands', b.id, row, MOCK_BANDS);
+          }
+          closeQuickModal(); showToast('Intervalos guardados'); onSaved && onSaved();
+        } catch (err) { formError('bd-msg', 'Não foi possível guardar: ' + err.message); }
+      });
+    }
+
+    // ---------- Novo projeto: fases do modelo ----------
+    async function modelFor(typeId, area, fractions, cache) {
+      const data = cache || await loadPhaseModelData();
+      const type = data.types.find(t => t.id === typeId);
+      if (!type) return { data, type: null };
+      const bands = data.bands.filter(b => b.project_type_id === type.id);
+      const size = type.size_measure === 'fractions' ? fractions : area;
+      const band = bandFor(bands, size);
+      const rows = band ? data.templates.filter(t => t.band_id === band.id).sort((a, b) => a.sort_order - b.sort_order) : [];
+      return { data, type, band, rows, size };
+    }
+    // Cria as fases do modelo num projeto novo (datas do trabalho calculadas se houver adjudicação)
+    async function createStagesFromModel(projectId, awardingDate, model) {
+      if (!model?.rows?.length) return 0;
+      const immune = Object.fromEntries(model.data.stageTypes.map(s => [s.id, s.break_immune]));
+      const names = Object.fromEntries(model.data.stageTypes.map(s => [s.id, s.name]));
+      const seen = new Set();
+      const stages = model.rows.map((r, i) => {
+        const base = !seen.has(r.stage_type_id); seen.add(r.stage_type_id);
+        return {
+          id: 'tmp-' + i, project_id: projectId, stage_type_id: r.stage_type_id, stage_order: i + 1, base_stage: base,
+          status: 'pending', pricing_type: 'percentage', percentage: r.percentage ?? null,
+          expected_lead_time_days: r.lead_days ?? null, work_time_days: r.work_days ?? null,
+          stage_types: { name: names[r.stage_type_id], break_immune: !!immune[r.stage_type_id] }
+        };
+      });
+      if (awardingDate) {
+        computeProjectPlan({ awarding_date: awardingDate }, stages, []);
+        stages.forEach(s => {
+          if (s.plan_start && s.work_time_days) { s.start_date = s.plan_start; s.end_date = addWorkdays(s.plan_start, s.work_time_days); }
+        });
+      }
+      const payload = stages.map(({ id, stage_types, plan_start, plan_end, plan_auto_end, ...rest }) => rest);
+      if (devMode) return payload.length;
+      const r = await supabase.from('project_stages').insert(payload);
+      if (r.error) throw r.error;
+      return payload.length;
     }
 
     // ================= CLIENTES: repositório, ficha, entidades de faturação e score =================
@@ -6541,6 +7426,8 @@
       { group: 'Ir para', label: 'Hoje', keys: 'home inicio', run: () => NAV_ACTIONS.home() },
       { group: 'Ir para', label: 'Projetos', keys: 'lista carteira', run: () => NAV_ACTIONS.projects() },
       { group: 'Ir para', label: 'Clientes', keys: 'clientes nif empresas score', run: () => NAV_ACTIONS.clients() },
+      { group: 'Ir para', label: 'Faturação', keys: 'faturas por faturar por receber weoinvoice saft', run: () => NAV_ACTIONS.billing() },
+      { group: 'Criar', label: 'Importar faturas do weoInvoice', keys: 'saft importar faturas weoinvoice', run: () => { openBillingModule(); openSaftImport(loadBilling); } },
       { group: 'Ir para', label: 'Horas', keys: 'historico imputacoes', run: () => NAV_ACTIONS.horas() },
       { group: 'Ir para', label: 'Atas', keys: 'reunioes', run: () => NAV_ACTIONS.atas() },
       { group: 'Ir para', label: 'Despesas', keys: 'reembolsos', run: () => NAV_ACTIONS.despesas() },
@@ -7229,9 +8116,11 @@
               <select id="ph-type" class="form-input">${types.map(t => `<option value="${escapeHtml(t.id)}"${t.id === stage.stage_type_id ? ' selected' : ''}>${escapeHtml(t.name)}</option>`).join('')}</select></div>
             <div><label class="field-label">Revisão</label>
               <input type="text" id="ph-rev" class="form-input" placeholder="ex: R02" value="${escapeHtml(stage.revision_label ?? '')}"></div>
-            <div class="span2"><label class="field-label">Lead time (dias úteis)</label>
-              <input type="text" inputmode="numeric" id="ph-lead" class="form-input" value="${escapeHtml(String(stage.expected_lead_time_days ?? ''))}">
-              <div class="field-hint">Conta a partir do lead time da fase anterior (a primeira, desde a adjudicação).</div></div>
+            <div><label class="field-label">Lead time (dias úteis)</label>
+              <input type="text" inputmode="numeric" id="ph-lead" class="form-input" value="${escapeHtml(String(stage.expected_lead_time_days ?? ''))}"></div>
+            <div><label class="field-label">Work time (dias úteis)</label>
+              <input type="text" inputmode="numeric" id="ph-work" class="form-input" value="${escapeHtml(String(stage.work_time_days ?? ''))}"></div>
+            <div class="span2 field-hint" style="margin-top:6px;">O lead time conta a partir do fim da fase anterior (a primeira, desde a adjudicação); o work time é a parte de trabalho, no início da fase.</div>
             <div><label class="field-label">Tipo de valor</label>
               <select id="ph-pricing" class="form-input">
                 <option value="percentage"${isFixed ? '' : ' selected'}>% dos honorários</option>
@@ -7295,6 +8184,8 @@
         const pricing = document.getElementById('ph-pricing').value;
         const value = numOrNull(document.getElementById('ph-value').value);
         const lead = numOrNull(document.getElementById('ph-lead').value);
+        const workT = numOrNull(document.getElementById('ph-work').value);
+        if (workT != null && (!Number.isInteger(workT) || workT < 0)) return formError('ph-msg', 'O work time tem de ser um número inteiro de dias úteis.');
         if (start && end && end < start) return formError('ph-msg', 'O fim do trabalho é anterior ao início.');
         if (lead != null && (!Number.isInteger(lead) || lead < 0)) return formError('ph-msg', 'O lead time tem de ser um número inteiro de dias úteis.');
         if (value != null && (Number.isNaN(value) || value < 0)) return formError('ph-msg', 'Valor inválido.');
@@ -7304,6 +8195,7 @@
           status: document.getElementById('ph-status').value,
           start_date: start, end_date: end,
           expected_lead_time_days: lead,
+          ...(workT != null || stage.work_time_days != null ? { work_time_days: workT } : {}),
           deadline_override: deadline, is_deadline_fixed: !!deadline,
           delivery_date: valOrNull(document.getElementById('ph-delivery').value),
           pricing_type: pricing,
@@ -7381,6 +8273,7 @@
           <div><label class="field-label">Tipo de projeto</label><select id="pe-type" class="form-input">${opt(types, project.project_type_id, 'Sem tipo')}</select></div>
           <div class="span2"><label class="field-label">Morada</label><input type="text" id="pe-address" class="form-input" value="${escapeHtml(project.address ?? '')}"></div>
           <div><label class="field-label">Área (m²)</label><input type="text" inputmode="decimal" id="pe-area" class="form-input" value="${escapeHtml(String(project.area ?? '').replace('.', ','))}"></div>
+          <div><label class="field-label">Frações</label><input type="text" inputmode="numeric" id="pe-fractions" class="form-input" value="${escapeHtml(String(project.fractions ?? ''))}"></div>
           <div><label class="field-label">Honorários (€)</label><input type="text" inputmode="decimal" id="pe-value" class="form-input" value="${escapeHtml(String(project.commission_value ?? '').replace('.', ','))}"></div>
           <div><label class="field-label">Data de adjudicação</label><input type="date" id="pe-awarding" class="form-input" value="${escapeHtml(project.awarding_date ?? '')}"></div>
         </div>
@@ -7393,7 +8286,9 @@
         const name = document.getElementById('pe-name').value.trim();
         const area = numOrNull(document.getElementById('pe-area').value);
         const value = numOrNull(document.getElementById('pe-value').value);
+        const fractions = numOrNull(document.getElementById('pe-fractions').value);
         if (!name) return formError('pe-msg', 'O nome é obrigatório.');
+        if (fractions != null && (Number.isNaN(fractions) || fractions < 0 || !Number.isInteger(fractions))) return formError('pe-msg', 'Frações: número inteiro.');
         if ((area != null && (Number.isNaN(area) || area < 0)) || (value != null && (Number.isNaN(value) || value < 0))) return formError('pe-msg', 'Área ou honorários inválidos.');
         const cp = pePicker.get();
         const patch = {
@@ -7405,7 +8300,7 @@
           client: cp.name,
           project_type_id: valOrNull(document.getElementById('pe-type').value),
           address: valOrNull(document.getElementById('pe-address').value.trim()),
-          area, commission_value: value,
+          area, fractions, commission_value: value,
           awarding_date: valOrNull(document.getElementById('pe-awarding').value)
         };
         const btn = document.getElementById('pe-save');
@@ -7428,6 +8323,7 @@
       const isEdit = !!invoice;
       const inv = invoice || { issue_date: dateKey(new Date()), amount: '', amount_paid: 0 };
       openQuickModal(isEdit ? 'Editar fatura' : 'Nova fatura', `
+        ${inv.source === 'saft' ? `<div class="field-hint" style="margin:0 0 6px;">Importada do weoInvoice (${escapeHtml(inv.external_ref || '')}${inv.gross_amount != null ? ' · ' + escapeHtml(fmtEUR(inv.gross_amount)) + ' com IVA' : ''}). Valores sem IVA; a próxima importação atualiza pagamentos e anulações.</div>` : ''}
         <div class="form-grid">
           <div><label class="field-label">N.º da fatura</label><input type="text" id="iv-number" class="form-input" placeholder="ex: FT 2026/014" value="${escapeHtml(inv.invoice_number ?? '')}"></div>
           <div><label class="field-label">Fase</label><select id="iv-stage" class="form-input"><option value="">Sem fase</option>${stages.map(s => `<option value="${escapeHtml(s.id)}"${String(s.id) === String(inv.stage_id) ? ' selected' : ''}>${escapeHtml(phaseName(s))}</option>`).join('')}</select></div>
