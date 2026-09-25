@@ -302,7 +302,7 @@
   }
   .secondary-btn:hover { border-color: var(--border-strong); background: var(--surface-2); }
   .text-btn {
-    background: none; border: none; padding: 0;
+    background: none; border: none; padding: 0; white-space: nowrap;
     font-size: 13px; font-weight: 600; color: var(--accent); cursor: pointer;
   }
   .text-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
@@ -371,8 +371,8 @@
   }
   .invoice-row:last-child { border-bottom: none; }
   .invoice-row:first-child { padding-top: 2px; }
-  .invoice-row > :first-child { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; color: var(--text-2); }
-  .invoice-row > :last-child { text-align: right; }
+  .invoice-row > :first-child { flex: 1 1 auto; min-width: min(7em, 40%); overflow-wrap: break-word; color: var(--text-2); }
+  .invoice-row > :last-child { text-align: right; min-width: 0; overflow-wrap: break-word; }
   .invoice-row .amount { font-weight: 600; white-space: nowrap; color: var(--text); }
   .invoice-row .text-btn { flex-shrink: 0; white-space: nowrap; }
   .editable-value { cursor: text; border-radius: 4px; padding: 2px 4px; margin: -2px -4px; color: var(--text); }
@@ -384,7 +384,7 @@
     text-align: left; font-size: 11.5px; font-weight: 600; color: var(--text-3);
     padding: 0 10px 8px 0; white-space: nowrap;
   }
-  .mini-table td { padding: 9px 10px 9px 0; border-top: 1px solid var(--border); vertical-align: middle; overflow-wrap: anywhere; }
+  .mini-table td { padding: 9px 10px 9px 0; border-top: 1px solid var(--border); vertical-align: middle; overflow-wrap: break-word; }
   .mini-table th:last-child, .mini-table td:last-child { padding-right: 0; }
   .col-value, .mini-table th.col-value, .mini-table td.col-value, .projects-table th.col-value { text-align: right; white-space: nowrap; }
   .mini-table-total td { font-weight: 650; border-top: 1px solid var(--border-strong); }
@@ -396,7 +396,10 @@
   .projects-table td { padding: 11px 16px; border-top: 1px solid var(--border); white-space: nowrap; }
   .projects-table tr.project-row { cursor: pointer; }
   .projects-table tr.project-row:hover td { background: var(--surface-2); }
-  .projects-table td.col-name { white-space: normal; font-weight: 550; overflow-wrap: anywhere; }
+  .projects-table td.col-name { white-space: normal; font-weight: 550; overflow-wrap: break-word; min-width: 150px; }
+  .projects-table td.col-type { white-space: normal; min-width: 120px; max-width: 240px; }
+  /* Ecrãs médios (iPad com barra lateral): menos colunas para o nome ter espaço */
+  @media (max-width: 1180px) { .projects-table .col-area { display: none; } }
   .projects-table td.col-code { color: var(--text-2); font-variant-numeric: tabular-nums; }
   .projects-table .col-value { font-weight: 600; }
   @media (max-width: 600px) {
@@ -432,7 +435,7 @@
   .detail-header .secondary-btn { width: auto; margin: 2px 0 0; padding: 0 14px; height: 34px; flex-shrink: 0; }
   .archived-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 14px 0 0; padding: 10px 14px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); font-size: 13.5px; color: var(--text-2); }
   .detail-header .titles { min-width: 0; }
-  .detail-header h2 { font-size: 22px; font-weight: 650; letter-spacing: -0.02em; overflow-wrap: anywhere; }
+  .detail-header h2 { font-size: 22px; font-weight: 650; letter-spacing: -0.02em; overflow-wrap: break-word; }
   .detail-header .sub { color: var(--text-2); font-size: 13px; margin-top: 4px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .detail-body { padding-top: 20px; }
 
@@ -469,7 +472,7 @@
   .gantt-label-spacer { height: 26px; }
   .gantt-label-cell {
     height: 40px; display: flex; align-items: center;
-    font-size: 12.5px; font-weight: 550; padding-right: 10px; overflow-wrap: anywhere;
+    font-size: 12.5px; font-weight: 550; padding-right: 10px; overflow-wrap: break-word;
   }
   .gantt-label-text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; max-height: 2.5em; line-height: 1.25; }
   .gantt-group-header { font-weight: 650; color: var(--text); }
@@ -549,7 +552,7 @@
   .marco-row:hover .marco-title { color: var(--accent); }
   .marco-stripe { width: 3px; border-radius: 2px; flex-shrink: 0; align-self: stretch; min-height: 30px; }
   .marco-body { flex: 1; min-width: 0; }
-  .marco-title { display: block; font-size: 13.5px; font-weight: 600; overflow-wrap: anywhere; }
+  .marco-title { display: block; font-size: 13.5px; font-weight: 600; overflow-wrap: break-word; }
   .marco-title.done { text-decoration: line-through; color: var(--text-3); }
   .marco-meta { display: block; font-size: 12.5px; color: var(--text-2); margin-top: 1px; }
   .marco-owners { display: flex; gap: 3px; flex-shrink: 0; margin-top: 1px; }
@@ -576,7 +579,7 @@
   .horas-entry:first-child { border-top: none; padding-top: 2px; }
   .horas-entry-main { display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 600; }
   .horas-entry-hours { margin-left: auto; }
-  .horas-entry-sub { font-size: 13px; color: var(--text-2); margin-top: 3px; overflow-wrap: anywhere; }
+  .horas-entry-sub { font-size: 13px; color: var(--text-2); margin-top: 3px; overflow-wrap: break-word; }
   .horas-entry-desc { font-size: 13px; margin-top: 2px; }
   .horas-entry-actions { display: flex; gap: 16px; margin-top: 8px; }
 
@@ -585,12 +588,12 @@
   .ata-entry:first-child { border-top: none; }
   .gantt-wrap.ata-entry { padding: 14px 18px; border-top: 1px solid var(--border); }
   .ata-entry-main { display: flex; align-items: baseline; gap: 10px; }
-  .ata-entry-title { font-size: 14px; font-weight: 600; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .ata-entry-title { font-size: 14px; font-weight: 600; flex: 1; min-width: 0; overflow-wrap: break-word; }
   .ata-entry:hover .ata-entry-title { color: var(--accent); }
   .ata-entry-date { font-size: 12.5px; color: var(--text-2); flex-shrink: 0; font-variant-numeric: tabular-nums; }
   .ata-entry-project { font-size: 12.5px; color: var(--text-2); margin-top: 2px; }
   .ata-entry-meta { font-size: 12px; color: var(--text-3); margin-top: 4px; }
-  .ata-entry-body { display: none; font-size: 13.5px; line-height: 1.55; margin-top: 10px; overflow-wrap: anywhere; cursor: text; }
+  .ata-entry-body { display: none; font-size: 13.5px; line-height: 1.55; margin-top: 10px; overflow-wrap: break-word; cursor: text; }
   .ata-entry.expanded .ata-entry-body { display: block; }
   .ata-entry-body p { margin: 0 0 6px; }
   .ata-entry-body p:last-child { margin-bottom: 0; }
@@ -1018,7 +1021,7 @@
   @media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } }
   .nowrap { white-space: nowrap; }
   #team-phases-table .mini-table { table-layout: fixed; width: 100%; }
-  #team-phases-table th, #team-phases-table td { white-space: normal; overflow-wrap: anywhere; }
+  #team-phases-table th, #team-phases-table td { white-space: normal; overflow-wrap: break-word; }
   .late-text { color: var(--danger); font-weight: 600; }
   .horas-back { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
   .horas-back b { font-size: 15px; font-weight: 650; }
@@ -1052,7 +1055,7 @@
   .ck-item:first-of-type, .ck-head + .ck-item { border-top: none; }
   .ck-item label { flex: 1; min-width: 0; display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 14px; }
   .ck-item input { width: 18px; height: 18px; margin-top: 1px; accent-color: var(--success); flex-shrink: 0; }
-  .ck-title { overflow-wrap: anywhere; }
+  .ck-title { overflow-wrap: break-word; }
   .ck-item.done .ck-title { color: var(--text-3); text-decoration: line-through; }
   .ck-badge { font-size: 11px; font-weight: 650; padding: 2px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; }
   .ck-x { border: none; background: none; color: var(--text-3); font-size: 18px; line-height: 1; cursor: pointer; padding: 2px 6px; border-radius: 4px; }
@@ -1069,7 +1072,7 @@
   .ph-ck-item { display: flex; align-items: center; gap: 10px; padding: 5px 6px; margin: 0 -6px; border-radius: 6px; font-size: 13.5px; cursor: pointer; width: fit-content; max-width: 100%; }
   .ph-ck-item:hover { background: var(--surface-3, var(--surface)); }
   .ph-ck-item input { width: 17px; height: 17px; accent-color: var(--success); flex-shrink: 0; margin: 0; }
-  .ph-ck-item span:first-of-type { overflow-wrap: anywhere; }
+  .ph-ck-item span:first-of-type { overflow-wrap: break-word; }
   .ph-ck-item.ticked span:first-of-type { color: var(--text-3); text-decoration: line-through; transition: color .2s; }
   .ph-ck-more { align-self: flex-start; font-size: 12.5px; padding: 2px 0; }
   .ph-ck-done { font-size: 12.5px; color: var(--success); font-weight: 600; }
@@ -1088,7 +1091,7 @@
   .tl-top { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
   .tl-top b { font-size: 13.5px; font-weight: 650; }
   .tl-top span { font-size: 12.5px; color: var(--text-3); }
-  .tl-notes { margin-top: 3px; font-size: 13.5px; color: var(--text-2); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .tl-notes { margin-top: 3px; font-size: 13.5px; color: var(--text-2); white-space: pre-wrap; overflow-wrap: break-word; }
   .toolbar-btn { width: auto; margin: 0; padding: 0 14px; height: 38px; white-space: nowrap; flex-shrink: 0; }
   .clients-table td small { display: block; font-size: 12px; font-weight: 400; color: var(--text-3); margin-top: 2px; }
   .clients-table .col-score { width: 150px; }
@@ -2871,6 +2874,8 @@
     }
     document.getElementById('today-log-hours').addEventListener('click', () => { navStack = []; openHorasModule(); });
 
+    // "Single-Family" não parte no hífen (hífen não separável entre letras)
+    const noBreakHyphens = t => String(t ?? '').replace(/(\p{L})-(\p{L})/gu, '$1\u2011$2');
     let allProjectsData = [];
 
     function renderProjectsTable(data) {
@@ -2889,7 +2894,7 @@
             <td class="col-code">${escapeHtml(p.code ?? '—')}</td>
             <td class="col-name">${escapeHtml(p.name ?? 'Sem nome')}</td>
             <td class="col-area">${escapeHtml(p.area != null ? p.area + ' m²' : '—')}</td>
-            <td class="col-type">${escapeHtml(p.project_types?.name ?? '—')}</td>
+            <td class="col-type">${escapeHtml(noBreakHyphens(p.project_types?.name ?? '—'))}</td>
             <td class="col-status">${statusPickerHtml(p.status, p.id)}</td>
             <td class="col-value">${valor}</td>
           </tr>
@@ -4772,12 +4777,12 @@
         </div>
 
         <div class="section-label">Todas as despesas</div>
-        <div class="gantt-wrap">
+        <div class="gantt-wrap"><div class="table-scroll">
           <table class="mini-table stack-table">
             <thead><tr><th>Data</th><th>Descrição</th><th>Projeto</th><th>Pago por</th><th class="col-value">Valor</th><th>Estado</th><th></th></tr></thead>
             <tbody>${rows}</tbody>
           </table>
-        </div>
+        </div></div>
       `;
 
       document.getElementById('despesas-chart-scale').addEventListener('click', (e) => {
