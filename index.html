@@ -6759,6 +6759,7 @@
     }
     // Padrão de uma regra: o descritivo sem números nem referências (ex.: "trf p glenn bascom")
     const bankPattern = desc => finNorm(desc).split(' ').filter(t => !/\d/.test(t) && t.length > 1).join(' ');
+    const INV_AFTER_PAY = 60;   // dias: uma fatura pode sair depois do pagamento (adiantamento)
     const invGross = (i, rate) => i.gross_amount != null ? Number(i.gross_amount) : Math.round(Number(i.amount || 0) * (1 + rate / 100) * 100) / 100;
     // Subconjunto de valores que soma exatamente o alvo (até 6 elementos, mais antigos primeiro)
     function subsetSum(items, target, val, maxN = 6) {
@@ -6808,7 +6809,8 @@
       const used = { ...usedExtra };
       base.matches.filter(m => m.confirmed && m.transaction_id !== tx.id).forEach(m => { used[m.invoice_id] = (used[m.invoice_id] || 0) + Number(m.amount); });
       const open = base.invoices
-        .filter(i => i.status !== 'cancelled' && i.doc_type !== 'NC' && Number(i.amount) > 0 && i.issue_date <= tx.date && diffDays(i.issue_date, tx.date) <= 400)
+        // inclui faturas emitidas até 60 dias depois do pagamento (adiantamentos: o cliente paga antes de a fatura sair)
+        .filter(i => i.status !== 'cancelled' && i.doc_type !== 'NC' && Number(i.amount) > 0 && i.issue_date <= addDaysKey(tx.date, INV_AFTER_PAY) && diffDays(i.issue_date, tx.date) <= 400)
         .map(i => ({ inv: i, open: Math.round((invGross(i, rate) - (used[i.id] || 0)) * 100) / 100, score: nameScore(i.customer_name || '', tx.description) }))
         .filter(o => o.open > 0.01)
         .sort((a, b) => a.inv.issue_date.localeCompare(b.inv.issue_date));
@@ -6827,8 +6829,8 @@
         const o = named.find(o => o.open > A) || named[0];
         return { lines: [{ inv: o.inv, amount: Math.min(A, o.open) }], confident: false, why: o.open > A ? `pagamento parcial — ficam a faltar ${fmtEUR(o.open - A)}` : 'o cliente coincide, o valor não' };
       }
-      const any = open.filter(o => Math.abs(o.open - A) < 0.02);
-      if (any.length) return { lines: [{ inv: any[0].inv, amount: A }], confident: false, why: 'mesmo valor, mas o cliente não aparece no descritivo' };
+      const any = open.filter(o => Math.abs(o.open - A) < 0.02).sort((a, b) => Math.abs(diffDays(a.inv.issue_date, tx.date)) - Math.abs(diffDays(b.inv.issue_date, tx.date)));
+      if (any.length) return { lines: [{ inv: any[0].inv, amount: A }], confident: false, why: `mesmo valor, mas quem paga não é o nome do cliente${any[0].inv.issue_date > tx.date ? ' · pago antes da fatura' : ''}${any.length > 1 ? ` · há ${any.length} faturas com este valor` : ''}` };
       return null;
     }
 
@@ -7061,7 +7063,7 @@
       base.matches.filter(m => m.confirmed && m.transaction_id !== tx.id).forEach(m => { used[m.invoice_id] = (used[m.invoice_id] || 0) + Number(m.amount); });
       const current = Object.fromEntries(base.matches.filter(m => m.transaction_id === tx.id).map(m => [m.invoice_id, Number(m.amount)]));
       const preset = Object.keys(current).length ? current : Object.fromEntries((sug?.lines || []).map(l => [l.inv.id, l.amount]));
-      const openInv = base.invoices.filter(i => i.status !== 'cancelled' && Number(i.amount) > 0 && i.issue_date <= tx.date)
+      const openInv = base.invoices.filter(i => i.status !== 'cancelled' && Number(i.amount) > 0 && i.issue_date <= addDaysKey(tx.date, INV_AFTER_PAY))
         .map(i => ({ i, open: Math.round((invGross(i, rate) - (used[i.id] || 0)) * 100) / 100, score: nameScore(i.customer_name || '', tx.description) }))
         .filter(o => o.open > 0.01 || preset[o.i.id])
         .sort((a, b) => (preset[b.i.id] ? 1 : 0) - (preset[a.i.id] ? 1 : 0) || b.score - a.score || b.i.issue_date.localeCompare(a.i.issue_date))
@@ -7627,7 +7629,7 @@
       const usedAll = {};
       b.matches.filter(m => m.confirmed).forEach(m => { usedAll[m.invoice_id] = (usedAll[m.invoice_id] || 0) + Number(m.amount); });
       const invOptions = (t, sugId) => {
-        const list = b.invoices.filter(i => i.status !== 'cancelled' && Number(i.amount) > 0 && i.issue_date <= t.date)
+        const list = b.invoices.filter(i => i.status !== 'cancelled' && Number(i.amount) > 0 && i.issue_date <= addDaysKey(t.date, INV_AFTER_PAY))
           .map(i => ({ i, open: Math.round((invGross(i, rateF) - (usedAll[i.id] || 0)) * 100) / 100, sc: nameScore(i.customer_name || '', t.description) }))
           .filter(o => o.open > 0.01)
           .sort((a, c) => (c.i.id === sugId) - (a.i.id === sugId) || c.sc - a.sc || c.i.issue_date.localeCompare(a.i.issue_date)).slice(0, 80);
