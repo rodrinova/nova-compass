@@ -1075,6 +1075,9 @@
   .tx-inv small { display: block; font-size: 11.5px; color: var(--text-3); }
   .tx-inv .tx-inv-amt { height: 34px; text-align: right; }
   .tx-sum { font-size: 13px; font-weight: 600; margin: 8px 2px; }
+  .tx-similar { background: var(--accent-soft); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+  .tx-sim { display: flex; gap: 8px; align-items: flex-start; padding: 5px 0; cursor: pointer; font-size: 13.5px; }
+  .tx-sim b { display: block; font-weight: 600; } .tx-sim small { display: block; color: var(--text-2); font-size: 12px; }
   .tx-sum.ok { color: var(--success); } .tx-sum.bad { color: var(--warning); }
   .saft-ok { color: var(--success); }
   .settings-sub { font-size: 14px; font-weight: 650; margin: 22px 0 4px; }
@@ -6816,8 +6819,15 @@
         .sort((a, b) => a.inv.issue_date.localeCompare(b.inv.issue_date));
       const A = Number(tx.amount);
       const named = open.filter(o => o.score >= 0.5);
-      const exact = named.filter(o => Math.abs(o.open - A) < 0.02);
-      if (exact.length) return { lines: [{ inv: exact[0].inv, amount: A }], confident: exact.length === 1, why: exact.length === 1 ? 'cliente e valor coincidem' : 'cliente e valor coincidem (há outra fatura igual)' };
+      // o recibo do SAF-T diz quando a fatura foi paga: se bate com a data do banco (±5 dias), é essa
+      const payNear = o => o.inv.payment_date && Number(o.inv.amount_paid) > 0 && Math.abs(diffDays(o.inv.payment_date, tx.date)) <= 5;
+      const byPayDate = (a, b) => (payNear(b) - payNear(a)) || a.inv.issue_date.localeCompare(b.inv.issue_date);
+      const exact = named.filter(o => Math.abs(o.open - A) < 0.02).sort(byPayDate);
+      if (exact.length) {
+        const sure = exact.length === 1 || (payNear(exact[0]) && !payNear(exact[1]));
+        return { lines: [{ inv: exact[0].inv, amount: A }], confident: sure,
+          why: exact.length === 1 ? 'cliente e valor coincidem' : sure ? 'cliente, valor e data do recibo coincidem' : `cliente e valor coincidem (há ${exact.length} faturas iguais — confirma qual)` };
+      }
       // várias faturas do mesmo cliente que somam o valor
       const groups = {};
       named.forEach(o => (groups[finNorm(o.inv.customer_name)] = groups[finNorm(o.inv.customer_name)] || []).push(o));
@@ -6829,7 +6839,7 @@
         const o = named.find(o => o.open > A) || named[0];
         return { lines: [{ inv: o.inv, amount: Math.min(A, o.open) }], confident: false, why: o.open > A ? `pagamento parcial — ficam a faltar ${fmtEUR(o.open - A)}` : 'o cliente coincide, o valor não' };
       }
-      const any = open.filter(o => Math.abs(o.open - A) < 0.02).sort((a, b) => Math.abs(diffDays(a.inv.issue_date, tx.date)) - Math.abs(diffDays(b.inv.issue_date, tx.date)));
+      const any = open.filter(o => Math.abs(o.open - A) < 0.02).sort((a, b) => (payNear(b) - payNear(a)) || Math.abs(diffDays(a.inv.issue_date, tx.date)) - Math.abs(diffDays(b.inv.issue_date, tx.date)));
       if (any.length) return { lines: [{ inv: any[0].inv, amount: A }], confident: false, why: `mesmo valor, mas quem paga não é o nome do cliente${any[0].inv.issue_date > tx.date ? ' · pago antes da fatura' : ''}${any.length > 1 ? ` · há ${any.length} faturas com este valor` : ''}` };
       return null;
     }
@@ -6843,8 +6853,9 @@
         ? { action: 'expense', category_id: rule.category_id, project_id: rule.project_id, stage_id: rule.stage_id, reviewed: true, why: 'regra guardada' }
         : { action: rule.kind, tax_type: rule.tax_type || null, reviewed: true, why: 'regra guardada' };
       // despesa já registada à mão (paga pela empresa): mesmo valor, até 6 dias de diferença
+      // (valor exato; até 6 dias de diferença, ou até 30 dias se for ≥ 50 €: às vezes regista-se a despesa pela data da fatura)
       const cands = base.expenses.filter(e => !e.bank_transaction_id && !linkedIds.has(e.id) && isCompanyPaid(e)
-        && Math.abs(Number(e.amount) - A) < 0.01 && Math.abs(diffDays(e.date, tx.date)) <= 6)
+        && Math.abs(Number(e.amount) - A) < 0.01 && Math.abs(diffDays(e.date, tx.date)) <= (A >= 50 ? 30 : 6))
         .sort((a, b) => Math.abs(diffDays(a.date, tx.date)) - Math.abs(diffDays(b.date, tx.date)));
       if (cands.length) return { action: 'link', expense: cands[0], reviewed: true, why: 'despesa já registada' };
       const d = normTxt(tx.description);
@@ -6863,6 +6874,15 @@
       if (/instituto registos|registos e notariado|\birn\b|camara municipal|\bc\.?m\.? /.test(d))
         return { action: 'expense', category_id: catByName(base, 'Impostos e taxas')?.id ?? null, reviewed: false, why: 'taxa — diz de que projeto' };
       return { action: 'expense', category_id: null, reviewed: false, why: 'por classificar' };
+    }
+
+    // Despesas já registadas à mão que podem ser esta saída (valor até 10% diferente, até 30 dias)
+    function similarExpenses(tx, base) {
+      const A = -Number(tx.amount);
+      return base.expenses.filter(e => !e.bank_transaction_id && e.notes !== BANK_MARK && isCompanyPaid(e)
+          && Math.abs(Number(e.amount) - A) <= Math.max(0.01, A * 0.1) && Math.abs(diffDays(e.date, tx.date)) <= 30)
+        .sort((a, b) => Math.abs(Number(a.amount) - A) - Math.abs(Number(b.amount) - A) || Math.abs(diffDays(a.date, tx.date)) - Math.abs(diffDays(b.date, tx.date)))
+        .slice(0, 5);
     }
 
     // Plano de importação (nada é gravado até carregar em Importar)
@@ -7016,8 +7036,18 @@
       // 1) limpar recebimentos antigos
       if (devMode) mb.matches = mb.matches.filter(m => m.transaction_id !== tx.id);
       else { const r = await supabase.from('bank_receipt_matches').delete().eq('transaction_id', tx.id); if (r.error) throw r.error; }
-      // 2) despesa: criar / atualizar / largar
-      if (d.kind === 'expense') {
+      // 2) despesa: juntar a uma já registada / criar / atualizar / largar
+      if (d.kind === 'expense' && d.link_expense_id) {
+        if (txExpense && txExpense.id !== d.link_expense_id) {
+          if (txExpense.notes === BANK_MARK) await dbDelete('expenses', txExpense.id, MOCK_EXPENSES);
+          else await upd('expenses', txExpense.id, { bank_transaction_id: null }, MOCK_EXPENSES);
+        }
+        const patch = { bank_transaction_id: tx.id, needs_review: false };
+        if (d.category_id) patch.category_id = d.category_id;
+        if (d.project_id) { patch.project_id = d.project_id; patch.stage_id = d.stage_id || null; }
+        if (d.use_bank_amount) patch.amount = -Number(tx.amount);
+        await upd('expenses', d.link_expense_id, patch, MOCK_EXPENSES);
+      } else if (d.kind === 'expense') {
         const patch = { category_id: d.category_id || null, project_id: d.project_id || null, stage_id: d.stage_id || null, needs_review: false,
           description: d.description || tx.description };
         if (txExpense) await upd('expenses', txExpense.id, patch, MOCK_EXPENSES);
@@ -7068,6 +7098,7 @@
         .filter(o => o.open > 0.01 || preset[o.i.id])
         .sort((a, b) => (preset[b.i.id] ? 1 : 0) - (preset[a.i.id] ? 1 : 0) || b.score - a.score || b.i.issue_date.localeCompare(a.i.issue_date))
         .slice(0, 60);
+      const similar = credit ? [] : similarExpenses(tx, base);
       const projOpts = base.projects.filter(p => !p.archived_at || p.id === txExpense?.project_id).map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml([p.code, p.name].filter(Boolean).join(' — '))}</option>`).join('');
       const catOpts = base.categories.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
 
@@ -7086,6 +7117,12 @@
           <div class="tx-sum" id="tx-sum"></div>
         </div>
         <div data-pane="expense" hidden>
+          ${similar.length ? `<div class="tx-similar">
+            <div class="field-hint" style="margin:0 0 6px;"><b>Já registaste esta despesa?</b> Se sim, junta-a a este movimento para não contar a dobrar.</div>
+            <label class="tx-sim"><input type="radio" name="tx-link" value="" checked><span>Não — é uma despesa nova</span></label>
+            ${similar.map(e => `<label class="tx-sim"><input type="radio" name="tx-link" value="${escapeHtml(e.id)}"><span><b>${escapeHtml(e.description || 'Despesa')}</b><small>${escapeHtml(fmtDayMonthYear(e.date))} · ${escapeHtml(fmtEUR(e.amount))}${Math.abs(Number(e.amount) + Number(tx.amount)) > 0.01 ? ` · diferença de ${escapeHtml(fmtEUR(Math.abs(Number(e.amount) + Number(tx.amount))))}` : ''}</small></span></label>`).join('')}
+            <label class="check-row" id="tx-use-bank-row" hidden><input type="checkbox" id="tx-use-bank" checked> Acertar o valor da despesa para o do banco (${escapeHtml(fmtEUR(-Number(tx.amount)))})</label>
+          </div>` : ''}
           <div class="form-grid">
             <div class="span2"><label class="field-label">Descrição</label><input type="text" id="tx-desc" class="form-input" value="${escapeHtml(txExpense?.description || tx.description)}"></div>
             <div class="span2"><label class="field-label">Categoria</label><select id="tx-cat" class="form-input"><option value="">Sem categoria</option>${catOpts}</select></div>
@@ -7150,6 +7187,12 @@
         q('#tx-proj').value = txExpense?.project_id || deb?.project_id || '';
         fillStages(q('#tx-proj').value, txExpense?.stage_id || deb?.stage_id || null);
         q('#tx-proj').addEventListener('change', () => fillStages(q('#tx-proj').value, null));
+        document.querySelectorAll('#quick-modal-body [name="tx-link"]').forEach(r => r.addEventListener('change', () => {
+          const id = document.querySelector('#quick-modal-body [name="tx-link"]:checked')?.value;
+          const e = similar.find(x => x.id === id);
+          const row = q('#tx-use-bank-row'); if (row) row.hidden = !e || Math.abs(Number(e.amount) + Number(tx.amount)) <= 0.01;
+          if (e) { q('#tx-cat').value = e.category_id || q('#tx-cat').value; if (e.project_id) { q('#tx-proj').value = e.project_id; fillStages(e.project_id, e.stage_id); } q('#tx-desc').value = e.description || q('#tx-desc').value; }
+        }));
       }
       // recebimento: soma das faturas marcadas
       const sumEl = q('#tx-sum');
@@ -7174,7 +7217,9 @@
           if (Math.abs(diff) >= 0.02) return formError('tx-msg', 'A soma das faturas tem de ser igual ao valor recebido. Ajusta os valores (um pagamento parcial fica abaixo do valor da fatura).');
           d = { kind: 'receipt', lines: ls };
         } else if (kind === 'expense') {
-          d = { kind: 'expense', category_id: valOrNull(q('#tx-cat').value), project_id: valOrNull(q('#tx-proj').value), stage_id: valOrNull(q('#tx-stage').value), description: q('#tx-desc').value.trim(), remember };
+          const link = document.querySelector('#quick-modal-body [name="tx-link"]:checked')?.value || null;
+          d = { kind: 'expense', category_id: valOrNull(q('#tx-cat').value), project_id: valOrNull(q('#tx-proj').value), stage_id: valOrNull(q('#tx-stage').value), description: q('#tx-desc').value.trim(), remember,
+            link_expense_id: link, use_bank_amount: !!(link && q('#tx-use-bank') && !q('#tx-use-bank-row').hidden && q('#tx-use-bank').checked) };
         } else if (kind === 'project_income') {
           if (!q('#tx-pi-proj').value) return formError('tx-msg', 'Escolhe o projeto.');
           d = { kind: 'project_income', project_id: q('#tx-pi-proj').value, stage_id: valOrNull(q('#tx-pi-stage').value) };
@@ -7654,7 +7699,9 @@
             editor = `<button type="button" class="primary-btn tx-save" data-tx-ok="${escapeHtml(t.id)}">Confirmar reembolso</button>`;
           } else {
             const cat = e?.category_id || c.category_id || '', pid = e?.project_id || c.project_id || '', sid = e?.stage_id || c.stage_id || '';
-            sugTxt = cat || pid ? 'Sugestão preenchida — confirma ou muda' : 'Escolhe a categoria e, se for de um projeto, o projeto e a fase';
+            const sim = similarExpenses(t, b)[0];
+            sugTxt = sim ? `Parece a despesa já registada «${sim.description || 'despesa'}» (${fmtEUR(sim.amount)}, ${fmtDayMonth(sim.date)}) — usa Mais opções para as juntar`
+              : cat || pid ? 'Sugestão preenchida — confirma ou muda' : 'Escolhe a categoria e, se for de um projeto, o projeto e a fase';
             editor = `<select class="form-input tx-cat-sel">${catOptions(cat)}</select>
               <select class="form-input tx-proj-sel">${projOptions(pid)}</select>
               <select class="form-input tx-stage-sel"${pid ? '' : ' disabled'}>${stageOptions(pid, sid)}</select>
