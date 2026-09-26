@@ -1003,7 +1003,18 @@
   @media (max-width: 560px) { .list-toolbar { flex-wrap: wrap; } .list-toolbar .search-input { flex-basis: 100%; } }
   .status-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--border); font-size: 14px; }
   .status-row:first-child { border-top: none; padding-top: 2px; }
-  .status-row .type-swatch { cursor: pointer; }
+  .color-btn { width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0; cursor: pointer; padding: 0;
+    background: var(--c); border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--border-strong); }
+  .color-btn:hover { box-shadow: 0 0 0 2px var(--accent); }
+  .color-preview { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; font-size: 15px; }
+  .color-preview .dot { width: 14px; height: 14px; border-radius: 50%; }
+  .color-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+  .color-swatch { aspect-ratio: 1; border-radius: 50%; border: 3px solid var(--surface); background: var(--c); cursor: pointer;
+    box-shadow: 0 0 0 1px var(--border); min-height: 36px; padding: 0; }
+  .color-swatch.on { box-shadow: 0 0 0 2px var(--text); }
+  .color-custom { display: flex; align-items: center; gap: 10px; }
+  .color-custom input[type="color"] { width: 52px; height: 36px; padding: 2px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); cursor: pointer; }
+  .color-custom span { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; color: var(--text-2); }
   .status-row .st-name { flex: 1; min-width: 0; }
   .status-row .st-code { font-size: 11.5px; color: var(--text-3); font-variant-numeric: tabular-nums; }
   .chip-toggle { height: 26px; padding: 0 10px; border-radius: 13px; border: 1px solid var(--border); background: var(--surface); font-size: 12px; font-weight: 600; color: var(--text-3); cursor: pointer; }
@@ -8438,16 +8449,47 @@
       '</div>';
     }
 
+    // ---------- Escolher cor (estados de projeto, tipos de marco) ----------
+    const COLOR_PRESETS = ['#714D79', '#9B6FA3', '#3E6FA8', '#2F8A8A', '#2E7D4F', '#7A8B2E',
+      '#B8842A', '#C9722E', '#C4453D', '#B5507A', '#5A6B7A', '#3A3F47'];
+    const safeColor = c => /^#[0-9a-f]{6}$/i.test(String(c || '')) ? c : '#714D79';
+    const colorButtonHtml = (color, attr) =>
+      `<button type="button" class="color-btn" ${attr} style="--c:${safeColor(color)}" aria-label="Mudar cor" title="Mudar cor"></button>`;
+    function openColorPicker(title, current, onPick) {
+      let chosen = safeColor(current);
+      openQuickModal(title, `
+        <div class="color-preview"><span class="dot" id="cp-dot"></span><b id="cp-name"></b></div>
+        <div class="color-grid" id="cp-grid">${COLOR_PRESETS.map(c => `<button type="button" class="color-swatch" data-c="${c}" style="--c:${c}" aria-label="Cor ${c}"></button>`).join('')}</div>
+        <label class="field-label">Outra cor</label>
+        <div class="color-custom"><input type="color" id="cp-custom" value="${chosen}" aria-label="Escolher outra cor"><span id="cp-hex">${chosen.toUpperCase()}</span></div>
+        <button type="button" class="primary-btn" id="cp-save">Guardar cor</button>
+        <div id="cp-msg" class="form-msg"></div>`);
+      const paint = () => {
+        document.getElementById('cp-dot').style.background = chosen;
+        document.getElementById('cp-name').textContent = title.replace(/^Cor de /, '');
+        document.getElementById('cp-hex').textContent = chosen.toUpperCase();
+        document.getElementById('cp-custom').value = chosen;
+        document.querySelectorAll('#cp-grid [data-c]').forEach(b => b.classList.toggle('on', b.dataset.c.toLowerCase() === chosen.toLowerCase()));
+      };
+      paint();
+      document.getElementById('cp-grid').addEventListener('click', e => { const b = e.target.closest('[data-c]'); if (b) { chosen = b.dataset.c; paint(); } });
+      document.getElementById('cp-custom').addEventListener('input', e => { chosen = safeColor(e.target.value); paint(); });
+      document.getElementById('cp-save').addEventListener('click', async () => {
+        try { await onPick(chosen); closeQuickModal(); showToast('Cor guardada'); }
+        catch (err) { formError('cp-msg', 'Não foi possível guardar: ' + err.message); }
+      });
+    }
+
     // ---------- Estados de projeto (Definições) ----------
     async function loadProjectStatusSettings() {
       const box = document.getElementById('settings-statuses-container');
       box.innerHTML = '<div class="detail-loading">A carregar...</div>';
       const list = await loadProjectStatuses(true);
       box.innerHTML = `
-        <div class="field-hint" style="margin:0 0 10px;">Toca no nome para o mudar. Os projetos com um estado <b>fechado</b> saem da lista de projetos ativos.</div>
+        <div class="field-hint" style="margin:0 0 10px;">Toca na cor ou no nome para os mudar. Os projetos com um estado <b>fechado</b> saem da lista de projetos ativos.</div>
         ${list.map((s, i) => `
           <div class="status-row" data-status-id="${escapeHtml(s.id)}">
-            <label class="type-swatch" style="background:${escapeHtml(s.color)}" title="Mudar cor"><input type="color" value="${escapeHtml(s.color)}" data-st-color hidden></label>
+            ${colorButtonHtml(s.color, 'data-st-color')}
             <span class="st-name"><span class="editable-value" data-st-rename>${escapeHtml(s.name)}</span></span>
             <button type="button" class="chip-toggle${s.is_closed ? ' on' : ''}" data-st-closed title="Fechado: sai da lista de projetos ativos">${s.is_closed ? 'Fechado' : 'Ativo'}</button>
             <span class="order-btns">
@@ -8470,9 +8512,13 @@
       };
       const rowOf = el => el.closest('[data-status-id]').dataset.statusId;
 
-      box.querySelectorAll('[data-st-color]').forEach(inp => inp.addEventListener('change', async () => {
-        try { await saveStatus(rowOf(inp), { color: inp.value }); inp.parentElement.style.background = inp.value; await loadProjectStatuses(true); }
-        catch (err) { showToast('Não foi possível mudar a cor: ' + err.message, { type: 'error' }); }
+      box.querySelectorAll('[data-st-color]').forEach(btn => btn.addEventListener('click', () => {
+        const st = byId(rowOf(btn));
+        openColorPicker(`Cor de ${st.name}`, st.color, async (c) => {
+          await saveStatus(st.id, { color: c });
+          await loadProjectStatuses(true);
+          loadProjectStatusSettings();
+        });
       }));
       box.querySelectorAll('[data-st-closed]').forEach(btn => btn.addEventListener('click', async () => {
         const s = byId(rowOf(btn));
@@ -8553,7 +8599,7 @@
             ? '<div class="gantt-empty">Sem tipos criados.</div>'
             : types.map(t => `
               <div class="type-row" data-type-id="${escapeHtml(t.id)}">
-                <span class="type-swatch" style="background:${escapeHtml(t.color)}"></span>
+                ${colorButtonHtml(t.color, `data-mt-color="${escapeHtml(t.id)}"`)}
                 <span class="type-name">${escapeHtml(t.name)}</span>
                 <button type="button" class="text-btn danger" data-del-type="${escapeHtml(t.id)}">Eliminar</button>
               </div>`).join('')) +
@@ -8563,6 +8609,14 @@
              <button id="add-mtype-btn" class="secondary-btn" style="margin-top:0; width:auto; padding:11px 18px;">Adicionar</button>
            </div>`;
 
+        box.querySelectorAll('[data-mt-color]').forEach(btn => btn.addEventListener('click', () => {
+          const t = types.find(x => x.id === btn.dataset.mtColor);
+          openColorPicker(`Cor de ${t.name}`, t.color, async (c) => {
+            if (devMode) { const m = MOCK_MILESTONE_TYPES.find(x => x.id === t.id); if (m) m.color = c; }
+            else { const r = await supabase.from('milestone_types').update({ color: c }).eq('id', t.id); if (r.error) throw r.error; }
+            loadMilestoneTypeSettings();
+          });
+        }));
         box.querySelectorAll('[data-del-type]').forEach(btn => {
           btn.addEventListener('click', async () => {
             const row = btn.closest('.type-row');
