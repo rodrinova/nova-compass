@@ -1031,7 +1031,22 @@
   .flow-col small { font-size: 10.5px; color: var(--text-3); }
   .flow-legend { display: flex; gap: 14px; font-size: 12px; color: var(--text-3); margin-top: 8px; }
   .flow-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
-  .tx-row { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto auto; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--border); }
+  .tx-row { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; align-items: center; gap: 6px 10px; padding: 12px 0; border-top: 1px solid var(--border); }
+  .tx-edit { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .tx-edit .form-input { height: 36px; width: auto; min-width: 0; flex: 1 1 160px; font-size: 13px; padding-top: 0; padding-bottom: 0; }
+  .tx-edit.credit .form-input { flex-basis: 320px; }
+  .tx-edit .primary-btn.tx-save { width: auto; margin: 0; min-height: 36px; padding: 0 16px; font-size: 13px; }
+  .tx-rem { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--text-2); cursor: pointer; white-space: nowrap; }
+  .tx-note { font-size: 12.5px; color: var(--text-2); }
+  .tx-months { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .tx-month { border: 1px solid var(--border); background: var(--surface); border-radius: 999px; padding: 5px 12px; font: inherit; font-size: 12.5px; cursor: pointer; color: var(--text-2); }
+  .tx-month.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .tx-line { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 6px; border-top: 1px solid var(--border); cursor: pointer; border-radius: 6px; }
+  .tx-line:hover { background: var(--surface-2); }
+  .tx-tag { display: inline-block !important; margin-top: 3px; padding: 1px 8px; border-radius: 999px; font-size: 11.5px !important; background: var(--surface-2); }
+  .tx-tag.todo { background: var(--warning-soft); color: var(--warning) !important; font-weight: 650; }
+  .tx-tag.in { background: var(--success-soft); color: var(--success) !important; }
+  .tx-tag.tax { background: var(--danger-soft); color: var(--danger) !important; }
   .tx-row:first-child { border-top: none; }
   .tx-date { font-size: 12.5px; color: var(--text-3); font-variant-numeric: tabular-nums; }
   .tx-main { min-width: 0; }
@@ -1042,8 +1057,9 @@
   .tx-actions { display: flex; gap: 10px; align-items: center; }
   .tx-actions .secondary-btn { width: auto; margin: 0; padding: 0 12px; min-height: 34px; font-size: 13px; }
   @media (max-width: 599px) {
-    .tx-row { grid-template-columns: 44px minmax(0, 1fr) auto; }
-    .tx-actions { grid-column: 2 / -1; justify-content: flex-end; }
+    .tx-row, .tx-line { grid-template-columns: 40px minmax(0, 1fr) auto; }
+    .tx-edit { grid-column: 1 / -1; }
+    .tx-edit .form-input { flex-basis: 100%; }
   }
   .tx-head { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 10px; align-items: baseline; margin-bottom: 8px; }
   .tx-head span { font-size: 12.5px; color: var(--text-3); }
@@ -7018,7 +7034,12 @@
       if (d.kind === 'internal' && d.reimburse?.length) {
         for (const e of d.reimburse) await upd('expenses', e.id, { reimbursed: true, reimbursed_at: tx.date + 'T12:00:00Z' }, MOCK_EXPENSES);
       }
-      await upd('bank_transactions', tx.id, { kind: d.kind, tax_type: d.kind === 'tax' ? d.tax_type : null, reviewed: true, note: d.note ?? tx.note ?? null }, devMode ? mb.txs : undefined);
+      // projeto/fase do movimento: o escolhido, ou (recebimento) o da primeira fatura
+      const firstInv = d.kind === 'receipt' ? base.invoices.find(i => i.id === d.lines[0]?.invoice_id) : null;
+      const project_id = d.project_id || firstInv?.project_id || null;
+      const stage_id = project_id ? (d.stage_id || (firstInv && firstInv.project_id === project_id ? firstInv.stage_id : null) || null) : null;
+      await upd('bank_transactions', tx.id, { kind: d.kind, tax_type: d.kind === 'tax' ? d.tax_type : null, reviewed: true, note: d.note ?? tx.note ?? null,
+        ...(base.txHasProject !== false ? { project_id, stage_id } : {}) }, devMode ? mb.txs : undefined);
       if (d.remember && ['expense', 'tax', 'internal', 'ignored'].includes(d.kind)) await saveBankRule(tx, d);
     }
 
@@ -7029,9 +7050,9 @@
       const sug = credit ? suggestReceipt(tx, base) : null;
       const deb = credit ? null : classifyDebit(tx, base);
       const kinds = credit
-        ? [['receipt', 'Pagamento de faturas'], ['internal', 'Entrada interna / capital'], ['ignored', 'Ignorar']]
+        ? [['receipt', 'Pagamento de faturas'], ['project_income', 'Recebimento sem fatura'], ['internal', 'Entrada interna / capital'], ['ignored', 'Ignorar']]
         : [['expense', 'Despesa'], ['tax', 'Imposto / Estado'], ...(deb?.action === 'reimb' ? [['reimb', 'Reembolso']] : []), ['internal', 'Transferência interna'], ['ignored', 'Ignorar']];
-      let kind = credit ? (tx.kind === 'internal' || tx.kind === 'ignored' ? tx.kind : 'receipt')
+      let kind = credit ? (['internal', 'ignored', 'project_income'].includes(tx.kind) ? tx.kind : 'receipt')
         : (tx.kind === 'unclassified' && deb?.action === 'reimb') ? 'reimb' : (tx.kind === 'unclassified' ? 'expense' : tx.kind);
       if (!kinds.some(k => k[0] === kind)) kind = kinds[0][0];
 
@@ -7054,6 +7075,7 @@
         <div class="segmented tx-kinds" id="tx-kinds">${kinds.map(([k, l]) => `<button type="button" data-kind="${k}">${l}</button>`).join('')}</div>
         <div data-pane="receipt" hidden>
           <div class="field-hint" style="margin:0 0 6px;">Marca a(s) fatura(s) que este valor paga (com IVA). Um pagamento parcial pode ficar abaixo do valor da fatura.</div>
+          <select id="tx-inv-proj" class="form-input" style="margin-bottom:8px;"><option value="">Faturas de todos os projetos</option>${projOpts}</select>
           <div class="tx-inv-list">${openInv.length ? openInv.map(o => `
             <label class="tx-inv"><input type="checkbox" data-inv="${escapeHtml(o.i.id)}"${preset[o.i.id] ? ' checked' : ''}>
               <span><b>${escapeHtml(invLabel(o.i))}</b><small>${escapeHtml(fmtDayMonthYear(o.i.issue_date))} · em aberto ${escapeHtml(fmtEUR(o.open))}</small></span>
@@ -7067,6 +7089,13 @@
             <div class="span2"><label class="field-label">Categoria</label><select id="tx-cat" class="form-input"><option value="">Sem categoria</option>${catOpts}</select></div>
             <div><label class="field-label">Projeto</label><select id="tx-proj" class="form-input"><option value="">Sem projeto (despesa da empresa)</option>${projOpts}</select></div>
             <div><label class="field-label">Fase</label><select id="tx-stage" class="form-input"><option value="">Sem fase</option></select></div>
+          </div>
+        </div>
+        <div data-pane="project_income" hidden>
+          <div class="field-hint" style="margin:0 0 6px;">Dinheiro de um projeto que não corresponde a uma fatura da app (ex.: adiantamento). Não conta como faturação.</div>
+          <div class="form-grid">
+            <div><label class="field-label">Projeto</label><select id="tx-pi-proj" class="form-input"><option value="">Escolhe o projeto</option>${projOpts}</select></div>
+            <div><label class="field-label">Fase</label><select id="tx-pi-stage" class="form-input"><option value="">Sem fase</option></select></div>
           </div>
         </div>
         <div data-pane="tax" hidden>
@@ -7097,6 +7126,23 @@
         const list = base.stages.filter(s => s.project_id === pid).sort((a, b) => (a.stage_order ?? 0) - (b.stage_order ?? 0));
         q('#tx-stage').innerHTML = '<option value="">Sem fase</option>' + list.map(s => `<option value="${escapeHtml(s.id)}"${s.id === sel ? ' selected' : ''}>${escapeHtml(phaseName(s))}</option>`).join('');
       };
+      if (credit) {
+        const fillPi = (pid, sel) => {
+          const list = base.stages.filter(s => s.project_id === pid).sort((a, b) => (a.stage_order ?? 0) - (b.stage_order ?? 0));
+          q('#tx-pi-stage').innerHTML = '<option value="">Sem fase</option>' + list.map(s => `<option value="${escapeHtml(s.id)}"${s.id === sel ? ' selected' : ''}>${escapeHtml(phaseName(s))}</option>`).join('');
+        };
+        q('#tx-pi-proj').value = tx.project_id || '';
+        fillPi(q('#tx-pi-proj').value, tx.stage_id);
+        q('#tx-pi-proj').addEventListener('change', () => fillPi(q('#tx-pi-proj').value, null));
+        // filtrar as faturas por projeto (as marcadas ficam sempre visíveis)
+        q('#tx-inv-proj').addEventListener('change', () => {
+          const pid = q('#tx-inv-proj').value;
+          document.querySelectorAll('#quick-modal-body .tx-inv').forEach(lb => {
+            const inv = openInv.find(o => o.i.id === lb.querySelector('[data-inv]').dataset.inv)?.i;
+            lb.hidden = !!pid && inv?.project_id !== pid && !lb.querySelector('[data-inv]').checked;
+          });
+        });
+      }
       if (!credit) {
         q('#tx-cat').value = txExpense?.category_id || deb?.category_id || '';
         q('#tx-proj').value = txExpense?.project_id || deb?.project_id || '';
@@ -7127,6 +7173,9 @@
           d = { kind: 'receipt', lines: ls };
         } else if (kind === 'expense') {
           d = { kind: 'expense', category_id: valOrNull(q('#tx-cat').value), project_id: valOrNull(q('#tx-proj').value), stage_id: valOrNull(q('#tx-stage').value), description: q('#tx-desc').value.trim(), remember };
+        } else if (kind === 'project_income') {
+          if (!q('#tx-pi-proj').value) return formError('tx-msg', 'Escolhe o projeto.');
+          d = { kind: 'project_income', project_id: q('#tx-pi-proj').value, stage_id: valOrNull(q('#tx-pi-stage').value) };
         } else if (kind === 'tax') d = { kind: 'tax', tax_type: q('#tx-tax').value, remember };
         else if (kind === 'reimb') d = { kind: 'internal', reimburse: deb.expenses, note: `Reembolso a ${deb.member.name}` };
         else d = { kind, remember };
@@ -7176,6 +7225,7 @@
       : unit === 'h' ? Math.round(v).toLocaleString('pt-PT') + ' h' : unit === 'days' ? Math.round(v) + ' dias'
       : unit === 'months' ? v.toLocaleString('pt-PT', { maximumFractionDigits: 1 }) + ' meses' : Math.round(v).toLocaleString('pt-PT');
     let finYear = new Date().getFullYear();
+    let finTxMonth = null;
     let finBase = null;
 
     function openFinanceModule() {
@@ -7564,26 +7614,82 @@
               <small>${escapeHtml(GANTT_MONTHS[mo - 1])}</small></div>`;
         }).join('')}</div><div class="flow-legend"><span><i class="in"></i>entradas</span><span><i class="out"></i>saídas</span></div>` : '<div class="gantt-empty">Importa os extratos para ver as entradas e saídas.</div>';
 
-      // --- Movimentos por rever ---
+      // --- Movimentos por rever: associar ali mesmo (categoria, projeto, fase / fatura / imposto) ---
       const pending = b.txs.filter(t => !t.reviewed).sort((a, c) => c.date.localeCompare(a.date));
       const expOf = t => b.expenses.find(e => e.bank_transaction_id === t.id);
+      const projName = id => { const p = b.projects.find(x => x.id === id); return p ? [p.code, p.name].filter(Boolean).join(' — ') : ''; };
+      const projOptions = sel => '<option value="">Sem projeto</option>' + b.projects.filter(p => !p.archived_at || p.id === sel)
+        .map(p => `<option value="${escapeHtml(p.id)}"${p.id === sel ? ' selected' : ''}>${escapeHtml([p.code, p.name].filter(Boolean).join(' — '))}</option>`).join('');
+      const stageOptions = (pid, sel) => '<option value="">Sem fase</option>' + b.stages.filter(s => s.project_id === pid).sort((a, c) => (a.stage_order ?? 0) - (c.stage_order ?? 0))
+        .map(s => `<option value="${escapeHtml(s.id)}"${s.id === sel ? ' selected' : ''}>${escapeHtml(phaseName(s))}</option>`).join('');
+      const catOptions = sel => '<option value="">Categoria…</option>' + b.categories.map(c => `<option value="${escapeHtml(c.id)}"${c.id === sel ? ' selected' : ''}>${escapeHtml(c.name)}</option>`).join('');
+      const rateF = Number(b.settings.vat_rate) || 23;
+      const usedAll = {};
+      b.matches.filter(m => m.confirmed).forEach(m => { usedAll[m.invoice_id] = (usedAll[m.invoice_id] || 0) + Number(m.amount); });
+      const invOptions = (t, sugId) => {
+        const list = b.invoices.filter(i => i.status !== 'cancelled' && Number(i.amount) > 0 && i.issue_date <= t.date)
+          .map(i => ({ i, open: Math.round((invGross(i, rateF) - (usedAll[i.id] || 0)) * 100) / 100, sc: nameScore(i.customer_name || '', t.description) }))
+          .filter(o => o.open > 0.01)
+          .sort((a, c) => (c.i.id === sugId) - (a.i.id === sugId) || c.sc - a.sc || c.i.issue_date.localeCompare(a.i.issue_date)).slice(0, 80);
+        return '<option value="">Escolhe a fatura…</option>' + list.map(o => `<option value="${escapeHtml(o.i.id)}" data-open="${o.open}"${o.i.id === sugId ? ' selected' : ''}>${escapeHtml(invLabel(o.i))} · em aberto ${escapeHtml(fmtEUR(o.open))}</option>`).join('');
+      };
       const pendingHtml = pending.map(t => {
         const credit = Number(t.amount) > 0;
-        let sugTxt = '', quick = false;
-        if (credit) { const s = suggestReceipt(t, b); if (s) { sugTxt = `${s.lines.map(l => invLabel(l.inv)).join(', ')} — ${s.why}`; quick = true; } else sugTxt = 'Não encontrei a fatura — escolhe à mão'; }
-        else {
+        let sugTxt = '', editor = '';
+        if (credit) {
+          const sg = suggestReceipt(t, b);
+          sugTxt = sg ? `Sugestão: ${sg.lines.map(l => invLabel(l.inv)).join(', ')} — ${sg.why}` : 'Não encontrei a fatura — escolhe-a aqui, ou em Mais opções (várias faturas, recebimento sem fatura…)';
+          editor = sg && sg.lines.length > 1
+            ? `<span class="tx-note">${sg.lines.length} faturas</span><button type="button" class="primary-btn tx-save" data-tx-ok="${escapeHtml(t.id)}">Confirmar</button>`
+            : `<select class="form-input tx-inv-sel">${invOptions(t, sg?.lines[0]?.inv.id)}</select><button type="button" class="primary-btn tx-save" data-tx-save="${escapeHtml(t.id)}">Guardar</button>`;
+        } else if (t.kind === 'tax') {
+          sugTxt = 'Pagamento ao Estado — diz qual é';
+          editor = `<select class="form-input tx-tax-sel">${TAX_TYPES.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select><label class="tx-rem"><input type="checkbox" class="tx-rem-cb"> lembrar</label><button type="button" class="primary-btn tx-save" data-tx-save="${escapeHtml(t.id)}">Guardar</button>`;
+        } else {
           const c = classifyDebit(t, b), e = expOf(t);
-          if (t.kind === 'tax') sugTxt = 'Pagamento ao Estado — diz se é IVA, IRC, Segurança Social…';
-          else if (c.action === 'reimb') { sugTxt = c.why; quick = true; }
-          else { const cat = b.categories.find(x => x.id === (e?.category_id || c.category_id)); sugTxt = cat ? `${cat.name} — confirma ou escolhe o projeto` : 'Escolhe a categoria (e o projeto/fase, se for o caso)'; quick = !!cat; }
+          if (c.action === 'reimb') {
+            sugTxt = `Sugestão: ${c.why} (${c.expenses.map(x => x.description || 'despesa').join(', ')})`;
+            editor = `<button type="button" class="primary-btn tx-save" data-tx-ok="${escapeHtml(t.id)}">Confirmar reembolso</button>`;
+          } else {
+            const cat = e?.category_id || c.category_id || '', pid = e?.project_id || c.project_id || '', sid = e?.stage_id || c.stage_id || '';
+            sugTxt = cat || pid ? 'Sugestão preenchida — confirma ou muda' : 'Escolhe a categoria e, se for de um projeto, o projeto e a fase';
+            editor = `<select class="form-input tx-cat-sel">${catOptions(cat)}</select>
+              <select class="form-input tx-proj-sel">${projOptions(pid)}</select>
+              <select class="form-input tx-stage-sel"${pid ? '' : ' disabled'}>${stageOptions(pid, sid)}</select>
+              <label class="tx-rem" title="Próximos movimentos com este descritivo ficam assim"><input type="checkbox" class="tx-rem-cb"> lembrar</label>
+              <button type="button" class="primary-btn tx-save" data-tx-save="${escapeHtml(t.id)}">Guardar</button>`;
+          }
         }
         return `<div class="tx-row" data-tx="${escapeHtml(t.id)}">
             <span class="tx-date">${escapeHtml(fmtDayMonth(t.date))}</span>
             <span class="tx-main"><b>${escapeHtml(t.description)}</b><small>${escapeHtml(sugTxt)}</small></span>
             <span class="tx-amt ${credit ? 'in' : 'out'}">${credit ? '+' : '−'}${escapeHtml(fmtEUR(Math.abs(t.amount)))}</span>
-            <span class="tx-actions">${quick ? `<button type="button" class="text-btn" data-tx-ok="${escapeHtml(t.id)}">Confirmar</button>` : ''}<button type="button" class="secondary-btn tx-open" data-tx-open="${escapeHtml(t.id)}">${quick ? 'Alterar' : 'Classificar'}</button></span>
+            <div class="tx-edit ${credit ? 'credit' : t.kind === 'tax' ? 'tax' : 'debit'}">${editor}<button type="button" class="text-btn" data-tx-open="${escapeHtml(t.id)}">Mais opções</button></div>
           </div>`;
       }).join('');
+
+      // --- Todos os movimentos (para corrigir qualquer um) ---
+      const txMonths = [...new Set(b.txs.map(t => t.date.slice(0, 7)))].sort().reverse();
+      if (!finTxMonth || !txMonths.includes(finTxMonth)) finTxMonth = txMonths[0] || null;
+      const txLabel = t => {
+        const e = expOf(t);
+        const where = [projName(e?.project_id || t.project_id), (() => { const st = b.stages.find(s => s.id === (e?.stage_id || t.stage_id)); return st ? phaseName(st) : ''; })()].filter(Boolean).join(' · ');
+        if (!t.reviewed) return { cls: 'todo', text: 'Por rever' };
+        if (t.kind === 'receipt') { const inv = b.matches.filter(m => m.transaction_id === t.id).map(m => b.invoices.find(i => i.id === m.invoice_id)).filter(Boolean); return { cls: 'in', text: 'Recebimento · ' + (inv.map(i => i.invoice_number || i.external_ref).join(', ') || 'faturas') + (where ? ' · ' + where : '') }; }
+        if (t.kind === 'project_income') return { cls: 'in', text: 'Recebimento sem fatura' + (where ? ' · ' + where : '') };
+        if (t.kind === 'expense') return { cls: 'exp', text: [(b.categories.find(c => c.id === e?.category_id)?.name || 'Despesa sem categoria'), where].filter(Boolean).join(' · ') };
+        if (t.kind === 'tax') return { cls: 'tax', text: 'Imposto · ' + (TAX_TYPES.find(x => x[0] === t.tax_type)?.[1] || '?') };
+        if (t.kind === 'internal') return { cls: 'int', text: t.note || 'Interno' };
+        return { cls: 'int', text: 'Ignorado' };
+      };
+      const monthTx = b.txs.filter(t => finTxMonth && t.date.startsWith(finTxMonth)).sort((a, c) => c.date.localeCompare(a.date));
+      const allTxHtml = txMonths.length ? `
+        <div class="tx-months">${txMonths.slice(0, 18).map(k => { const [yy, mo] = k.split('-').map(Number); return `<button type="button" class="tx-month${k === finTxMonth ? ' on' : ''}" data-tx-month="${k}">${GANTT_MONTHS[mo - 1]} ${String(yy).slice(2)}</button>`; }).join('')}</div>
+        ${monthTx.map(t => { const l = txLabel(t); const credit = Number(t.amount) > 0; return `<div class="tx-line" data-tx-open="${escapeHtml(t.id)}">
+            <span class="tx-date">${escapeHtml(fmtDayMonth(t.date))}</span>
+            <span class="tx-main"><b>${escapeHtml(t.description)}</b><small class="tx-tag ${l.cls}">${escapeHtml(l.text)}</small></span>
+            <span class="tx-amt ${credit ? 'in' : 'out'}">${credit ? '+' : '−'}${escapeHtml(fmtEUR(Math.abs(t.amount)))}</span>
+          </div>`; }).join('')}` : '<div class="gantt-empty">Sem movimentos importados.</div>';
 
       const uncl = b.expenses.filter(e => e.needs_review).length;
       box.innerHTML = `
@@ -7660,6 +7766,9 @@
         <div class="section-label" id="fin-review">Movimentos do banco por rever</div>
         <div class="gantt-wrap">${pending.length ? pendingHtml : '<div class="gantt-empty">Está tudo revisto. 👌</div>'}</div>
 
+        <div class="section-label">Todos os movimentos</div>
+        <div class="gantt-wrap">${allTxHtml}</div>
+
         <div class="section-label">Extratos importados</div>
         <div class="gantt-wrap">${b.statements.length ? b.statements.slice(0, 24).map(s => `
             <div class="invoice-row"><span>${escapeHtml(s.bank || 'Extrato')} · ${escapeHtml([s.period_from, s.period_to].filter(Boolean).map(fmtDayMonthYear).join(' → '))}<br><small>${escapeHtml(s.file_name || '')} · ${s.n_transactions} movimentos</small></span><span class="amount">${escapeHtml(fmtEUR(s.closing_balance))}</span></div>`).join('')
@@ -7680,6 +7789,31 @@
       box.querySelectorAll('[data-rec-yes]').forEach(bt => bt.addEventListener('click', () => setRec(bt.dataset.recYes, 'yes')));
       box.querySelectorAll('[data-rec-no]').forEach(bt => bt.addEventListener('click', () => setRec(bt.dataset.recNo, 'no')));
       box.querySelectorAll('[data-tx-open]').forEach(bt => bt.addEventListener('click', () => openTxReview(b.txs.find(t => t.id === bt.dataset.txOpen), b, loadFinance)));
+      box.querySelectorAll('[data-tx-month]').forEach(bt => bt.addEventListener('click', () => { finTxMonth = bt.dataset.txMonth; renderFinance(); }));
+      box.querySelectorAll('.tx-row').forEach(row => {
+        const ps = row.querySelector('.tx-proj-sel'), ss = row.querySelector('.tx-stage-sel');
+        ps?.addEventListener('change', () => { ss.innerHTML = stageOptions(ps.value, null); ss.disabled = !ps.value; });
+      });
+      box.querySelectorAll('[data-tx-save]').forEach(bt => bt.addEventListener('click', async () => {
+        const row = bt.closest('.tx-row'), t = b.txs.find(x => x.id === bt.dataset.txSave);
+        const remember = !!row.querySelector('.tx-rem-cb')?.checked;
+        let d;
+        if (Number(t.amount) > 0) {
+          const sel = row.querySelector('.tx-inv-sel'), opt = sel.selectedOptions[0];
+          if (!sel.value) { showToast('Escolhe a fatura (ou usa Mais opções).', { type: 'error' }); sel.focus(); return; }
+          const open = Number(opt.dataset.open);
+          if (Number(t.amount) > open + 0.02) { showToast('O valor recebido é maior do que o que falta pagar desta fatura: usa Mais opções para juntar várias faturas.', { type: 'error', ms: 6000 }); return; }
+          d = { kind: 'receipt', lines: [{ invoice_id: sel.value, amount: Number(t.amount) }] };
+        } else if (t.kind === 'tax') d = { kind: 'tax', tax_type: row.querySelector('.tx-tax-sel').value, remember };
+        else {
+          const cat = row.querySelector('.tx-cat-sel').value;
+          if (!cat) { showToast('Escolhe a categoria.', { type: 'error' }); row.querySelector('.tx-cat-sel').focus(); return; }
+          d = { kind: 'expense', category_id: cat, project_id: valOrNull(row.querySelector('.tx-proj-sel').value), stage_id: valOrNull(row.querySelector('.tx-stage-sel').value), description: expOf(t)?.description || t.description, remember };
+        }
+        bt.disabled = true; bt.textContent = 'A guardar…';
+        try { await applyTxDecision(t, b, d); showToast('Guardado' + (remember ? ' · regra criada para os próximos' : '')); loadFinance(); }
+        catch (err) { bt.disabled = false; bt.textContent = 'Guardar'; showToast('Não foi possível guardar: ' + err.message, { type: 'error' }); }
+      }));
       box.querySelectorAll('[data-tx-ok]').forEach(bt => bt.addEventListener('click', async () => {
         bt.disabled = true;
         try { await acceptTxSuggestion(b.txs.find(t => t.id === bt.dataset.txOk), b); showToast('Confirmado'); loadFinance(); }
