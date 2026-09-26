@@ -111,3 +111,9 @@ begin
     execute format('revoke all on %I from anon', t);
   end loop;
 end $$;
+
+-- Associar qualquer movimento a um projeto e fase (ex.: recebimento sem fatura, imposto de um projeto)
+alter table bank_transactions add column if not exists project_id uuid references projects(id) on delete set null;
+alter table bank_transactions add column if not exists stage_id uuid references project_stages(id) on delete set null;
+alter table bank_transactions drop constraint if exists bank_transactions_kind_check;
+alter table bank_transactions add constraint bank_transactions_kind_check check (kind in ('unclassified', 'expense', 'receipt', 'project_income', 'tax', 'internal', 'ignored'));
