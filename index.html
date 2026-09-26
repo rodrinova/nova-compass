@@ -802,6 +802,22 @@
   /* ---------- Pessoas nas fases (ficha do projeto) ---------- */
   .assign-cell { display: inline-flex; align-items: center; gap: 3px; background: none; border: none; cursor: pointer; padding: 2px; border-radius: 6px; }
   .assign-cell:hover { background: var(--surface-2); }
+  .assign-na { color: var(--text-3); padding: 2px 6px; }
+  .assign-pop { position: fixed; z-index: 45; width: 250px; max-height: 320px; display: flex; flex-direction: column;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-pop); overflow: hidden; }
+  .assign-pop.sheet { left: 8px !important; right: 8px; bottom: calc(var(--tab-h, 0px) + var(--safe-b, 0px) + 8px); top: auto !important; width: auto; max-height: 60vh; }
+  .assign-pop-head { padding: 10px 12px 8px; border-bottom: 1px solid var(--border); }
+  .assign-pop-head b { display: block; font-size: 13.5px; font-weight: 650; }
+  .assign-pop-head span { font-size: 12px; color: var(--text-3); }
+  .assign-pop-list { overflow-y: auto; padding: 4px; }
+  .assign-opt { display: flex; align-items: center; gap: 10px; width: 100%; border: none; background: none; text-align: left;
+    padding: 8px 8px; border-radius: 6px; font: inherit; font-size: 14px; color: var(--text); cursor: pointer; min-height: 40px; }
+  .assign-opt:hover, .assign-opt:focus-visible { background: var(--surface-2); outline: none; }
+  .assign-opt-name { flex: 1; min-width: 0; } .assign-opt-name small { color: var(--text-3); }
+  .assign-check { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--border-strong); color: transparent;
+    display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; }
+  .assign-opt.on .assign-check { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .assign-opt:disabled { opacity: .6; }
   .assign-cell .assign-empty { font-size: 12.5px; font-weight: 600; color: var(--accent); }
 
   /* ---------- Pesquisa e paleta ⌘K ---------- */
@@ -2565,7 +2581,7 @@
         stages = res.data || [];
       }
       stageSelect.innerHTML = '<option value="">Seleciona a fase</option>' +
-        stages.map(s => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.stage_types?.name ?? 'Fase')}</option>`).join('');
+        stages.filter(s => !isAwardStage(s)).map(s => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.stage_types?.name ?? 'Fase')}</option>`).join('');
     }
 
     function resetHorasForm() {
@@ -3600,7 +3616,7 @@
                       <td>${stageStatusLabel(s)}</td>
                       <td class="nowrap${isStageLate(s) ? ' late-text' : ''}">${s.delivery_date ? 'Entregue ' + escapeHtml(fmtDayMonth(s.delivery_date)) : s.plan_end ? escapeHtml(fmtDayMonth(s.plan_end)) + (s.is_deadline_fixed && s.deadline_override && s.plan_auto_end && s.plan_auto_end !== s.plan_end ? ` <span class="lt-manual" title="Alterado à mão · original ${escapeHtml(fmtDayMonth(s.plan_auto_end))}">✎</span>` : '') : '—'}</td>
                       <td class="ck-count">${escapeHtml(ckCountText(ckCounts[s.id]) || '—')}</td>
-                      ${assignSupport ? `<td><button type="button" class="assign-cell" data-assign-stage="${escapeHtml(s.id)}" title="Escolher pessoas">${(stageAssignees[s.id] || []).length ? avatarsHtml(stageAssignees[s.id], ataMemberNames, meId) : '<span class="assign-empty">+ Atribuir</span>'}</button></td>` : ''}
+                      ${assignSupport ? `<td>${isAwardStage(s) ? '<span class="assign-na" title="A adjudicação não se atribui">—</span>' : `<button type="button" class="assign-cell" data-assign-stage="${escapeHtml(s.id)}" title="Escolher pessoas" aria-haspopup="true">${(stageAssignees[s.id] || []).length ? avatarsHtml(stageAssignees[s.id], ataMemberNames, meId) : '<span class="assign-empty">+ Atribuir</span>'}</button>`}</td>` : ''}
                       <td class="col-value">${fmtEUR(budgeted)}</td>
                       <td class="col-value">${fmtHours(horas)}</td>
                       <td>${invoiceCell}</td>
@@ -3884,7 +3900,12 @@
         detailBody.querySelectorAll('[data-assign-stage]').forEach(btn => btn.addEventListener('click', (ev) => {
           ev.stopPropagation();
           const st = stages.find(s => String(s.id) === btn.dataset.assignStage);
-          if (st) openAssignModal(st, stageAssignees[st.id] || [], () => openDetail(project.id ?? projectId));
+          if (!st) return;
+          const ids = stageAssignees[st.id] = stageAssignees[st.id] || [];
+          // Cada toque grava logo e atualiza só esta célula (sem recarregar a ficha)
+          openAssignPopover(btn, st, ids, () => {
+            btn.innerHTML = ids.length ? avatarsHtml(ids, ataMemberNames, meId) : '<span class="assign-empty">+ Atribuir</span>';
+          });
         }));
         document.querySelectorAll('#detail-body .ata-entry').forEach(row => {
           row.addEventListener('click', () => row.classList.toggle('expanded'));
@@ -5209,6 +5230,8 @@
       }
       return key;
     }
+    // A adjudicação é o arranque do projeto: não se atribui a ninguém nem recebe horas
+    const isAwardStage = s => /adjudica/i.test(s?.stage_types?.name || '');
     const isOffPlanStage = s => /assist[eê]ncia|adjudica/i.test(s.stage_types?.name || '');
     function computeProjectPlan(project, stages, breaks = []) {
       let cursor = project?.awarding_date || null;
@@ -5324,7 +5347,90 @@
       }).join('');
     }
 
-    // Atribuir pessoas a uma fase (ficha do projeto)
+    // Atribuir pessoas a uma fase — lista junto à célula; cada toque grava logo
+    let assignPop = null;
+    function closeAssignPopover() {
+      if (!assignPop) return;
+      assignPop.el.remove();
+      document.removeEventListener('mousedown', assignPop.outside, true);
+      document.removeEventListener('keydown', assignPop.esc, true);
+      window.removeEventListener('resize', assignPop.close);
+      window.removeEventListener('scroll', assignPop.onScroll, true);
+      assignPop = null;
+    }
+    async function toggleStageAssignee(stageId, memberId, on) {
+      if (devMode) {
+        const l = mockStageAssignees[stageId] = mockStageAssignees[stageId] || [];
+        if (on && !l.includes(memberId)) l.push(memberId);
+        if (!on) mockStageAssignees[stageId] = l.filter(x => x !== memberId);
+        return;
+      }
+      const r = on
+        ? await supabase.from('stage_assignees').upsert({ stage_id: stageId, member_id: memberId }, { onConflict: 'stage_id,member_id', ignoreDuplicates: true })
+        : await supabase.from('stage_assignees').delete().eq('stage_id', stageId).eq('member_id', memberId);
+      if (r.error) throw r.error;
+    }
+    async function openAssignPopover(anchor, stage, ids, onChange) {
+      const again = assignPop && assignPop.anchor === anchor;
+      closeAssignPopover();
+      if (again) return;   // tocar outra vez na mesma célula fecha a lista
+      const el = document.createElement('div');
+      el.className = 'assign-pop';
+      el.setAttribute('role', 'dialog');
+      el.setAttribute('aria-label', 'Pessoas na fase');
+      el.innerHTML = `<div class="assign-pop-head"><b>${escapeHtml(phaseName(stage))}</b><span>toca para atribuir ou tirar</span></div><div class="assign-pop-list"><div class="gantt-empty">A carregar…</div></div>`;
+      document.body.appendChild(el);
+      const place = () => {
+        const r = anchor.getBoundingClientRect();
+        if (window.matchMedia('(max-width: 599px)').matches) { el.classList.add('sheet'); return; }
+        const w = el.offsetWidth, h = el.offsetHeight;
+        let left = Math.min(Math.max(8, r.left), window.innerWidth - w - 8);
+        let top = r.bottom + 6;
+        if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 6);
+        el.style.left = left + 'px'; el.style.top = top + 'px';
+      };
+      const outside = e => { if (!el.contains(e.target) && !anchor.contains(e.target)) closeAssignPopover(); };
+      const esc = e => { if (e.key === 'Escape') { e.stopPropagation(); closeAssignPopover(); anchor.focus(); } };
+      const onScroll = e => { if (!el.contains(e.target)) place(); };
+      assignPop = { el, anchor, outside, esc, close: closeAssignPopover, onScroll };
+      document.addEventListener('mousedown', outside, true);
+      document.addEventListener('keydown', esc, true);
+      window.addEventListener('resize', closeAssignPopover);
+      window.addEventListener('scroll', onScroll, true);
+      place();
+      const members = await loadAllMembers();
+      if (!assignPop || assignPop.el !== el) return;
+      members.forEach(m => { ataMemberNames[m.id] = m.name; });
+      const me = (await getCurrentMember())?.id;
+      const sorted = [...members].sort((a, b) => (b.id === me) - (a.id === me));
+      const list = el.querySelector('.assign-pop-list');
+      list.innerHTML = sorted.map(m => `
+        <button type="button" class="assign-opt${ids.includes(m.id) ? ' on' : ''}" data-member="${escapeHtml(m.id)}" aria-pressed="${ids.includes(m.id)}">
+          <span class="marco-avatar${m.id === me ? ' me' : ''}">${escapeHtml(initials(m.name))}</span>
+          <span class="assign-opt-name">${escapeHtml(m.name)}${m.id === me ? ' <small>(eu)</small>' : ''}</span>
+          <span class="assign-check" aria-hidden="true">✓</span>
+        </button>`).join('');
+      place();
+      list.querySelector('.assign-opt')?.focus();
+      list.addEventListener('click', async (e) => {
+        const b = e.target.closest('[data-member]');
+        if (!b || b.disabled) return;
+        const id = b.dataset.member, on = !ids.includes(id);
+        b.disabled = true;
+        b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
+        try {
+          await toggleStageAssignee(stage.id, id, on);
+          if (on) ids.push(id); else ids.splice(ids.indexOf(id), 1);
+          invalidateActivePhases();
+          onChange && onChange();
+        } catch (err) {
+          b.classList.toggle('on', !on); b.setAttribute('aria-pressed', !on);
+          showToast('Não foi possível gravar: ' + err.message, { type: 'error' });
+        } finally { b.disabled = false; }
+      });
+    }
+
+    // Atribuir pessoas a uma fase (janela; usada onde não há tabela)
     async function openAssignModal(stage, currentIds, onSaved) {
       openQuickModal('Pessoas na fase', `
         <div class="field-hint" style="margin:0 0 12px;">${escapeHtml(phaseName(stage))} — quem trabalha nesta fase vê-a no seu calendário e na Home.</div>
@@ -7985,6 +8091,7 @@
           const r = await supabase.from('project_stages').select('id, status, revision_label, stage_types(name)').eq('project_id', pid).order('stage_order');
           stages = r.data || [];
         }
+        stages = stages.filter(s => !isAwardStage(s));
         const open = stages.filter(s => !isStageDone(s)), done = stages.filter(isStageDone);
         const opt = s => `<option value="${escapeHtml(s.id)}">${escapeHtml((s.stage_types?.name ?? 'Fase') + (s.revision_label ? ' ' + s.revision_label : ''))}</option>`;
         sel.innerHTML = '<option value="">Escolhe a fase</option>' + open.map(opt).join('') +
@@ -8181,8 +8288,10 @@
         </div>
         <label class="field-label">Checklist</label>
         <div class="checklist" id="ph-checklist"><div class="field-hint" style="margin:0;">A carregar…</div></div>
+        <div${isAwardStage(stage) ? ' hidden' : ''}>
         <label class="field-label">Pessoas</label>
         <div class="owner-picker" id="ph-people">${members.map(m => `<button type="button" class="owner-chip${sel.has(m.id) ? ' on' : ''}" data-member="${escapeHtml(m.id)}">${escapeHtml(m.name)}</button>`).join('')}</div>
+        </div>
         <details class="more-opts">
           <summary>Mais opções</summary>
           <div class="form-grid">
