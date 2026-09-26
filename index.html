@@ -483,7 +483,7 @@
   .gantt-ruler-tick {
     position: absolute; top: 0; height: 100%;
     display: flex; align-items: flex-end; padding: 0 0 5px 5px;
-    border-left: 1px solid var(--border); font-size: 10.5px; color: var(--text-3); white-space: nowrap;
+    font-size: 10.5px; color: var(--text-3); white-space: nowrap;   /* a linha vem de .gantt-grid-line */
   }
   .gantt-track-row { position: relative; height: 40px; }
   .gantt-lane { position: absolute; top: 14px; left: 0; right: 0; height: 12px; background: var(--track); border-radius: 3px; }
@@ -495,7 +495,17 @@
     position: absolute; top: 0; height: 100%; display: flex; align-items: center;
     font-size: 11px; font-weight: 500; color: var(--text-2); white-space: nowrap; padding-left: 6px;
   }
-  .gantt-grid-line { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--border); z-index: 1; }
+  /* Linhas verticais por todo o gráfico: por cima das faixas cinzentas, por baixo das barras */
+  .gantt-grid-line { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--border); z-index: 1; pointer-events: none; }
+  .gantt-grid-line.lv-m { background: var(--border-strong); }
+  .gantt-grid-line.lv-y { background: var(--text-3); opacity: .45; }
+  .gantt-lane { z-index: 0; } .gantt-bar, .gantt-end-date { z-index: 2; }
+  /* "Tudo": cabe na largura; mostra só as linhas e rótulos que cabem (applyGanttDensity) */
+  .gantt-scroll-inner.gantt-fit { width: 100%; overflow: hidden; --gantt-tail: 150px; }
+  .gantt-fit .gantt-ruler-tick { display: none; }
+  .gantt-fit[data-lab="w"] .gantt-ruler-tick.lv-w, .gantt-fit[data-lab="m"] .gantt-ruler-tick.lv-m, .gantt-fit[data-lab="y"] .gantt-ruler-tick.lv-y { display: flex; }
+  .gantt-fit[data-grid="m"] .gantt-grid-line.lv-w, .gantt-fit[data-grid="y"] .gantt-grid-line:not(.lv-y) { display: none; }
+  @media (max-width: 599px) { .gantt-scroll-inner.gantt-fit { --gantt-tail: 30px; } .gantt-fit .gantt-end-date { display: none; } }
   .gantt-today-line { position: absolute; top: 0; bottom: 0; width: 1.5px; background: var(--danger); z-index: 3; }
   .gantt-today-label { position: absolute; top: -1px; left: 4px; font-size: 9.5px; font-weight: 700; color: var(--danger); white-space: nowrap; }
   @media (max-width: 560px) { .gantt-labels-col { width: 118px; } }
@@ -802,7 +812,47 @@
   /* ---------- Pessoas nas fases (ficha do projeto) ---------- */
   .assign-cell { display: inline-flex; align-items: center; gap: 3px; background: none; border: none; cursor: pointer; padding: 2px; border-radius: 6px; }
   .assign-cell:hover { background: var(--surface-2); }
+  .assign-na { color: var(--text-3); padding: 2px 6px; }
+  .assign-pop { position: fixed; z-index: 45; width: 250px; max-height: 320px; display: flex; flex-direction: column;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-pop); overflow: hidden; }
+  .assign-pop.sheet { left: 8px !important; right: 8px; bottom: calc(var(--tab-h, 0px) + var(--safe-b, 0px) + 8px); top: auto !important; width: auto; max-height: 60vh; }
+  .assign-pop-head { padding: 10px 12px 8px; border-bottom: 1px solid var(--border); }
+  .assign-pop-head b { display: block; font-size: 13.5px; font-weight: 650; }
+  .assign-pop-head span { font-size: 12px; color: var(--text-3); }
+  .assign-pop-list { overflow-y: auto; padding: 4px; }
+  .assign-opt { display: flex; align-items: center; gap: 10px; width: 100%; border: none; background: none; text-align: left;
+    padding: 8px 8px; border-radius: 6px; font: inherit; font-size: 14px; color: var(--text); cursor: pointer; min-height: 40px; }
+  .assign-opt:hover, .assign-opt:focus-visible { background: var(--surface-2); outline: none; }
+  .assign-opt-name { flex: 1; min-width: 0; } .assign-opt-name small { color: var(--text-3); }
+  .assign-check { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--border-strong); color: transparent;
+    display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; }
+  .assign-opt.on .assign-check { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .assign-opt:disabled { opacity: .6; }
   .assign-cell .assign-empty { font-size: 12.5px; font-weight: 600; color: var(--accent); }
+
+  .status-cell { display: inline-flex; align-items: center; gap: 6px; background: none; border: none; cursor: pointer; font: inherit; color: inherit;
+    padding: 4px 6px; margin: -4px -6px; border-radius: 6px; white-space: nowrap; min-height: 32px; }
+  .status-cell svg { width: 9px; height: 6px; fill: none; stroke: var(--text-3); stroke-width: 1.6; opacity: .7; }
+  .status-cell:hover { background: var(--surface-2); } .status-cell:hover svg { opacity: 1; }
+  .stage-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; background: var(--text-3); margin: 0 5px; }
+  .stage-dot.st-wip { background: var(--accent); } .stage-dot.st-done { background: #2F7D4F; } .stage-dot.st-interrupted { background: var(--danger); }
+  /* ---------- Ordem das fases (arrastar e largar) ---------- */
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+  .mini-table th.drag-col, .mini-table td.drag-cell { width: 34px; padding-left: 0; padding-right: 0; text-align: center; }
+  .drag-handle { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 36px; margin: -8px 0;
+    border: none; background: none; border-radius: 6px; color: var(--text-3); cursor: grab; touch-action: none;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  .drag-handle svg { width: 10px; height: 16px; fill: currentColor; }
+  .drag-handle:hover { background: var(--surface-2); color: var(--text-2); }
+  .drag-handle:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; color: var(--accent); }
+  @media (pointer: coarse) { .drag-handle { width: 40px; height: 44px; } .mini-table th.drag-col, .mini-table td.drag-cell { width: 40px; } }
+  tbody.saving .drag-handle { opacity: .4; pointer-events: none; }
+  /* sem position na <tr>: mudaria o offsetParent e as contas de posição */
+  tr.dragging { will-change: transform; }
+  tr.dragging > td { background: var(--surface-2); box-shadow: 0 8px 14px -10px rgba(0,0,0,.35); }
+  tr.dragging .drag-handle { cursor: grabbing; color: var(--accent); background: var(--surface-2); }
+  tbody.reordering tr:not(.dragging) { pointer-events: none; }
+  body.row-dragging, body.row-dragging * { cursor: grabbing !important; -webkit-user-select: none !important; user-select: none !important; }
 
   /* ---------- Pesquisa e paleta ⌘K ---------- */
   .side-search {
@@ -2037,6 +2087,7 @@
 
     function buildMockTeamStages(teamProjects) {
       const addDays = (dateStr, days) => {
+        if (!dateStr) return null;
         const d = new Date(dateStr);
         d.setDate(d.getDate() + days);
         return d.toISOString().slice(0, 10);
@@ -2146,11 +2197,9 @@
           return 0;
         }
 
-        let teamScale = 'week';
+        let teamScale = 'fit';   // ao abrir, o cronograma mostra tudo
 
         function renderTeamGanttSection(scale) {
-          const pxPerDay = scale === 'month' ? 6 : scale === 'day' ? 34 : 20;
-          const dayMs = 86400000;
 
           const qualifying = [];
           projects.forEach(p => {
@@ -2159,11 +2208,7 @@
 
           if (qualifying.length === 0) {
             return `
-              <div class="gantt-scale-toggle segmented">
-                <button type="button" data-scale="day" class="${scale === 'day' ? 'active' : ''}">Dias</button>
-                <button type="button" data-scale="week" class="${scale === 'week' ? 'active' : ''}">Semanas</button>
-                <button type="button" data-scale="month" class="${scale === 'month' ? 'active' : ''}">Meses</button>
-              </div>
+              ${ganttScaleButtons(scale, true)}
               <div class="gantt-empty">Nenhuma fase por fazer tem lead time. Para o calcular, indica a data de adjudicação do projeto e o lead time (dias úteis) de cada fase.</div>`;
           }
 
@@ -2172,9 +2217,7 @@
           const allEnds = qualifying.map(s => parseDateKey(ganttWindow(s).e)).concat([today]);
           const rangeStart = new Date(Math.min(...allStarts));
           const rangeEnd = new Date(Math.max(...allEnds));
-          const totalDays = Math.max(1, Math.ceil((rangeEnd - rangeStart) / dayMs)) + 12;
-          const totalPx = totalDays * pxPerDay + 150; // folga para o rótulo "data · valor" da última barra
-          const dayOffset = (d) => Math.round((d - rangeStart) / dayMs) * pxPerDay;
+          const ax = ganttAxis(rangeStart, rangeEnd, scale);
 
           const labelRows = [];
           const trackRows = [];
@@ -2189,8 +2232,6 @@
             projStages.forEach(s => {
               const start = parseDateKey(ganttWindow(s).s);
               const end = parseDateKey(ganttWindow(s).e);
-              const left = dayOffset(start);
-              const width = Math.max(10, dayOffset(end) - left);
               const isOverdue = isStageLate(s);
               const color = isOverdue
                 ? 'var(--danger)'
@@ -2203,56 +2244,18 @@
               trackRows.push(`
                 <div class="gantt-track-row" data-open-project="${escapeHtml(p.id)}">
                   <div class="gantt-lane"></div>
-                  <div class="gantt-bar" style="left:${left}px; width:${width}px; background:${color};"></div>
-                  <div class="gantt-end-date" style="left:${left + width + 6}px;">${fmtDateShort(end)} · ${fmtEUR(invoiced)}</div>
+                  <div class="gantt-bar" style="left:${ax.x(start)}; width:${ax.w(start, end)}; background:${color};"></div>
+                  <div class="gantt-end-date" style="left:calc(${ax.x(start)} + ${ax.w(start, end)} + 6px);">${fmtDateShort(end)} · ${fmtEUR(invoiced)}</div>
                 </div>`);
             });
           });
 
-          let rulerTicks = '';
-          let gridLines = '';
-          if (scale === 'month') {
-            let cursor = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 1);
-            while (cursor <= rangeEnd) {
-              const left = dayOffset(cursor);
-              if (left >= 0) {
-                rulerTicks += `<div class="gantt-ruler-tick" style="left:${left}px;">${cursor.toLocaleDateString('pt-PT', { month: 'short', year: '2-digit' })}</div>`;
-                gridLines += `<div class="gantt-grid-line" style="left:${left}px;"></div>`;
-              }
-              cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
-            }
-          } else if (scale === 'day') {
-            let cursor = new Date(rangeStart);
-            while (cursor <= rangeEnd) {
-              const left = dayOffset(cursor);
-              rulerTicks += `<div class="gantt-ruler-tick" style="left:${left}px;">${fmtDateShort(cursor)}</div>`;
-              gridLines += `<div class="gantt-grid-line" style="left:${left}px;"></div>`;
-              cursor = new Date(cursor.getTime() + dayMs);
-            }
-          } else {
-            let cursor = new Date(rangeStart);
-            const dow = cursor.getDay();
-            cursor.setDate(cursor.getDate() + (dow === 0 ? -6 : 1 - dow));
-            while (cursor <= rangeEnd) {
-              const left = dayOffset(cursor);
-              if (left >= 0) {
-                rulerTicks += `<div class="gantt-ruler-tick" style="left:${left}px;">${fmtDateShort(cursor)}</div>`;
-                gridLines += `<div class="gantt-grid-line" style="left:${left}px;"></div>`;
-              }
-              cursor = new Date(cursor.getTime() + 7 * dayMs);
-            }
-          }
-
-          const todayLeft = dayOffset(today);
+          const todayLeft = ax.px(today);
 
           return `
             <div class="gantt-toolbar">
-              <div class="gantt-scale-toggle segmented">
-                <button type="button" data-scale="day" class="${scale === 'day' ? 'active' : ''}">Dias</button>
-                <button type="button" data-scale="week" class="${scale === 'week' ? 'active' : ''}">Semanas</button>
-                <button type="button" data-scale="month" class="${scale === 'month' ? 'active' : ''}">Meses</button>
-              </div>
-              <button type="button" class="text-btn" data-today-btn="1">Hoje</button>
+              ${ganttScaleButtons(scale, true)}
+              ${scale === 'fit' ? '' : '<button type="button" class="text-btn" data-today-btn="1">Hoje</button>'}
             </div>
             <div class="gantt-body">
               <div class="gantt-labels-col">
@@ -2260,10 +2263,10 @@
                 ${labelRows.join('')}
               </div>
               <div class="gantt-scroll">
-                <div class="gantt-scroll-inner" style="width:${totalPx}px;" data-today-left="${todayLeft}">
-                  <div class="gantt-today-line" style="left:${todayLeft}px;"><span class="gantt-today-label">Hoje</span></div>
-                  ${gridLines}
-                  <div class="gantt-ruler" style="width:${totalPx}px;">${rulerTicks}</div>
+                <div ${ax.innerAttrs} data-today-left="${todayLeft}">
+                  <div class="gantt-today-line" style="left:${ax.x(today)};"><span class="gantt-today-label">Hoje</span></div>
+                  ${ax.grid}
+                  <div class="gantt-ruler">${ax.ruler}</div>
                   ${trackRows.join('')}
                 </div>
               </div>
@@ -2271,6 +2274,7 @@
         }
 
         ganttEl.innerHTML = renderTeamGanttSection(teamScale);
+        watchGanttDensity(ganttEl);
         // onclick (e não addEventListener): ganttEl é permanente e esta função corre a cada
         // troca de equipa — atribuir substitui o handler anterior em vez de o acumular.
         ganttEl.onclick = (e) => {
@@ -2278,6 +2282,7 @@
           if (scaleBtn) {
             teamScale = scaleBtn.dataset.scale;
             ganttEl.innerHTML = renderTeamGanttSection(teamScale);
+            watchGanttDensity(ganttEl);
             scrollGanttToToday();
             return;
           }
@@ -2565,7 +2570,7 @@
         stages = res.data || [];
       }
       stageSelect.innerHTML = '<option value="">Seleciona a fase</option>' +
-        stages.map(s => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.stage_types?.name ?? 'Fase')}</option>`).join('');
+        stages.filter(s => !isAwardStage(s)).map(s => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.stage_types?.name ?? 'Fase')}</option>`).join('');
     }
 
     function resetHorasForm() {
@@ -3398,9 +3403,6 @@
         }
 
         function renderGanttSection(scale) {
-          const pxPerDay = scale === 'month' ? 6 : 20;
-          const dayMs = 86400000;
-
           // Barra = período previsto (calculado); sem cálculo, as datas de trabalho
           const win = s => (s.plan_start && s.plan_end) ? { s: s.plan_start, e: s.plan_end } : phaseWindow(s);
           const stageDates = stages.filter(win)
@@ -3416,9 +3418,8 @@
 
           const minDate = new Date(Math.min(...allDates.map(d => d.start)));
           const maxDate = new Date(Math.max(...allDates.map(d => d.end)));
-          const totalDays = Math.max(1, Math.ceil((maxDate - minDate) / dayMs)) + 12;
-          const totalPx = totalDays * pxPerDay + 150; // folga para o rótulo "data · valor" da última barra
-          const dayOffset = (d) => Math.round((d - minDate) / dayMs) * pxPerDay;
+          const ax = ganttAxis(minDate, maxDate, scale);
+          const today = new Date(); today.setHours(0, 0, 0, 0);
 
           const timelineItems = [
             ...stages.map(s => ({ kind: 'stage', data: s, sortDate: win(s) ? parseDateKey(win(s).s) : null })),
@@ -3448,8 +3449,6 @@
               if (!win(s)) return `<div class="gantt-track-row"><div class="gantt-lane"></div></div>`;
               const start = parseDateKey(win(s).s);
               const end = parseDateKey(win(s).e);
-              const left = dayOffset(start);
-              const width = Math.max(10, dayOffset(end) - left);
               const color = s.status === 'completed' || s.status === 'done'
                 ? 'var(--success)'
                 : isStageActive(s)
@@ -3458,68 +3457,42 @@
               return `
                 <div class="gantt-track-row">
                   <div class="gantt-lane"></div>
-                  <div class="gantt-bar" style="left:${left}px; width:${width}px; background:${color};"></div>
-                  <div class="gantt-end-date" style="left:${left + width + 6}px;">${fmtDateShort(end)} · ${fmtEUR(stageBudgetValue(s))}</div>
+                  <div class="gantt-bar" style="left:${ax.x(start)}; width:${ax.w(start, end)}; background:${color};"></div>
+                  <div class="gantt-end-date" style="left:calc(${ax.x(start)} + ${ax.w(start, end)} + 6px);">${fmtDateShort(end)} · ${fmtEUR(stageBudgetValue(s))}</div>
                 </div>`;
             }
             const b = item.data;
             if (!b.start_date || !b.end_date) return `<div class="gantt-track-row"><div class="gantt-lane"></div></div>`;
             const start = parseDateKey(b.start_date);
             const end = parseDateKey(b.end_date);
-            const left = dayOffset(start);
-            const width = Math.max(10, dayOffset(end) - left);
             return `
               <div class="gantt-track-row">
                 <div class="gantt-lane"></div>
-                <div class="gantt-bar break-bar" style="left:${left}px; width:${width}px;">
+                <div class="gantt-bar break-bar" style="left:${ax.x(start)}; width:${ax.w(start, end)};">
                   <span class="pct">${escapeHtml(Object.fromEntries(BREAK_TYPES)[b.type] ?? b.type ?? '')}</span>
                 </div>
               </div>`;
           }).join('');
 
-          let rulerTicks = '';
-          if (scale === 'month') {
-            let cursor = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
-            while (cursor <= maxDate) {
-              const left = dayOffset(cursor);
-              if (left >= 0) {
-                rulerTicks += `<div class="gantt-ruler-tick" style="left:${left}px;">${cursor.toLocaleDateString('pt-PT', { month: 'short', year: '2-digit' })}</div>`;
-              }
-              cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
-            }
-          } else {
-            let cursor = new Date(minDate);
-            const dow = cursor.getDay();
-            cursor.setDate(cursor.getDate() + (dow === 0 ? -6 : 1 - dow));
-            while (cursor <= maxDate) {
-              const left = dayOffset(cursor);
-              if (left >= 0) {
-                rulerTicks += `<div class="gantt-ruler-tick" style="left:${left}px;">${fmtDateShort(cursor)}</div>`;
-              }
-              cursor = new Date(cursor.getTime() + 7 * dayMs);
-            }
-          }
-
           return `
-            <div class="gantt-scale-toggle segmented">
-              <button type="button" data-scale="week" class="${scale === 'week' ? 'active' : ''}">Semanas</button>
-              <button type="button" data-scale="month" class="${scale === 'month' ? 'active' : ''}">Meses</button>
-            </div>
+            ${ganttScaleButtons(scale, false)}
             <div class="gantt-body">
               <div class="gantt-labels-col">
                 <div class="gantt-label-spacer"></div>
                 ${labelsHtml}
               </div>
               <div class="gantt-scroll">
-                <div class="gantt-scroll-inner" style="width:${totalPx}px;">
-                  <div class="gantt-ruler" style="width:${totalPx}px;">${rulerTicks}</div>
+                <div ${ax.innerAttrs}>
+                  ${ax.grid}
+                  ${today >= ax.start && ax.x(today) && (today - ax.start) / 86400000 <= ax.days ? `<div class="gantt-today-line" style="left:${ax.x(today)};"><span class="gantt-today-label">Hoje</span></div>` : ''}
+                  <div class="gantt-ruler">${ax.ruler}</div>
                   ${tracksHtml}
                 </div>
               </div>
             </div>`;
         }
 
-        let ganttScale = 'week';
+        let ganttScale = 'fit';   // ao abrir, o cronograma mostra o projeto inteiro
         const ganttHtml = renderGanttSection(ganttScale);
 
         // --- Participação: colaboradores por percentagem de horas no projeto ---
@@ -3565,11 +3538,12 @@
           stageInvoiceMap[inv.stage_id].paid += Number(inv.amount_paid ?? 0);
         });
 
+        const leadCellHtml = s => s.delivery_date ? 'Entregue ' + escapeHtml(fmtDayMonthYear(s.delivery_date)) : s.plan_end ? escapeHtml(fmtDayMonthYear(s.plan_end)) + (s.is_deadline_fixed && s.deadline_override && s.plan_auto_end && s.plan_auto_end !== s.plan_end ? ` <span class="lt-manual" title="Alterado à mão · original ${escapeHtml(fmtDayMonthYear(s.plan_auto_end))}">✎</span>` : '') : '—';
         let stagesTableHtml = '<div class="gantt-empty">Este projeto ainda não tem fases registadas.</div>';
         if (stages.length > 0) {
           stagesTableHtml = `
             <div class="table-scroll"><table class="mini-table">
-              <thead><tr><th>Fase</th><th>Estado</th><th>Lead time</th><th>Checklist</th>${assignSupport ? '<th>Pessoas</th>' : ''}<th class="col-value">Valor</th><th class="col-value">Horas</th><th>Faturação</th><th>Pagamento</th></tr></thead>
+              <thead><tr><th class="drag-col"><span class="sr-only">Ordem</span></th><th>Fase</th><th>Estado</th><th>Lead time</th><th>Checklist</th>${assignSupport ? '<th>Pessoas</th>' : ''}<th class="col-value">Valor</th><th class="col-value">Horas</th><th>Faturação</th><th>Pagamento</th></tr></thead>
               <tbody>
                 ${stages.map(s => {
                   const inv = stageInvoiceMap[s.id] || { amount: 0, paid: 0 };
@@ -3595,12 +3569,13 @@
                         ? `<span class="invoice-status partial">Parcial</span>`
                         : `<span class="invoice-status ${shouldFlag ? 'pending' : 'neutral'}">Não paga</span>`;
                   return `
-                    <tr class="click-row" data-phase-row="${escapeHtml(s.id)}" title="Editar fase"${isExcluded ? ' style="opacity:.55;"' : ''}>
+                    <tr class="click-row" data-phase-row="${escapeHtml(s.id)}" data-stage-row="${escapeHtml(s.id)}"${isAwardStage(s) ? ' data-fixed' : ''} title="Editar fase"${isExcluded ? ' style="opacity:.55;"' : ''}>
+                      <td class="drag-cell">${isAwardStage(s) ? '' : `<button type="button" class="drag-handle" aria-label="Mover ${faseLabel} (arrastar, ou setas ↑ ↓)" title="Arrastar para mudar a ordem"><svg viewBox="0 0 10 16" aria-hidden="true"><circle cx="2.5" cy="3" r="1.4"/><circle cx="7.5" cy="3" r="1.4"/><circle cx="2.5" cy="8" r="1.4"/><circle cx="7.5" cy="8" r="1.4"/><circle cx="2.5" cy="13" r="1.4"/><circle cx="7.5" cy="13" r="1.4"/></svg></button>`}</td>
                       <td>${faseLabel}</td>
-                      <td>${stageStatusLabel(s)}</td>
-                      <td class="nowrap${isStageLate(s) ? ' late-text' : ''}">${s.delivery_date ? 'Entregue ' + escapeHtml(fmtDayMonth(s.delivery_date)) : s.plan_end ? escapeHtml(fmtDayMonth(s.plan_end)) + (s.is_deadline_fixed && s.deadline_override && s.plan_auto_end && s.plan_auto_end !== s.plan_end ? ` <span class="lt-manual" title="Alterado à mão · original ${escapeHtml(fmtDayMonth(s.plan_auto_end))}">✎</span>` : '') : '—'}</td>
+                      <td><button type="button" class="status-cell" data-status-stage="${escapeHtml(s.id)}" title="Mudar o estado" aria-haspopup="true">${stageStatusLabel(s)}<svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></button></td>
+                      <td class="lt-cell nowrap${isStageLate(s) ? ' late-text' : ''}">${leadCellHtml(s)}</td>
                       <td class="ck-count">${escapeHtml(ckCountText(ckCounts[s.id]) || '—')}</td>
-                      ${assignSupport ? `<td><button type="button" class="assign-cell" data-assign-stage="${escapeHtml(s.id)}" title="Escolher pessoas">${(stageAssignees[s.id] || []).length ? avatarsHtml(stageAssignees[s.id], ataMemberNames, meId) : '<span class="assign-empty">+ Atribuir</span>'}</button></td>` : ''}
+                      ${assignSupport ? `<td>${isAwardStage(s) ? '<span class="assign-na" title="A adjudicação não se atribui">—</span>' : `<button type="button" class="assign-cell" data-assign-stage="${escapeHtml(s.id)}" title="Escolher pessoas" aria-haspopup="true">${(stageAssignees[s.id] || []).length ? avatarsHtml(stageAssignees[s.id], ataMemberNames, meId) : '<span class="assign-empty">+ Atribuir</span>'}</button>`}</td>` : ''}
                       <td class="col-value">${fmtEUR(budgeted)}</td>
                       <td class="col-value">${fmtHours(horas)}</td>
                       <td>${invoiceCell}</td>
@@ -3835,7 +3810,7 @@
 
         // Edição de fases, pausas, faturas e despesas
         detailBody.querySelectorAll('[data-phase-row]').forEach(tr => tr.addEventListener('click', (e) => {
-          if (e.target.closest('[data-assign-stage]')) return;
+          if (e.target.closest('[data-assign-stage], [data-status-stage], .drag-handle') || tr.classList.contains('drag-settling')) return;
           openPhaseModal(tr.dataset.phaseRow, { fromProject: true, onSaved: reopen });
         }));
         document.getElementById('add-break-btn').addEventListener('click', () => openBreakModal(null, project, breaks, reopen));
@@ -3868,8 +3843,85 @@
         ganttBox.addEventListener('click', (e) => {
           const b = e.target.closest('[data-scale]');
           if (!b) return;
-          ganttBox.innerHTML = renderGanttSection(b.dataset.scale);
+          ganttScale = b.dataset.scale;
+          ganttBox.innerHTML = renderGanttSection(ganttScale);
+          watchGanttDensity(ganttBox);
         });
+        watchGanttDensity(ganttBox);
+
+        // Ordem das fases: arrastar pela pega (a adjudicação fica fixa); grava logo, com "Anular"
+        const stagesTbody = detailBody.querySelector('tr[data-stage-row]')?.parentElement;
+        if (stagesTbody) {
+          const refreshPlan = () => {
+            stages.sort((a, b) => (a.stage_order ?? 0) - (b.stage_order ?? 0));
+            computeProjectPlan(project, stages, breaks);
+            ganttBox.innerHTML = renderGanttSection(ganttScale);
+            watchGanttDensity(ganttBox);
+            stagesTbody.querySelectorAll('tr[data-stage-row]').forEach(tr => {
+              const st = stages.find(x => String(x.id) === tr.dataset.stageRow);
+              const cell = st && tr.querySelector('.lt-cell');
+              if (!cell) return;
+              cell.innerHTML = leadCellHtml(st);
+              cell.classList.toggle('late-text', !!isStageLate(st));
+            });
+          };
+          let closeOrderToast = null;
+          const saveOrder = async (ids, prevIds, undoable) => {
+            const prevOrder = new Map(stages.map(x => [String(x.id), x.stage_order]));
+            ids.forEach((id, i) => { const st = stages.find(x => String(x.id) === id); if (st) st.stage_order = i + 1; });
+            refreshPlan();
+            stagesTbody.classList.add('saving');
+            try {
+              if (!devMode) {
+                const { error } = await supabase.rpc('reorder_project_stages', { p_project_id: project.id ?? projectId, p_stage_ids: ids });
+                if (error) throw error;
+              }
+              invalidateActivePhases();
+              // só a última alteração se pode anular (um "Anular" antigo saltaria por cima da mais recente)
+              if (closeOrderToast) closeOrderToast();
+              if (undoable) closeOrderToast = showToast('Ordem das fases alterada', { ms: 6500, undo: () => {
+                reorderRowsTo(stagesTbody, prevIds);
+                saveOrder(prevIds, ids, false);
+              } });
+              else closeOrderToast = showToast('Ordem reposta');
+            } catch (err) {
+              stages.forEach(x => { x.stage_order = prevOrder.get(String(x.id)); });
+              reorderRowsTo(stagesTbody, prevIds);
+              refreshPlan();
+              showToast('A ordem não foi gravada: ' + (err.message || err), { type: 'error', ms: 6000 });
+            } finally {
+              stagesTbody.classList.remove('saving');
+            }
+          };
+          enableRowReorder(stagesTbody, (ids, prevIds) => saveOrder(ids, prevIds, true));
+
+          // Estado da fase: escolhe-se na própria célula; grava logo, com "Anular"
+          const setStatus = async (st, next, undoable) => {
+            const prev = st.status;
+            const btn = stagesTbody.querySelector(`[data-status-stage="${CSS.escape(String(st.id))}"]`);
+            const paint = () => {
+              if (btn) btn.firstChild.textContent = stageStatusLabel(st);
+              refreshPlan();
+            };
+            st.status = next; paint();
+            try {
+              await dbUpdate('project_stages', st.id, { status: next }, stages);
+              invalidateActivePhases();
+              if (closeOrderToast) closeOrderToast();
+              closeOrderToast = undoable
+                ? showToast(`${phaseName(st)}: ${stageStatusLabel(st)}`, { ms: 6500, undo: () => setStatus(st, prev, false) })
+                : showToast('Estado reposto');
+            } catch (err) {
+              st.status = prev; paint();
+              showToast('O estado não foi gravado: ' + (err.message || err), { type: 'error', ms: 6000 });
+            }
+          };
+          stagesTbody.querySelectorAll('[data-status-stage]').forEach(btn => btn.addEventListener('click', ev => {
+            ev.stopPropagation();
+            const st = stages.find(x => String(x.id) === btn.dataset.statusStage);
+            if (st) openStatusPopover(btn, st, next => setStatus(st, next, true));
+          }));
+        }
 
         const reopen = () => openDetail(project.id ?? projectId);
         detailBody.querySelectorAll('[data-open-client]').forEach(b => b.addEventListener('click', () => openClientDetail(b.dataset.openClient)));
@@ -3884,7 +3936,12 @@
         detailBody.querySelectorAll('[data-assign-stage]').forEach(btn => btn.addEventListener('click', (ev) => {
           ev.stopPropagation();
           const st = stages.find(s => String(s.id) === btn.dataset.assignStage);
-          if (st) openAssignModal(st, stageAssignees[st.id] || [], () => openDetail(project.id ?? projectId));
+          if (!st) return;
+          const ids = stageAssignees[st.id] = stageAssignees[st.id] || [];
+          // Cada toque grava logo e atualiza só esta célula (sem recarregar a ficha)
+          openAssignPopover(btn, st, ids, () => {
+            btn.innerHTML = ids.length ? avatarsHtml(ids, ataMemberNames, meId) : '<span class="assign-empty">+ Atribuir</span>';
+          });
         }));
         document.querySelectorAll('#detail-body .ata-entry').forEach(row => {
           row.addEventListener('click', () => row.classList.toggle('expanded'));
@@ -4045,8 +4102,24 @@
 
     // ---------- Modal genérico de ações rápidas ----------
     let quickModalCloseHook = null;   // corre uma vez quando a janela fecha (qualquer via)
+    // Alterações por guardar num formulário da janela: fechar por ✕, Esc ou toque fora pede confirmação
+    let quickModalDirty = false;
+    // (a checklist e o que tiver data-autosave gravam logo; ficheiros e pesquisas não contam)
+    const markQuickDirty = e => {
+      const t = e.target;
+      if (!e.isTrusted || t.closest('.checklist, [data-autosave]') || t.type === 'file' || t.type === 'search') return;
+      if (t.matches('input, select, textarea') || t.closest('.owner-chip')) quickModalDirty = true;
+    };
+    ['input', 'change', 'click'].forEach(ev => document.getElementById('quick-modal-body').addEventListener(ev, e => {
+      if (ev === 'click' ? e.target.closest('.owner-chip') : true) markQuickDirty(e);
+    }));
+    function requestCloseQuickModal() {
+      if (quickModalDirty && !window.confirm('Tens alterações por guardar. Fechar sem guardar?')) return;
+      closeQuickModal();
+    }
     function openQuickModal(title, bodyHtml) {
       quickModalCloseHook = null;
+      quickModalDirty = false;
       document.getElementById('quick-modal-title').textContent = title;
       document.getElementById('quick-modal-body').innerHTML = bodyHtml;
       document.getElementById('quick-modal-overlay').style.display = 'block';
@@ -4055,17 +4128,19 @@
     }
     function closeQuickModal() {
       const hook = quickModalCloseHook; quickModalCloseHook = null;
+      quickModalDirty = false;
       document.getElementById('quick-modal-overlay').style.display = 'none';
       document.getElementById('quick-modal').style.display = 'none';
       document.getElementById('quick-modal-body').innerHTML = '';
       document.body.style.overflow = '';
       if (hook) hook();
     }
-    document.getElementById('quick-modal-close').addEventListener('click', closeQuickModal);
-    document.getElementById('quick-modal-overlay').addEventListener('click', closeQuickModal);
+    document.getElementById('quick-modal-close').addEventListener('click', requestCloseQuickModal);
+    document.getElementById('quick-modal-overlay').addEventListener('click', requestCloseQuickModal);
     document.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape') return;
-      if (document.getElementById('quick-modal').style.display === 'flex') closeQuickModal();
+      if (assignPop) return;   // o Esc fecha primeiro a lista aberta
+      if (document.getElementById('quick-modal').style.display === 'flex') requestCloseQuickModal();
       else if (fabMenu.style.display === 'flex') closeFabMenu();
     });
 
@@ -5166,6 +5241,11 @@
     function fmtDayMonth(key) {
       return parseDateKey(key).toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' });
     }
+    // Com ano (ex.: 15/06/2025): para prazos e entregas, que atravessam anos
+    function fmtDayMonthYear(key) {
+      const d = parseDateKey(key);
+      return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+    }
     function isStageLate(s, todayKey = dateKey(new Date())) {
       const dl = stageDeadline(s);
       return !isStageDone(s) && !s.delivery_date && !!dl && dl < todayKey;
@@ -5209,6 +5289,8 @@
       }
       return key;
     }
+    // A adjudicação é o arranque do projeto: não se atribui a ninguém nem recebe horas
+    const isAwardStage = s => /adjudica/i.test(s?.stage_types?.name || '');
     const isOffPlanStage = s => /assist[eê]ncia|adjudica/i.test(s.stage_types?.name || '');
     function computeProjectPlan(project, stages, breaks = []) {
       let cursor = project?.awarding_date || null;
@@ -5237,6 +5319,76 @@
         || (running.length ? null : open[0]);
       return next ? [...running, next] : running;
     }
+
+    // ================= CRONOGRAMAS: eixo do tempo partilhado =================
+    // scale: 'fit' (cabe tudo na largura, posições em %), 'day', 'week' ou 'month' (px por dia fixo).
+    // Devolve funções de posição (strings CSS), a régua e as linhas verticais. No modo 'fit' há
+    // linhas/rótulos de semanas, meses e anos; applyGanttDensity mostra os que cabem.
+    const GANTT_SCALES = { day: 34, week: 20, month: 6 };
+    const GANTT_MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+    function ganttAxis(minDate, maxDate, scale, { pad = 12 } = {}) {
+      const dayMs = 86400000;
+      const start = new Date(minDate); start.setHours(0, 0, 0, 0);
+      const fit = scale === 'fit';
+      const days = Math.max(1, Math.round((maxDate - start) / dayMs)) + (fit ? 2 : pad);
+      const end = new Date(start.getTime() + days * dayMs);
+      const frac = d => (d - start) / dayMs / days;
+      let x, w, px, innerAttrs;
+      if (fit) {
+        // --gantt-tail: folga à direita para o rótulo "data · valor" da última barra
+        x = d => `calc((100% - var(--gantt-tail)) * ${frac(d).toFixed(5)})`;
+        w = (a, b) => `max(10px, calc((100% - var(--gantt-tail)) * ${Math.max(0, frac(b) - frac(a)).toFixed(5)}))`;
+        px = () => 0;
+        innerAttrs = `class="gantt-scroll-inner gantt-fit" data-days="${days}" data-grid="m" data-lab="m"`;
+      } else {
+        const ppd = GANTT_SCALES[scale] || GANTT_SCALES.week;
+        px = d => Math.round((d - start) / dayMs) * ppd;
+        x = d => px(d) + 'px';
+        w = (a, b) => Math.max(10, px(b) - px(a)) + 'px';
+        innerAttrs = `class="gantt-scroll-inner" style="width:${days * ppd + 150}px;"`;
+      }
+      // Marcas: dias (só na escala Dias), semanas (segundas), meses (dia 1) e anos (1 de janeiro)
+      const ticks = [];
+      const want = fit ? ['w', 'm', 'y'] : scale === 'day' ? ['d'] : scale === 'month' ? ['m'] : ['w', 'm'];
+      if (want.includes('d')) for (let d = new Date(start); d < end; d = new Date(d.getTime() + dayMs)) ticks.push({ d, lv: 'd', label: fmtDateShort(d) });
+      if (want.includes('w')) {
+        const d = new Date(start); d.setDate(d.getDate() + ((8 - d.getDay()) % 7));
+        for (; d < end; d.setDate(d.getDate() + 7)) ticks.push({ d: new Date(d), lv: 'w', label: fmtDateShort(d) });
+      }
+      if (want.includes('m') || want.includes('y')) {
+        for (let d = new Date(start.getFullYear(), start.getMonth() + (start.getDate() > 1 ? 1 : 0), 1); d < end; d = new Date(d.getFullYear(), d.getMonth() + 1, 1)) {
+          if (want.includes('m')) ticks.push({ d, lv: 'm', label: GANTT_MONTHS[d.getMonth()] + (d.getMonth() === 0 || !ticks.some(t => t.lv === 'm') ? ' ' + String(d.getFullYear()).slice(2) : '') });
+          if (want.includes('y') && d.getMonth() === 0) ticks.push({ d, lv: 'y', label: String(d.getFullYear()) });
+        }
+      }
+      // Na escala Semanas, o início de cada mês tem uma linha mais marcada (sem rótulo próprio)
+      const labelled = t => !(scale === 'week' && t.lv === 'm');
+      const ruler = ticks.filter(labelled).map(t => `<div class="gantt-ruler-tick lv-${t.lv}" style="left:${x(t.d)};">${escapeHtml(t.label)}</div>`).join('');
+      const grid = ticks.map(t => `<div class="gantt-grid-line lv-${t.lv}" style="left:${x(t.d)};"></div>`).join('');
+      return { start, days, fit, x, w, px, innerAttrs, ruler, grid };
+    }
+    // Modo 'fit': escolhe o nível de linhas e rótulos conforme a largura real (e volta a escolher
+    // quando a largura muda: rodar o iPad, abrir um separador que estava escondido…)
+    function applyGanttDensity(inner) {
+      const tail = parseFloat(getComputedStyle(inner).getPropertyValue('--gantt-tail')) || 0;
+      const ppd = Math.max(0, inner.clientWidth - tail) / (Number(inner.dataset.days) || 1);
+      if (!ppd) return;
+      inner.dataset.grid = ppd * 7 >= 12 ? 'w' : ppd * 30 >= 10 ? 'm' : 'y';
+      inner.dataset.lab = ppd * 7 >= 44 ? 'w' : ppd * 30 >= 30 ? 'm' : 'y';
+    }
+    const ganttResize = typeof ResizeObserver === 'function'
+      ? new ResizeObserver(entries => entries.forEach(e => e.target.isConnected ? applyGanttDensity(e.target) : ganttResize.unobserve(e.target)))
+      : null;
+    function watchGanttDensity(root) {
+      root.querySelectorAll('.gantt-fit').forEach(inner => { applyGanttDensity(inner); ganttResize && ganttResize.observe(inner); });
+    }
+    const ganttScaleButtons = (scale, withDays) => `
+      <div class="gantt-scale-toggle segmented">
+        <button type="button" data-scale="fit" class="${scale === 'fit' ? 'active' : ''}" title="Mostrar tudo">Tudo</button>
+        ${withDays ? `<button type="button" data-scale="day" class="${scale === 'day' ? 'active' : ''}">Dias</button>` : ''}
+        <button type="button" data-scale="week" class="${scale === 'week' ? 'active' : ''}">Semanas</button>
+        <button type="button" data-scale="month" class="${scale === 'month' ? 'active' : ''}">Meses</button>
+      </div>`;
 
     // Faixa desenhada: o trabalho (início → fim); sem datas de trabalho, o período previsto
     function phaseWindow(p) {
@@ -5324,7 +5476,269 @@
       }).join('');
     }
 
-    // Atribuir pessoas a uma fase (ficha do projeto)
+    // Atribuir pessoas a uma fase — lista junto à célula; cada toque grava logo
+    let assignPop = null;
+    // ================= ORDENAR LINHAS (arrastar e largar) =================
+    // Linhas <tr data-stage-row="id"> de um tbody; as que têm data-fixed não se movem nem
+    // deixam passar outras. Arrasta-se pela pega (.drag-handle) com rato, dedo ou caneta
+    // (Pointer Events); no teclado, setas ↑/↓ na pega. Esc durante o arrasto cancela.
+    // onReorder(novosIds, idsAntes) só é chamado quando a ordem mudou mesmo.
+    function reorderRowsTo(tbody, ids) {
+      const byId = new Map([...tbody.querySelectorAll('tr[data-stage-row]')].map(r => [r.dataset.stageRow, r]));
+      ids.forEach(id => { const r = byId.get(id); if (r) tbody.appendChild(r); });
+    }
+    function scrollParentOf(el) {
+      for (let n = el.parentElement; n && n !== document.body; n = n.parentElement) {
+        const oy = getComputedStyle(n).overflowY;
+        if ((oy === 'auto' || oy === 'scroll') && n.scrollHeight > n.clientHeight + 1) return n;
+      }
+      return document.scrollingElement || document.documentElement;
+    }
+    function enableRowReorder(tbody, onReorder) {
+      const rowsOf = () => [...tbody.querySelectorAll('tr[data-stage-row]')];
+      const idsOf = () => rowsOf().map(r => r.dataset.stageRow);
+      const movable = r => r && !r.hasAttribute('data-fixed');
+      // Anima as linhas que mudaram de sítio (FLIP): da posição antiga para a nova
+      const withFlip = (rows, mutate) => {
+        const before = new Map(rows.map(r => [r, r.offsetTop]));
+        mutate();
+        rows.forEach(r => {
+          const d = before.get(r) - r.offsetTop;
+          if (!d) return;
+          r.style.transition = 'none';
+          r.style.transform = `translateY(${d}px)`;
+          r.getBoundingClientRect();
+          r.style.transition = 'transform .16s ease';
+          r.style.transform = '';
+        });
+      };
+      let drag = null;
+
+      tbody.addEventListener('click', e => { if (e.target.closest('.drag-handle')) e.stopPropagation(); });
+      tbody.addEventListener('pointerdown', e => {
+        const handle = e.target.closest('.drag-handle');
+        if (!handle || drag || (e.pointerType === 'mouse' && e.button !== 0) || tbody.classList.contains('saving')) return;
+        const row = handle.closest('tr');
+        if (!movable(row)) return;
+        e.preventDefault();
+        closeAssignPopover();
+        try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+        const table = tbody.closest('table');
+        const scroller = scrollParentOf(table);
+        drag = {
+          row, handle, table, scroller, pointerId: e.pointerId,
+          y: e.clientY, grab: e.clientY - row.getBoundingClientRect().top,
+          before: idsOf(), raf: 0, moved: false
+        };
+        row.classList.add('dragging');
+        tbody.classList.add('reordering');
+        document.body.classList.add('row-dragging');
+        if (navigator.vibrate && e.pointerType === 'touch') { try { navigator.vibrate(8); } catch (_) {} }
+        drag.raf = requestAnimationFrame(tick);
+      });
+
+      function layout() {
+        const { row, table } = drag;
+        const rows = rowsOf();
+        const first = rows[0], last = rows[rows.length - 1];
+        // limites: não passa acima da última linha fixa do topo, nem abaixo do fim da tabela
+        let minTop = first.offsetTop;
+        for (const r of rows) { if (r === row || movable(r)) break; minTop = r.offsetTop + r.offsetHeight; }
+        const maxTop = last.offsetTop + last.offsetHeight - row.offsetHeight;
+        const want = Math.min(maxTop, Math.max(minTop, drag.y - table.getBoundingClientRect().top - drag.grab));
+        let prev = row.previousElementSibling, next = row.nextElementSibling;
+        while (movable(prev) && want < prev.offsetTop + prev.offsetHeight / 2) {
+          const p = prev; withFlip([p], () => row.after(p)); drag.moved = true;
+          prev = row.previousElementSibling;
+        }
+        next = row.nextElementSibling;
+        while (movable(next) && want + row.offsetHeight > next.offsetTop + next.offsetHeight / 2) {
+          const n = next; withFlip([n], () => row.before(n)); drag.moved = true;
+          next = row.nextElementSibling;
+        }
+        row.style.transform = `translateY(${want - row.offsetTop}px)`;
+      }
+      function tick() {
+        if (!drag) return;
+        // Scroll automático perto das margens (no telemóvel, acima da barra de separadores)
+        const sc = drag.scroller;
+        const isDoc = sc === document.scrollingElement || sc === document.documentElement;
+        const top = isDoc ? 0 : sc.getBoundingClientRect().top;
+        const tabbar = document.querySelector('.tabbar');
+        const tabH = tabbar && getComputedStyle(tabbar).display !== 'none' ? tabbar.getBoundingClientRect().height : 0;
+        const bottom = isDoc ? window.innerHeight - tabH : sc.getBoundingClientRect().bottom;
+        const edge = 64;
+        let v = 0;
+        if (drag.y < top + edge) v = -Math.ceil((top + edge - drag.y) / 4);
+        else if (drag.y > bottom - edge) v = Math.ceil((drag.y - (bottom - edge)) / 4);
+        if (v) sc.scrollTop += Math.max(-18, Math.min(18, v));
+        layout();
+        drag.raf = requestAnimationFrame(tick);
+      }
+      function finish(cancel) {
+        if (!drag) return;
+        const { row, handle, pointerId, before } = drag;
+        cancelAnimationFrame(drag.raf);
+        try { handle.releasePointerCapture(pointerId); } catch (_) {}
+        drag = null;
+        if (cancel) withFlip(rowsOf(), () => reorderRowsTo(tbody, before));
+        // pousa a linha no lugar (animação curta) e evita que o "click" final abra a fase
+        row.classList.add('drag-settling');
+        row.style.transition = 'transform .16s ease';
+        row.style.transform = '';
+        setTimeout(() => {
+          row.classList.remove('dragging', 'drag-settling');
+          row.style.transition = '';
+        }, 180);
+        tbody.classList.remove('reordering');
+        document.body.classList.remove('row-dragging');
+        const after = idsOf();
+        if (!cancel && after.join() !== before.join()) onReorder(after, before);
+      }
+      tbody.addEventListener('pointermove', e => {
+        if (!drag || e.pointerId !== drag.pointerId) return;
+        e.preventDefault();
+        drag.y = e.clientY;
+      });
+      tbody.addEventListener('pointerup', e => { if (drag && e.pointerId === drag.pointerId) finish(false); });
+      tbody.addEventListener('pointercancel', e => { if (drag && e.pointerId === drag.pointerId) finish(true); });
+      tbody.addEventListener('lostpointercapture', e => { if (drag && e.pointerId === drag.pointerId) finish(false); });
+      document.addEventListener('keydown', e => { if (drag && e.key === 'Escape') { e.preventDefault(); finish(true); } }, true);
+      // iOS: impede o scroll da página enquanto se arrasta com o dedo
+      tbody.addEventListener('touchmove', e => { if (drag) e.preventDefault(); }, { passive: false });
+
+      // Teclado: setas na pega movem uma posição; grava 0,7 s depois da última tecla
+      let kbBefore = null, kbTimer = null;
+      tbody.addEventListener('keydown', e => {
+        const handle = e.target.closest('.drag-handle');
+        if (!handle || drag || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+        e.preventDefault();
+        const row = handle.closest('tr');
+        const other = e.key === 'ArrowUp' ? row.previousElementSibling : row.nextElementSibling;
+        if (!movable(other) || tbody.classList.contains('saving')) return;
+        if (!kbBefore) kbBefore = idsOf();
+        withFlip([other], () => (e.key === 'ArrowUp' ? row.after(other) : row.before(other)));
+        clearTimeout(kbTimer);
+        kbTimer = setTimeout(() => {
+          const before = kbBefore; kbBefore = null;
+          const after = idsOf();
+          if (after.join() !== before.join()) onReorder(after, before);
+        }, 700);
+      });
+    }
+
+    function closeAssignPopover() {
+      if (!assignPop) return;
+      assignPop.el.remove();
+      document.removeEventListener('mousedown', assignPop.outside, true);
+      document.removeEventListener('keydown', assignPop.esc, true);
+      window.removeEventListener('resize', assignPop.close);
+      window.removeEventListener('scroll', assignPop.onScroll, true);
+      assignPop = null;
+    }
+    async function toggleStageAssignee(stageId, memberId, on) {
+      if (devMode) {
+        const l = mockStageAssignees[stageId] = mockStageAssignees[stageId] || [];
+        if (on && !l.includes(memberId)) l.push(memberId);
+        if (!on) mockStageAssignees[stageId] = l.filter(x => x !== memberId);
+        return;
+      }
+      const r = on
+        ? await supabase.from('stage_assignees').upsert({ stage_id: stageId, member_id: memberId }, { onConflict: 'stage_id,member_id', ignoreDuplicates: true })
+        : await supabase.from('stage_assignees').delete().eq('stage_id', stageId).eq('member_id', memberId);
+      if (r.error) throw r.error;
+    }
+    // Lista pequena junto a uma célula (no telemóvel, folha em baixo). Devolve o elemento, ou
+    // null quando se tocou outra vez na mesma célula (nesse caso só fecha).
+    function mountCellPopover(anchor, label, headHtml, bodyHtml) {
+      const again = assignPop && assignPop.anchor === anchor;
+      closeAssignPopover();
+      if (again) return null;
+      const el = document.createElement('div');
+      el.className = 'assign-pop';
+      el.setAttribute('role', 'dialog');
+      el.setAttribute('aria-label', label);
+      el.innerHTML = `<div class="assign-pop-head">${headHtml}</div><div class="assign-pop-list">${bodyHtml}</div>`;
+      document.body.appendChild(el);
+      const place = () => {
+        const r = anchor.getBoundingClientRect();
+        if (window.matchMedia('(max-width: 599px)').matches) { el.classList.add('sheet'); return; }
+        const w = el.offsetWidth, h = el.offsetHeight;
+        let left = Math.min(Math.max(8, r.left), window.innerWidth - w - 8);
+        let top = r.bottom + 6;
+        if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 6);
+        el.style.left = left + 'px'; el.style.top = top + 'px';
+      };
+      const outside = e => { if (!el.contains(e.target) && !anchor.contains(e.target)) closeAssignPopover(); };
+      const esc = e => { if (e.key === 'Escape') { e.stopPropagation(); closeAssignPopover(); anchor.focus(); } };
+      const onScroll = e => { if (!el.contains(e.target)) place(); };
+      assignPop = { el, anchor, outside, esc, close: closeAssignPopover, onScroll, place };
+      document.addEventListener('mousedown', outside, true);
+      document.addEventListener('keydown', esc, true);
+      window.addEventListener('resize', closeAssignPopover);
+      window.addEventListener('scroll', onScroll, true);
+      place();
+      return el;
+    }
+    async function openAssignPopover(anchor, stage, ids, onChange) {
+      const el = mountCellPopover(anchor, 'Pessoas na fase',
+        `<b>${escapeHtml(phaseName(stage))}</b><span>toca para atribuir ou tirar</span>`, '<div class="gantt-empty">A carregar…</div>');
+      if (!el) return;
+      const place = assignPop.place;
+      const members = await loadAllMembers();
+      if (!assignPop || assignPop.el !== el) return;
+      members.forEach(m => { ataMemberNames[m.id] = m.name; });
+      const me = (await getCurrentMember())?.id;
+      const sorted = [...members].sort((a, b) => (b.id === me) - (a.id === me));
+      const list = el.querySelector('.assign-pop-list');
+      list.innerHTML = sorted.map(m => `
+        <button type="button" class="assign-opt${ids.includes(m.id) ? ' on' : ''}" data-member="${escapeHtml(m.id)}" aria-pressed="${ids.includes(m.id)}">
+          <span class="marco-avatar${m.id === me ? ' me' : ''}">${escapeHtml(initials(m.name))}</span>
+          <span class="assign-opt-name">${escapeHtml(m.name)}${m.id === me ? ' <small>(eu)</small>' : ''}</span>
+          <span class="assign-check" aria-hidden="true">✓</span>
+        </button>`).join('');
+      place();
+      list.querySelector('.assign-opt')?.focus();
+      list.addEventListener('click', async (e) => {
+        const b = e.target.closest('[data-member]');
+        if (!b || b.disabled) return;
+        const id = b.dataset.member, on = !ids.includes(id);
+        b.disabled = true;
+        b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
+        try {
+          await toggleStageAssignee(stage.id, id, on);
+          if (on) ids.push(id); else ids.splice(ids.indexOf(id), 1);
+          invalidateActivePhases();
+          onChange && onChange();
+        } catch (err) {
+          b.classList.toggle('on', !on); b.setAttribute('aria-pressed', !on);
+          showToast('Não foi possível gravar: ' + err.message, { type: 'error' });
+        } finally { b.disabled = false; }
+      });
+    }
+
+    // Estado de uma fase, escolhido junto à célula: grava ao tocar (quem chama mostra o "Anular")
+    function openStatusPopover(anchor, stage, onPick) {
+      const cur = STAGE_STATUSES.some(([v]) => v === stage.status) ? stage.status : 'pending';
+      const opts = STAGE_STATUSES.filter(([v]) => v !== 'todo' || cur === 'todo').filter(([v]) => !(v === 'pending' && cur === 'todo'));
+      const el = mountCellPopover(anchor, 'Estado da fase', `<b>${escapeHtml(phaseName(stage))}</b><span>estado da fase</span>`,
+        opts.map(([v, l]) => `
+          <button type="button" class="assign-opt${v === cur ? ' on' : ''}" data-status="${v}" aria-pressed="${v === cur}">
+            <span class="stage-dot st-${v}" aria-hidden="true"></span>
+            <span class="assign-opt-name">${l}</span>
+            <span class="assign-check" aria-hidden="true">✓</span>
+          </button>`).join(''));
+      if (!el) return;
+      el.querySelector('.assign-opt.on, .assign-opt')?.focus();
+      el.querySelector('.assign-pop-list').addEventListener('click', e => {
+        const b = e.target.closest('[data-status]');
+        if (!b) return;
+        closeAssignPopover();
+        if (b.dataset.status !== stage.status) onPick(b.dataset.status);
+      });
+    }
+
+    // Atribuir pessoas a uma fase (janela; usada onde não há tabela)
     async function openAssignModal(stage, currentIds, onSaved) {
       openQuickModal('Pessoas na fase', `
         <div class="field-hint" style="margin:0 0 12px;">${escapeHtml(phaseName(stage))} — quem trabalha nesta fase vê-a no seu calendário e na Home.</div>
@@ -7594,6 +8008,7 @@
       const close = () => { el.classList.remove('show'); setTimeout(() => el.remove(), 200); };
       const timer = setTimeout(close, ms);
       if (undo) el.querySelector('.toast-undo').addEventListener('click', () => { clearTimeout(timer); close(); undo(); });
+      return () => { clearTimeout(timer); close(); };
     }
 
     // ================= HORAS: grelha semanal =================
@@ -7985,6 +8400,7 @@
           const r = await supabase.from('project_stages').select('id, status, revision_label, stage_types(name)').eq('project_id', pid).order('stage_order');
           stages = r.data || [];
         }
+        stages = stages.filter(s => !isAwardStage(s));
         const open = stages.filter(s => !isStageDone(s)), done = stages.filter(isStageDone);
         const opt = s => `<option value="${escapeHtml(s.id)}">${escapeHtml((s.stage_types?.name ?? 'Fase') + (s.revision_label ? ' ' + s.revision_label : ''))}</option>`;
         sel.innerHTML = '<option value="">Escolhe a fase</option>' + open.map(opt).join('') +
@@ -8153,7 +8569,7 @@
         let head, sub = '', orig = '';
         if (shown) {
           head = `Lead time: ${escapeHtml(fmtLong(shown))}`;
-          sub = ltManual ? 'Alterado à mão' : `${escapeHtml(String(stage.expected_lead_time_days))} dias úteis a partir de ${escapeHtml(fmtDayMonth(stage.plan_start))}`;
+          sub = ltManual ? 'Alterado à mão' : `${escapeHtml(String(stage.expected_lead_time_days))} dias úteis a partir de ${escapeHtml(fmtDayMonthYear(stage.plan_start))}`;
           if (late) sub += ' · <em>atrasada</em>';
           if (ltManual && auto && auto !== ltManual) orig = `<span>Original: ${escapeHtml(fmtLong(auto))} · <button type="button" class="text-btn" data-lt-reset>Repor original</button></span>`;
           else if (ltManual && !auto) orig = `<span><button type="button" class="text-btn" data-lt-reset>Remover alteração</button></span>`;
@@ -8181,8 +8597,10 @@
         </div>
         <label class="field-label">Checklist</label>
         <div class="checklist" id="ph-checklist"><div class="field-hint" style="margin:0;">A carregar…</div></div>
+        <div${isAwardStage(stage) ? ' hidden' : ''}>
         <label class="field-label">Pessoas</label>
         <div class="owner-picker" id="ph-people">${members.map(m => `<button type="button" class="owner-chip${sel.has(m.id) ? ' on' : ''}" data-member="${escapeHtml(m.id)}">${escapeHtml(m.name)}</button>`).join('')}</div>
+        </div>
         <details class="more-opts">
           <summary>Mais opções</summary>
           <div class="form-grid">
