@@ -852,47 +852,79 @@
   .break-note { font-size: 12.5px; color: var(--text-2); text-align: left !important; }
   tr.break-row.active .break-note { color: var(--text); font-weight: 550; }
   .gantt-bar.break-bar.open { background: repeating-linear-gradient(45deg, var(--warning), var(--warning) 4px, var(--warning-soft) 4px, var(--warning-soft) 8px); }
-  /* ---------- Histórico do projeto (timeline vertical) ---------- */
-  .hist { position: relative; margin: 4px 0 2px; }
-  .hist-row, .hist-month { display: grid; grid-template-columns: 40px auto 24px minmax(0, 1fr); column-gap: 8px; align-items: stretch; }
-  .hist-row { min-height: 46px; border-radius: 8px; }
-  .hist-row.click { cursor: pointer; }
-  .hist-row.click:hover { background: var(--surface-2); }
-  .hist-date { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; line-height: 1.1; padding: 6px 0; }
-  .hist-date b { font-size: 15px; font-weight: 650; font-variant-numeric: tabular-nums; }
-  .hist-date span { font-size: 11px; color: var(--text-3); }
-  .hist-row.today .hist-date b { font-size: 12.5px; color: var(--accent); }
-  .hist-lanes { display: flex; }
+  /* ---------- Histórico do projeto (timeline em colunas) ---------- */
+  .hist-sum { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 2px 0 16px; }
+  .hs-tile { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+  .hs-tile span { display: block; font-size: 11px; font-weight: 650; letter-spacing: .03em; text-transform: uppercase; color: var(--text-3); }
+  .hs-tile b { display: block; font-size: 15px; font-weight: 650; margin-top: 3px; overflow-wrap: break-word; }
+  .hs-tile small { display: block; font-size: 12px; color: var(--text-2); margin-top: 2px; overflow-wrap: break-word; }
+  .hs-tile small .late, .hs-tile.bad small { color: var(--danger); }
+  .hs-tile.warn { background: var(--warning-soft); } .hs-tile.warn b { color: var(--warning); }
+  @media (max-width: 899px) { .hist-sum { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hist-sum .hs-tile:last-child { grid-column: 1 / -1; } }
+  .hist2 { position: relative; }
+  .hrow { display: grid; grid-template-columns: 46px auto minmax(0, 1fr); align-items: stretch; }
+  .hcells { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, .8fr) minmax(0, 1fr); border-top: 1px solid var(--border); }
+  .hc { border-left: 1px solid var(--border); padding: 4px 0; min-width: 0; }
+  .hhead .hcells { border-top: none; }
+  .hhead .hc { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-3); padding: 0 10px 8px; border-left-color: transparent; }
+  .hhead { position: sticky; top: 103px; background: var(--surface); z-index: 3; }   /* por baixo da barra do topo e dos separadores */
+  .hrow.paused .hcells { background: var(--warning-soft); }
+  .hrow.paused .hc-pause { box-shadow: inset 3px 0 0 var(--warning); }
+  .hrow.today .hcells { background: var(--accent-soft); }
+  .hrow.today.paused .hcells { background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--warning-soft); }
+  .hdate { display: flex; flex-direction: column; align-items: flex-end; justify-content: flex-start; padding: 9px 8px 0 0; line-height: 1.1; }
+  .hdate b { font-size: 15px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .hdate span { font-size: 11px; color: var(--text-3); }
+  .hrow.today .hdate b { font-size: 12.5px; color: var(--accent); }
+  .hist-lanes { display: flex; padding-right: 4px; }
   .hl { position: relative; width: 11px; }
-  .hl.on::before { content: ''; position: absolute; left: 4px; width: 3px; top: 0; bottom: 0; border-radius: 2px; background: var(--c); opacity: .85; }
-  .hl.on.up::before { bottom: 50%; }
-  .hl.on.down::before { top: 50%; }
-  .hl.on.late::before { background: repeating-linear-gradient(to bottom, var(--danger) 0 4px, transparent 4px 7px); opacity: 1; }
-  .hl.on.up::after, .hl.on.down::after { content: ''; position: absolute; left: 2px; top: calc(50% - 3.5px); width: 7px; height: 7px; border-radius: 50%; background: var(--c); }
-  .hist-rail { position: relative; display: flex; align-items: center; justify-content: center; }
-  .hist-rail::before { content: ''; position: absolute; left: calc(50% - 1px); width: 2px; top: 0; bottom: 0; background: var(--border-strong); }
-  .hist-row.today .hist-rail::before { top: 50%; }
-  .hist-rail.paused::before { left: calc(50% - 3px); width: 6px; border-radius: 3px; background: repeating-linear-gradient(to bottom, var(--warning) 0 5px, var(--warning-soft) 5px 9px); }
-  .hist-dot { position: relative; z-index: 1; width: 12px; height: 12px; border-radius: 50%; background: var(--surface); border: 2.5px solid var(--c, var(--accent)); }
-  .hist-row.today .hist-dot { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
-  .hist-row.k-delivery .hist-dot, .hist-row.k-award .hist-dot, .hist-row.k-payment .hist-dot { background: var(--c); }
-  .hist-row.k-start .hist-dot, .hist-row.k-ata .hist-dot, .hist-row.k-invoice .hist-dot { width: 9px; height: 9px; border-width: 2px; }
-  .hist-row.k-pause .hist-dot, .hist-row.k-pause-end .hist-dot { border-radius: 3px; }
-  .hist-body { display: flex; flex-direction: column; justify-content: center; padding: 7px 8px 7px 0; min-width: 0; }
-  .hist-body b { font-size: 13.5px; font-weight: 600; overflow-wrap: break-word; }
-  .hist-row.k-start .hist-body b, .hist-row.k-ata .hist-body b, .hist-row.k-invoice .hist-body b, .hist-row.k-payment .hist-body b { font-weight: 550; color: var(--text-2); }
-  .hist-row.k-delivery .hist-body b { color: var(--text); }
-  .hist-row.k-planned .hist-body b { color: var(--danger); font-weight: 550; }
-  .hist-body span { font-size: 12.5px; color: var(--text-3); overflow-wrap: break-word; }
-  .hist-month { min-height: 30px; }
-  .hist-month .hist-lanes { grid-column: 2; }
-  .hist-month-label { grid-column: 3 / 5; align-self: center; font-size: 11.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-3); padding: 8px 0 4px; }
+  .hl.on::before { content: ''; position: absolute; left: 4px; width: 3px; top: 0; bottom: 0; border-radius: 2px; background: var(--c); }
+  .hl.on.up::before { bottom: auto; height: 18px; }
+  .hl.on.down::before { top: 18px; }
+  .hl.on.dot::before { display: none; }
+  .hl.on.late::before { background: repeating-linear-gradient(to bottom, var(--danger) 0 4px, transparent 4px 7px); }
+  .hl.on.up::after, .hl.on.down::after, .hl.on.dot::after { content: ''; position: absolute; left: 1.5px; top: 14.5px; width: 8px; height: 8px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 2px var(--surface); }
+  .hmonth { min-height: 28px; }
+  .hmonth-label { grid-column: 3; align-self: end; font-size: 11.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-2); padding: 12px 10px 4px; border-top: 1px solid var(--border-strong); }
+  .hmonth.paused .hmonth-label { background: var(--warning-soft); }
+  .hi { display: flex; align-items: flex-start; gap: 8px; padding: 5px 10px; border-radius: 6px; margin: 0 4px; }
+  .hi.click { cursor: pointer; } .hi.click:hover { background: var(--surface-2); }
+  .hi-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex-shrink: 0; margin-top: 5px; }
+  .hi.k-start .hi-dot, .hi.k-planned .hi-dot, .hi.k-invoice .hi-dot, .hi.k-ata .hi-dot { background: transparent; box-shadow: inset 0 0 0 2px var(--c); }
+  .hi.k-pause .hi-dot, .hi.k-pause-end .hi-dot { border-radius: 2px; }
+  .hi-txt { flex: 1; min-width: 0; }
+  .hi-txt b { display: block; font-size: 13.5px; font-weight: 600; line-height: 1.3; overflow-wrap: break-word; }
+  .hi-txt span { display: block; font-size: 12px; color: var(--text-2); line-height: 1.3; overflow-wrap: break-word; }
+  .hi.k-start .hi-txt b, .hi.k-ata .hi-txt b, .hi.k-invoice .hi-txt b { font-weight: 550; }
+  .hi.k-planned .hi-txt b, .hi.k-planned .hi-txt span { color: var(--danger); }
+  .hi.k-payment .hi-txt b { color: var(--success); }
+  .hi-cat { display: none; }
+  .hi-amt { font-style: normal; font-size: 13px; font-weight: 650; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .hi.k-payment .hi-amt { color: var(--success); }
+  .hi-badge { font-style: normal; font-size: 11px; font-weight: 700; white-space: nowrap; padding: 2px 7px; border-radius: 999px; margin-top: 1px; }
+  .hi-badge.late { background: var(--danger-soft); color: var(--danger); }
+  .hi-badge.early, .hi-badge.ok { background: var(--success-soft); color: var(--success); }
   .hist-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--text-3); margin: -2px 0 10px; }
   .hist-legend i { display: inline-block; vertical-align: middle; margin-right: 5px; }
   .hist-legend .lg-lane { width: 3px; height: 14px; border-radius: 2px; background: var(--accent); }
   .hist-legend .lg-late { width: 3px; height: 14px; background: repeating-linear-gradient(to bottom, var(--danger) 0 4px, transparent 4px 7px); }
-  .hist-legend .lg-pause { width: 6px; height: 14px; border-radius: 3px; background: repeating-linear-gradient(to bottom, var(--warning) 0 5px, var(--warning-soft) 5px 9px); }
-  @media (max-width: 599px) { .hist-row, .hist-month { grid-template-columns: 30px auto 20px minmax(0, 1fr); column-gap: 6px; } .hl { width: 9px; } .hl.on::before { left: 3px; } .hl.on.up::after, .hl.on.down::after { left: 1px; } }
+  .hist-legend .lg-pause { width: 14px; height: 12px; border-radius: 3px; background: var(--warning-soft); box-shadow: inset 3px 0 0 var(--warning); }
+  /* Telemóvel e iPad vertical: uma lista, cada acontecimento com a etiqueta da coluna */
+  @media (max-width: 759px) {
+    .hhead { display: none; }
+    .hrow { grid-template-columns: 34px auto minmax(0, 1fr); }
+    .hcells { display: block; }
+    .hc { border-left: none; padding: 0; }
+    .hc.empty { display: none; }
+    .hcells > .hc:first-child { padding-top: 4px; }
+    .hcells > .hc:last-child { padding-bottom: 4px; }
+    .hi { margin: 0; padding: 5px 8px; }
+    .hi-cat { display: block; font-style: normal; font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-3); }
+    .hc-pause .hi-cat { color: var(--warning); } .hc-bill .hi-cat { color: var(--success); }
+    .hrow.paused .hc-pause { box-shadow: none; }
+    .hdate { padding-right: 6px; }
+    .hl { width: 9px; } .hl.on::before { left: 3px; } .hl.on.up::after, .hl.on.down::after, .hl.on.dot::after { left: .5px; }
+  }
 
   /* ---------- Ordem das fases (arrastar e largar) ---------- */
   .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
@@ -3852,7 +3884,7 @@
             </div>
             <div class="gantt-wrap" id="project-history">
               <div class="card-head"><h2>Histórico</h2><span>do mais recente para o mais antigo</span></div>
-              <div class="hist-legend"><span><i class="lg-lane"></i>lead time de cada fase</span><span><i class="lg-late"></i>além do previsto</span><span><i class="lg-pause"></i>em pausa</span></div>
+              <div class="hist-legend"><span><i class="lg-lane"></i>lead time de cada fase</span><span><i class="lg-late"></i>além do previsto</span><span><i class="lg-pause"></i>projeto em pausa</span></div>
               ${historyTimelineHtml({ project, stages, breaks, invoices, payments, marcos: projectMarcos, marcoTypes, notes: projectNotes })}
             </div>
           </section>
@@ -5483,133 +5515,157 @@
     }
 
     // ================= HISTÓRICO DO PROJETO (timeline vertical) =================
-    // Tudo o que já aconteceu, do mais recente (em cima) para o mais antigo: adjudicação,
-    // marcos e entregas, pausas, faturas e recebimentos, atas, início de cada fase. À esquerda,
-    // uma linha por fase mostra o seu lead time: cheia até ao fim previsto, tracejada a
-    // vermelho quando passou do previsto (atraso), até à entrega.
+    // Tudo o que já aconteceu, do mais recente (em cima) para o mais antigo, em colunas:
+    // Fases (linha de lead time de cada fase, entregas com o desvio ao previsto) · Marcos e atas ·
+    // Pausas (o período em pausa fica a âmbar na linha toda) · Faturação (faturas e recebimentos,
+    // com os dias que o cliente levou a pagar). Por cima, um resumo para ler em 5 segundos.
+    // No telemóvel as colunas passam a lista, cada acontecimento com a etiqueta da sua coluna.
     const HIST_COLORS = ['#714D79', '#3E6FA8', '#2F8A8A', '#B8842A', '#8A5A9E', '#5A6B7A', '#2E7D4F', '#A85A3E'];
+    const HIST_COLS = [['phase', 'Fases'], ['marco', 'Marcos e atas'], ['pause', 'Pausas'], ['bill', 'Faturação']];
     function historyTimelineHtml({ project, stages, breaks, invoices, payments, marcos, marcoTypes, notes }) {
       const today = dateKey(new Date());
       const ev = [];
-      const add = (date, rank, o) => { if (date && date <= today) ev.push({ date, rank, ...o }); };
+      const add = (date, col, rank, o) => { if (date && date <= today) ev.push({ date, col, rank, ...o }); };
       const eur = v => fmtEUR(Number(v || 0));
+      const days = n => `${n} dia${n === 1 ? '' : 's'}`;
 
-      // Linhas de lead time (uma por fase já começada)
+      // Linhas de lead time (uma por fase já começada), com o que aconteceu de facto
       const lanes = [];
       [...stages].sort((a, b) => (a.stage_order ?? 0) - (b.stage_order ?? 0)).forEach(st => {
         if (isOffPlanStage(st)) return;
-        // o que aconteceu de facto: início real (se registado), entrega real
         let start = st.start_date || st.plan_start;
         if (!start || start > today) return;
         const done = isStageDone(st) || !!st.delivery_date;
         const end = st.delivery_date || (done ? (st.end_date || st.plan_end || start) : today);
         if (end < start) start = end;
         const planned = st.plan_auto_end || st.plan_end || null;
-        lanes.push({ st, start, end, planned, open: !done, color: HIST_COLORS[lanes.length % HIST_COLORS.length] });
+        lanes.push({ st, start, end, planned, open: !done, delivered: !!st.delivery_date, color: HIST_COLORS[lanes.length % HIST_COLORS.length] });
       });
-      // colunas: fases que não se sobrepõem partilham a mesma coluna
       const cols = [];
       [...lanes].sort((a, b) => a.start.localeCompare(b.start)).forEach(l => {
         let c = cols.findIndex(lastEnd => lastEnd < l.start);
         if (c < 0) { c = cols.length; cols.push(l.end); } else cols[c] = l.end;
         l.col = c;
       });
-      const laneOf = st => lanes.find(l => l.st === st);
+      const delta = l => (l.planned && !l.open) ? diffDays(l.planned, l.end) : null;
+      const deltaBadge = d => d == null ? '' : d > 0 ? `<em class="hi-badge late">+${days(d)}</em>` : d < 0 ? `<em class="hi-badge early">${days(-d)} antes</em>` : '<em class="hi-badge ok">no prazo</em>';
 
-      add(project.awarding_date, 1, { kind: 'award', title: 'Adjudicação', sub: project.name ? 'Início do projeto' : '', color: 'var(--text)' });
+      // --- Fases ---
       lanes.forEach(l => {
-        add(l.start, 2, { kind: 'start', title: `Início · ${phaseName(l.st)}`, sub: l.planned ? `Lead time previsto até ${fmtDayMonthYear(l.planned)}` : '', color: l.color, lane: l, edge: 'start', stageId: l.st.id });
-        if (l.planned && l.planned < l.end && l.planned <= today) {
-          add(l.planned, 6, { kind: 'planned', title: `Fim previsto · ${phaseName(l.st)}`, sub: l.open ? 'Ainda por entregar' : 'Entregue depois do previsto', color: 'var(--danger)', lane: l, stageId: l.st.id });
-        }
-        const hasDeliveryMarco = marcos.some(m => m.auto_kind === 'delivery' && String(m.stage_id) === String(l.st.id));
-        if (!l.open && !hasDeliveryMarco) add(l.end, 8, { kind: l.st.delivery_date ? 'delivery' : 'end', title: `${l.st.delivery_date ? 'Entrega' : 'Concluída'} · ${phaseName(l.st)}`, sub: '', color: l.color, lane: l, edge: 'end', stageId: l.st.id });
+        const nm = phaseName(l.st);
+        add(l.start, 'phase', 1, { kind: 'start', title: nm, sub: 'Início' + (l.planned ? ` · previsto até ${fmtDayMonthYear(l.planned)}` : ''), color: l.color, lane: l, edge: 'start', stageId: l.st.id });
+        if (l.planned && l.planned < l.end && l.planned <= today)
+          add(l.planned, 'phase', 2, { kind: 'planned', title: nm, sub: l.open ? 'Fim previsto — ainda por entregar' : 'Fim previsto', color: 'var(--danger)', lane: l, stageId: l.st.id });
+        if (!l.open) add(l.end, 'phase', 3, { kind: 'delivery', title: nm, sub: `${l.delivered ? 'Entregue' : 'Concluída'} · ${days(diffDays(l.start, l.end))} de trabalho`, color: l.color, lane: l, edge: 'end', stageId: l.st.id, badge: deltaBadge(delta(l)) });
       });
-      // Marcos (as entregas trazem a comparação com o lead time)
+      add(project.awarding_date, 'phase', 0, { kind: 'award', title: 'Adjudicação', sub: 'Arranque do projeto', color: 'var(--text)' });
+      // --- Marcos (as entregas já estão nas fases) e atas ---
       marcos.forEach(m => {
+        if (m.auto_kind === 'delivery') return;
         const t = marcoTypes[m.type_id];
-        const st = m.stage_id ? stages.find(x => String(x.id) === String(m.stage_id)) : null;
-        const l = st ? laneOf(st) : null;
-        let sub = t?.name || '';
-        if (m.auto_kind === 'delivery' && st) {
-          const planned = st.plan_auto_end || st.plan_end;
-          if (planned) {
-            const d = diffDays(planned, m.event_date);
-            sub = d > 0 ? `${d} dia${d === 1 ? '' : 's'} depois do previsto (${fmtDayMonthYear(planned)})` : d < 0 ? `${-d} dia${d === -1 ? '' : 's'} antes do previsto` : 'No dia previsto';
-          } else sub = 'Entrega';
-        }
-        add(m.event_date, m.auto_kind === 'delivery' ? 8 : 5, {
-          kind: m.auto_kind === 'delivery' ? 'delivery' : 'marco', title: m.title, sub,
-          color: m.auto_kind === 'delivery' ? (l?.color || t?.color || '#2E7D4F') : (t?.color || 'var(--accent)'),
-          lane: l, edge: l ? 'end' : null, marcoId: m.id, stageId: st?.id
-        });
+        add(m.event_date, 'marco', 2, { kind: 'marco', title: m.title, sub: [t?.name, m.done ? 'feito' : ''].filter(Boolean).join(' · '), color: t?.color || 'var(--accent)', marcoId: m.id });
       });
-      // Pausas
+      notes.forEach(n => add(n.meeting_date, 'marco', 1, { kind: 'ata', title: n.title || 'Reunião', sub: 'Ata', color: 'var(--text-3)' }));
+      // --- Pausas ---
+      const who = b => b.type === 'client' ? 'À espera do cliente' : b.type === 'municipality' ? 'À espera da Câmara' : '';
       breaks.forEach(b => {
         if (!b.start_date) return;
-        const who = b.type === 'client' ? 'À espera do cliente' : b.type === 'municipality' ? 'À espera da Câmara' : '';
-        add(b.start_date, 3, { kind: 'pause', title: `Pausa · ${b.name || ''}`, sub: [who, b.end_date ? '' : 'em aberto'].filter(Boolean).join(' · '), color: 'var(--warning)', breakId: b.id });
-        if (b.end_date) add(b.end_date, 7, { kind: 'pause-end', title: `Fim da pausa · ${b.name || ''}`, sub: `${diffDays(b.start_date, b.end_date)} dias parado`, color: 'var(--warning)', breakId: b.id });
+        add(b.start_date, 'pause', 1, { kind: 'pause', title: b.name || 'Pausa', sub: ['Início', who(b)].filter(Boolean).join(' · '), color: 'var(--warning)', breakId: b.id });
+        if (b.end_date) add(b.end_date, 'pause', 2, { kind: 'pause-end', title: b.name || 'Pausa', sub: `Fim · ${days(diffDays(b.start_date, b.end_date))} parado`, color: 'var(--warning)', breakId: b.id });
       });
-      // Faturas e recebimentos
+      // --- Faturação ---
       const payBy = {};
       (payments || []).forEach(pm => (payBy[pm.invoice_id] = payBy[pm.invoice_id] || []).push(pm));
+      let billed = 0, received = 0, payDaysW = 0, payAmtW = 0;
       invoices.forEach(i => {
         if (i.status === 'cancelled') return;
-        const nr = i.invoice_number || i.external_ref || 'Fatura';
+        const nr = i.invoice_number || i.external_ref || '';
         const fase = i.stage_id ? stages.find(x => String(x.id) === String(i.stage_id)) : null;
-        add(i.issue_date, 4, { kind: 'invoice', title: `${Number(i.amount) < 0 ? 'Nota de crédito' : 'Fatura'} ${nr} · ${eur(i.amount)}`, sub: fase ? phaseName(fase) : '', color: 'var(--text-2)', invoiceId: i.id });
-        const pays = payBy[i.id];
-        if (pays && pays.length) pays.forEach(pm => add(pm.paid_at, 4, { kind: 'payment', title: `Recebido ${eur(pm.amount)}`, sub: `${nr}${pm.receipt_ref ? ' · ' + pm.receipt_ref : ''}`, color: 'var(--success)', invoiceId: i.id }));
-        else if (Number(i.amount_paid) > 0 && i.payment_date) add(i.payment_date, 4, { kind: 'payment', title: `Recebido ${eur(i.amount_paid)}`, sub: nr, color: 'var(--success)', invoiceId: i.id });
+        billed += Number(i.amount || 0);
+        add(i.issue_date, 'bill', 1, { kind: 'invoice', title: `${Number(i.amount) < 0 ? 'Nota de crédito' : 'Fatura'}${nr ? ' ' + nr : ''}`, sub: fase ? phaseName(fase) : 'sem fase', amount: eur(i.amount), color: 'var(--text-2)', invoiceId: i.id });
+        const pays = (payBy[i.id] && payBy[i.id].length) ? payBy[i.id].map(pm => ({ date: pm.paid_at, amount: Number(pm.amount) }))
+          : (Number(i.amount_paid) > 0 && i.payment_date ? [{ date: i.payment_date, amount: Number(i.amount_paid) }] : []);
+        pays.forEach(pm => {
+          if (!pm.date) return;
+          const d = Math.max(0, diffDays(i.issue_date, pm.date));
+          received += pm.amount; payDaysW += d * pm.amount; payAmtW += pm.amount;
+          add(pm.date, 'bill', 2, { kind: 'payment', title: 'Recebido', sub: `${nr ? nr + ' · ' : ''}${d === 0 ? 'no próprio dia' : days(d) + ' após a fatura'}`, amount: eur(pm.amount), color: 'var(--success)', invoiceId: i.id });
+        });
       });
-      // Atas
-      notes.forEach(n => add(n.meeting_date, 5, { kind: 'ata', title: `Ata · ${n.title || 'Reunião'}`, sub: '', color: 'var(--text-3)' }));
 
-      if (!ev.length) return '<div class="gantt-empty">Ainda não há histórico. Aparece aqui à medida que o projeto avança: adjudicação, entregas, marcos, pausas, faturas e atas.</div>';
+      // --- Resumo ---
+      const closed = lanes.filter(l => !l.open && l.planned);
+      const onTime = closed.filter(l => delta(l) <= 0).length;
+      const lates = closed.map(delta).filter(d => d > 0);
+      const pausedDays = breaks.filter(b => b.start_date && b.start_date <= today).reduce((t, b) => t + diffDays(b.start_date, b.end_date && b.end_date < today ? b.end_date : today), 0);
+      const openBreak = breaks.find(b => b.start_date && b.start_date <= today && (!b.end_date || b.end_date >= today));
+      const running = lanes.filter(l => l.open);
+      const tile = (label, value, sub, cls = '') => `<div class="hs-tile ${cls}"><span>${label}</span><b>${value}</b>${sub ? `<small>${sub}</small>` : ''}</div>`;
+      const summary = `<div class="hist-sum">
+          ${tile('Adjudicação', project.awarding_date ? escapeHtml(fmtDayMonthYear(project.awarding_date)) : '—', project.awarding_date ? `há ${escapeHtml(days(diffDays(project.awarding_date, today)))}` : '')}
+          ${openBreak ? tile('Agora', 'Em pausa', `${escapeHtml(openBreak.name || '')} · há ${escapeHtml(days(diffDays(openBreak.start_date, today)))}`, 'warn')
+            : tile('Agora', running.length ? escapeHtml(running.map(l => phaseName(l.st)).join(', ')) : '—', running.length && running[0].planned ? (today > running[0].planned ? `<span class="late">${escapeHtml(days(diffDays(running[0].planned, today)))} além do previsto</span>` : `previsto até ${escapeHtml(fmtDayMonthYear(running[0].planned))}`) : '')}
+          ${tile('Entregas no prazo', closed.length ? `${onTime} de ${closed.length}` : '—', lates.length ? `atraso médio ${escapeHtml(days(Math.round(lates.reduce((a, b) => a + b, 0) / lates.length)))}` : closed.length ? 'sem atrasos' : '', lates.length ? 'bad' : '')}
+          ${tile('Em pausa', pausedDays ? escapeHtml(days(pausedDays)) : '—', breaks.length ? `${breaks.length} pausa${breaks.length === 1 ? '' : 's'}` : '')}
+          ${tile('Faturado · recebido', `${escapeHtml(fmtEURShort(billed))} · ${escapeHtml(fmtEURShort(received))}`, payAmtW ? `pagam em média em ${escapeHtml(days(Math.round(payDaysW / payAmtW)))}` : '')}
+        </div>`;
 
-      ev.sort((a, b) => b.date.localeCompare(a.date) || b.rank - a.rank);
-      // Posição (linha) do fim e do início de cada fase: a linha da fase ocupa o que fica entre eles
-      ev.forEach((e, i) => {
-        if (!e.lane) return;
-        if (e.edge === 'end' && e.lane.endIdx == null) e.lane.endIdx = i;
-        if (e.edge === 'start') e.lane.startIdx = i;
-      });
-      lanes.forEach(l => { if (l.open || l.endIdx == null) l.endIdx = -1; if (l.startIdx == null) l.startIdx = ev.length; });
+      if (!ev.length) return summary + '<div class="gantt-empty">Ainda não há histórico. Aparece aqui à medida que o projeto avança: adjudicação, entregas, marcos, pausas, faturas e atas.</div>';
+
+      // Linhas: um dia por linha (mais recente em cima)
+      const byDate = {};
+      ev.forEach(e => (byDate[e.date] = byDate[e.date] || []).push(e));
+      const dates = Object.keys(byDate).sort().reverse();
+      const rowOf = {};
+      dates.forEach((d, i) => byDate[d].forEach(e => {
+        if (e.lane && e.edge === 'start') e.lane.startIdx = i;
+        if (e.lane && e.edge === 'end') e.lane.endIdx = i;
+      }));
+      lanes.forEach(l => { if (l.open || l.endIdx == null) l.endIdx = -1; if (l.startIdx == null) l.startIdx = dates.length; });
       const nCols = cols.length;
-      const inPause = d => breaks.some(b => b.start_date && d >= b.start_date && d <= (b.end_date || today));
-      // pos: índice da linha (-1 = Hoje); between: cabeçalho de mês logo acima da linha pos
       const lanesHtml = (pos, d, between = false) => {
-        if (!nCols) return '';
         const cells = [];
         for (let c = 0; c < nCols; c++) {
-          const l = lanes.find(x => x.col === c && (between ? pos > x.endIdx && pos <= x.startIdx : pos >= x.endIdx && pos <= x.startIdx));
+          const l = pos === null ? null : lanes.find(x => x.col === c && (between ? pos > x.endIdx && pos <= x.startIdx : pos >= x.endIdx && pos <= x.startIdx));
           if (!l) { cells.push('<span class="hl"></span>'); continue; }
-          const part = between ? 'full' : pos === l.startIdx ? 'up' : pos === l.endIdx && !l.open ? 'down' : 'full';
+          const part = between ? 'full' : (pos === l.startIdx && pos === l.endIdx) ? 'dot' : pos === l.startIdx ? 'up' : (pos === l.endIdx && !l.open) ? 'down' : 'full';
           const late = l.planned && d > l.planned;
-          cells.push(`<span class="hl on ${part}${late ? ' late' : ''}" style="--c:${l.color}" title="${escapeHtml(phaseName(l.st))}${l.planned ? ' · previsto ' + escapeHtml(fmtDayMonthYear(l.planned)) : ''}"></span>`);
+          cells.push(`<span class="hl on ${part}${late ? ' late' : ''}" style="--c:${l.color}" title="${escapeHtml(phaseName(l.st))}${l.planned ? ' · previsto até ' + escapeHtml(fmtDayMonthYear(l.planned)) : ''}"></span>`);
         }
         return `<span class="hist-lanes">${cells.join('')}</span>`;
       };
-      const monthName = d => { const x = parseDateKey(d); const t = x.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' }); return t.charAt(0).toUpperCase() + t.slice(1); };
-      let html = `<div class="hist" style="--n:${nCols}">`;
-      html += `<div class="hist-row today"><span class="hist-date"><b>Hoje</b></span>${lanesHtml(-1, today)}<span class="hist-rail${inPause(today) ? ' paused' : ''}"><span class="hist-dot"></span></span><span class="hist-body"><b>${escapeHtml(fmtDayMonthYear(today))}</b>${lanes.some(l => l.open) ? `<span>${lanes.filter(l => l.open).map(l => escapeHtml(phaseName(l.st))).join(', ')} em curso</span>` : ''}</span></div>`;
-      let month = today.slice(0, 7);
-      ev.forEach((e, i) => {
-        if (e.date.slice(0, 7) !== month) {
-          month = e.date.slice(0, 7);
-          const [y, m] = month.split('-').map(Number);
-          const monthEnd = dateKey(new Date(y, m, 0));
-          html += `<div class="hist-month">${lanesHtml(i, monthEnd, true)}<span class="hist-month-label">${escapeHtml(monthName(e.date))}</span></div>`;
-        }
-        const attrs = e.marcoId ? ` data-hist-marco="${escapeHtml(e.marcoId)}"` : e.stageId && (e.kind === 'start' || e.kind === 'end' || e.kind === 'planned') ? ` data-hist-stage="${escapeHtml(e.stageId)}"` : e.invoiceId ? ` data-hist-invoice="${escapeHtml(e.invoiceId)}"` : e.breakId ? ` data-hist-break="${escapeHtml(e.breakId)}"` : '';
-        const d = parseDateKey(e.date);
-        html += `<div class="hist-row k-${e.kind}${attrs ? ' click' : ''}"${attrs}>
-            <span class="hist-date"><b>${d.getDate()}</b><span>${escapeHtml(GANTT_MONTHS[d.getMonth()])}</span></span>
-            ${lanesHtml(i, e.date)}
-            <span class="hist-rail${inPause(e.date) ? ' paused' : ''}"><span class="hist-dot" style="--c:${e.color}"></span></span>
-            <span class="hist-body"><b>${escapeHtml(e.title)}</b>${e.sub ? `<span>${escapeHtml(e.sub)}</span>` : ''}</span>
+      const inPause = d => breaks.some(b => b.start_date && d >= b.start_date && d <= (b.end_date || today));
+      const itemHtml = e => {
+        const attrs = e.marcoId ? ` data-hist-marco="${escapeHtml(e.marcoId)}"` : e.stageId ? ` data-hist-stage="${escapeHtml(e.stageId)}"` : e.invoiceId ? ` data-hist-invoice="${escapeHtml(e.invoiceId)}"` : e.breakId ? ` data-hist-break="${escapeHtml(e.breakId)}"` : '';
+        const cat = HIST_COLS.find(c => c[0] === e.col)[1];
+        return `<div class="hi k-${e.kind}${attrs ? ' click' : ''}"${attrs}>
+            <span class="hi-dot" style="--c:${e.color}"></span>
+            <span class="hi-txt"><i class="hi-cat">${cat}</i><b>${escapeHtml(e.title)}</b>${e.sub ? `<span>${escapeHtml(e.sub)}</span>` : ''}</span>
+            ${e.amount ? `<em class="hi-amt">${escapeHtml(e.amount)}</em>` : ''}${e.badge || ''}
           </div>`;
+      };
+      const cellsHtml = list => `<div class="hcells">${HIST_COLS.map(([k]) => {
+          const mine = (list || []).filter(e => e.col === k).sort((a, b) => b.rank - a.rank);
+          return `<div class="hc hc-${k}${mine.length ? '' : ' empty'}">${mine.map(itemHtml).join('')}</div>`;
+        }).join('')}</div>`;
+      const monthName = d => { const t = parseDateKey(d).toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' }); return t.charAt(0).toUpperCase() + t.slice(1); };
+
+      let html = summary + `<div class="hist2">`;
+      html += `<div class="hrow hhead"><span class="hdate"></span>${lanesHtml(null)}<div class="hcells">${HIST_COLS.map(([k, l]) => `<div class="hc hc-${k}">${l}</div>`).join('')}</div></div>`;
+      // Hoje: o que está a decorrer
+      const nowItems = [];
+      running.forEach(l => nowItems.push({ col: 'phase', rank: 9, kind: 'now', title: phaseName(l.st), sub: l.planned ? (today > l.planned ? `Em curso · ${days(diffDays(l.planned, today))} além do previsto` : `Em curso · faltam ${days(diffDays(today, l.planned))}`) : 'Em curso', color: l.color, stageId: l.st.id }));
+      if (openBreak) nowItems.push({ col: 'pause', rank: 9, kind: 'pause', title: openBreak.name || 'Pausa', sub: `Em pausa há ${days(diffDays(openBreak.start_date, today))}`, color: 'var(--warning)', breakId: openBreak.id });
+      html += `<div class="hrow today${openBreak ? ' paused' : ''}"><span class="hdate"><b>Hoje</b><span>${escapeHtml(fmtDayMonth(today))}</span></span>${lanesHtml(-1, today)}${cellsHtml(nowItems)}</div>`;
+      let month = today.slice(0, 7);
+      dates.forEach((d, i) => {
+        if (d.slice(0, 7) !== month) {
+          month = d.slice(0, 7);
+          const [y, m] = month.split('-').map(Number);
+          html += `<div class="hrow hmonth${inPause(dateKey(new Date(y, m, 0))) ? ' paused' : ''}"><span class="hdate"></span>${lanesHtml(i, dateKey(new Date(y, m, 0)), true)}<div class="hmonth-label">${escapeHtml(monthName(d))}</div></div>`;
+        }
+        const x = parseDateKey(d);
+        html += `<div class="hrow${inPause(d) ? ' paused' : ''}"><span class="hdate"><b>${x.getDate()}</b><span>${escapeHtml(GANTT_MONTHS[x.getMonth()])}</span></span>${lanesHtml(i, d)}${cellsHtml(byDate[d])}</div>`;
       });
       html += '</div>';
       return html;
