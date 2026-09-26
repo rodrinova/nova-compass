@@ -1612,6 +1612,116 @@
   }
   @keyframes splash-out { 0%, 76% { opacity: 1; } 100% { opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { #splash { display: none; } }
+  /* =================== MOVIMENTO =================== */
+  /* Um só vocabulário: entradas curtas (160–320 ms), curva de desaceleração suave, nada de saltos.
+     Quem tem "reduzir movimento" no sistema vê tudo instantâneo. */
+  :root { --ease: cubic-bezier(.2, .8, .2, 1); --ease-io: cubic-bezier(.4, 0, .2, 1); --t-fast: 120ms; --t: 200ms; --t-slow: 320ms; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes popIn { from { opacity: 0; transform: translateY(-4px) scale(.97); } to { opacity: 1; transform: none; } }
+  @keyframes sheetUp { from { transform: translateY(100%); } to { transform: none; } }
+  @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+  @keyframes justUpdated { 0% { background-color: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); } 100% { background-color: transparent; box-shadow: inset 3px 0 0 transparent; } }
+  @keyframes growX { from { transform: scaleX(0); } to { transform: none; } }
+  @keyframes growY { from { transform: scaleY(0); } to { transform: none; } }
+  @keyframes drawLine { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+  @keyframes ringDraw { from { stroke-dasharray: 0 999; } }
+  @keyframes progressRun { 0% { transform: translateX(-100%) scaleX(.3); } 50% { transform: translateX(10%) scaleX(.6); } 100% { transform: translateX(100%) scaleX(.3); } }
+  @keyframes pressIn { 0% { transform: scale(1); } 40% { transform: scale(.94); } 100% { transform: scale(1); } }
+
+  /* Páginas: cada vez que uma página aparece, entra suavemente */
+  #home-view, #projects-view, #clients-view, #client-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view,
+  .settings-sec:not([hidden]) { animation: fadeUp var(--t-slow) var(--ease); }
+  [data-dpanel].tab-in { animation: fadeUp var(--t) var(--ease); }
+
+  /* Interação: cor, fundo e sombra mudam com suavidade; os botões respondem ao toque */
+  button, .nav-item, .form-input, .owner-chip, .segmented button, .text-btn, .click-row, .click-row td, .project-row td, .invoice-row, .settings-link, .tx-month, .hi, .rec-row, .tx-line {
+    transition: background-color var(--t-fast) var(--ease-io), border-color var(--t-fast) var(--ease-io), color var(--t-fast) var(--ease-io), box-shadow var(--t) var(--ease-io), opacity var(--t-fast) var(--ease-io);
+  }
+  .primary-btn, .secondary-btn, .segmented button, .owner-chip, .fab-btn, .tx-month, .nav-icon-btn { transition: background-color var(--t-fast) var(--ease-io), border-color var(--t-fast), color var(--t-fast), box-shadow var(--t), transform var(--t-fast) var(--ease); }
+  .primary-btn:active:not(:disabled), .secondary-btn:active:not(:disabled), .owner-chip:active, .tx-month:active, .nav-icon-btn:active, .segmented button:active { transform: scale(.97); }
+  .nav-item:active svg { animation: pressIn .22s var(--ease); }
+  .form-input:focus { transition: border-color var(--t-fast), box-shadow var(--t) var(--ease); }
+
+  /* Janelas: entram a crescer (ou a subir, no telemóvel) e saem ao contrário */
+  #quick-modal-overlay { animation: fadeIn var(--t) var(--ease); }
+  #quick-modal { animation: modalIn var(--t) var(--ease); }
+  @keyframes modalIn { from { opacity: 0; transform: translate(-50%, -48%) scale(.97); } to { opacity: 1; transform: translate(-50%, -50%); } }
+  @keyframes modalOut { from { opacity: 1; transform: translate(-50%, -50%); } to { opacity: 0; transform: translate(-50%, -49%) scale(.98); } }
+  #quick-modal.closing { animation: modalOut 170ms var(--ease-io) forwards; }
+  #quick-modal-overlay.closing { animation: fadeIn 170ms var(--ease-io) reverse forwards; }
+  @media (max-width: 560px) {
+    #quick-modal { animation: sheetUp var(--t-slow) var(--ease); }
+    #quick-modal.closing { animation: sheetDown 170ms var(--ease-io) forwards; }
+    @keyframes sheetDown { from { transform: none; } to { transform: translateY(100%); } }
+  }
+  /* Menus e listas flutuantes */
+  .assign-pop { animation: popIn var(--t) var(--ease); transform-origin: top left; }
+  .assign-pop.sheet { animation: sheetUp var(--t-slow) var(--ease); }
+  .fab-menu[style*="flex"] { animation: popIn var(--t) var(--ease); }
+  .more-sheet.open { animation: sheetUp var(--t-slow) var(--ease); }
+  .cp-list, .status-menu, .color-pop { animation: popIn var(--t-fast) var(--ease); }
+
+  /* Barra fina no topo enquanto a página se atualiza por baixo */
+  #top-progress { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 80; pointer-events: none; overflow: hidden; opacity: 0; transition: opacity var(--t) var(--ease-io); }
+  #top-progress::before { content: ''; position: absolute; inset: 0; background: var(--accent); transform-origin: left; animation: progressRun 1.1s var(--ease-io) infinite; }
+  #top-progress.on { opacity: 1; }
+  #top-progress.done { opacity: 0; transition-duration: .35s; }
+  .is-refreshing { transition: opacity var(--t) var(--ease-io); opacity: .96; }
+
+  /* Esqueletos no primeiro carregamento (em vez de "A carregar…") */
+  .skel { display: flex; flex-direction: column; gap: 10px; padding: 16px 4px; }
+  .skel-row { display: flex; justify-content: space-between; gap: 16px; align-items: center; }
+  .skel-line, .detail-loading::before, .detail-loading::after {
+    display: block; height: 12px; border-radius: 6px;
+    background: linear-gradient(90deg, var(--track) 25%, var(--surface-2) 45%, var(--track) 65%); background-size: 200% 100%;
+    animation: shimmer 1.4s linear infinite;
+  }
+  .skel-line.short { width: 70px; flex-shrink: 0; }
+  .detail-loading { position: relative; color: transparent !important; min-height: 64px; padding: 20px 0 !important; display: flex; flex-direction: column; gap: 12px; user-select: none; }
+  .detail-loading::before { content: ''; width: 68%; }
+  .detail-loading::after { content: ''; width: 44%; }
+
+  /* O que acabou de mudar pisca suavemente */
+  .just-updated, tr.just-updated > td { animation: justUpdated 1.5s var(--ease-io); }
+
+  /* Primeira vez que uma página aparece: blocos e linhas entram em cascata */
+  .anim-in .gantt-wrap, .anim-in .hero-card, .anim-in .fg, .anim-in .tax-card, .anim-in .stat-tile, .anim-in .hs-tile, .anim-in .kpi,
+  .anim-in .project-row, .anim-in .tx-row, .anim-in .rec-row, .anim-in .ata-entry, .anim-in .client-card, .anim-in .hrow { animation: fadeUp var(--t-slow) var(--ease) backwards; }
+  .anim-in :is(.gantt-wrap, .hero-card, .fg, .tax-card, .stat-tile, .hs-tile, .kpi, .project-row, .tx-row, .rec-row, .ata-entry, .hrow):nth-child(2) { animation-delay: 30ms; }
+  .anim-in :is(.gantt-wrap, .hero-card, .fg, .tax-card, .stat-tile, .hs-tile, .kpi, .project-row, .tx-row, .rec-row, .ata-entry, .hrow):nth-child(3) { animation-delay: 60ms; }
+  .anim-in :is(.gantt-wrap, .hero-card, .fg, .tax-card, .stat-tile, .hs-tile, .kpi, .project-row, .tx-row, .rec-row, .ata-entry, .hrow):nth-child(4) { animation-delay: 90ms; }
+  .anim-in :is(.gantt-wrap, .hero-card, .fg, .tax-card, .stat-tile, .hs-tile, .kpi, .project-row, .tx-row, .rec-row, .ata-entry, .hrow):nth-child(5) { animation-delay: 120ms; }
+  .anim-in :is(.gantt-wrap, .hero-card, .fg, .tax-card, .stat-tile, .hs-tile, .kpi, .project-row, .tx-row, .rec-row, .ata-entry, .hrow):nth-child(6) { animation-delay: 150ms; }
+  .anim-in :is(.gantt-wrap, .hero-card, .fg, .tax-card, .stat-tile, .hs-tile, .kpi, .project-row, .tx-row, .rec-row, .ata-entry, .hrow):nth-child(n+7) { animation-delay: 180ms; }
+
+  /* Gráficos que se desenham */
+  .anim-in .gantt-bar { transform-origin: left center; animation: growX .55s var(--ease) backwards; }
+  .anim-in .fg-bar span, .anim-in .time-bar-seg { transform-origin: left center; animation: growX .7s var(--ease) backwards .15s; }
+  .anim-in .ring circle:nth-of-type(2) { animation: ringDraw .9s var(--ease) backwards .1s; }
+  .anim-in .fin-svg .cur { stroke-dasharray: 1; animation: drawLine 1s var(--ease) backwards .15s; }
+  .anim-in .fin-svg .area { animation: fadeIn .8s var(--ease) backwards .35s; }
+  .anim-in .fin-svg rect { transform-box: fill-box; transform-origin: bottom; animation: growY .6s var(--ease) backwards; }
+  .anim-in .fin-svg g:nth-of-type(n+4) rect { animation-delay: 60ms; } .anim-in .fin-svg g:nth-of-type(n+8) rect { animation-delay: 120ms; }
+  .anim-in .donut { animation: popIn .6s var(--ease) backwards; }
+  .anim-in .flow-bars span, .anim-in .hours-col span { transform-origin: bottom; animation: growY .6s var(--ease) backwards; }
+  #home-view .hours-col span { transform-origin: bottom; animation: growY .7s var(--ease) backwards .1s; }
+  .gantt-scroll-inner { transition: none; }
+
+  /* Secções que abrem e fecham com suavidade (browsers recentes) */
+  :root { interpolate-size: allow-keywords; }
+  details::details-content { transition: height var(--t) var(--ease), content-visibility var(--t) allow-discrete; height: 0; overflow: clip; }
+  details[open]::details-content { height: auto; }
+  details > summary { transition: color var(--t-fast); }
+
+  /* Toque nas listas de opções, checks e chips */
+  .assign-opt.on .assign-check, .owner-chip.on { animation: pressIn .25s var(--ease); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+    #top-progress::before { animation: none; transform: none; opacity: .6; }
+  }
+
 </style>
 </head>
 <body>
@@ -2329,7 +2439,8 @@
     let suppressNavPush = false;
 
     function pushCurrentView(newState) {
-      if (!suppressNavPush && JSON.stringify(currentViewState) !== JSON.stringify(newState)) {
+      const sameView = JSON.stringify(currentViewState) === JSON.stringify(newState);
+      if (!suppressNavPush && !sameView) {
         navStack.push(currentViewState);
       }
       suppressNavPush = false;
@@ -2341,7 +2452,7 @@
       document.querySelectorAll('[data-nav]').forEach(el => el.classList.toggle('active', el.dataset.nav === navKey));
       document.getElementById('more-sheet').classList.remove('open');
       document.getElementById('tab-more').classList.toggle('active', ['clients', 'billing', 'finance', 'atas', 'despesas', 'settings'].includes(navKey));
-      window.scrollTo(0, 0);
+      if (!sameView) window.scrollTo(0, 0);   // voltar a carregar a mesma página não salta para o topo
     }
 
     function goBack() {
@@ -2361,6 +2472,110 @@
       else if (prev.name === 'agenda') openAgendaModule(prev.mode);
       else if (prev.name === 'detail') openDetail(prev.projectId);
       else showHome();
+    }
+
+    // ================= ATUALIZAÇÃO SILENCIOSA =================
+    // Depois de gravar, as páginas voltam a buscar os dados mas sem "piscar": o conteúdo fica à
+    // vista (com uma barra fina no topo) e, quando chega o novo, o scroll, as secções abertas,
+    // o scroll das tabelas e o foco voltam ao sítio; o que mudou fica destacado por instantes.
+    // Na primeira vez (ou ao abrir outra entidade) mostra um esqueleto animado.
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    // Números que "sobem" até ao valor ao aparecerem (só na primeira vez que a página abre)
+    function animateNumbers(root) {
+      if (reduceMotion.matches) return;
+      root.querySelectorAll('.hero-card b, .stat-value, .fg > b, .kpi b, .hours-total, .hs-tile b').forEach(el => {
+        if (el.children.length || el.dataset.counted) return;
+        const txt = el.textContent, m = txt.match(/-?\d{1,3}(?:[\s\u00a0\u202f]\d{3})*(?:,\d+)?|-?\d+(?:,\d+)?/);
+        if (!m) return;
+        const numTxt = m[0], dec = (numTxt.split(',')[1] || '').length;
+        const target = Number(numTxt.replace(/[\s\u00a0\u202f]/g, '').replace(',', '.'));
+        if (!isFinite(target) || Math.abs(target) < 2) return;
+        const pre = txt.slice(0, m.index), post = txt.slice(m.index + numTxt.length);
+        const fmt = v => pre + v.toLocaleString('pt-PT', { minimumFractionDigits: dec, maximumFractionDigits: dec }) + post;
+        el.dataset.counted = '1';
+        const t0 = performance.now(), dur = 650;
+        const step = now => {
+          const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+          el.textContent = k < 1 ? fmt(target * e) : txt;
+          if (k < 1) requestAnimationFrame(step);
+        };
+        el.textContent = fmt(0);
+        requestAnimationFrame(step);
+      });
+    }
+    const topBar = (() => {
+      const el = document.createElement('div');
+      el.id = 'top-progress'; el.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(el);
+      let n = 0, t = null;
+      return {
+        start() { n++; clearTimeout(t); el.classList.remove('done'); el.classList.add('on'); },
+        done() { n = Math.max(0, n - 1); if (!n) { el.classList.add('done'); t = setTimeout(() => el.classList.remove('on', 'done'), 400); } }
+      };
+    })();
+    const SKELETON = (rows = 4) => `<div class="skel" aria-label="A carregar">${Array.from({ length: rows }, (_, i) => `<div class="skel-row"><span class="skel-line" style="width:${[62, 84, 48, 72, 56, 90][i % 6]}%"></span><span class="skel-line short"></span></div>`).join('')}</div>`;
+    const UI_KEYS = ['data-phase-row', 'data-break-id', 'data-invoice-id', 'data-expense-id', 'data-edit-expense', 'data-marco-id', 'data-note-id', 'data-tx', 'data-client-id', 'data-open-project', 'data-id'];
+    const uiKeyOf = n => { for (const a of UI_KEYS) if (n.hasAttribute(a)) return a + '=' + n.getAttribute(a); return null; };
+    const UI_SCROLLERS = '.table-scroll, .gantt-scroll, .tx-inv-list, .detail-tabs, .tx-months';
+    function captureUI(el) {
+      const st = { y: window.scrollY, details: [], scrolls: [], focus: null, sig: new Map() };
+      el.querySelectorAll('details').forEach((d, i) => { if (d.open) st.details.push(i); });
+      el.querySelectorAll(UI_SCROLLERS).forEach((x, i) => { if (x.scrollLeft || x.scrollTop) st.scrolls.push([i, x.scrollLeft, x.scrollTop]); });
+      const a = document.activeElement;
+      if (a && a.id && el.contains(a)) st.focus = a.id;
+      el.querySelectorAll(UI_KEYS.map(k => `[${k}]`).join(',')).forEach(n => { const k = uiKeyOf(n); if (k && !st.sig.has(k)) st.sig.set(k, n.textContent.replace(/\s+/g, ' ').trim()); });
+      return st;
+    }
+    function flashUpdated(n) {
+      n.classList.remove('just-updated'); void n.offsetWidth; n.classList.add('just-updated');
+      setTimeout(() => n.classList.remove('just-updated'), 1600);
+    }
+    function restoreUI(el, st) {
+      const ds = el.querySelectorAll('details');
+      st.details.forEach(i => { if (ds[i]) ds[i].open = true; });
+      const xs = el.querySelectorAll(UI_SCROLLERS);
+      st.scrolls.forEach(([i, l, t]) => { if (xs[i]) { xs[i].scrollLeft = l; xs[i].scrollTop = t; } });
+      window.scrollTo(0, st.y);
+      if (st.focus) document.getElementById(st.focus)?.focus({ preventScroll: true });
+      // o que mudou (poucas coisas: se mudou quase tudo, não se destaca nada)
+      if (!st.sig.size) return;
+      const changed = [];
+      el.querySelectorAll(UI_KEYS.map(k => `[${k}]`).join(',')).forEach(n => {
+        const k = uiKeyOf(n); if (!k || n.offsetParent === null) return;
+        const before = st.sig.get(k), now = n.textContent.replace(/\s+/g, ' ').trim();
+        if (before === undefined || before !== now) changed.push(n);
+      });
+      if (changed.length && changed.length <= 6) changed.forEach(flashUpdated);
+    }
+    // Chamada no início de cada carregamento. Devolve true se for uma atualização silenciosa.
+    function beginLoad(el, key, placeholder) {
+      if (!el) return false;
+      const soft = el.dataset.loadKey === key && el.childElementCount > 0 && !el.querySelector(':scope > .skel, :scope > .detail-loading, :scope > .spinner, :scope > .gantt-wrap:only-child > .detail-loading');
+      el.dataset.loadKey = key;
+      if (!soft) {
+        el.classList.add('anim-in');
+        clearTimeout(el.__animT); el.__animT = setTimeout(() => el.classList.remove('anim-in'), 1800);
+        if (placeholder != null) el.innerHTML = placeholder;
+        // quando o conteúdo chega: números a subir
+        let t = null;
+        const mo = new MutationObserver(() => { clearTimeout(t); t = setTimeout(() => { mo.disconnect(); if (!el.querySelector(':scope > .skel, :scope > .detail-loading')) animateNumbers(el); }, 60); });
+        mo.observe(el, { childList: true, subtree: true });
+        setTimeout(() => mo.disconnect(), 15000);
+        return false;
+      }
+      const st = captureUI(el);
+      el.classList.add('is-refreshing'); topBar.start();
+      let t = null, finished = false;
+      const finish = () => {
+        if (finished) return; finished = true;
+        mo.disconnect(); clearTimeout(safety);
+        el.classList.remove('is-refreshing'); topBar.done();
+        restoreUI(el, st);
+      };
+      const mo = new MutationObserver(() => { clearTimeout(t); t = setTimeout(() => requestAnimationFrame(finish), 80); });
+      mo.observe(el, { childList: true, subtree: true });
+      const safety = setTimeout(finish, 15000);
+      return true;
     }
 
     function hideAllViews() {
@@ -2425,8 +2640,7 @@
     async function loadTeamPlanning(teamId) {
       const ganttEl = document.getElementById('team-gantt');
       const tableEl = document.getElementById('team-phases-table');
-      ganttEl.innerHTML = '<div class="detail-loading">A carregar...</div>';
-      tableEl.innerHTML = '';
+      if (!beginLoad(ganttEl, 'team:' + (teamId || ''), '<div class="detail-loading">A carregar...</div>')) tableEl.innerHTML = '';
 
       try {
         let projects, stages;
@@ -2974,7 +3188,7 @@
 
     async function loadHorasHistory() {
       const container = document.getElementById('horas-history-container');
-      container.innerHTML = '<div class="detail-loading">A carregar...</div>';
+      beginLoad(container, 'horas-history', '<div class="detail-loading">A carregar...</div>');
 
       try {
         const member = await getCurrentMember();
@@ -3119,7 +3333,7 @@
     // ---------- Módulo Definições: categorias de imputação ----------
     async function loadCategories() {
       const container = document.getElementById('settings-categories-container');
-      container.innerHTML = '<div class="detail-loading">A carregar...</div>';
+      beginLoad(container, 'categories', '<div class="detail-loading">A carregar...</div>');
       try {
         let categories;
         if (devMode) {
@@ -3408,9 +3622,12 @@
     });
 
     async function loadProjects() {
-      projectsContainer.className = 'center-msg';
-      projectsContainer.innerHTML = '<div class="spinner"></div>A carregar projetos...';
-      document.getElementById('projects-search').value = '';
+      // já com a lista à vista (voltar à página, gravar): atualiza por baixo e mantém a pesquisa
+      if (!beginLoad(projectsContainer, 'projects', null)) {
+        projectsContainer.className = '';
+        projectsContainer.innerHTML = SKELETON(6);
+        document.getElementById('projects-search').value = '';
+      }
 
       try {
         let data;
@@ -3579,15 +3796,16 @@
     }
 
     async function openDetail(projectId) {
+      const sameProject = currentViewState?.name === 'detail' && String(currentViewState.projectId) === String(projectId) && detailPanel.style.display !== 'none';
       pushCurrentView({ name: 'detail', projectId });
       document.getElementById('nav-title').textContent = 'Projeto';
-      hideAllViews();
-      detailPanel.style.display = 'block';
-      window.scrollTo(0, 0);
-      detailBody.innerHTML = '<div class="detail-loading">A carregar...</div>';
-      document.getElementById('detail-name').textContent = '—';
-      document.getElementById('detail-code').textContent = '—';
-      document.getElementById('detail-client').textContent = '—';
+      if (!sameProject) { hideAllViews(); detailPanel.style.display = 'block'; window.scrollTo(0, 0); }
+      // mesma ficha (depois de gravar): atualiza por baixo, sem apagar nem saltar
+      if (!beginLoad(detailBody, 'detail:' + projectId, '<div class="detail-loading">A carregar...</div>')) {
+        document.getElementById('detail-name').textContent = '—';
+        document.getElementById('detail-code').textContent = '—';
+        document.getElementById('detail-client').textContent = '—';
+      }
 
       try {
         let project, stages, invoices, timeEntries, breaks, expenses, projectNotes;
@@ -4163,7 +4381,11 @@
             btn.classList.toggle('active', btn.dataset.dtab === t);
             btn.setAttribute('aria-selected', btn.dataset.dtab === t ? 'true' : 'false');
           });
-          detailBody.querySelectorAll('[data-dpanel]').forEach(p => { p.hidden = p.dataset.dpanel !== t; });
+          detailBody.querySelectorAll('[data-dpanel]').forEach(p => {
+            const show = p.dataset.dpanel === t;
+            if (show && p.hidden) { p.classList.remove('tab-in'); void p.offsetWidth; p.classList.add('tab-in'); }
+            p.hidden = !show;
+          });
         };
         showDTab(detailTabByProject[pid0] || 'resumo');
         // Câmara: dados próprios, carregados à parte (os prazos são os marcos do tipo "prazo")
@@ -4467,10 +4689,15 @@
       if (ev === 'click' ? e.target.closest('.owner-chip') : true) markQuickDirty(e);
     }));
     function requestCloseQuickModal() {
+      if (document.getElementById('quick-modal').classList.contains('closing')) return;
       if (quickModalDirty && !window.confirm('Tens alterações por guardar. Fechar sem guardar?')) return;
       closeQuickModal();
     }
+    let quickCloseTimer = null;
     function openQuickModal(title, bodyHtml) {
+      clearTimeout(quickCloseTimer);
+      document.getElementById('quick-modal').classList.remove('closing');
+      document.getElementById('quick-modal-overlay').classList.remove('closing');
       quickModalCloseHook = null;
       quickModalDirty = false;
       document.getElementById('quick-modal-title').textContent = title;
@@ -4479,12 +4706,19 @@
       document.getElementById('quick-modal').style.display = 'flex';
       document.body.style.overflow = 'hidden';
     }
+    // Fecha com uma animação curta (a janela desce/encolhe e o fundo desvanece)
     function closeQuickModal() {
       const hook = quickModalCloseHook; quickModalCloseHook = null;
       quickModalDirty = false;
-      document.getElementById('quick-modal-overlay').style.display = 'none';
-      document.getElementById('quick-modal').style.display = 'none';
-      document.getElementById('quick-modal-body').innerHTML = '';
+      const m = document.getElementById('quick-modal'), o = document.getElementById('quick-modal-overlay');
+      const hide = () => {
+        o.style.display = 'none'; m.style.display = 'none';
+        m.classList.remove('closing'); o.classList.remove('closing');
+        document.getElementById('quick-modal-body').innerHTML = '';
+      };
+      clearTimeout(quickCloseTimer);
+      if (m.style.display === 'none' || reduceMotion.matches) hide();
+      else { m.classList.add('closing'); o.classList.add('closing'); quickCloseTimer = setTimeout(hide, 170); }
       document.body.style.overflow = '';
       if (hook) hook();
     }
@@ -5109,9 +5343,11 @@
 
     async function loadAtas() {
       const container = document.getElementById('atas-container');
-      container.className = 'center-msg';
-      container.innerHTML = '<div class="spinner"></div>A carregar atas...';
-      document.getElementById('atas-search').value = '';
+      if (!beginLoad(container, 'atas', null)) {
+        container.className = '';
+        container.innerHTML = SKELETON(5);
+        document.getElementById('atas-search').value = '';
+      }
 
       try {
         let notes;
@@ -5472,8 +5708,7 @@
 
     async function loadDespesas() {
       const panel = document.getElementById('despesas-todas-panel');
-      panel.className = 'center-msg';
-      panel.innerHTML = '<div class="spinner"></div>A carregar despesas...';
+      if (!beginLoad(panel, 'despesas', null)) { panel.className = ''; panel.innerHTML = SKELETON(6); }
 
       try {
         let expenses, projectMap = {}, memberMap = {};
@@ -7289,7 +7524,7 @@
 
     async function loadFinance() {
       const box = document.getElementById('finance-container');
-      box.innerHTML = '<div class="detail-loading">A carregar…</div>';
+      beginLoad(box, 'finance:' + finYear, '<div class="detail-loading">A carregar…</div>');
       try {
         const bank = await loadBankBase();
         let projects, types, stages, hours, goals;
@@ -7536,7 +7771,7 @@
           ${GANTT_MONTHS.map((m, i) => `<text x="${x(i).toFixed(1)}" y="${H - 8}" text-anchor="middle" class="ax">${m}</text>`).join('')}
           ${target ? `<path d="M${L},${y(0)} L${x(11)},${y(target)}" class="goal"/><text x="${x(11) - 4}" y="${y(target) - 6}" text-anchor="end" class="goal-t">objetivo ${escapeHtml(fmtEURShort(target))}</text>` : ''}
           ${c0.some(v => v) ? `<path d="${line(c0)}" class="prev"/>` : ''}
-          ${area ? `<path d="${area}" class="area"/><path d="${line(c1)}" class="cur"/><circle cx="${x(c1.length - 1).toFixed(1)}" cy="${y(c1[c1.length - 1]).toFixed(1)}" r="4.5" class="dot"/>` : ''}
+          ${area ? `<path d="${area}" class="area"/><path d="${line(c1)}" class="cur" pathLength="1"/><circle cx="${x(c1.length - 1).toFixed(1)}" cy="${y(c1[c1.length - 1]).toFixed(1)}" r="4.5" class="dot"/>` : ''}
         </svg>`;
     }
     // Faturação e custos por mês (barras lado a lado)
@@ -7974,7 +8209,7 @@
     // ---------- Definições: finanças ----------
     async function loadFinanceSettingsPanel() {
       const box = document.getElementById('settings-finance-container');
-      box.innerHTML = '<div class="detail-loading">A carregar...</div>';
+      beginLoad(box, 'fin-settings', '<div class="detail-loading">A carregar...</div>');
       try {
         financeSettingsCache = null;
         const s = await loadFinanceSettings();
@@ -8054,7 +8289,7 @@
     }
     async function loadBilling() {
       const box = document.getElementById('billing-container');
-      box.innerHTML = '<div class="gantt-wrap"><div class="detail-loading">A carregar…</div></div>';
+      beginLoad(box, 'billing', '<div class="gantt-wrap"><div class="detail-loading">A carregar…</div></div>');
       try { billingCache = await loadBillingBase(); renderBilling(); }
       catch (err) { box.innerHTML = `<div class="error-box">Não foi possível carregar a faturação: ${escapeHtml(err.message)}</div>`; }
     }
@@ -8679,7 +8914,7 @@
     }
     async function loadClients() {
       const box = document.getElementById('clients-container');
-      box.innerHTML = '<div class="gantt-wrap"><div class="detail-loading">A carregar…</div></div>';
+      beginLoad(box, 'clients', '<div class="gantt-wrap"><div class="detail-loading">A carregar…</div></div>');
       if (!(await clientsTablesReady())) { box.innerHTML = '<div class="error-box">Para usar o repositório de clientes, corre clientes.sql no Supabase.</div>'; return; }
       try {
         const data = await loadClientsData();
@@ -8742,7 +8977,7 @@
       hideAllViews();
       const view = document.getElementById('client-view');
       view.style.display = 'block';
-      view.innerHTML = '<div class="gantt-wrap"><div class="detail-loading">A carregar…</div></div>';
+      beginLoad(view, 'client:' + clientId, '<div class="gantt-wrap"><div class="detail-loading">A carregar…</div></div>');
       try {
         const data = await loadClientsData();
         const scores = computeClientScores(data);
@@ -10150,7 +10385,7 @@
       if (!tsDay || tsDay < tsWeekStart || tsDay > weekEnd) {
         tsDay = todayKey >= tsWeekStart && todayKey <= weekEnd ? todayKey : tsWeekStart;
       }
-      box.innerHTML = '<div class="detail-loading">A carregar…</div>';
+      beginLoad(box, 'ts:' + tsWeekStart, '<div class="detail-loading">A carregar…</div>');
 
       try {
         const member = await getCurrentMember();
@@ -11237,7 +11472,7 @@
     // ---------- Estados de projeto (Definições) ----------
     async function loadProjectStatusSettings() {
       const box = document.getElementById('settings-statuses-container');
-      box.innerHTML = '<div class="detail-loading">A carregar...</div>';
+      beginLoad(box, 'pstatus', '<div class="detail-loading">A carregar...</div>');
       const list = await loadProjectStatuses(true);
       box.innerHTML = `
         <div class="field-hint" style="margin:0 0 10px;">Toca na cor ou no nome para os mudar. Os projetos com um estado <b>fechado</b> saem da lista de projetos ativos.</div>
@@ -11345,7 +11580,7 @@
     // ---------- Tipos de marco (Definições) ----------
     async function loadMilestoneTypeSettings() {
       const box = document.getElementById('settings-mtypes-container');
-      box.innerHTML = '<div class="detail-loading">A carregar...</div>';
+      beginLoad(box, 'mtypes', '<div class="detail-loading">A carregar...</div>');
       try {
         const types = await loadMilestoneTypes();
         box.innerHTML =
