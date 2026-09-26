@@ -9953,6 +9953,10 @@
           return;
         }
 
+        // Marco de entrega com data nova: pergunta se a entrega da fase acompanha
+        const syncDelivery = isEdit && existing?.auto_kind === 'delivery' && existing.stage_id && eventDate && eventDate !== existing.event_date
+          && window.confirm(`Mudaste a data desta entrega para ${fmtDayMonthYear(eventDate)}.\n\nQueres mudar também a data de entrega da fase para ${fmtDayMonthYear(eventDate)}? (as datas do plano acompanham)\n\nOK = sim, mudar a fase · Cancelar = mudar só o marco`);
+
         const btn = document.getElementById('mk-submit');
         btn.disabled = true;
         btn.textContent = 'A guardar…';
@@ -9992,6 +9996,12 @@
               if (res.error) throw res.error;
               id = res.data.id;
             }
+            // Entrega da fase acompanha o marco (o trigger volta a acertar o marco com a mesma data)
+            if (syncDelivery) {
+              const r = await supabase.from('project_stages').update({ delivery_date: eventDate }).eq('id', existing.stage_id);
+              if (r.error) throw r.error;
+              invalidateActivePhases();
+            }
             // Owners: substituir o conjunto
             const del = await supabase.from('milestone_owners').delete().eq('milestone_id', id);
             if (del.error) throw del.error;
@@ -10002,6 +10012,7 @@
             }
           }
           closeQuickModal();
+          if (syncDelivery) showToast('Marco e data de entrega da fase atualizados');
           if (onSuccess) onSuccess();
           else if (agendaVisibleNow()) loadAgenda();
           else if (document.getElementById('home-view').style.display !== 'none') renderToday();
