@@ -1009,6 +1009,10 @@
   .tax-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
   .tax-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   .tax-card.current { border-color: var(--accent); }
+  .tax-card.paid { background: var(--success-soft); border-color: transparent; }
+  .tax-card .vat-pay-btn { width: auto; align-self: flex-start; margin: 8px 0 0; min-height: 34px; padding: 0 14px; font-size: 13px; }
+  .vat-hist { margin-top: 10px; } .vat-hist summary { cursor: pointer; font-size: 13.5px; font-weight: 600; }
+  .vat-hist[open] summary { margin-bottom: 8px; }
   .tax-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
   .tax-top span { font-size: 12px; font-weight: 650; color: var(--text-2); }
   .tax-card > b { font-size: 21px; font-weight: 650; font-variant-numeric: tabular-nums; }
@@ -1075,6 +1079,9 @@
   .tx-inv small { display: block; font-size: 11.5px; color: var(--text-3); }
   .tx-inv .tx-inv-amt { height: 34px; text-align: right; }
   .tx-sum { font-size: 13px; font-weight: 600; margin: 8px 2px; }
+  .tx-similar { background: var(--accent-soft); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+  .tx-sim { display: flex; gap: 8px; align-items: flex-start; padding: 5px 0; cursor: pointer; font-size: 13.5px; }
+  .tx-sim b { display: block; font-weight: 600; } .tx-sim small { display: block; color: var(--text-2); font-size: 12px; }
   .tx-sum.ok { color: var(--success); } .tx-sum.bad { color: var(--warning); }
   .saft-ok { color: var(--success); }
   .settings-sub { font-size: 14px; font-weight: 650; margin: 22px 0 4px; }
@@ -6759,6 +6766,7 @@
     }
     // Padrão de uma regra: o descritivo sem números nem referências (ex.: "trf p glenn bascom")
     const bankPattern = desc => finNorm(desc).split(' ').filter(t => !/\d/.test(t) && t.length > 1).join(' ');
+    const INV_AFTER_PAY = 60;   // dias: uma fatura pode sair depois do pagamento (adiantamento)
     const invGross = (i, rate) => i.gross_amount != null ? Number(i.gross_amount) : Math.round(Number(i.amount || 0) * (1 + rate / 100) * 100) / 100;
     // Subconjunto de valores que soma exatamente o alvo (até 6 elementos, mais antigos primeiro)
     function subsetSum(items, target, val, maxN = 6) {
@@ -6808,14 +6816,22 @@
       const used = { ...usedExtra };
       base.matches.filter(m => m.confirmed && m.transaction_id !== tx.id).forEach(m => { used[m.invoice_id] = (used[m.invoice_id] || 0) + Number(m.amount); });
       const open = base.invoices
-        .filter(i => i.status !== 'cancelled' && i.doc_type !== 'NC' && Number(i.amount) > 0 && i.issue_date <= tx.date && diffDays(i.issue_date, tx.date) <= 400)
+        // inclui faturas emitidas até 60 dias depois do pagamento (adiantamentos: o cliente paga antes de a fatura sair)
+        .filter(i => i.status !== 'cancelled' && i.doc_type !== 'NC' && Number(i.amount) > 0 && i.issue_date <= addDaysKey(tx.date, INV_AFTER_PAY) && diffDays(i.issue_date, tx.date) <= 400)
         .map(i => ({ inv: i, open: Math.round((invGross(i, rate) - (used[i.id] || 0)) * 100) / 100, score: nameScore(i.customer_name || '', tx.description) }))
         .filter(o => o.open > 0.01)
         .sort((a, b) => a.inv.issue_date.localeCompare(b.inv.issue_date));
       const A = Number(tx.amount);
       const named = open.filter(o => o.score >= 0.5);
-      const exact = named.filter(o => Math.abs(o.open - A) < 0.02);
-      if (exact.length) return { lines: [{ inv: exact[0].inv, amount: A }], confident: exact.length === 1, why: exact.length === 1 ? 'cliente e valor coincidem' : 'cliente e valor coincidem (há outra fatura igual)' };
+      // o recibo do SAF-T diz quando a fatura foi paga: se bate com a data do banco (±5 dias), é essa
+      const payNear = o => o.inv.payment_date && Number(o.inv.amount_paid) > 0 && Math.abs(diffDays(o.inv.payment_date, tx.date)) <= 5;
+      const byPayDate = (a, b) => (payNear(b) - payNear(a)) || a.inv.issue_date.localeCompare(b.inv.issue_date);
+      const exact = named.filter(o => Math.abs(o.open - A) < 0.02).sort(byPayDate);
+      if (exact.length) {
+        const sure = exact.length === 1 || (payNear(exact[0]) && !payNear(exact[1]));
+        return { lines: [{ inv: exact[0].inv, amount: A }], confident: sure,
+          why: exact.length === 1 ? 'cliente e valor coincidem' : sure ? 'cliente, valor e data do recibo coincidem' : `cliente e valor coincidem (há ${exact.length} faturas iguais — confirma qual)` };
+      }
       // várias faturas do mesmo cliente que somam o valor
       const groups = {};
       named.forEach(o => (groups[finNorm(o.inv.customer_name)] = groups[finNorm(o.inv.customer_name)] || []).push(o));
@@ -6827,8 +6843,8 @@
         const o = named.find(o => o.open > A) || named[0];
         return { lines: [{ inv: o.inv, amount: Math.min(A, o.open) }], confident: false, why: o.open > A ? `pagamento parcial — ficam a faltar ${fmtEUR(o.open - A)}` : 'o cliente coincide, o valor não' };
       }
-      const any = open.filter(o => Math.abs(o.open - A) < 0.02);
-      if (any.length) return { lines: [{ inv: any[0].inv, amount: A }], confident: false, why: 'mesmo valor, mas o cliente não aparece no descritivo' };
+      const any = open.filter(o => Math.abs(o.open - A) < 0.02).sort((a, b) => (payNear(b) - payNear(a)) || Math.abs(diffDays(a.inv.issue_date, tx.date)) - Math.abs(diffDays(b.inv.issue_date, tx.date)));
+      if (any.length) return { lines: [{ inv: any[0].inv, amount: A }], confident: false, why: `mesmo valor, mas quem paga não é o nome do cliente${any[0].inv.issue_date > tx.date ? ' · pago antes da fatura' : ''}${any.length > 1 ? ` · há ${any.length} faturas com este valor` : ''}` };
       return null;
     }
 
@@ -6841,8 +6857,9 @@
         ? { action: 'expense', category_id: rule.category_id, project_id: rule.project_id, stage_id: rule.stage_id, reviewed: true, why: 'regra guardada' }
         : { action: rule.kind, tax_type: rule.tax_type || null, reviewed: true, why: 'regra guardada' };
       // despesa já registada à mão (paga pela empresa): mesmo valor, até 6 dias de diferença
+      // (valor exato; até 6 dias de diferença, ou até 30 dias se for ≥ 50 €: às vezes regista-se a despesa pela data da fatura)
       const cands = base.expenses.filter(e => !e.bank_transaction_id && !linkedIds.has(e.id) && isCompanyPaid(e)
-        && Math.abs(Number(e.amount) - A) < 0.01 && Math.abs(diffDays(e.date, tx.date)) <= 6)
+        && Math.abs(Number(e.amount) - A) < 0.01 && Math.abs(diffDays(e.date, tx.date)) <= (A >= 50 ? 30 : 6))
         .sort((a, b) => Math.abs(diffDays(a.date, tx.date)) - Math.abs(diffDays(b.date, tx.date)));
       if (cands.length) return { action: 'link', expense: cands[0], reviewed: true, why: 'despesa já registada' };
       const d = normTxt(tx.description);
@@ -6861,6 +6878,15 @@
       if (/instituto registos|registos e notariado|\birn\b|camara municipal|\bc\.?m\.? /.test(d))
         return { action: 'expense', category_id: catByName(base, 'Impostos e taxas')?.id ?? null, reviewed: false, why: 'taxa — diz de que projeto' };
       return { action: 'expense', category_id: null, reviewed: false, why: 'por classificar' };
+    }
+
+    // Despesas já registadas à mão que podem ser esta saída (valor até 10% diferente, até 30 dias)
+    function similarExpenses(tx, base) {
+      const A = -Number(tx.amount);
+      return base.expenses.filter(e => !e.bank_transaction_id && e.notes !== BANK_MARK && isCompanyPaid(e)
+          && Math.abs(Number(e.amount) - A) <= Math.max(0.01, A * 0.1) && Math.abs(diffDays(e.date, tx.date)) <= 30)
+        .sort((a, b) => Math.abs(Number(a.amount) - A) - Math.abs(Number(b.amount) - A) || Math.abs(diffDays(a.date, tx.date)) - Math.abs(diffDays(b.date, tx.date)))
+        .slice(0, 5);
     }
 
     // Plano de importação (nada é gravado até carregar em Importar)
@@ -7014,8 +7040,18 @@
       // 1) limpar recebimentos antigos
       if (devMode) mb.matches = mb.matches.filter(m => m.transaction_id !== tx.id);
       else { const r = await supabase.from('bank_receipt_matches').delete().eq('transaction_id', tx.id); if (r.error) throw r.error; }
-      // 2) despesa: criar / atualizar / largar
-      if (d.kind === 'expense') {
+      // 2) despesa: juntar a uma já registada / criar / atualizar / largar
+      if (d.kind === 'expense' && d.link_expense_id) {
+        if (txExpense && txExpense.id !== d.link_expense_id) {
+          if (txExpense.notes === BANK_MARK) await dbDelete('expenses', txExpense.id, MOCK_EXPENSES);
+          else await upd('expenses', txExpense.id, { bank_transaction_id: null }, MOCK_EXPENSES);
+        }
+        const patch = { bank_transaction_id: tx.id, needs_review: false };
+        if (d.category_id) patch.category_id = d.category_id;
+        if (d.project_id) { patch.project_id = d.project_id; patch.stage_id = d.stage_id || null; }
+        if (d.use_bank_amount) patch.amount = -Number(tx.amount);
+        await upd('expenses', d.link_expense_id, patch, MOCK_EXPENSES);
+      } else if (d.kind === 'expense') {
         const patch = { category_id: d.category_id || null, project_id: d.project_id || null, stage_id: d.stage_id || null, needs_review: false,
           description: d.description || tx.description };
         if (txExpense) await upd('expenses', txExpense.id, patch, MOCK_EXPENSES);
@@ -7061,11 +7097,12 @@
       base.matches.filter(m => m.confirmed && m.transaction_id !== tx.id).forEach(m => { used[m.invoice_id] = (used[m.invoice_id] || 0) + Number(m.amount); });
       const current = Object.fromEntries(base.matches.filter(m => m.transaction_id === tx.id).map(m => [m.invoice_id, Number(m.amount)]));
       const preset = Object.keys(current).length ? current : Object.fromEntries((sug?.lines || []).map(l => [l.inv.id, l.amount]));
-      const openInv = base.invoices.filter(i => i.status !== 'cancelled' && Number(i.amount) > 0 && i.issue_date <= tx.date)
+      const openInv = base.invoices.filter(i => i.status !== 'cancelled' && Number(i.amount) > 0 && i.issue_date <= addDaysKey(tx.date, INV_AFTER_PAY))
         .map(i => ({ i, open: Math.round((invGross(i, rate) - (used[i.id] || 0)) * 100) / 100, score: nameScore(i.customer_name || '', tx.description) }))
         .filter(o => o.open > 0.01 || preset[o.i.id])
         .sort((a, b) => (preset[b.i.id] ? 1 : 0) - (preset[a.i.id] ? 1 : 0) || b.score - a.score || b.i.issue_date.localeCompare(a.i.issue_date))
         .slice(0, 60);
+      const similar = credit ? [] : similarExpenses(tx, base);
       const projOpts = base.projects.filter(p => !p.archived_at || p.id === txExpense?.project_id).map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml([p.code, p.name].filter(Boolean).join(' — '))}</option>`).join('');
       const catOpts = base.categories.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
 
@@ -7084,6 +7121,12 @@
           <div class="tx-sum" id="tx-sum"></div>
         </div>
         <div data-pane="expense" hidden>
+          ${similar.length ? `<div class="tx-similar">
+            <div class="field-hint" style="margin:0 0 6px;"><b>Já registaste esta despesa?</b> Se sim, junta-a a este movimento para não contar a dobrar.</div>
+            <label class="tx-sim"><input type="radio" name="tx-link" value="" checked><span>Não — é uma despesa nova</span></label>
+            ${similar.map(e => `<label class="tx-sim"><input type="radio" name="tx-link" value="${escapeHtml(e.id)}"><span><b>${escapeHtml(e.description || 'Despesa')}</b><small>${escapeHtml(fmtDayMonthYear(e.date))} · ${escapeHtml(fmtEUR(e.amount))}${Math.abs(Number(e.amount) + Number(tx.amount)) > 0.01 ? ` · diferença de ${escapeHtml(fmtEUR(Math.abs(Number(e.amount) + Number(tx.amount))))}` : ''}</small></span></label>`).join('')}
+            <label class="check-row" id="tx-use-bank-row" hidden><input type="checkbox" id="tx-use-bank" checked> Acertar o valor da despesa para o do banco (${escapeHtml(fmtEUR(-Number(tx.amount)))})</label>
+          </div>` : ''}
           <div class="form-grid">
             <div class="span2"><label class="field-label">Descrição</label><input type="text" id="tx-desc" class="form-input" value="${escapeHtml(txExpense?.description || tx.description)}"></div>
             <div class="span2"><label class="field-label">Categoria</label><select id="tx-cat" class="form-input"><option value="">Sem categoria</option>${catOpts}</select></div>
@@ -7148,6 +7191,12 @@
         q('#tx-proj').value = txExpense?.project_id || deb?.project_id || '';
         fillStages(q('#tx-proj').value, txExpense?.stage_id || deb?.stage_id || null);
         q('#tx-proj').addEventListener('change', () => fillStages(q('#tx-proj').value, null));
+        document.querySelectorAll('#quick-modal-body [name="tx-link"]').forEach(r => r.addEventListener('change', () => {
+          const id = document.querySelector('#quick-modal-body [name="tx-link"]:checked')?.value;
+          const e = similar.find(x => x.id === id);
+          const row = q('#tx-use-bank-row'); if (row) row.hidden = !e || Math.abs(Number(e.amount) + Number(tx.amount)) <= 0.01;
+          if (e) { q('#tx-cat').value = e.category_id || q('#tx-cat').value; if (e.project_id) { q('#tx-proj').value = e.project_id; fillStages(e.project_id, e.stage_id); } q('#tx-desc').value = e.description || q('#tx-desc').value; }
+        }));
       }
       // recebimento: soma das faturas marcadas
       const sumEl = q('#tx-sum');
@@ -7172,7 +7221,9 @@
           if (Math.abs(diff) >= 0.02) return formError('tx-msg', 'A soma das faturas tem de ser igual ao valor recebido. Ajusta os valores (um pagamento parcial fica abaixo do valor da fatura).');
           d = { kind: 'receipt', lines: ls };
         } else if (kind === 'expense') {
-          d = { kind: 'expense', category_id: valOrNull(q('#tx-cat').value), project_id: valOrNull(q('#tx-proj').value), stage_id: valOrNull(q('#tx-stage').value), description: q('#tx-desc').value.trim(), remember };
+          const link = document.querySelector('#quick-modal-body [name="tx-link"]:checked')?.value || null;
+          d = { kind: 'expense', category_id: valOrNull(q('#tx-cat').value), project_id: valOrNull(q('#tx-proj').value), stage_id: valOrNull(q('#tx-stage').value), description: q('#tx-desc').value.trim(), remember,
+            link_expense_id: link, use_bank_amount: !!(link && q('#tx-use-bank') && !q('#tx-use-bank-row').hidden && q('#tx-use-bank').checked) };
         } else if (kind === 'project_income') {
           if (!q('#tx-pi-proj').value) return formError('tx-msg', 'Escolhe o projeto.');
           d = { kind: 'project_income', project_id: q('#tx-pi-proj').value, stage_id: valOrNull(q('#tx-pi-stage').value) };
@@ -7357,7 +7408,7 @@
       const len = regime === 'monthly' ? 1 : 3;
       const startIdx = Math.floor((m - 1) / len) * len;          // mês (0-11) de início do período atual
       const periods = [];
-      for (let k = -2; k <= 0; k++) {
+      for (let k = (len === 3 ? -5 : -8); k <= 0; k++) {
         const s = new Date(y, startIdx + k * len, 1), e = new Date(y, startIdx + k * len + len, 0);
         const due = new Date(e.getFullYear(), e.getMonth() + 2, 25);
         const from = dateKey(s), to = dateKey(e);
@@ -7393,8 +7444,15 @@
         const done = diffDays(p.from, today) + 1, total = diffDays(p.from, p.to) + 1;
         projected = done > 0 ? due * total / done : due;
       }
-      const paid = b.txs.filter(t => t.kind === 'tax' && t.tax_type === 'iva' && t.date > p.to && t.date <= addDaysKey(p.due, 20)).reduce((t, x) => t - Number(x.amount), 0);
-      return { out, inp, due, projected, paid, uncategorized: exps.filter(e => !e.category_id).length };
+      // Pago: marcado à mão (vat_payments) ou pagamentos de IVA do banco feitos depois do fim do período
+      const manual = (b.settings.vat_payments || {})[p.from] || null;
+      // janela: do fim do período até ao fim do período seguinte (cada pagamento conta só num período)
+      const nextEnd = (() => { const e = parseDateKey(p.to); return dateKey(new Date(e.getFullYear(), e.getMonth() + 1 + (b.settings.vat_regime === 'monthly' ? 1 : 3), 0)); })();
+      const bankPays = b.txs.filter(t => t.kind === 'tax' && t.tax_type === 'iva' && t.date > p.to && t.date <= nextEnd
+        && !Object.values(b.settings.vat_payments || {}).some(v => v.tx_id === t.id && v !== manual));
+      const paid = manual ? Number(manual.amount) : bankPays.reduce((t, x) => t - Number(x.amount), 0);
+      const paidDate = manual ? manual.date : bankPays.map(t => t.date).sort().pop() || null;
+      return { out, inp, due, projected, paid, paidDate, manual, uncategorized: exps.filter(e => !e.category_id).length };
     }
     // IRC — pagamentos por conta (CIRC, art. 104.º e 105.º): 31 de julho, 30 de setembro e 15 de
     // dezembro; cada um = (IRC liquidado do ano anterior − retenções na fonte) × 80% ÷ 3, ou 95% se a
@@ -7583,18 +7641,24 @@
 
       // --- Impostos ---
       const periods = vatPeriodsAround(today, b.settings.vat_regime);
-      const vatCards = periods.filter(p => p.current || p.due >= addDaysKey(today, -45)).map(p => {
-        const v = vatForPeriod(b, p, today);
-        const val = p.current ? v.projected : v.due;
-        const state = !p.current && v.paid > 0 ? `<span class="tx-pill ok">pago ${escapeHtml(fmtEURShort(v.paid))}</span>` : !p.current && p.due < today ? '<span class="tx-pill bad">prazo passou — confirma se foi pago</span>' : '';
-        return `<div class="tax-card${p.current ? ' current' : ''}">
+      const vatAll = periods.map(p => ({ p, v: vatForPeriod(b, p, today) }));
+      const vatCards = vatAll.filter(({ p, v }) => p.current || (p.due >= addDaysKey(today, -45)) || (p.due < today && !(v.paid > 0) && p.due >= addDaysKey(today, -200))).map(({ p, v }) => {
+        const est = p.current ? v.projected : v.due;
+        const isPaid = !p.current && v.paid > 0;
+        const state = isPaid ? `<span class="tx-pill ok">✓ pago${v.paidDate ? ' a ' + escapeHtml(fmtDayMonth(v.paidDate)) : ''}</span>` : !p.current && p.due < today ? '<span class="tx-pill bad">prazo passou</span>' : '';
+        return `<div class="tax-card${p.current ? ' current' : ''}${isPaid ? ' paid' : ''}">
             <div class="tax-top"><span>IVA · ${escapeHtml(p.label)}</span>${state}</div>
-            <b>${val >= 0 ? escapeHtml(fmtEURShort(val)) : 'Crédito ' + escapeHtml(fmtEURShort(-val))}</b>
-            <small>${p.current ? 'estimativa até ao fim do período · ' : ''}pagar até <b>${escapeHtml(fmtDayMonthYear(p.due))}</b></small>
+            <b>${isPaid ? escapeHtml(fmtEURShort(v.paid)) : est >= 0 ? escapeHtml(fmtEURShort(est)) : 'Crédito ' + escapeHtml(fmtEURShort(-est))}</b>
+            <small>${isPaid ? `pago${v.manual ? ' (marcado à mão)' : ' (do extrato)'} · a app estimava ${escapeHtml(fmtEURShort(v.due))}` : `${p.current ? 'estimativa até ao fim do período · ' : 'estimativa · '}pagar até <b>${escapeHtml(fmtDayMonthYear(p.due))}</b>`}</small>
             <div class="tax-lines"><span>IVA das faturas <em>${escapeHtml(fmtEUR(v.out))}</em></span><span>IVA das despesas (dedutível) <em>− ${escapeHtml(fmtEUR(v.inp))}</em></span>${p.current ? `<span>Até hoje <em>${escapeHtml(fmtEUR(v.due))}</em></span>` : ''}</div>
-            ${v.uncategorized ? `<div class="tax-warn">${v.uncategorized} despesa(s) sem categoria não contam para o IVA dedutível.</div>` : ''}
+            ${!p.current ? (isPaid ? (v.manual ? `<button type="button" class="text-btn" data-vat-unpay="${p.from}">Desfazer marcação</button>` : '') : `<button type="button" class="secondary-btn vat-pay-btn" data-vat-pay="${p.from}">Marcar como pago</button>`) : ''}
+            ${v.uncategorized && !isPaid ? `<div class="tax-warn">${v.uncategorized} despesa(s) sem categoria não contam para o IVA dedutível.</div>` : ''}
           </div>`;
       }).join('');
+      const vatHistory = vatAll.filter(({ p }) => !p.current).reverse().map(({ p, v }) => `<tr>
+          <td>${escapeHtml(p.label)}</td><td class="col-value">${escapeHtml(fmtEURShort(v.due))}</td>
+          <td class="col-value">${v.paid > 0 ? escapeHtml(fmtEURShort(v.paid)) : '—'}</td>
+          <td>${v.paid > 0 ? `<span class="tx-pill ok">pago${v.paidDate ? ' ' + escapeHtml(fmtDayMonth(v.paidDate)) : ''}</span>` : p.due < today ? '<span class="tx-pill bad">sem pagamento</span>' : `até ${escapeHtml(fmtDayMonth(p.due))}`}</td></tr>`).join('');
       const irc = ircInstallments(b, y);
       const ircCard = `<div class="tax-card">
           <div class="tax-top"><span>IRC · pagamentos por conta ${y}</span></div>
@@ -7627,7 +7691,7 @@
       const usedAll = {};
       b.matches.filter(m => m.confirmed).forEach(m => { usedAll[m.invoice_id] = (usedAll[m.invoice_id] || 0) + Number(m.amount); });
       const invOptions = (t, sugId) => {
-        const list = b.invoices.filter(i => i.status !== 'cancelled' && Number(i.amount) > 0 && i.issue_date <= t.date)
+        const list = b.invoices.filter(i => i.status !== 'cancelled' && Number(i.amount) > 0 && i.issue_date <= addDaysKey(t.date, INV_AFTER_PAY))
           .map(i => ({ i, open: Math.round((invGross(i, rateF) - (usedAll[i.id] || 0)) * 100) / 100, sc: nameScore(i.customer_name || '', t.description) }))
           .filter(o => o.open > 0.01)
           .sort((a, c) => (c.i.id === sugId) - (a.i.id === sugId) || c.sc - a.sc || c.i.issue_date.localeCompare(a.i.issue_date)).slice(0, 80);
@@ -7652,7 +7716,9 @@
             editor = `<button type="button" class="primary-btn tx-save" data-tx-ok="${escapeHtml(t.id)}">Confirmar reembolso</button>`;
           } else {
             const cat = e?.category_id || c.category_id || '', pid = e?.project_id || c.project_id || '', sid = e?.stage_id || c.stage_id || '';
-            sugTxt = cat || pid ? 'Sugestão preenchida — confirma ou muda' : 'Escolhe a categoria e, se for de um projeto, o projeto e a fase';
+            const sim = similarExpenses(t, b)[0];
+            sugTxt = sim ? `Parece a despesa já registada «${sim.description || 'despesa'}» (${fmtEUR(sim.amount)}, ${fmtDayMonth(sim.date)}) — usa Mais opções para as juntar`
+              : cat || pid ? 'Sugestão preenchida — confirma ou muda' : 'Escolhe a categoria e, se for de um projeto, o projeto e a fase';
             editor = `<select class="form-input tx-cat-sel">${catOptions(cat)}</select>
               <select class="form-input tx-proj-sel">${projOptions(pid)}</select>
               <select class="form-input tx-stage-sel"${pid ? '' : ' disabled'}>${stageOptions(pid, sid)}</select>
@@ -7752,6 +7818,10 @@
 
         <div class="section-label">Impostos a pagar</div>
         <div class="tax-grid">${vatCards}${ircCard}</div>
+        <details class="gantt-wrap vat-hist"><summary>Histórico do IVA — estimado pela app e pago</summary>
+          <div class="table-scroll"><table class="mini-table"><thead><tr><th>Período</th><th class="col-value">Estimado</th><th class="col-value">Pago</th><th>Estado</th></tr></thead><tbody>${vatHistory}</tbody></table></div>
+          <div class="field-hint">Os pagamentos de IVA do banco (movimentos marcados como "Imposto · IVA") são reconhecidos sozinhos. O que foi pago por outra via marca-se à mão.</div>
+        </details>
         <div class="fin-note">Estimativas a partir das faturas (SAF-T) e das despesas registadas; o valor final é o da declaração da contabilidade. Regime de IVA: <b>${b.settings.vat_regime === 'monthly' ? 'mensal' : b.settings.vat_regime === 'cash' ? 'trimestral, IVA de caixa' : 'trimestral'}</b> · <button type="button" class="text-btn" data-fin-settings>mudar</button></div>
 
         <div class="section-label">Tesouraria e recebimentos</div>
@@ -7789,6 +7859,15 @@
       box.querySelectorAll('[data-rec-yes]').forEach(bt => bt.addEventListener('click', () => setRec(bt.dataset.recYes, 'yes')));
       box.querySelectorAll('[data-rec-no]').forEach(bt => bt.addEventListener('click', () => setRec(bt.dataset.recNo, 'no')));
       box.querySelectorAll('[data-tx-open]').forEach(bt => bt.addEventListener('click', () => openTxReview(b.txs.find(t => t.id === bt.dataset.txOpen), b, loadFinance)));
+      box.querySelectorAll('[data-vat-pay]').forEach(bt => bt.addEventListener('click', () => {
+        const x = vatAll.find(z => z.p.from === bt.dataset.vatPay);
+        openVatPaidModal(b, x.p, x.v);
+      }));
+      box.querySelectorAll('[data-vat-unpay]').forEach(bt => bt.addEventListener('click', async () => {
+        const vp = { ...(b.settings.vat_payments || {}) }; delete vp[bt.dataset.vatUnpay];
+        try { await saveFinanceSettings({ vat_payments: vp }); b.settings = await loadFinanceSettings(); renderFinance(); showToast('Marcação desfeita'); }
+        catch (err) { showToast('Não foi possível: ' + err.message, { type: 'error' }); }
+      }));
       box.querySelectorAll('[data-tx-month]').forEach(bt => bt.addEventListener('click', () => { finTxMonth = bt.dataset.txMonth; renderFinance(); }));
       box.querySelectorAll('.tx-row').forEach(row => {
         const ps = row.querySelector('.tx-proj-sel'), ss = row.querySelector('.tx-stage-sel');
@@ -7819,6 +7898,40 @@
         try { await acceptTxSuggestion(b.txs.find(t => t.id === bt.dataset.txOk), b); showToast('Confirmado'); loadFinance(); }
         catch (err) { bt.disabled = false; showToast('Não foi possível confirmar: ' + err.message, { type: 'error' }); }
       }));
+    }
+
+    // IVA de um período pago por outra via (ou fora do intervalo que a app reconhece)
+    function openVatPaidModal(b, p, v) {
+      const used = new Set(Object.values(b.settings.vat_payments || {}).map(x => x.tx_id).filter(Boolean));
+      const cands = b.txs.filter(t => Number(t.amount) < 0 && (t.kind === 'tax' || /duc|autoridade tribut|financas|\bat\b/.test(normTxt(t.description))) && t.date > p.to && !used.has(t.id))
+        .sort((a, c) => Math.abs(diffDays(a.date, p.due)) - Math.abs(diffDays(c.date, p.due))).slice(0, 6);
+      openQuickModal(`IVA · ${p.label}`, `
+        <div class="field-hint" style="margin:0 0 10px;">A app estimava <b>${escapeHtml(fmtEUR(v.due))}</b>. Indica o que foi efetivamente pago (o valor da declaração).</div>
+        ${cands.length ? `<label class="field-label" style="margin-top:0;">Foi um destes pagamentos do banco?</label>
+          ${cands.map(t => `<label class="tx-sim"><input type="radio" name="vat-tx" value="${escapeHtml(t.id)}" data-amt="${-Number(t.amount)}" data-date="${t.date}"><span><b>${escapeHtml(t.description)}</b><small>${escapeHtml(fmtDayMonthYear(t.date))} · ${escapeHtml(fmtEUR(-Number(t.amount)))}${t.kind === 'tax' && t.tax_type ? ' · ' + escapeHtml(TAX_TYPES.find(x => x[0] === t.tax_type)?.[1] || '') : ''}</small></span></label>`).join('')}
+          <label class="tx-sim"><input type="radio" name="vat-tx" value="" checked><span>Não — pago por outra via (outra conta, compensação…)</span></label>` : ''}
+        <div class="form-grid">
+          <div><label class="field-label">Valor pago (€)</label><input type="text" inputmode="decimal" id="vat-amt" class="form-input" value="${escapeHtml(String(Math.max(0, Math.round(v.due * 100) / 100)).replace('.', ','))}"></div>
+          <div><label class="field-label">Data</label><input type="date" id="vat-date" class="form-input" value="${escapeHtml(p.due <= dateKey(new Date()) ? p.due : dateKey(new Date()))}"></div>
+          <div class="span2"><label class="field-label">Nota (opcional)</label><input type="text" id="vat-note" class="form-input" placeholder="ex.: pago pela conta pessoal, a acertar"></div>
+        </div>
+        <button type="button" class="primary-btn" id="vat-save">Marcar como pago</button>
+        <div id="vat-msg" class="form-msg"></div>`);
+      document.querySelectorAll('#quick-modal-body [name="vat-tx"]').forEach(r => r.addEventListener('change', () => {
+        if (r.checked && r.value) { document.getElementById('vat-amt').value = String(r.dataset.amt).replace('.', ','); document.getElementById('vat-date').value = r.dataset.date; }
+      }));
+      document.getElementById('vat-save').addEventListener('click', async () => {
+        const amount = numOrNull(document.getElementById('vat-amt').value), date = document.getElementById('vat-date').value;
+        if (amount == null || Number.isNaN(amount) || amount < 0) return formError('vat-msg', 'Indica o valor pago.');
+        if (!date) return formError('vat-msg', 'Indica a data.');
+        const txId = document.querySelector('#quick-modal-body [name="vat-tx"]:checked')?.value || null;
+        try {
+          // o movimento do banco escolhido passa a ser "Imposto · IVA"
+          if (txId) { const t = b.txs.find(x => x.id === txId); await applyTxDecision(t, b, { kind: 'tax', tax_type: 'iva' }); }
+          await saveFinanceSettings({ vat_payments: { ...(b.settings.vat_payments || {}), [p.from]: { amount, date, tx_id: txId, note: valOrNull(document.getElementById('vat-note').value.trim()) } } });
+          quickModalDirty = false; closeQuickModal(); showToast(`IVA ${p.label} marcado como pago`); loadFinance();
+        } catch (err) { formError('vat-msg', 'Não foi possível guardar: ' + err.message); }
+      });
     }
 
     // ---------- Objetivos do ano ----------
