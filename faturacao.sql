@@ -58,3 +58,16 @@ drop policy if exists "Só a equipa" on invoice_payments;
 create policy "Só a equipa" on invoice_payments for all to authenticated
   using (private.is_team_member()) with check (private.is_team_member());
 revoke all on invoice_payments from anon;
+
+-- Notas de crédito (NC) ficam com valor negativo; só elas podem ter valores abaixo de zero
+alter table invoices drop constraint if exists invoices_amount_check;
+alter table invoices add constraint invoices_amount_check check (amount >= 0 or doc_type = 'NC');
+alter table invoices drop constraint if exists invoices_amount_paid_check;
+alter table invoices add constraint invoices_amount_paid_check check (amount_paid >= 0 or doc_type = 'NC');
+
+-- Arquivar pendentes: fases que não vão ser faturadas e faturas que não vão ser recebidas
+-- (saem das listas e dos totais "por faturar" / "por receber"; podem ser repostas)
+alter table invoices add column if not exists archived_at timestamptz;
+alter table invoices add column if not exists archive_note text;
+alter table project_stages add column if not exists billing_archived_at timestamptz;
+alter table project_stages add column if not exists billing_archive_note text;

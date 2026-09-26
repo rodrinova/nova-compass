@@ -1223,6 +1223,10 @@
   .invoice-row small { color: var(--text-3); }
   .bl-age { font-size: 12.5px; font-weight: 600; color: var(--text-2); white-space: nowrap; }
   .bl-age.warn { color: var(--warning); } .bl-age.late { color: var(--danger); }
+  .bl-arch { flex-shrink: 0; font-size: 12.5px; color: var(--text-3); margin-left: 4px; }
+  .bl-arch:hover { color: var(--accent); }
+  .bl-archived { opacity: .7; }
+  .bl-archived-toggle { display: block; margin-top: 12px; font-size: 13px; }
   .bl-src { font-size: 10.5px; font-weight: 650; padding: 1px 6px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); vertical-align: 1px; }
   .file-drop { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 22px 12px; border: 1.5px dashed var(--border-strong); border-radius: 10px; cursor: pointer; text-align: center; margin-bottom: 8px; }
   .file-drop b { color: var(--accent); font-size: 14px; } .file-drop span { font-size: 12.5px; color: var(--text-3); }
@@ -3684,7 +3688,10 @@
         }
 
         // --- Indicadores do topo e contagens dos separadores ---
-        const porReceber = round2(totalFaturado - totalRecebido);
+        // Faturas arquivadas (incobráveis, pagas por fora…) não contam como por receber
+        const arquivadoPorReceber = invoices.filter(i => i.archived_at && i.status !== 'cancelled')
+          .reduce((t, i) => t + Math.max(0, Number(i.amount || 0) - Number(i.amount_paid || 0)), 0);
+        const porReceber = round2(Math.max(0, totalFaturado - totalRecebido - arquivadoPorReceber));
         const hojeKeyDet = dateKey(new Date());
         const proxima = stages.filter(s => !isStageDone(s) && stageDeadline(s))
           .sort((x, y) => stageDeadline(x).localeCompare(stageDeadline(y)))[0];
@@ -5424,7 +5431,7 @@
       }
       const [p, s, i, e] = await Promise.all([
         supabase.from('projects').select('id, code, name, client_id, commission_value, archived_at, clients(name)'),
-        supabase.from('project_stages').select('id, project_id, stage_order, status, percentage, fixed_value, excluded_from_invoicing, delivery_date, end_date, revision_label, stage_types(name)'),
+        supabase.from('project_stages').select('id, project_id, stage_order, status, percentage, fixed_value, excluded_from_invoicing, delivery_date, end_date, revision_label, billing_archived_at, billing_archive_note, stage_types(name)'),
         supabase.from('invoices').select('*').order('issue_date', { ascending: false }),
         (await clientsTablesReady()) ? supabase.from('client_entities').select('client_id, nif') : Promise.resolve({ data: [] })
       ]);
@@ -5625,7 +5632,7 @@
     }
 
     // ---------- Módulo Faturação ----------
-    let billingTab = 'tobill', billingCache = null;
+    let billingTab = 'tobill', billingCache = null, billingShowArchived = false;
     async function openBillingModule(tab) {
       if (tab) billingTab = tab;
       pushCurrentView({ name: 'billing' });
@@ -5650,12 +5657,17 @@
         const p = projById[s.project_id]; const budget = stageBudget(s, p);
         return { s, p, budget, invoiced: invByStage[s.id] || 0, remaining: Math.round((budget - (invByStage[s.id] || 0)) * 100) / 100, doneAt: s.delivery_date || s.end_date || null };
       }).filter(x => x.p && x.remaining > 0.5).sort((a, b) => (a.doneAt || '9999').localeCompare(b.doneAt || '9999'));
-      const toReceive = valid.filter(i => i.project_id && invBalance(i) > 0.5)
+      const receivable = valid.filter(i => i.project_id && invBalance(i) > 0.5)
         .map(i => ({ i, p: projById[i.project_id], age: diffDays(i.issue_date, today) })).sort((a, b) => b.age - a.age);
+      // Arquivados: saem das listas e dos totais, mas ficam à vista em "Ver arquivadas"
+      const toBillArchived = toBill.filter(x => x.s.billing_archived_at);
+      const toReceiveArchived = receivable.filter(x => x.i.archived_at);
+      const toReceive = receivable.filter(x => !x.i.archived_at);
+      toBill.splice(0, toBill.length, ...toBill.filter(x => !x.s.billing_archived_at));
       const unmatched = b.invoices.filter(i => !i.project_id && i.status !== 'cancelled');
       const yearAgo = addDaysKey(today, -365);
       const last12 = valid.filter(i => i.issue_date >= yearAgo);
-      return { projById, toBill, toReceive, unmatched, today,
+      return { projById, toBill, toReceive, toBillArchived, toReceiveArchived, unmatched, today,
         kpi: {
           toBill: toBill.reduce((t, x) => t + x.remaining, 0), toReceive: toReceive.reduce((t, x) => t + invBalance(x.i), 0),
           overdue: toReceive.filter(x => x.age > 60).reduce((t, x) => t + invBalance(x.i), 0),
@@ -5669,19 +5681,29 @@
       const ageCls = a => a > 90 ? 'late' : a > 60 ? 'warn' : '';
       const tabs = [['tobill', 'Por faturar', d.toBill.length], ['toreceive', 'Por receber', d.toReceive.length], ['all', 'Faturas', null], ['unmatched', 'Por associar', d.unmatched.length]];
       let body = '';
-      if (billingTab === 'tobill') {
-        body = d.toBill.length ? d.toBill.map(x => `
-          <div class="invoice-row click-row" data-open-project-fin="${escapeHtml(x.p.id)}">
-            <span><b class="bl-title">${escapeHtml(phaseName(x.s))}</b><br><small>${escapeHtml(projLabel(x.p))}${x.p.archived_at ? ' · arquivado' : ''}${x.doneAt ? ' · concluída a ' + escapeHtml(fmtDayMonth(x.doneAt)) : ''}${x.invoiced > 0 ? ' · já faturado ' + escapeHtml(fmtEURShort(x.invoiced)) : ''}</small></span>
+      const archivedNote = (at, note) => ` · arquivada a ${escapeHtml(fmtDayMonth(String(at).slice(0, 10)))}${note ? ' — ' + escapeHtml(note) : ''}`;
+      const archivedToggle = (n) => n ? `<button type="button" class="text-btn bl-archived-toggle" data-show-archived>${billingShowArchived ? 'Esconder arquivadas' : `Ver arquivadas (${n})`}</button>` : '';
+      const stageRow = (x, archived) => `
+          <div class="invoice-row click-row${archived ? ' bl-archived' : ''}" data-open-project-fin="${escapeHtml(x.p.id)}">
+            <span><b class="bl-title">${escapeHtml(phaseName(x.s))}</b><br><small>${escapeHtml(projLabel(x.p))}${x.p.archived_at ? ' · projeto arquivado' : ''}${x.doneAt ? ' · concluída a ' + escapeHtml(fmtDayMonth(x.doneAt)) : ''}${x.invoiced > 0 ? ' · já faturado ' + escapeHtml(fmtEURShort(x.invoiced)) : ''}${archived ? archivedNote(x.s.billing_archived_at, x.s.billing_archive_note) : ''}</small></span>
             <span class="amount">${escapeHtml(fmtEURShort(x.remaining))}</span>
-          </div>`).join('') : '<div class="gantt-empty">Não há fases concluídas por faturar. 🎉</div>';
-      } else if (billingTab === 'toreceive') {
-        body = d.toReceive.length ? d.toReceive.map(x => `
-          <div class="invoice-row click-row" data-invoice="${escapeHtml(x.i.id)}">
-            <span><b class="bl-title">${escapeHtml(x.i.external_ref || x.i.invoice_number || 'Sem número')}</b><br><small>${escapeHtml(projLabel(x.p))} · emitida a ${escapeHtml(fmtDayMonth(x.i.issue_date))}</small></span>
-            <span class="bl-age ${ageCls(x.age)}">${x.age} dias</span>
+            <button type="button" class="text-btn bl-arch" ${archived ? 'data-unarch-stage' : 'data-arch-stage'}="${escapeHtml(x.s.id)}">${archived ? 'Repor' : 'Arquivar'}</button>
+          </div>`;
+      const invRow = (x, archived) => `
+          <div class="invoice-row click-row${archived ? ' bl-archived' : ''}" data-invoice="${escapeHtml(x.i.id)}">
+            <span><b class="bl-title">${escapeHtml(x.i.external_ref || x.i.invoice_number || 'Sem número')}</b><br><small>${escapeHtml(projLabel(x.p))} · emitida a ${escapeHtml(fmtDayMonth(x.i.issue_date))}${archived ? archivedNote(x.i.archived_at, x.i.archive_note) : ''}</small></span>
+            <span class="bl-age ${archived ? '' : ageCls(x.age)}">${x.age} dias</span>
             <span class="amount">${escapeHtml(fmtEURShort(invBalance(x.i)))}</span>
-          </div>`).join('') : '<div class="gantt-empty">Tudo recebido. Não há faturas por liquidar.</div>';
+            <button type="button" class="text-btn bl-arch" ${archived ? 'data-unarch-inv' : 'data-arch-inv'}="${escapeHtml(x.i.id)}">${archived ? 'Repor' : 'Arquivar'}</button>
+          </div>`;
+      if (billingTab === 'tobill') {
+        body = (d.toBill.length ? d.toBill.map(x => stageRow(x, false)).join('') : '<div class="gantt-empty">Não há fases concluídas por faturar. 🎉</div>') +
+          archivedToggle(d.toBillArchived.length) +
+          (billingShowArchived && d.toBillArchived.length ? `<div class="bl-archived-list"><div class="section-label" style="margin:14px 0 4px;">Arquivadas — não contam no por faturar</div>${d.toBillArchived.map(x => stageRow(x, true)).join('')}</div>` : '');
+      } else if (billingTab === 'toreceive') {
+        body = (d.toReceive.length ? d.toReceive.map(x => invRow(x, false)).join('') : '<div class="gantt-empty">Tudo recebido. Não há faturas por liquidar.</div>') +
+          archivedToggle(d.toReceiveArchived.length) +
+          (billingShowArchived && d.toReceiveArchived.length ? `<div class="bl-archived-list"><div class="section-label" style="margin:14px 0 4px;">Arquivadas — não contam no por receber</div>${d.toReceiveArchived.map(x => invRow(x, true)).join('')}</div>` : '');
       } else if (billingTab === 'unmatched') {
         body = d.unmatched.length ? `<div class="field-hint" style="margin:0 0 8px;">Faturas importadas que a app não conseguiu ligar a um projeto. Toca para escolher projeto e fase.</div>` + d.unmatched.map(i => `
           <div class="invoice-row click-row" data-assoc="${escapeHtml(i.id)}">
@@ -5694,7 +5716,7 @@
         body = `<input type="text" id="billing-search" class="search-input" placeholder="Pesquisar n.º, cliente, projeto…" value="${escapeHtml(document.getElementById('billing-search')?.value || '')}" style="margin-bottom:10px;">` +
           (list.length ? list.map(i => {
             const bal = invBalance(i);
-            const st = i.status === 'cancelled' ? ['neutral', 'Anulada'] : bal <= 0.5 ? ['paid', 'Paga'] : Number(i.amount_paid) > 0 ? ['partial', 'Parcial'] : ['pending', 'Por receber'];
+            const st = i.status === 'cancelled' ? ['neutral', 'Anulada'] : bal <= 0.5 ? ['paid', 'Paga'] : i.archived_at ? ['neutral', 'Arquivada'] : Number(i.amount_paid) > 0 ? ['partial', 'Parcial'] : ['pending', 'Por receber'];
             return `<div class="invoice-row click-row" data-invoice="${escapeHtml(i.id)}">
               <span><b class="bl-title">${escapeHtml(i.external_ref || i.invoice_number || 'Sem número')}</b>${i.source === 'saft' ? ' <span class="bl-src">weoInvoice</span>' : ''}<br><small>${escapeHtml(projLabel(d.projById[i.project_id]))} · ${escapeHtml(fmtDayMonth(i.issue_date))} ${escapeHtml(String(i.issue_date).slice(0, 4))}</small></span>
               <span class="invoice-status ${st[0]}">${st[1]}</span>
@@ -5714,7 +5736,48 @@
           <button type="button" class="secondary-btn toolbar-btn" id="billing-import">Importar do weoInvoice</button>
         </div>
         <div class="gantt-wrap">${body}</div>`;
-      box.querySelectorAll('[data-btab]').forEach(b => b.addEventListener('click', () => { billingTab = b.dataset.btab; renderBilling(); }));
+      box.querySelectorAll('[data-btab]').forEach(b => b.addEventListener('click', () => { billingTab = b.dataset.btab; billingShowArchived = false; renderBilling(); }));
+      box.querySelectorAll('[data-show-archived]').forEach(b => b.addEventListener('click', () => { billingShowArchived = !billingShowArchived; renderBilling(); }));
+      // Arquivar / repor (fases por faturar e faturas por receber)
+      const setArchive = async (kind, id, on, note) => {
+        const patch = kind === 'stage'
+          ? (on ? { billing_archived_at: new Date().toISOString(), billing_archive_note: note || null } : { billing_archived_at: null, billing_archive_note: null })
+          : (on ? { archived_at: new Date().toISOString(), archive_note: note || null } : { archived_at: null, archive_note: null });
+        const table = kind === 'stage' ? 'project_stages' : 'invoices';
+        const list = kind === 'stage' ? billingCache.stages : billingCache.invoices;
+        await dbUpdate(table, id, patch, devMode ? list : undefined);
+        Object.assign(list.find(x => String(x.id) === String(id)) || {}, patch);
+        renderBilling();
+      };
+      const askArchive = (kind, id, label) => {
+        openQuickModal(kind === 'stage' ? 'Arquivar fase por faturar' : 'Arquivar fatura por receber', `
+          <div class="field-hint" style="margin:0 0 8px;"><b>${escapeHtml(label)}</b> sai da lista e do total ${kind === 'stage' ? 'por faturar' : 'por receber'}. Podes repô-la quando quiseres em "Ver arquivadas".</div>
+          <label class="field-label">Motivo (opcional)</label>
+          <input type="text" id="arch-note" class="form-input" maxlength="200" placeholder="${kind === 'stage' ? 'ex.: oferecido ao cliente, incluído noutra fase' : 'ex.: incobrável, pago por fora, em contencioso'}">
+          <button type="button" class="primary-btn" id="arch-go">Arquivar</button>
+          <div id="arch-msg" class="form-msg"></div>`);
+        const go = () => setArchive(kind, id, true, document.getElementById('arch-note').value.trim())
+          .then(() => { closeQuickModal(); showToast('Arquivada', { undo: () => setArchive(kind, id, false).catch(err => showToast('Não foi possível anular: ' + err.message, { type: 'error' })) }); })
+          .catch(err => formError('arch-msg', 'Não foi possível arquivar: ' + err.message));
+        document.getElementById('arch-go').addEventListener('click', go);
+        document.getElementById('arch-note').addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+      };
+      box.querySelectorAll('[data-arch-stage]').forEach(b => b.addEventListener('click', e => {
+        e.stopPropagation();
+        const x = d.toBill.find(y => String(y.s.id) === b.dataset.archStage);
+        askArchive('stage', b.dataset.archStage, `${phaseName(x.s)} · ${projLabel(x.p)}`);
+      }));
+      box.querySelectorAll('[data-arch-inv]').forEach(b => b.addEventListener('click', e => {
+        e.stopPropagation();
+        const x = d.toReceive.find(y => String(y.i.id) === b.dataset.archInv);
+        askArchive('invoice', b.dataset.archInv, x.i.external_ref || x.i.invoice_number || 'Fatura');
+      }));
+      box.querySelectorAll('[data-unarch-stage], [data-unarch-inv]').forEach(b => b.addEventListener('click', e => {
+        e.stopPropagation();
+        const kind = b.dataset.unarchStage ? 'stage' : 'invoice';
+        setArchive(kind, b.dataset.unarchStage || b.dataset.unarchInv, false).then(() => showToast('Reposta'))
+          .catch(err => showToast('Não foi possível repor: ' + err.message, { type: 'error' }));
+      }));
       document.getElementById('billing-import').addEventListener('click', () => openSaftImport(loadBilling));
       const search = document.getElementById('billing-search');
       if (search) search.addEventListener('input', () => { const pos = search.selectionStart; renderBilling(); const s2 = document.getElementById('billing-search'); s2.focus(); s2.setSelectionRange(pos, pos); });
