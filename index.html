@@ -1768,6 +1768,7 @@
   .cm-legal small.cm-note { color: var(--text-2); font-style: italic; }
   .cm-legal .cm-when small { text-align: right; margin-top: 0; }
   .cm-legal.done { opacity: .7; }
+  .cm-of { font-size: 12.5px; color: var(--text-2); }
   .ht-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0; font-size: 14px; }
   .ht-row .form-input { max-width: 200px; margin: 0; }
   .hours-of { font-size: 14px; font-weight: 500; color: var(--text-2); letter-spacing: 0; }
@@ -9667,7 +9668,7 @@
       const legal = camCfg ? computeCamaraDeadlines(project, stages, camCfg) : [];
       const nOficios = stages.filter(s => (['lic', 'pip'].includes(camaraKind(s.stage_types?.name)) && s.revision_kind === 'oficio') || camaraKind(s.stage_types?.name) === 'oficio').length;
 
-      box.innerHTML = camaraDeadlinesHtml(legal, nOficios) + `
+      box.innerHTML = camaraDeadlinesHtml(legal, nOficios, dl) + `
         <div class="gantt-wrap">
           <div class="card-head"><h2>Processo camarário</h2><button type="button" class="text-btn" id="cm-edit">Editar</button></div>
           <div class="invoice-row"><span>Município</span><span>${escapeHtml(project.municipality || '—')}</span></div>
@@ -9685,19 +9686,6 @@
               : '—'}</span></div>
             <div class="field-hint" style="margin:8px 0 0;">Guardada cifrada. Cada vez que alguém a vê ou copia fica registado${lastLog ? ` — último acesso: ${escapeHtml(ataMemberNames[lastLog.member_id] || 'alguém')}, ${escapeHtml(fmtDateTime(lastLog.at))}` : ''}.</div>`
             : '<div class="gantt-empty">Ainda sem acesso guardado. Guarda aqui o utilizador e a palavra-passe da plataforma da câmara: fica cifrada e só a equipa lhe chega.</div>'}
-        </div>
-
-        <div class="gantt-wrap">
-          <div class="card-head"><h2>Outros prazos a controlar</h2><button type="button" class="text-btn" id="cm-add-deadline">+ Novo prazo</button></div>
-          ${dl.length ? dl.map(m => {
-            const d = diffDays(today, m.event_date);
-            const when = m.done ? 'Cumprido' : d < 0 ? `Passou há ${-d} dias` : d === 0 ? 'Hoje' : `Faltam ${d} dias`;
-            const cls = m.done ? 'ok' : d < 0 ? 'late' : (m.alert_days != null && d <= m.alert_days) ? 'soon' : '';
-            return `<div class="invoice-row click-row" data-cm-marco="${escapeHtml(m.id)}">
-              <span>${escapeHtml(m.title)}<br><small style="color:var(--text-3)">${escapeHtml(fmtLongD(m.event_date))}${m.alert_days != null ? ' · aviso ' + Number(m.alert_days) + ' dias antes' : ''}</small></span>
-              <span class="cm-when ${cls}">${escapeHtml(when)}</span>
-            </div>`;
-          }).join('') : '<div class="gantt-empty">Sem outros prazos. Os prazos da lei (alvará, especialidades, validades…) já aparecem em Prazos legais; aqui fica o resto que queiras vigiar, com aviso na Home.</div>'}
         </div>
 
         <div class="gantt-wrap">
@@ -10311,17 +10299,33 @@
       if (d.left < 0) return d.who === 'camara' ? `Passou há ${-d.left} ${d.left === -1 ? 'dia' : 'dias'}` : `Atrasado ${-d.left} ${d.left === -1 ? 'dia' : 'dias'}`;
       return d.left === 0 ? 'Termina hoje' : `Faltam ${d.left} ${d.left === 1 ? 'dia' : 'dias'}`;
     }
-    function camaraDeadlinesHtml(list, oficioCount) {
-      const rows = list.map(d => `
+    // Um só cartão "Prazos": os calculados pela lei (Câmara / NOVA) e os criados à mão, por data
+    function camaraDeadlinesHtml(list, oficioCount, manual = []) {
+      const today = dateKey(new Date());
+      const items = [
+        ...list.map(d => ({ d, due: d.due, done: d.state === 'done' })),
+        ...manual.map(m => ({ m, due: m.event_date, done: !!m.done }))
+      ].sort((a, b) => (a.done - b.done) || (a.due || '9999').localeCompare(b.due || '9999'));
+      const legalRow = d => `
         <div class="invoice-row cm-legal ${d.state}" data-cm-stage="${escapeHtml(d.stage.id)}">
           <span><b>${escapeHtml(d.label)}</b><br><small>${escapeHtml(phaseName(d.stage))}${d.start ? ' · desde ' + escapeHtml(fmtDayMonthYear(d.start)) : ''}${d.due ? ' · até ' + escapeHtml(fmtDayMonthYear(d.due)) : ''}${d.rule?.hint ? ' · ' + escapeHtml(d.rule.hint) : ''}${d.regime === 'antigo' ? ' · regime anterior a 1/10/2026' : ''}</small>
             ${d.state === 'late' && d.who === 'camara' ? '<small class="cm-tacit">Prazo ultrapassado: possível deferimento tácito — confirmar com a Câmara/jurista</small>' : ''}
             ${d.warn ? `<small class="cm-warn">${escapeHtml(d.warn)}</small>` : ''}${d.note ? `<small class="cm-note">${escapeHtml(d.note)}</small>` : ''}</span>
           <span class="cm-when ${d.state === 'late' ? 'late' : d.state === 'soon' ? 'soon' : d.state === 'done' ? 'ok' : ''}">${escapeHtml(camaraStateText(d))}<small>${d.who === 'camara' ? 'Câmara' : 'NOVA'}</small></span>
-        </div>`).join('');
+        </div>`;
+      const manualRow = m => {
+        const left = diffDays(today, m.event_date);
+        const when = m.done ? 'Cumprido' : left < 0 ? `Passou há ${-left} ${left === -1 ? 'dia' : 'dias'}` : left === 0 ? 'Hoje' : `Faltam ${left} ${left === 1 ? 'dia' : 'dias'}`;
+        const cls = m.done ? 'ok' : left < 0 ? 'late' : (m.alert_days != null && left <= m.alert_days) ? 'soon' : '';
+        return `<div class="invoice-row cm-legal ${m.done ? 'done' : ''}" data-cm-marco="${escapeHtml(m.id)}">
+          <span><b>${escapeHtml(m.title)}</b><br><small>até ${escapeHtml(fmtDayMonthYear(m.event_date))}${m.alert_days != null ? ' · aviso ' + Number(m.alert_days) + ' dias antes' : ''}</small></span>
+          <span class="cm-when ${cls}">${escapeHtml(when)}<small>Manual</small></span>
+        </div>`;
+      };
       return `<div class="gantt-wrap">
-          <div class="card-head"><h2>Prazos legais</h2><span>${oficioCount ? `${oficioCount} ${oficioCount === 1 ? 'resposta a ofício' : 'respostas a ofício'}` : 'sem ofícios'}</span></div>
-          ${rows || '<div class="gantt-empty">Os prazos aparecem quando a fase de PIP ou de licenciamento tiver data de entrega (a submissão). Os valores estão em Definições → Prazos camarários.</div>'}
+          <div class="card-head"><h2>Prazos</h2><span class="card-head-actions"><span class="cm-of">${oficioCount ? `${oficioCount} ${oficioCount === 1 ? 'resposta a ofício' : 'respostas a ofício'}` : 'sem ofícios'}</span><button type="button" class="text-btn" id="cm-add-deadline">+ Novo prazo</button></span></div>
+          ${items.length ? items.map(x => x.d ? legalRow(x.d) : manualRow(x.m)).join('')
+            : '<div class="gantt-empty">Os prazos da lei aparecem quando a fase de PIP ou de licenciamento tiver data de entrega (a submissão); os valores estão em Definições → Prazos camarários. Para outra data a vigiar, usa "+ Novo prazo".</div>'}
         </div>`;
     }
 
