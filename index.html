@@ -4616,7 +4616,7 @@
         projectMarcos.filter(m => !m.done && m.auto_kind !== 'delivery' && m.event_date && (m.event_date >= hojeKeyDet || marcoTypes[m.type_id]?.is_deadline || m.alert_days != null))
           .forEach(m => nextItems.push({ date: m.event_date, title: m.title, who: namesOf(m.owner_ids) || whoOwner,
             sub: marcoTypes[m.type_id]?.is_deadline || m.alert_days != null ? 'Prazo' : (marcoTypes[m.type_id]?.name || 'Marco'), marcoId: m.id }));
-        notDone.filter(s => stageDeadline(s) && !s.delivery_date).forEach(s => nextItems.push({ date: stageDeadline(s), title: `Entregar ${phaseName(s)}`,
+        notDone.filter(s => stageDeadline(s) && !s.delivery_date && !hasNoDelivery(s)).forEach(s => nextItems.push({ date: stageDeadline(s), title: `Entregar ${phaseName(s)}`,
           who: namesOf(peopleOf(s)) || whoOwner, sub: 'Fase', stageId: s.id }));
         nextItems.sort((a, b) => a.date.localeCompare(b.date));
         const leftPill = it => {
@@ -4643,7 +4643,7 @@
           if (isAwardStage(s)) return;
           const nm = phaseName(s);
           if (s.delivery_date && ['pending', 'todo'].includes(s.status)) issues.push({ s, t: `${nm}: tem data de entrega mas está "Por iniciar"` });
-          if (isStageDone(s) && !s.delivery_date) issues.push({ s, t: `${nm}: concluída sem data de entrega` });
+          if (isStageDone(s) && !s.delivery_date && !hasNoDelivery(s)) issues.push({ s, t: `${nm}: concluída sem data de entrega` });
           if (s.status === 'review' && !s.delivery_date) issues.push({ s, t: `${nm}: em apreciação sem data de submissão` });
           if (s.delivery_date && s.delivery_date > hojeKeyDet) issues.push({ s, t: `${nm}: data de entrega no futuro (${fmtDayMonthYear(s.delivery_date)})` });
           if (s.start_date && s.end_date && s.end_date < s.start_date) issues.push({ s, t: `${nm}: fim do trabalho antes do início` });
@@ -4892,7 +4892,7 @@
           const setStatus = async (st, next, undoable, prevDelivery) => {
             const prev = st.status;
             let patch = { status: next };
-            if (undoable && next === 'done' && !st.delivery_date) {
+            if (undoable && next === 'done' && !st.delivery_date && !hasNoDelivery(st)) {
               const d = await askDeliveryDate(st);
               if (d === undefined) return;
               if (d) patch.delivery_date = d;
@@ -6439,6 +6439,8 @@
     // A adjudicação é o arranque do projeto: não se atribui a ninguém nem recebe horas
     const isAwardStage = s => /adjudica/i.test(s?.stage_types?.name || '');
     const isOffPlanStage = s => /assist[eê]ncia|adjudica/i.test(s.stage_types?.name || '');
+    // Fases sem entrega (acompanhamento contínuo): Assistência Técnica e Adjudicação
+    const hasNoDelivery = s => /assist[eê]ncia|adjudica/i.test(s.stage_types?.name || '');
     // Plano do projeto: cada fase começa quando a anterior acaba (a primeira, na adjudicação).
     // Pausas entre fases (after_stage_id): as fases a seguir só começam depois de a pausa acabar
     // (aberta = hoje, por isso as datas andam para a frente até a fecharem). Uma fase com
@@ -12094,7 +12096,7 @@
 
     async function quickStageStatus(stageId, next, prev, onDone, stage = null) {
       let patch = { status: next };
-      if (next === 'done' && stage && !stage.delivery_date) {
+      if (next === 'done' && stage && !stage.delivery_date && !hasNoDelivery(stage)) {
         const d = await askDeliveryDate(stage);
         if (d === undefined) { onDone && onDone(); return; }
         if (d) patch.delivery_date = d;
@@ -12321,7 +12323,7 @@
       document.getElementById('ph-status').addEventListener('change', e => {
         document.getElementById('ph-wait-wrap').hidden = e.target.value !== 'review';
         const del = document.getElementById('ph-delivery');
-        if ((e.target.value === 'done' || e.target.value === 'review') && !del.value) {
+        if ((e.target.value === 'done' || e.target.value === 'review') && !del.value && !hasNoDelivery(stage)) {
           del.value = dateKey(new Date());
           del.classList.add('just-updated');
           del.nextElementSibling.textContent = 'Proposto: hoje. Muda se a entrega foi noutro dia.';
