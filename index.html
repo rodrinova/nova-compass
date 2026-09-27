@@ -3484,17 +3484,17 @@
         const cfg = await loadCamaraCfg();
         const row = (k, r) => `<div class="cam-rule" data-rule="${k}">
             <div class="cam-rule-name"><b>${escapeHtml(r.label)}</b><small>${escapeHtml(r.hint || '')} · ${r.who === 'camara' ? 'prazo da Câmara' : 'prazo da NOVA'}</small></div>
-            ${k === 'oficio' ? '<div class="cam-rule-fields"><span class="field-hint" style="margin:0">prazo indicado em cada ofício</span>' : r.months != null
+            ${k === 'oficio' || k === 'obra' ? `<div class="cam-rule-fields"><span class="field-hint" style="margin:0">${k === 'obra' ? 'data do alvará, na fase' : 'prazo indicado em cada ofício'}</span>` : r.months != null
               ? `<div class="cam-rule-fields"><label>Meses<input type="text" inputmode="numeric" class="form-input" data-f="months" value="${escapeHtml(String(r.months))}"></label>`
               : `<div class="cam-rule-fields"><label>Dias<input type="text" inputmode="numeric" class="form-input" data-f="days" value="${escapeHtml(String(r.days ?? ''))}"></label>
                  <label>Contagem<select class="form-input" data-f="unit"><option value="uteis"${r.unit !== 'corridos' ? ' selected' : ''}>úteis</option><option value="corridos"${r.unit === 'corridos' ? ' selected' : ''}>seguidos</option></select></label>`}
               <label>Aviso (dias antes)<input type="text" inputmode="numeric" class="form-input" data-f="alert" value="${escapeHtml(String(r.alert ?? ''))}"></label></div>
           </div>`;
         const groups = [['Regime novo (submissões a partir da data abaixo)', ['pip_simples', 'pip_qualificado', 'lic_arquitetura', 'deliberacao']],
-          ['Prazos da NOVA', ['especialidades', 'oficio']],
+          ['Prazos da NOVA (com aviso na página Hoje)', ['aviso_local', 'especialidades', 'oficio', 'alvara', 'obra']],
           ['Regime anterior (DL 10/2024)', ['old_pip_simples', 'old_pip_qualificado', 'old_lic_300', 'old_lic_2200', 'old_lic_big']]];
         box.innerHTML = `
-          <div class="field-hint" style="margin:0 0 12px;">Os prazos contam a partir da <b>entrega da fase</b> (a submissão na Câmara); as especialidades a partir da <b>aprovação da arquitetura</b>. Dias úteis descontam fins de semana e feriados nacionais (não os municipais). Quando um prazo da Câmara passa, a app diz <i>possível deferimento tácito — confirmar</i>, nunca que está deferido.</div>
+          <div class="field-hint" style="margin:0 0 12px;">Os prazos contam a partir da <b>entrega da fase</b> (a submissão na Câmara); as especialidades a partir da <b>aprovação da arquitetura</b>. Só os prazos da NOVA avisam na página Hoje; os da Câmara ficam no separador Câmara de cada projeto. Dias úteis descontam fins de semana e feriados nacionais (não os municipais). Quando um prazo da Câmara passa, a app diz <i>possível deferimento tácito — confirmar</i>, nunca que está deferido.</div>
           <label class="field-label" for="cam-regime" style="margin-top:0;">Regime novo (DL 108/2026) a partir de</label>
           <input type="date" id="cam-regime" class="form-input" style="max-width:220px;" value="${escapeHtml(cfg.regime_date)}">
           ${groups.map(([t, keys]) => `<div class="section-label" style="margin-top:18px;">${escapeHtml(t)}</div>${keys.map(k => row(k, cfg.rules[k])).join('')}`).join('')}
@@ -4359,7 +4359,10 @@
                   const isPartial = inv.paid > 0 && inv.paid < inv.amount;
                   const horas = hoursByStageId[s.id] || 0;
                   const faseLabel = escapeHtml(`${s.stage_types?.name ?? 'Fase'}${s.revision_label ? ' · ' + s.revision_label : ''}`);
-                  const invoiceCell = isExcluded
+                  const notBilled = s.revision_kind === 'oficio' || camaraKind(s.stage_types?.name) === 'oficio';
+                  const invoiceCell = notBilled && !isInvoiced
+                    ? `<span class="invoice-status neutral" title="Respostas a ofício não se faturam">Não se fatura</span>`
+                    : isExcluded
                     ? `<span class="invoice-status neutral" title="Fase excluída: não conta para os totais">Fora das contas</span>`
                     : isInvoiced
                       ? `<span class="invoice-status paid">Faturada · ${fmtEUR(inv.amount)}</span>`
@@ -4879,6 +4882,11 @@
               <label class="check-row"><input type="checkbox" id="rv-ofnone"> O ofício não tem prazo</label>
               <div class="field-hint">Com a data e os dias, a app calcula até quando responder e avisa na página Hoje.</div>` : ''}`;
           camBox.querySelectorAll('[name="rv-kind"]').forEach(r => r.addEventListener('change', drawRevCamara));
+          // Resposta a ofício não se fatura: sem valor
+          const noVal = cur === 'oficio';
+          ['revision-value-type-toggle', 'revision-value-label', 'revision-value'].forEach(id => { const e = document.getElementById(id); if (e) e.hidden = noVal; });
+          const vt = document.getElementById('revision-value-type-toggle');
+          if (vt && vt.previousElementSibling) vt.previousElementSibling.hidden = noVal;
         };
         typeSel.addEventListener('change', drawRevCamara);
 
@@ -4913,7 +4921,8 @@
             msgEl.className = 'form-msg error';
             return;
           }
-          if (isNaN(valueRaw) || valueRaw < 0) {
+          const isOficioRev = document.querySelector('#revision-camara [name="rv-kind"]:checked')?.value === 'oficio';
+          if (!isOficioRev && (isNaN(valueRaw) || valueRaw < 0)) {
             msgEl.textContent = 'Indica um valor válido.';
             msgEl.className = 'form-msg error';
             return;
@@ -4953,9 +4962,9 @@
               stage_order: maxOrder + 1,
               revision_label: revisionLabel,
               base_stage: false,
-              percentage: revisionValueType === 'percentage' ? valueRaw : null,
-              fixed_value: revisionValueType === 'fixed' ? valueRaw : null,
-              pricing_type: revisionValueType,
+              percentage: isOficioRev ? null : revisionValueType === 'percentage' ? valueRaw : null,
+              fixed_value: isOficioRev ? 0 : revisionValueType === 'fixed' ? valueRaw : null,
+              pricing_type: isOficioRev ? 'fixed' : revisionValueType,
               start_date: startDate,
               end_date: endDate,
               ...rvCam
@@ -10176,7 +10185,10 @@
         old_lic_300:  { label: 'Licenciamento (regime 2024) até 300 m²', days: 120, unit: 'uteis', alert: 10, who: 'camara', hint: 'prazo global' },
         old_lic_2200: { label: 'Licenciamento (regime 2024) até 2200 m²', days: 150, unit: 'uteis', alert: 10, who: 'camara', hint: 'prazo global' },
         old_lic_big:  { label: 'Licenciamento (regime 2024) acima de 2200 m²', days: 200, unit: 'corridos', alert: 10, who: 'camara', hint: 'prazo global, dias seguidos' },
-        oficio:       { label: 'Resposta a ofício (prazo NOVA)', alert: 5, who: 'nova', hint: 'o prazo vem do ofício' }
+        oficio:       { label: 'Resposta a ofício (prazo NOVA)', alert: 5, who: 'nova', hint: 'o prazo vem do ofício' },
+        aviso_local:  { label: 'Enviar ao dono de obra o aviso a afixar no local', days: 10, unit: 'uteis', alert: 10, who: 'nova', hint: 'após a submissão do licenciamento' },
+        alvara:       { label: 'Levantar o alvará / pagar as taxas', months: 12, alert: 60, who: 'nova', hint: 'após a licença deferida' },
+        obra:         { label: 'Fim do prazo da obra — pedir licença de utilização ou prorrogação', alert: 90, who: 'nova', hint: 'prazo indicado no alvará' }
       }
     };
     let camaraCfgCache = null;
@@ -10249,6 +10261,8 @@
           }
           const hadOficio = oficios.some(o => (o.oficio_date || o.delivery_date || '') >= s.delivery_date);
           push(s, key, s.delivery_date, { done: !!s.approval_date, regime: reg, warn, note: hadOficio ? 'Houve ofício depois da submissão: a contagem pode ter ficado suspensa — confirmar' : null });
+          // aviso no local: só para submissões recentes (as antigas já foram tratadas fora da app)
+          if (s.delivery_date >= addDaysKey(today, -60) || s.aviso_local_sent) push(s, 'aviso_local', s.delivery_date, { done: !!s.aviso_local_sent });
           if (s.approval_date) {
             const esp = sorted.find(x => kindOf(x) === 'esp' && x.delivery_date && x.delivery_date >= s.approval_date);
             push(s, 'especialidades', s.approval_date, { done: !!esp });
@@ -10256,6 +10270,12 @@
         }
         if (k === 'esp' && s.delivery_date && licBase && regimeOf(licBase.delivery_date) === 'novo')
           push(s, 'deliberacao', s.delivery_date, { done: !!s.approval_date });
+        // Licença deferida → levantar o alvará; alvará com prazo → fim da obra / licença de utilização
+        if (k === 'esp' && s.approval_date) push(s, 'alvara', s.approval_date, { done: !!s.alvara_date });
+        if ((k === 'esp' || k === 'lic') && s.works_deadline) {
+          const util = sorted.find(x => kindOf(x) === 'util' && x.delivery_date);
+          push(s, 'obra', s.alvara_date || s.approval_date || null, { due: s.works_deadline, done: !!util });
+        }
       });
       oficios.forEach(s => {
         if (s.oficio_no_deadline) out.push({ stage: s, key: 'oficio', rule: R.oficio, label: 'Resposta a ofício (sem prazo)', who: 'nova', start: s.oficio_date, due: null, done: !!s.delivery_date, note: 'O ofício não indica prazo' });
@@ -10341,9 +10361,10 @@
       const out = [];
       all.forEach(({ project, deadlines }) => {
         if (project.owner_id && project.owner_id !== me) return;
-        deadlines.filter(d => d.state === 'late' || d.state === 'soon').forEach(d => out.push({
+        // Só o que depende de nós; a tramitação na Câmara fica no separador Câmara, sem avisos
+        deadlines.filter(d => d.who === 'nova' && (d.state === 'late' || d.state === 'soon')).forEach(d => out.push({
           kind: 'camara', project: project.id,
-          title: `${d.label}${d.state === 'late' && d.who === 'camara' ? ' — possível deferimento tácito' : ''}`,
+          title: d.label,
           sub: `${project.name} · ${phaseName(d.stage)} · até ${fmtDayMonthYear(d.due)}`,
           when: camaraStateText(d), late: d.state === 'late' }));
       });
@@ -11772,9 +11793,13 @@
         if (k === 'pip') html += `<div class="form-grid"><div><label class="field-label" for="ph-pip">Tipo de PIP</label>
             <select id="ph-pip" class="form-input"><option value="">Escolher…</option><option value="simples"${pip === 'simples' ? ' selected' : ''}>Simples</option><option value="qualificado"${pip === 'qualificado' ? ' selected' : ''}>Qualificado</option></select></div>
             <div><label class="field-label" for="ph-approval">Decisão da Câmara a</label><input type="date" id="ph-approval" class="form-input" value="${escapeHtml(appr)}"></div></div>`;
-        if (k === 'lic' && !isRev) html += `<label class="field-label" for="ph-approval">Arquitetura aprovada a</label><input type="date" id="ph-approval" class="form-input" value="${escapeHtml(appr)}">
-            <div class="field-hint">A data de entrega é a submissão: conta o prazo da Câmara. A aprovação faz contar os 6 meses para as especialidades.</div>`;
-        if (k === 'esp') html += `<label class="field-label" for="ph-approval">Licença deferida a</label><input type="date" id="ph-approval" class="form-input" value="${escapeHtml(appr)}">`;
+        const avs = keep('ph-aviso', stage.aviso_local_sent || ''), alv = keep('ph-alvara', stage.alvara_date || ''), wd = keep('ph-works', stage.works_deadline || '');
+        if (k === 'lic' && !isRev) html += `<div class="form-grid"><div><label class="field-label" for="ph-approval">Arquitetura aprovada a</label><input type="date" id="ph-approval" class="form-input" value="${escapeHtml(appr)}"></div>
+            <div><label class="field-label" for="ph-aviso">Aviso para o local enviado a</label><input type="date" id="ph-aviso" class="form-input" value="${escapeHtml(avs)}"></div></div>
+            <div class="field-hint">A data de entrega é a submissão. A app lembra de enviar ao dono de obra o aviso a afixar no local; a aprovação faz contar os 6 meses das especialidades.</div>`;
+        if (k === 'esp') html += `<div class="form-grid"><div><label class="field-label" for="ph-approval">Licença deferida a</label><input type="date" id="ph-approval" class="form-input" value="${escapeHtml(appr)}"></div>
+            <div><label class="field-label" for="ph-alvara">Alvará levantado a</label><input type="date" id="ph-alvara" class="form-input" value="${escapeHtml(alv)}"></div>
+            <div class="span2"><label class="field-label" for="ph-works">Obra tem de terminar até (prazo do alvará)</label><input type="date" id="ph-works" class="form-input" value="${escapeHtml(wd)}"></div></div>`;
         if ((k === 'lic' && isRev) || k === 'oficio') {
           html += `<label class="field-label" for="ph-revkind">Esta revisão é…</label>
             <select id="ph-revkind" class="form-input"><option value="">Escolher…</option><option value="oficio"${rk === 'oficio' || (k === 'oficio' && !rk) ? ' selected' : ''}>Resposta a ofício da Câmara</option><option value="aditamento"${rk === 'aditamento' ? ' selected' : ''}>Aditamento por alterações de projeto</option></select>`;
@@ -11873,6 +11898,9 @@
         const g = id => document.getElementById(id);
         if (g('ph-pip')) patch.pip_kind = valOrNull(g('ph-pip').value);
         if (g('ph-approval')) patch.approval_date = valOrNull(g('ph-approval').value);
+        if (g('ph-aviso')) patch.aviso_local_sent = valOrNull(g('ph-aviso').value);
+        if (g('ph-alvara')) patch.alvara_date = valOrNull(g('ph-alvara').value);
+        if (g('ph-works')) patch.works_deadline = valOrNull(g('ph-works').value);
         if (g('ph-revkind')) {
           patch.revision_kind = valOrNull(g('ph-revkind').value);
           if (patch.revision_kind === 'oficio' || (!patch.revision_kind && g('ph-ofdate'))) {
