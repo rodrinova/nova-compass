@@ -835,7 +835,7 @@
   .status-cell svg { width: 9px; height: 6px; fill: none; stroke: var(--text-3); stroke-width: 1.6; opacity: .7; }
   .status-cell:hover { background: var(--surface-2); } .status-cell:hover svg { opacity: 1; }
   .stage-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; background: var(--text-3); margin: 0 5px; }
-  .stage-dot.st-wip { background: var(--accent); } .stage-dot.st-done { background: #2F7D4F; } .stage-dot.st-interrupted { background: var(--danger); }
+  .stage-dot.st-wip { background: var(--accent); } .stage-dot.st-done { background: #2F7D4F; } .stage-dot.st-interrupted { background: var(--danger); } .stage-dot.st-review { background: var(--warning); }
   /* Pausas na tabela de fases */
   .card-head-actions { display: inline-flex; gap: 14px; flex-wrap: wrap; justify-content: flex-end; }
   tr.break-row > td { background: var(--surface-2); color: var(--text-2); }
@@ -1831,6 +1831,20 @@
   .ov-left { font-size: 12.5px; font-weight: 600; color: var(--text-2); white-space: nowrap; }
   .ov-left.soon { color: var(--warning); } .ov-left.late { color: var(--danger); } .ov-left.info { color: var(--text-2); font-style: italic; }
   .stat-value.warn { color: var(--warning); }
+  .hist-legend-d { margin: -4px 0 10px; }
+  .hist-legend-d summary { font-size: 12.5px; color: var(--text-2); cursor: pointer; list-style: none; display: inline-block; }
+  .hist-legend-d summary::-webkit-details-marker { display: none; }
+  .hist-legend-d summary::before { content: 'ⓘ '; }
+  .hist-legend-d .hist-legend { margin-top: 6px; }
+  .ov-now-phase.waiting { border-color: color-mix(in srgb, var(--warning) 45%, var(--border)); }
+  .ov-pill.wait { background: var(--warning-soft); color: var(--warning); }
+  .ov-waittxt { color: var(--text); }
+  .ov-who { font-weight: 650; color: var(--text); }
+  .ov-who.ext { color: var(--text-2); font-weight: 600; }
+  .ov-count { display: inline-block; min-width: 20px; padding: 0 6px; margin-left: 6px; border-radius: 10px; background: var(--warning-soft); color: var(--warning); text-align: center; letter-spacing: 0; }
+  .ov-issue { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 8px 0; border-top: 1px solid var(--border); font-size: 14px; cursor: pointer; }
+  .ov-issue:first-of-type { border-top: none; }
+  .ov-fix { color: var(--accent); font-weight: 600; font-size: 13px; white-space: nowrap; }
   .ata-marco-tag { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); margin: 2px 0 4px; }
   .cm-of { font-size: 12.5px; color: var(--text-2); }
   .ht-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0; font-size: 14px; }
@@ -2447,6 +2461,7 @@
       if (s.status === 'completed' || s.status === 'done') return 'Concluída';
       if (['wip', 'in_progress', 'active'].includes(s.status)) return 'Em curso';
       if (s.status === 'interrupted') return 'Interrompida';
+      if (s.status === 'review') return 'Em apreciação';
       return 'Por iniciar';
     }
 
@@ -4528,17 +4543,21 @@
         const dN = n => `${n} ${n === 1 ? 'dia' : 'dias'}`;
         const openBreakDet = breaks.find(b => b.start_date && b.start_date <= hojeKeyDet && (!b.end_date || b.end_date >= hojeKeyDet));
         const notDone = stages.filter(s => !isStageDone(s) && !isAwardStage(s));
-        const running = notDone.filter(isStageActive);
-        const nowStages = running.length ? running : notDone.slice(0, 1);
+        const running = notDone.filter(s => isStageActive(s) || s.status === 'review');
+        const nowStages = running.length ? running : notDone.filter(s => s.status !== 'interrupted').slice(0, 1);
+        const camaraDueOf = s => legalDet.find(d => d.stage.id === s.id && d.who === 'camara' && d.state !== 'done' && d.due);
         const peopleOf = s => (stageAssignees[s.id] || []);
         const nowHtml = nowStages.length ? nowStages.map(s => {
           const late = isStageLate(s, hojeKeyDet);
           const ppl = peopleOf(s);
           const ck = ckCounts[s.id];
-          return `<div class="ov-now-phase" data-ov-stage="${escapeHtml(s.id)}">
-              <div class="ov-now-top"><b>${escapeHtml(phaseName(s))}</b><span class="ov-pill ${late ? 'late' : isStageActive(s) ? 'wip' : ''}">${escapeHtml(stageStatusLabel(s))}</span></div>
+          const waiting = s.status === 'review';
+          const cd = waiting ? camaraDueOf(s) : null;
+          const waitTxt = waiting ? `À espera ${s.waiting_on === 'cliente' ? 'do cliente' : s.waiting_on === 'outro' ? 'de terceiros' : 'da Câmara'}${s.delivery_date ? ' desde ' + fmtDayMonthYear(s.delivery_date) + ' · ' + dN(diffDays(s.delivery_date, hojeKeyDet)) : ''}${cd ? ' · decisão até ' + fmtDayMonthYear(cd.due) : ''}` : '';
+          return `<div class="ov-now-phase${waiting ? ' waiting' : ''}" data-ov-stage="${escapeHtml(s.id)}">
+              <div class="ov-now-top"><b>${escapeHtml(phaseName(s))}</b><span class="ov-pill ${late ? 'late' : waiting ? 'wait' : isStageActive(s) ? 'wip' : ''}">${escapeHtml(stageStatusLabel(s))}</span></div>
               <div class="ov-now-meta">
-                <span class="${late ? 'late' : ''}">${stageDeadline(s) ? escapeHtml(deadlineText(s, hojeKeyDet)) : 'Sem prazo'}</span>
+                ${waiting ? `<span class="ov-waittxt">${escapeHtml(waitTxt)}</span>` : `<span class="${late ? 'late' : ''}">${stageDeadline(s) ? escapeHtml(deadlineText(s, hojeKeyDet)) : 'Sem prazo'}</span>`}
                 ${ppl.length ? `<span class="ov-ppl">${avatarsHtml(ppl, ataMemberNames, meId)}</span>` : '<span class="ov-warn">Sem ninguém atribuído</span>'}
                 ${ck && ck.total ? `<span>Checklist ${ck.done}/${ck.total}</span>` : ''}
               </div>
@@ -4552,10 +4571,17 @@
           </section>`;
         // A seguir: prazos (lei + manuais), marcos futuros e fins de fase — atrasados primeiro
         const nextItems = [];
-        legalDet.filter(d => d.due && d.state !== 'done').forEach(d => nextItems.push({ date: d.due, title: d.label, sub: d.who === 'camara' ? 'Prazo da Câmara' : 'Prazo NOVA', stageId: d.stage.id, camara: d.who === 'camara' }));
+        // Ações: quem · o quê · até quando
+        const firstName = n => String(n || '').split(' ')[0];
+        const whoOwner = ownerName ? firstName(ownerName) : 'Sem responsável';
+        const namesOf = ids => (ids || []).map(id => firstName(ataMemberNames[id] || marcoMembers[id] || '')).filter(Boolean).join(', ');
+        legalDet.filter(d => d.due && d.state !== 'done').forEach(d => nextItems.push({ date: d.due, title: CAMARA_ACTION[d.key] || d.label,
+          who: d.who === 'camara' ? 'Câmara' : whoOwner, sub: phaseName(d.stage), stageId: d.stage.id, camara: d.who === 'camara' }));
         projectMarcos.filter(m => !m.done && m.auto_kind !== 'delivery' && m.event_date && (m.event_date >= hojeKeyDet || marcoTypes[m.type_id]?.is_deadline || m.alert_days != null))
-          .forEach(m => nextItems.push({ date: m.event_date, title: m.title, sub: marcoTypes[m.type_id]?.is_deadline || m.alert_days != null ? 'Prazo' : (marcoTypes[m.type_id]?.name || 'Marco'), marcoId: m.id }));
-        notDone.filter(s => stageDeadline(s) && !s.delivery_date).forEach(s => nextItems.push({ date: stageDeadline(s), title: `Entrega · ${phaseName(s)}`, sub: 'Fase', stageId: s.id }));
+          .forEach(m => nextItems.push({ date: m.event_date, title: m.title, who: namesOf(m.owner_ids) || whoOwner,
+            sub: marcoTypes[m.type_id]?.is_deadline || m.alert_days != null ? 'Prazo' : (marcoTypes[m.type_id]?.name || 'Marco'), marcoId: m.id }));
+        notDone.filter(s => stageDeadline(s) && !s.delivery_date).forEach(s => nextItems.push({ date: stageDeadline(s), title: `Entregar ${phaseName(s)}`,
+          who: namesOf(peopleOf(s)) || whoOwner, sub: 'Fase', stageId: s.id }));
         nextItems.sort((a, b) => a.date.localeCompare(b.date));
         const leftPill = it => {
           const n = diffDays(hojeKeyDet, it.date);
@@ -4567,7 +4593,7 @@
             ${nextItems.length ? `<div class="ov-next">${nextItems.slice(0, 5).map(it => `
               <div class="ov-next-row"${it.stageId ? ` data-ov-stage="${escapeHtml(it.stageId)}"` : it.marcoId ? ` data-marco-id="${escapeHtml(it.marcoId)}"` : ''}>
                 <span class="ov-date"><b>${parseDateKey(it.date).getDate()}</b>${escapeHtml(GANTT_MONTHS[parseDateKey(it.date).getMonth()])}</span>
-                <span class="ov-next-txt"><b>${escapeHtml(it.title)}</b><small>${escapeHtml(it.sub)}</small></span>
+                <span class="ov-next-txt"><b>${escapeHtml(it.title)}</b><small><span class="ov-who${it.camara ? ' ext' : ''}">${escapeHtml(it.who || '')}</span>${it.sub ? ' · ' + escapeHtml(it.sub) : ''}</small></span>
                 ${leftPill(it)}
               </div>`).join('')}</div>` : '<div class="ov-empty">Nada agendado. Os prazos aparecem com as datas das fases e dos marcos.</div>'}
           </section>`;
@@ -4575,7 +4601,23 @@
             <div class="ov-label">Cronograma</div>
             <div id="detail-gantt">${ganttHtml}</div>
           </section>`;
-        const overviewHtml = nowBlock + nextBlock + ganttBlock;
+        // Verificação de coerência das fases
+        const issues = [];
+        stages.forEach(s => {
+          if (isAwardStage(s)) return;
+          const nm = phaseName(s);
+          if (s.delivery_date && ['pending', 'todo'].includes(s.status)) issues.push({ s, t: `${nm}: tem data de entrega mas está "Por iniciar"` });
+          if (isStageDone(s) && !s.delivery_date) issues.push({ s, t: `${nm}: concluída sem data de entrega` });
+          if (s.status === 'review' && !s.delivery_date) issues.push({ s, t: `${nm}: em apreciação sem data de submissão` });
+          if (s.delivery_date && s.delivery_date > hojeKeyDet) issues.push({ s, t: `${nm}: data de entrega no futuro (${fmtDayMonthYear(s.delivery_date)})` });
+          if (s.start_date && s.end_date && s.end_date < s.start_date) issues.push({ s, t: `${nm}: fim do trabalho antes do início` });
+        });
+        const issuesBlock = issues.length ? `<section class="ov-block ov-issues">
+            <div class="ov-label">A verificar <span class="ov-count">${issues.length}</span></div>
+            ${issues.slice(0, 6).map(x => `<div class="ov-issue" data-ov-stage="${escapeHtml(x.s.id)}"><span>${escapeHtml(x.t)}</span><span class="ov-fix">Corrigir</span></div>`).join('')}
+            ${issues.length > 6 ? `<div class="ov-empty">e mais ${issues.length - 6}</div>` : ''}
+          </section>` : '';
+        const overviewHtml = nowBlock + nextBlock + issuesBlock + ganttBlock;
 
         detailBody.innerHTML = `
           <nav class="detail-tabs" role="tablist">
@@ -4620,7 +4662,7 @@
           <section data-dpanel="marcos" hidden>
             <div class="gantt-wrap" id="project-history">
               <div class="card-head"><h2>Cronologia</h2><span class="card-head-actions"><button type="button" id="add-marco-btn" class="text-btn">+ Marco</button><button type="button" id="add-deadline-btn" class="text-btn">+ Prazo</button></span></div>
-              <div class="hist-legend"><span><i class="lg-lane"></i>lead time de cada fase</span><span><i class="lg-late"></i>além do previsto</span><span><i class="lg-pause"></i>projeto em pausa</span></div>
+              <details class="hist-legend-d"><summary>Legenda</summary><div class="hist-legend"><span><i class="lg-lane"></i>linha de cada fase: do início ao fim</span><span><i class="lg-late"></i>além do previsto</span><span><i class="lg-pause"></i>projeto em pausa</span></div></details>
               ${historyTimelineHtml({ project, stages, breaks, invoices, payments, marcos: projectMarcos, marcoTypes, notes: projectNotes, legal: legalDet })}
             </div>
           </section>
@@ -4819,6 +4861,12 @@
               if (d === undefined) return;
               if (d) patch.delivery_date = d;
             }
+            if (undoable && next === 'review') {
+              const r = await askReview(st);
+              if (r === undefined) return;
+              Object.assign(patch, r);
+              if (r.waiting_on) st.waiting_on = r.waiting_on;
+            }
             if (prevDelivery !== undefined) patch.delivery_date = prevDelivery;
             const oldDelivery = st.delivery_date ?? null;
             const btn = stagesTbody.querySelector(`[data-status-stage="${CSS.escape(String(st.id))}"]`);
@@ -4836,8 +4884,8 @@
               closeOrderToast = undoable
                 ? showToast(`${phaseName(st)}: ${stageStatusLabel(st)}${patch.delivery_date ? ' · entregue a ' + fmtDayMonthYear(patch.delivery_date) : ''}`, { ms: 6500, undo: () => setStatus(st, prev, false, deliveryChanged ? oldDelivery : undefined) })
                 : showToast('Estado reposto');
-              // a data de entrega muda o lead time, o cronograma e o histórico: atualiza a ficha por baixo
-              if (deliveryChanged) openDetail(project.id ?? projectId);
+              // o estado e a data mudam a Visão geral, o cronograma e a cronologia: atualiza a ficha por baixo
+              openDetail(project.id ?? projectId);
             } catch (err) {
               st.status = prev; paint();
               showToast('O estado não foi gravado: ' + (err.message || err), { type: 'error', ms: 6000 });
@@ -6491,7 +6539,7 @@
           ${tile('Em pausa', pausedDays ? escapeHtml(days(pausedDays)) : '—', breaks.length ? `${breaks.length} pausa${breaks.length === 1 ? '' : 's'}` : '')}
         </div>`;
 
-      if (!ev.length && !future.length) return summary + '<div class="gantt-empty">Ainda não há histórico. Aparece aqui à medida que o projeto avança: adjudicação, entregas, marcos, prazos, pausas e atas.</div>';
+      if (!ev.length && !future.length) return '<div class="gantt-empty">Ainda não há histórico. Aparece aqui à medida que o projeto avança: adjudicação, entregas, marcos, prazos, pausas e atas.</div>';
 
       // Linhas: um dia por linha (mais recente em cima)
       const byDate = {};
@@ -6530,7 +6578,8 @@
         }).join('')}</div>`;
       const monthName = d => { const t = parseDateKey(d).toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' }); return t.charAt(0).toUpperCase() + t.slice(1); };
 
-      let html = summary + `<div class="hist2">`;
+      // (o resumo em quadrados vive na Visão geral; aqui só a linha do tempo)
+      let html = `<div class="hist2">`;
       html += `<div class="hrow hhead"><span class="hdate"></span>${lanesHtml(null)}<div class="hcells">${HIST_COLS.map(([k, l]) => `<div class="hc hc-${k}">${l}</div>`).join('')}</div></div>`;
       // Hoje: o que está a decorrer
       const nowItems = [];
@@ -10326,6 +10375,14 @@
       else { const r = await supabase.from('app_settings').upsert({ key: 'camara_deadlines', value: slim, updated_at: new Date().toISOString() }); if (r.error) throw r.error; }
       camaraCfgCache = null;
     }
+    // Linguagem corrente para "A seguir"
+    const CAMARA_ACTION = {
+      pip_simples: 'Câmara decide o PIP', pip_qualificado: 'Câmara decide o PIP', old_pip_simples: 'Câmara decide o PIP', old_pip_qualificado: 'Câmara decide o PIP',
+      lic_arquitetura: 'Câmara decide a arquitetura', old_lic_300: 'Câmara decide o licenciamento', old_lic_2200: 'Câmara decide o licenciamento', old_lic_big: 'Câmara decide o licenciamento',
+      deliberacao: 'Câmara delibera o licenciamento', especialidades: 'Entregar as especialidades', oficio: 'Responder ao ofício da Câmara',
+      aviso_local: 'Enviar ao dono de obra o aviso para o local', alvara: 'Levantar o alvará / pagar as taxas',
+      obra: 'Pedir a licença de utilização (fim do prazo da obra)', pip_validade: 'Submeter o licenciamento antes de o PIP caducar'
+    };
     const normTxt2 = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
     // Tipo camarário de uma fase, pelo nome do tipo de fase
     function camaraKind(typeName) {
@@ -11733,7 +11790,7 @@
     // "pending" e "todo" querem dizer o mesmo para quem usa a app: Por iniciar
     const STAGE_STATUSES = [
       ['pending', 'Por iniciar'], ['todo', 'Por iniciar'], ['wip', 'Em curso'],
-      ['interrupted', 'Interrompida'], ['done', 'Concluída']
+      ['review', 'Em apreciação'], ['interrupted', 'Interrompida'], ['done', 'Concluída']
     ];
     const stageStatusOptions = cur => STAGE_STATUSES
       .filter(([v]) => v === 'todo' ? cur === 'todo' : !(v === 'pending' && cur === 'todo'))
@@ -11770,6 +11827,33 @@
     // Mudança rápida do estado de uma fase (Home), com Anular
     // Ao concluir uma fase sem data de entrega: "Entregue quando?" (hoje por omissão).
     // Devolve a data, null (concluir sem data) ou undefined (desistiu: não muda nada).
+    const WAITING_ON = [['camara', 'Câmara'], ['cliente', 'Cliente'], ['outro', 'Outra entidade']];
+    const waitingLabel = w => (WAITING_ON.find(x => x[0] === w)?.[1] || 'terceiros');
+    // De quem se está à espera, por omissão, quando uma fase passa a "Em apreciação"
+    const defaultWaitingOn = s => (['lic', 'pip', 'esp', 'util', 'cp', 'oficio', 'escassa'].includes(camaraKind(s.stage_types?.name)) ? 'camara' : 'cliente');
+    // "Em apreciação": pede a data de submissão (se faltar) e de quem se espera. undefined = desistiu
+    function askReview(stage) {
+      return new Promise(resolve => {
+        let done = false;
+        const finish = v => { if (!done) { done = true; resolve(v); } };
+        const today = dateKey(new Date()), def = stage.waiting_on || defaultWaitingOn(stage);
+        openQuickModal('Em apreciação', `
+          <div class="field-hint" style="margin:0 0 12px;"><b>${escapeHtml(phaseName(stage))}</b> foi entregue e está à espera de alguém. O tempo de espera deixa de contar como atraso vosso.</div>
+          ${stage.delivery_date ? '' : `<label class="field-label" for="rv-date" style="margin-top:0;">Entregue / submetida a</label><input type="date" id="rv-date" class="form-input" value="${today}" max="${today}">`}
+          <label class="field-label">À espera de</label>
+          <div class="segmented" id="rv-wait">${WAITING_ON.map(([v, l]) => `<button type="button" data-w="${v}" class="${v === def ? 'active' : ''}">${l}</button>`).join('')}</div>
+          <button type="button" class="primary-btn" id="rv-ok">Guardar</button>`);
+        let wait = def;
+        document.getElementById('rv-wait').addEventListener('click', e => { const b = e.target.closest('[data-w]'); if (!b) return; wait = b.dataset.w; document.querySelectorAll('#rv-wait button').forEach(x => x.classList.toggle('active', x === b)); });
+        quickModalCloseHook = () => finish(undefined);
+        document.getElementById('rv-ok').addEventListener('click', () => {
+          const d = document.getElementById('rv-date');
+          if (d && !d.value) { d.focus(); return; }
+          quickModalCloseHook = null; closeQuickModal();
+          finish({ waiting_on: wait, ...(d ? { delivery_date: d.value } : {}) });
+        });
+      });
+    }
     function askDeliveryDate(stage) {
       return new Promise(resolve => {
         let done = false;
@@ -11798,6 +11882,11 @@
         const d = await askDeliveryDate(stage);
         if (d === undefined) { onDone && onDone(); return; }
         if (d) patch.delivery_date = d;
+      }
+      if (next === 'review' && stage) {
+        const r = await askReview(stage);
+        if (r === undefined) { onDone && onDone(); return; }
+        Object.assign(patch, r);
       }
       try {
         await dbUpdate('project_stages', stageId, patch, MOCK_STAGES.concat(MOCK_AGENDA_PHASES));
@@ -11878,6 +11967,8 @@
         <div class="plan-box" id="ph-plan"></div>
         <label class="field-label">Estado</label>
         <select id="ph-status" class="form-input">${stageStatusOptions(stage.status)}</select>
+        <div id="ph-wait-wrap"${stage.status === 'review' ? '' : ' hidden'}><label class="field-label" for="ph-waiting">À espera de</label>
+          <select id="ph-waiting" class="form-input">${WAITING_ON.map(([v, l]) => `<option value="${v}"${(stage.waiting_on || defaultWaitingOn(stage)) === v ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
         <div class="form-grid">
           <div><label class="field-label">Início do trabalho</label><input type="date" id="ph-start" class="form-input" value="${escapeHtml(stage.start_date ?? '')}"></div>
           <div><label class="field-label">Fim do trabalho</label><input type="date" id="ph-end" class="form-input" value="${escapeHtml(stage.end_date ?? '')}"></div>
@@ -12007,8 +12098,9 @@
       });
       // Concluída sem data de entrega: propõe hoje (pode-se mudar antes de guardar)
       document.getElementById('ph-status').addEventListener('change', e => {
+        document.getElementById('ph-wait-wrap').hidden = e.target.value !== 'review';
         const del = document.getElementById('ph-delivery');
-        if (e.target.value === 'done' && !del.value) {
+        if ((e.target.value === 'done' || e.target.value === 'review') && !del.value) {
           del.value = dateKey(new Date());
           del.classList.add('just-updated');
           del.nextElementSibling.textContent = 'Proposto: hoje. Muda se a entrega foi noutro dia.';
@@ -12043,6 +12135,7 @@
           excluded_from_invoicing: document.getElementById('ph-excluded').checked,
           ignores_breaks: document.getElementById('ph-ignores-breaks').checked
         };
+        if (patch.status === 'review') patch.waiting_on = document.getElementById('ph-waiting').value;
         // Câmara (só os campos que estão à vista)
         const g = id => document.getElementById(id);
         if (g('ph-pip')) patch.pip_kind = valOrNull(g('ph-pip').value);

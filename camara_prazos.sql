@@ -31,3 +31,9 @@ alter table project_stages add column if not exists alvara_date date;
 alter table project_stages add column if not exists works_deadline date;
 
 -- revision_kind 'novo': numa revisão de PIP, um PIP novo (não é resposta a ofício)
+
+-- Estado "Em apreciação" (status = 'review'): a fase foi entregue/submetida e espera por alguém.
+--  - waiting_on: de quem se está à espera (Câmara, cliente ou outro)
+alter table project_stages add column if not exists waiting_on text;
+alter table project_stages drop constraint if exists project_stages_waiting_on_check;
+alter table project_stages add constraint project_stages_waiting_on_check check (waiting_on is null or waiting_on in ('camara', 'cliente', 'outro'));
