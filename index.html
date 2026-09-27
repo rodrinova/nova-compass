@@ -853,17 +853,17 @@
   tr.break-row.active .break-note { color: var(--text); font-weight: 550; }
   .gantt-bar.break-bar.open { background: repeating-linear-gradient(45deg, var(--warning), var(--warning) 4px, var(--warning-soft) 4px, var(--warning-soft) 8px); }
   /* ---------- Histórico do projeto (timeline em colunas) ---------- */
-  .hist-sum { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 2px 0 16px; }
+  .hist-sum { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 2px 0 16px; }
   .hs-tile { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; min-width: 0; }
   .hs-tile span { display: block; font-size: 12px; font-weight: 650; letter-spacing: .03em; text-transform: uppercase; color: var(--text-3); }
   .hs-tile b { display: block; font-size: 15px; font-weight: 650; margin-top: 3px; overflow-wrap: break-word; }
   .hs-tile small { display: block; font-size: 12px; color: var(--text-2); margin-top: 2px; overflow-wrap: break-word; }
   .hs-tile small .late, .hs-tile.bad small { color: var(--danger); }
   .hs-tile.warn { background: var(--warning-soft); } .hs-tile.warn b { color: var(--warning); }
-  @media (max-width: 899px) { .hist-sum { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hist-sum .hs-tile:last-child { grid-column: 1 / -1; } }
+  @media (max-width: 899px) { .hist-sum { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .hist2 { position: relative; }
   .hrow { display: grid; grid-template-columns: 46px auto minmax(0, 1fr); align-items: stretch; }
-  .hcells { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, .8fr) minmax(0, 1fr); border-top: 1px solid var(--border); }
+  .hcells { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.1fr) minmax(0, .9fr); border-top: 1px solid var(--border); }
   .hc { border-left: 1px solid var(--border); padding: 4px 0; min-width: 0; }
   .hhead .hcells { border-top: none; }
   .hhead .hc { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-3); padding: 0 10px 8px; border-left-color: transparent; }
@@ -6305,7 +6305,7 @@
     // com os dias que o cliente levou a pagar). Por cima, um resumo para ler em 5 segundos.
     // No telemóvel as colunas passam a lista, cada acontecimento com a etiqueta da sua coluna.
     const HIST_COLORS = ['#714D79', '#3E6FA8', '#2F8A8A', '#B8842A', '#8A5A9E', '#5A6B7A', '#2E7D4F', '#A85A3E'];
-    const HIST_COLS = [['phase', 'Fases'], ['marco', 'Marcos, prazos e atas'], ['pause', 'Pausas'], ['bill', 'Faturação']];
+    const HIST_COLS = [['phase', 'Fases'], ['marco', 'Marcos, prazos e atas'], ['pause', 'Pausas']];   // a faturação vive no separador Finanças
     function historyTimelineHtml({ project, stages, breaks, invoices, payments, marcos, marcoTypes, notes, legal = [] }) {
       const today = dateKey(new Date());
       const ev = [];
@@ -6376,26 +6376,6 @@
         add(b.start_date, 'pause', 1, { kind: 'pause', title: b.name || 'Pausa', sub: ['Início', who(b)].filter(Boolean).join(' · '), color: 'var(--warning)', breakId: b.id });
         if (b.end_date) add(b.end_date, 'pause', 2, { kind: 'pause-end', title: b.name || 'Pausa', sub: `Fim · ${days(diffDays(b.start_date, b.end_date))} parado`, color: 'var(--warning)', breakId: b.id });
       });
-      // --- Faturação ---
-      const payBy = {};
-      (payments || []).forEach(pm => (payBy[pm.invoice_id] = payBy[pm.invoice_id] || []).push(pm));
-      let billed = 0, received = 0, payDaysW = 0, payAmtW = 0;
-      invoices.forEach(i => {
-        if (i.status === 'cancelled') return;
-        const nr = i.invoice_number || i.external_ref || '';
-        const fase = i.stage_id ? stages.find(x => String(x.id) === String(i.stage_id)) : null;
-        billed += Number(i.amount || 0);
-        add(i.issue_date, 'bill', 1, { kind: 'invoice', title: `${Number(i.amount) < 0 ? 'Nota de crédito' : 'Fatura'}${nr ? ' ' + nr : ''}`, sub: fase ? phaseName(fase) : 'sem fase', amount: eur(i.amount), color: 'var(--text-2)', invoiceId: i.id });
-        const pays = (payBy[i.id] && payBy[i.id].length) ? payBy[i.id].map(pm => ({ date: pm.paid_at, amount: Number(pm.amount) }))
-          : (Number(i.amount_paid) > 0 && i.payment_date ? [{ date: i.payment_date, amount: Number(i.amount_paid) }] : []);
-        pays.forEach(pm => {
-          if (!pm.date) return;
-          const d = Math.max(0, diffDays(i.issue_date, pm.date));
-          received += pm.amount; payDaysW += d * pm.amount; payAmtW += pm.amount;
-          add(pm.date, 'bill', 2, { kind: 'payment', title: 'Recebido', sub: `${nr ? nr + ' · ' : ''}${d === 0 ? 'no próprio dia' : days(d) + ' após a fatura'}`, amount: eur(pm.amount), color: 'var(--success)', invoiceId: i.id });
-        });
-      });
-
       // --- Resumo ---
       const closed = lanes.filter(l => !l.open && l.planned);
       const onTime = closed.filter(l => delta(l) <= 0).length;
@@ -6410,10 +6390,9 @@
             : tile('Agora', running.length ? escapeHtml(running.map(l => phaseName(l.st)).join(', ')) : '—', running.length && running[0].planned ? (today > running[0].planned ? `<span class="late">${escapeHtml(days(diffDays(running[0].planned, today)))} além do previsto</span>` : `previsto até ${escapeHtml(fmtDayMonthYear(running[0].planned))}`) : '')}
           ${tile('Entregas no prazo', closed.length ? `${onTime} de ${closed.length}` : '—', lates.length ? `atraso médio ${escapeHtml(days(Math.round(lates.reduce((a, b) => a + b, 0) / lates.length)))}` : closed.length ? 'sem atrasos' : '', lates.length ? 'bad' : '')}
           ${tile('Em pausa', pausedDays ? escapeHtml(days(pausedDays)) : '—', breaks.length ? `${breaks.length} pausa${breaks.length === 1 ? '' : 's'}` : '')}
-          ${tile('Faturado · recebido', `${escapeHtml(fmtEURShort(billed))} · ${escapeHtml(fmtEURShort(received))}`, payAmtW ? `pagam em média em ${escapeHtml(days(Math.round(payDaysW / payAmtW)))}` : '')}
         </div>`;
 
-      if (!ev.length && !future.length) return summary + '<div class="gantt-empty">Ainda não há histórico. Aparece aqui à medida que o projeto avança: adjudicação, entregas, marcos, pausas, faturas e atas.</div>';
+      if (!ev.length && !future.length) return summary + '<div class="gantt-empty">Ainda não há histórico. Aparece aqui à medida que o projeto avança: adjudicação, entregas, marcos, prazos, pausas e atas.</div>';
 
       // Linhas: um dia por linha (mais recente em cima)
       const byDate = {};
