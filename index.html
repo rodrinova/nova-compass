@@ -898,7 +898,6 @@
   .hi.k-start .hi-txt b, .hi.k-ata .hi-txt b, .hi.k-invoice .hi-txt b { font-weight: 550; }
   .hi.k-planned .hi-txt b, .hi.k-planned .hi-txt span { color: var(--danger); }
   .hi.k-payment .hi-txt b { color: var(--success); }
-  .hi-cat { display: none; }
   .hi-amt { font-style: normal; font-size: 13px; font-weight: 650; white-space: nowrap; font-variant-numeric: tabular-nums; }
   .hi.k-payment .hi-amt { color: var(--success); }
   .hi-badge { font-style: normal; font-size: 12px; font-weight: 700; white-space: nowrap; padding: 2px 7px; border-radius: 999px; margin-top: 1px; }
@@ -919,8 +918,6 @@
     .hcells > .hc:first-child { padding-top: 4px; }
     .hcells > .hc:last-child { padding-bottom: 4px; }
     .hi { margin: 0; padding: 5px 8px; }
-    .hi-cat { display: block; font-style: normal; font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-3); }
-    .hc-pause .hi-cat { color: var(--warning); } .hc-bill .hi-cat { color: var(--success); }
     .hrow.paused .hc-pause { box-shadow: none; }
     .hdate { padding-right: 6px; }
     .hl { width: 9px; } .hl.on::before { left: 3px; } .hl.on.up::after, .hl.on.down::after, .hl.on.dot::after { left: .5px; }
@@ -6512,10 +6509,9 @@
       const inPause = d => breaks.some(b => b.start_date && d >= b.start_date && d <= (b.end_date || today));
       const itemHtml = e => {
         const attrs = e.noteId ? ` data-hist-note="${escapeHtml(e.noteId)}"` : e.marcoId ? ` data-hist-marco="${escapeHtml(e.marcoId)}"` : e.stageId ? ` data-hist-stage="${escapeHtml(e.stageId)}"` : e.invoiceId ? ` data-hist-invoice="${escapeHtml(e.invoiceId)}"` : e.breakId ? ` data-hist-break="${escapeHtml(e.breakId)}"` : '';
-        const cat = HIST_COLS.find(c => c[0] === e.col)[1];
         return `<div class="hi k-${e.kind}${attrs ? ' click' : ''}"${attrs}>
             <span class="hi-dot" style="--c:${e.color}"></span>
-            <span class="hi-txt"><i class="hi-cat">${cat}</i><b>${escapeHtml(e.title)}</b>${e.sub ? `<span>${escapeHtml(e.sub)}</span>` : ''}</span>
+            <span class="hi-txt"><b>${escapeHtml(e.title)}</b>${e.sub ? `<span>${escapeHtml(e.sub)}</span>` : ''}</span>
             ${e.amount ? `<em class="hi-amt">${escapeHtml(e.amount)}</em>` : ''}${e.badge || ''}
           </div>`;
       };
