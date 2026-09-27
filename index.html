@@ -1745,6 +1745,22 @@
   .detail-loading::after { content: ''; width: 44%; }
 
   /* O que acabou de mudar pisca suavemente */
+  .projects-kpi { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; font-size: 13px; color: var(--text-2); margin: -4px 0 12px; }
+  .projects-kpi b { color: var(--text); font-weight: 650; }
+  .alert-row.team.late .alert-icon { background: var(--danger-soft, rgba(192,57,43,.12)); color: var(--danger); }
+  .cam-rule { display: flex; gap: 14px; align-items: flex-end; justify-content: space-between; padding: 10px 0; border-top: 1px solid var(--border); flex-wrap: wrap; }
+  .cam-rule-name { flex: 1 1 240px; font-size: 14px; }
+  .cam-rule-name small { display: block; color: var(--text-3); font-size: 12px; margin-top: 2px; }
+  .cam-rule-fields { display: flex; gap: 8px; flex-wrap: wrap; }
+  .cam-rule-fields label { display: flex; flex-direction: column; font-size: 12px; color: var(--text-2); gap: 3px; }
+  .cam-rule-fields .form-input { width: 96px; margin: 0; padding: 8px 10px; }
+  .cm-legal { cursor: pointer; align-items: flex-start; }
+  .cm-legal small { display: block; color: var(--text-3); font-size: 12px; margin-top: 2px; }
+  .cm-legal small.cm-tacit { color: var(--danger); font-weight: 600; }
+  .cm-legal small.cm-warn { color: var(--warning); font-weight: 600; }
+  .cm-legal small.cm-note { color: var(--text-2); font-style: italic; }
+  .cm-legal .cm-when small { text-align: right; margin-top: 0; }
+  .cm-legal.done { opacity: .7; }
   .ht-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0; font-size: 14px; }
   .ht-row .form-input { max-width: 200px; margin: 0; }
   .hours-of { font-size: 14px; font-weight: 500; color: var(--text-2); letter-spacing: 0; }
@@ -1937,6 +1953,7 @@
             <button type="button" data-scope="archived">Arquivados</button>
           </div>
         </div>
+        <div id="projects-kpi" class="projects-kpi" hidden></div>
         <div id="projects-container" class="center-msg">
           <div class="spinner"></div>
           A carregar projetos...
@@ -2063,6 +2080,7 @@
             <button type="button" class="settings-link" data-sec="models"><span>Modelos de fases</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button type="button" class="settings-link" data-sec="statuses"><span>Estados de projeto</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button type="button" class="settings-link" data-sec="checklists"><span>Checklists das fases</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+            <button type="button" class="settings-link" data-sec="camara"><span>Prazos camarários</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <div class="settings-group">Equipa e agenda</div>
             <button type="button" class="settings-link" data-sec="categories"><span>Horas: alvo e categorias</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button type="button" class="settings-link" data-sec="mtypes"><span>Tipos de marco</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
@@ -2084,6 +2102,10 @@
           <section class="settings-sec" data-sec-panel="checklists" hidden>
             <h2 class="settings-title">Checklists das fases</h2>
             <div class="gantt-wrap" id="settings-checklists-container"><div class="detail-loading">A carregar...</div></div>
+          </section>
+          <section class="settings-sec" data-sec-panel="camara" hidden>
+            <h2 class="settings-title">Prazos camarários</h2>
+            <div class="gantt-wrap" id="settings-camara-container"><div class="detail-loading">A carregar...</div></div>
           </section>
           <section class="settings-sec" data-sec-panel="categories" hidden>
             <h2 class="settings-title">Horas: alvo e categorias</h2>
@@ -3078,7 +3100,7 @@
       models: () => loadPhaseModelSettings(), statuses: () => loadProjectStatusSettings(),
       checklists: () => loadChecklistTemplateSettings(), categories: () => loadCategories(),
       mtypes: () => loadMilestoneTypeSettings(), clientscore: () => loadClientScoreSettings(),
-      finance: () => loadFinanceSettingsPanel()
+      finance: () => loadFinanceSettingsPanel(), camara: () => loadCamaraSettings()
     };
     let settingsSection = 'models';
     const settingsNarrow = window.matchMedia('(max-width: 759px)');
@@ -3455,6 +3477,46 @@
     }
 
     // ---------- Módulo Definições: categorias de imputação ----------
+    // Prazos camarários: dias, úteis/corridos e aviso de cada regra (a estrutura é fixa)
+    async function loadCamaraSettings() {
+      const box = document.getElementById('settings-camara-container');
+      try {
+        const cfg = await loadCamaraCfg();
+        const row = (k, r) => `<div class="cam-rule" data-rule="${k}">
+            <div class="cam-rule-name"><b>${escapeHtml(r.label)}</b><small>${escapeHtml(r.hint || '')} · ${r.who === 'camara' ? 'prazo da Câmara' : 'prazo da NOVA'}</small></div>
+            ${k === 'oficio' ? '<div class="cam-rule-fields"><span class="field-hint" style="margin:0">prazo indicado em cada ofício</span>' : r.months != null
+              ? `<div class="cam-rule-fields"><label>Meses<input type="text" inputmode="numeric" class="form-input" data-f="months" value="${escapeHtml(String(r.months))}"></label>`
+              : `<div class="cam-rule-fields"><label>Dias<input type="text" inputmode="numeric" class="form-input" data-f="days" value="${escapeHtml(String(r.days ?? ''))}"></label>
+                 <label>Contagem<select class="form-input" data-f="unit"><option value="uteis"${r.unit !== 'corridos' ? ' selected' : ''}>úteis</option><option value="corridos"${r.unit === 'corridos' ? ' selected' : ''}>seguidos</option></select></label>`}
+              <label>Aviso (dias antes)<input type="text" inputmode="numeric" class="form-input" data-f="alert" value="${escapeHtml(String(r.alert ?? ''))}"></label></div>
+          </div>`;
+        const groups = [['Regime novo (submissões a partir da data abaixo)', ['pip_simples', 'pip_qualificado', 'lic_arquitetura', 'deliberacao']],
+          ['Prazos da NOVA', ['especialidades', 'oficio']],
+          ['Regime anterior (DL 10/2024)', ['old_pip_simples', 'old_pip_qualificado', 'old_lic_300', 'old_lic_2200', 'old_lic_big']]];
+        box.innerHTML = `
+          <div class="field-hint" style="margin:0 0 12px;">Os prazos contam a partir da <b>entrega da fase</b> (a submissão na Câmara); as especialidades a partir da <b>aprovação da arquitetura</b>. Dias úteis descontam fins de semana e feriados nacionais (não os municipais). Quando um prazo da Câmara passa, a app diz <i>possível deferimento tácito — confirmar</i>, nunca que está deferido.</div>
+          <label class="field-label" for="cam-regime" style="margin-top:0;">Regime novo (DL 108/2026) a partir de</label>
+          <input type="date" id="cam-regime" class="form-input" style="max-width:220px;" value="${escapeHtml(cfg.regime_date)}">
+          ${groups.map(([t, keys]) => `<div class="section-label" style="margin-top:18px;">${escapeHtml(t)}</div>${keys.map(k => row(k, cfg.rules[k])).join('')}`).join('')}
+          <div class="field-hint">Valores tirados de resumos do RJUE (DL 10/2024 e DL 108/2026). Confirmem-nos com o texto da lei antes de confiar neles.</div>
+          <button type="button" class="secondary-btn" id="cam-save" style="width:auto;padding:11px 18px;">Guardar</button>`;
+        document.getElementById('cam-save').addEventListener('click', async () => {
+          const next = { regime_date: document.getElementById('cam-regime').value || CAMARA_DEFAULT.regime_date, rules: JSON.parse(JSON.stringify(cfg.rules)) };
+          let bad = false;
+          box.querySelectorAll('[data-rule]').forEach(r => r.querySelectorAll('[data-f]').forEach(i => {
+            const f = i.dataset.f;
+            if (f === 'unit') next.rules[r.dataset.rule].unit = i.value;
+            else { const v = numOrNull(i.value); if (v == null || !Number.isInteger(v) || v < 0) bad = true; else next.rules[r.dataset.rule][f] = v; }
+          }));
+          if (bad) { showToast('Os dias, meses e avisos têm de ser números inteiros.', { type: 'error' }); return; }
+          try { await saveCamaraCfg(next); showToast('Prazos camarários guardados'); loadCamaraSettings(); }
+          catch (err) { showToast('Não foi possível guardar: ' + err.message, { type: 'error' }); }
+        });
+      } catch (err) {
+        box.innerHTML = `<div class="error-box">Erro ao carregar: ${escapeHtml(err.message)}</div>`;
+      }
+    }
+
     // Horas esperadas por semana (alvo), com data de início geral e por pessoa
     async function loadHoursTargetSettings() {
       const box = document.getElementById('settings-hours-target');
@@ -3765,6 +3827,27 @@
       });
     }
 
+    // KPI de qualidade: respostas a ofício por processo de licenciamento (últimos 12 meses)
+    async function renderOficioKpi() {
+      const el = document.getElementById('projects-kpi');
+      let stages;
+      if (devMode) stages = window.__mockCamStages || MOCK_STAGES;
+      else {
+        const r = await supabase.from('project_stages').select('project_id, delivery_date, revision_kind, oficio_date, revision_label, base_stage, stage_types(name)');
+        if (r.error) throw r.error;
+        stages = r.data || [];
+      }
+      const since = addDaysKey(dateKey(new Date()), -365);
+      const kind = s => camaraKind(s.stage_types?.name);
+      const lic = new Set(stages.filter(s => kind(s) === 'lic' && s.delivery_date && s.delivery_date >= since).map(s => s.project_id));
+      const of = stages.filter(s => ((kind(s) === 'lic' && s.revision_kind === 'oficio') || kind(s) === 'oficio') && (s.oficio_date || s.delivery_date || '9999') >= since);
+      const ad = stages.filter(s => kind(s) === 'lic' && s.revision_kind === 'aditamento' && (s.delivery_date || '9999') >= since);
+      if (!lic.size && !of.length) { el.hidden = true; return; }
+      const avg = lic.size ? of.length / lic.size : null;
+      el.hidden = false;
+      el.innerHTML = `<b>Qualidade dos licenciamentos</b><span>${of.length} ${of.length === 1 ? 'resposta a ofício' : 'respostas a ofício'} em ${lic.size} ${lic.size === 1 ? 'processo' : 'processos'}${avg != null ? ` · média ${avg.toLocaleString('pt-PT', { maximumFractionDigits: 1 })} por processo` : ''}${ad.length ? ` · ${ad.length} ${ad.length === 1 ? 'aditamento' : 'aditamentos'}` : ''} · últimos 12 meses</span>`;
+    }
+
     let projectsScope = 'active';
     function applyProjectFilters() {
       const term = document.getElementById('projects-search').value.trim().toLowerCase();
@@ -3825,6 +3908,7 @@
 
         await Promise.all([loadProjectStatuses(), loadOwnerMembers()]);
         allProjectsData = data || [];
+        renderOficioKpi().catch(() => {});
         applyProjectFilters();
       } catch (err) {
         projectsContainer.className = 'error-box';
@@ -4559,7 +4643,7 @@
         showDTab(detailTabByProject[pid0] || 'resumo');
         // Câmara: dados próprios, carregados à parte (os prazos são os marcos do tipo "prazo")
         const deadlineMarcos = projectMarcos.filter(m => marcoTypes[m.type_id]?.is_deadline || m.alert_days != null);
-        renderCamaraPanel(project, document.getElementById('camara-panel'), deadlineMarcos, () => { detailTabByProject[pid0] = 'camara'; openDetail(pid0); });
+        renderCamaraPanel(project, document.getElementById('camara-panel'), deadlineMarcos, () => { detailTabByProject[pid0] = 'camara'; openDetail(pid0); }, stages);
         detailBody.querySelectorAll('[data-dtab]').forEach(btn => btn.addEventListener('click', () => showDTab(btn.dataset.dtab)));
 
         // Cronograma: Semanas / Meses (os botões existiam mas não estavam ligados)
@@ -4733,6 +4817,7 @@
           <select id="revision-stage-type" class="form-input">
             <option value="">A carregar...</option>
           </select>
+          <div id="revision-camara"></div>
           <label class="field-label">Rótulo da revisão (opcional)</label>
           <input type="text" id="revision-label" class="form-input" placeholder="ex: R02">
           <label class="field-label">Tipo de valor</label>
@@ -4777,6 +4862,25 @@
         wrap.innerHTML = renderRevisionFormHtml();
         wrap.style.display = 'block';
         await loadStageTypesInto(document.getElementById('revision-stage-type'));
+        // Revisão de licenciamento (ou "Resposta a ofício"): é resposta a um ofício ou um aditamento?
+        const typeSel = document.getElementById('revision-stage-type');
+        const camBox = document.getElementById('revision-camara');
+        const drawRevCamara = () => {
+          const k = camaraKind(typeSel.selectedOptions[0]?.textContent);
+          if (k !== 'lic' && k !== 'oficio') { camBox.innerHTML = ''; return; }
+          const cur = camBox.querySelector('[name="rv-kind"]:checked')?.value || (k === 'oficio' ? 'oficio' : '');
+          camBox.innerHTML = `
+            <label class="field-label">Esta revisão é…</label>
+            <label class="check-row"><input type="radio" name="rv-kind" value="oficio"${cur === 'oficio' ? ' checked' : ''}> Resposta a um ofício da Câmara</label>
+            <label class="check-row"><input type="radio" name="rv-kind" value="aditamento"${cur === 'aditamento' ? ' checked' : ''}> Aditamento por alterações de projeto</label>
+            ${cur === 'oficio' ? `<div class="form-grid">
+              <div><label class="field-label" for="rv-ofdate">Data do ofício</label><input type="date" id="rv-ofdate" class="form-input"></div>
+              <div><label class="field-label" for="rv-ofdays">Prazo (dias úteis)</label><input type="text" inputmode="numeric" id="rv-ofdays" class="form-input" placeholder="ex: 30"></div></div>
+              <label class="check-row"><input type="checkbox" id="rv-ofnone"> O ofício não tem prazo</label>
+              <div class="field-hint">Com a data e os dias, a app calcula até quando responder e avisa na página Hoje.</div>` : ''}`;
+          camBox.querySelectorAll('[name="rv-kind"]').forEach(r => r.addEventListener('change', drawRevCamara));
+        };
+        typeSel.addEventListener('change', drawRevCamara);
 
         let revisionValueType = 'percentage';
         document.getElementById('revision-value-type-toggle').addEventListener('click', (e) => {
@@ -4814,6 +4918,20 @@
             msgEl.className = 'form-msg error';
             return;
           }
+          const rvKindEl = document.querySelector('#revision-camara [name="rv-kind"]:checked');
+          const rvCam = {};
+          if (document.querySelector('#revision-camara [name="rv-kind"]')) {
+            if (!rvKindEl) { msgEl.textContent = 'Diz se é resposta a ofício ou aditamento.'; msgEl.className = 'form-msg error'; return; }
+            rvCam.revision_kind = rvKindEl.value;
+            if (rvKindEl.value === 'oficio') {
+              const od = document.getElementById('rv-ofdate').value || null;
+              const none = document.getElementById('rv-ofnone').checked;
+              const days = parseInt(document.getElementById('rv-ofdays').value, 10);
+              if (!od) { msgEl.textContent = 'Indica a data do ofício.'; msgEl.className = 'form-msg error'; return; }
+              if (!none && !(days > 0)) { msgEl.textContent = 'Indica o prazo em dias úteis, ou marca "não tem prazo".'; msgEl.className = 'form-msg error'; return; }
+              Object.assign(rvCam, { oficio_date: od, oficio_no_deadline: none, oficio_deadline: none ? null : addWorkdays(od, days) });
+            }
+          }
 
           const btn = document.getElementById('revision-submit-btn');
           btn.disabled = true;
@@ -4839,7 +4957,8 @@
               fixed_value: revisionValueType === 'fixed' ? valueRaw : null,
               pricing_type: revisionValueType,
               start_date: startDate,
-              end_date: endDate
+              end_date: endDate,
+              ...rvCam
             };
 
             const res = await supabase.from('project_stages').insert(payload);
@@ -9493,7 +9612,7 @@
     const mockCredentials = { 'mock-1': { username: 'nova.arquitetos', has: true, pw: 'demo-1234', updated_at: new Date().toISOString() } };
     const safeUrl = u => /^https?:\/\//i.test(String(u || '').trim()) ? String(u).trim() : null;
 
-    async function renderCamaraPanel(project, box, deadlines, reopenTab) {
+    async function renderCamaraPanel(project, box, deadlines, reopenTab, stages = []) {
       box.innerHTML = '<div class="gantt-wrap"><div class="detail-loading">A carregar…</div></div>';
       let followups = [], cred = null, log = [];
       try {
@@ -9523,8 +9642,11 @@
       const lastLog = log[0];
       const fmtLongD = k => parseDateKey(k).toLocaleDateString('pt-PT', { day: 'numeric', month: 'short', year: 'numeric' });
       const dl = [...deadlines].sort((a, b) => a.event_date.localeCompare(b.event_date));
+      const camCfg = await loadCamaraCfg().catch(() => null);
+      const legal = camCfg ? computeCamaraDeadlines(project, stages, camCfg) : [];
+      const nOficios = stages.filter(s => (camaraKind(s.stage_types?.name) === 'lic' && s.revision_kind === 'oficio') || camaraKind(s.stage_types?.name) === 'oficio').length;
 
-      box.innerHTML = `
+      box.innerHTML = camaraDeadlinesHtml(legal, nOficios) + `
         <div class="gantt-wrap">
           <div class="card-head"><h2>Processo camarário</h2><button type="button" class="text-btn" id="cm-edit">Editar</button></div>
           <div class="invoice-row"><span>Município</span><span>${escapeHtml(project.municipality || '—')}</span></div>
@@ -9570,6 +9692,8 @@
             : '<div class="gantt-empty">Sem registos. Sempre que falares com a câmara ou o processo mudar de estado, regista aqui um ponto de situação — fica o histórico do processo.</div>'}
         </div>`;
 
+      box.querySelectorAll('[data-cm-stage]').forEach(r => r.addEventListener('click', () =>
+        openPhaseModal(r.dataset.cmStage, { onSaved: reopenTab, fromProject: true })));
       box.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', async () => {
         try { await navigator.clipboard.writeText(b.dataset.copy); showToast('Copiado'); } catch { showToast('Não foi possível copiar', { type: 'error' }); }
       }));
@@ -9987,9 +10111,9 @@
       if (!rows.length && !breakRows.length && !importRows.length && !teamRows.length) { el.hidden = true; el.innerHTML = ''; return; }
       const today = dateKey(new Date());
       el.hidden = false;
-      el.innerHTML = `<div class="card-head"><h2>Avisos</h2><span>${[importRows.length && 'fecho do mês', teamRows.length && 'organização', breakRows.length && 'pausas', rows.length && 'prazos'].filter(Boolean).join(' · ')}</span></div>` + teamRows.map(r => `
-          <div class="alert-row team" data-alert-team="${r.kind}"${r.project ? ` data-project="${escapeHtml(r.project)}"` : ''}>
-            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : '+'}</span>
+      el.innerHTML = `<div class="card-head"><h2>Avisos</h2><span>${[importRows.length && 'fecho do mês', teamRows.some(r => r.kind === 'camara') && 'câmaras', teamRows.some(r => r.kind !== 'camara') && 'organização', breakRows.length && 'pausas', rows.length && 'prazos'].filter(Boolean).join(' · ')}</span></div>` + teamRows.map(r => `
+          <div class="alert-row team${r.late ? ' late' : r.kind === 'camara' ? ' soon' : ''}" data-alert-team="${r.kind}"${r.project ? ` data-project="${escapeHtml(r.project)}"` : ''}>
+            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : '+'}</span>
             <span class="alert-text"><b>${escapeHtml(r.title)}</b><span>${escapeHtml(r.sub)}</span></span>
             <span class="alert-when">${escapeHtml(r.when)}</span>
           </div>`).join('') + importRows.map(r => `
@@ -10020,6 +10144,7 @@
         const k = r.dataset.alertTeam;
         if (k === 'hours') openHorasModule();
         else if (k === 'owner') openProjectsModule();
+        else if (k === 'camara') { detailTabByProject[r.dataset.project] = 'camara'; openDetail(r.dataset.project); }
         else { detailTabByProject[r.dataset.project] = 'fases'; openDetail(r.dataset.project); }
       }));
       el.querySelectorAll('[data-alert-import]').forEach(r => r.addEventListener('click', () => {
@@ -10031,6 +10156,136 @@
         detailTabByProject[r.dataset.project] = 'fases';
         openDetail(r.dataset.project);
       }));
+    }
+
+    // ================= PRAZOS CAMARÁRIOS (RJUE) =================
+    // Regime novo (DL 108/2026) para processos submetidos a partir de 1/10/2026; antes disso, o de 2024
+    // (DL 10/2024, prazo global pela área). Os prazos contam a partir da entrega (= submissão) da fase;
+    // as especialidades (prazo da NOVA) a partir da aprovação da arquitetura. Tudo editável em Definições.
+    // A app nunca afirma um deferimento tácito: diz "prazo ultrapassado — possível deferimento tácito, confirmar".
+    const CAMARA_DEFAULT = {
+      regime_date: '2026-10-01',
+      rules: {
+        pip_simples:     { label: 'PIP simples — decisão da Câmara', days: 35, unit: 'uteis', alert: 5, who: 'camara', hint: '20 dias de saneamento + 15' },
+        pip_qualificado: { label: 'PIP qualificado — decisão da Câmara', days: 50, unit: 'uteis', alert: 5, who: 'camara', hint: '20 dias de saneamento + 30' },
+        lic_arquitetura: { label: 'Licenciamento — apreciação da arquitetura', days: 50, unit: 'uteis', alert: 5, who: 'camara', hint: '20 dias de saneamento + 30' },
+        especialidades:  { label: 'Entrega das especialidades (prazo NOVA)', months: 6, alert: 30, who: 'nova', hint: '6 meses após a aprovação da arquitetura; prorrogável por 3' },
+        deliberacao:     { label: 'Deliberação final da Câmara', days: 20, unit: 'uteis', alert: 5, who: 'camara', hint: 'após a entrega das especialidades' },
+        old_pip_simples:     { label: 'PIP simples (regime 2024)', days: 15, unit: 'uteis', alert: 5, who: 'camara', hint: 'confirmar' },
+        old_pip_qualificado: { label: 'PIP qualificado (regime 2024)', days: 20, unit: 'uteis', alert: 5, who: 'camara', hint: 'confirmar' },
+        old_lic_300:  { label: 'Licenciamento (regime 2024) até 300 m²', days: 120, unit: 'uteis', alert: 10, who: 'camara', hint: 'prazo global' },
+        old_lic_2200: { label: 'Licenciamento (regime 2024) até 2200 m²', days: 150, unit: 'uteis', alert: 10, who: 'camara', hint: 'prazo global' },
+        old_lic_big:  { label: 'Licenciamento (regime 2024) acima de 2200 m²', days: 200, unit: 'corridos', alert: 10, who: 'camara', hint: 'prazo global, dias seguidos' },
+        oficio:       { label: 'Resposta a ofício (prazo NOVA)', alert: 5, who: 'nova', hint: 'o prazo vem do ofício' }
+      }
+    };
+    let camaraCfgCache = null;
+    async function loadCamaraCfg() {
+      if (camaraCfgCache) return camaraCfgCache;
+      let v = null;
+      if (devMode) v = window.__mockCamara || null;
+      else { const r = await supabase.from('app_settings').select('value').eq('key', 'camara_deadlines').maybeSingle(); v = r.data?.value || null; }
+      const rules = {};
+      Object.entries(CAMARA_DEFAULT.rules).forEach(([k, d]) => { rules[k] = { ...d, ...((v?.rules || {})[k] || {}) }; });
+      return (camaraCfgCache = { regime_date: v?.regime_date || CAMARA_DEFAULT.regime_date, rules });
+    }
+    async function saveCamaraCfg(cfg) {
+      const slim = { regime_date: cfg.regime_date, rules: Object.fromEntries(Object.entries(cfg.rules).map(([k, r]) => [k, { days: r.days, unit: r.unit, months: r.months, alert: r.alert }])) };
+      if (devMode) window.__mockCamara = slim;
+      else { const r = await supabase.from('app_settings').upsert({ key: 'camara_deadlines', value: slim, updated_at: new Date().toISOString() }); if (r.error) throw r.error; }
+      camaraCfgCache = null;
+    }
+    const normTxt2 = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+    // Tipo camarário de uma fase, pelo nome do tipo de fase
+    function camaraKind(typeName) {
+      const n = normTxt2(typeName);
+      if (n === 'pip' || n.includes('informacao previa')) return 'pip';
+      if (n.startsWith('licenciamento')) return 'lic';
+      if (n.startsWith('especialidades')) return 'esp';
+      if (n.includes('oficio')) return 'oficio';
+      if (n.includes('comunicacao previa')) return 'cp';
+      if (n.includes('utilizacao')) return 'util';
+      if (n.includes('escassa')) return 'escassa';
+      return null;
+    }
+    const addMonthsKey = (key, m) => { const d = parseDateKey(key); const t = new Date(d.getFullYear(), d.getMonth() + m, d.getDate()); return dateKey(t); };
+    function camaraDue(start, rule) {
+      if (!start || !rule) return null;
+      if (rule.months) return addMonthsKey(start, Number(rule.months));
+      if (!rule.days) return null;
+      return rule.unit === 'corridos' ? addDaysKey(start, Number(rule.days)) : addWorkdays(start, Number(rule.days));
+    }
+    const isRevisionStage = s => !!(s.revision_label || s.revision_kind || s.base_stage === false);
+    // Prazos legais de um projeto, a partir das fases
+    function computeCamaraDeadlines(project, stages, cfg) {
+      const out = [];
+      const R = cfg.rules, today = dateKey(new Date());
+      const sorted = [...stages].sort((a, b) => (a.stage_order ?? 0) - (b.stage_order ?? 0));
+      const kindOf = s => camaraKind(s.stage_types?.name);
+      const regimeOf = d => (d && d >= cfg.regime_date ? 'novo' : 'antigo');
+      const push = (s, key, start, extra = {}) => {
+        const rule = R[key]; if (!rule) return;
+        out.push({ stage: s, key, rule, label: rule.label, who: rule.who, start, due: extra.due !== undefined ? extra.due : camaraDue(start, rule),
+          done: !!extra.done, note: extra.note || null, warn: extra.warn || null, regime: extra.regime || null });
+      };
+      // licenciamento base (a primeira submissão) e as revisões
+      const lics = sorted.filter(s => kindOf(s) === 'lic');
+      const licBase = lics.find(s => !isRevisionStage(s)) || lics[0] || null;
+      const oficios = sorted.filter(s => (kindOf(s) === 'lic' && s.revision_kind === 'oficio') || kindOf(s) === 'oficio');
+      sorted.forEach(s => {
+        const k = kindOf(s);
+        if (k === 'pip' && s.delivery_date) {
+          const reg = regimeOf(s.delivery_date);
+          if (!s.pip_kind) { out.push({ stage: s, key: 'pip', label: 'PIP — decisão da Câmara', who: 'camara', start: s.delivery_date, due: null, warn: 'Indica na fase se é PIP simples ou qualificado', done: !!s.approval_date }); return; }
+          push(s, (reg === 'antigo' ? 'old_pip_' : 'pip_') + s.pip_kind, s.delivery_date, { done: !!s.approval_date, regime: reg });
+        }
+        if (k === 'lic' && s === licBase && s.delivery_date) {
+          const reg = regimeOf(s.delivery_date);
+          let key = 'lic_arquitetura', warn = null;
+          if (reg === 'antigo') {
+            const a = Number(project?.area);
+            key = !a ? 'old_lic_2200' : a <= 300 ? 'old_lic_300' : a <= 2200 ? 'old_lic_2200' : 'old_lic_big';
+            if (!a) warn = 'Sem área no projeto: assumido 300–2200 m²';
+          }
+          const hadOficio = oficios.some(o => (o.oficio_date || o.delivery_date || '') >= s.delivery_date);
+          push(s, key, s.delivery_date, { done: !!s.approval_date, regime: reg, warn, note: hadOficio ? 'Houve ofício depois da submissão: a contagem pode ter ficado suspensa — confirmar' : null });
+          if (s.approval_date) {
+            const esp = sorted.find(x => kindOf(x) === 'esp' && x.delivery_date && x.delivery_date >= s.approval_date);
+            push(s, 'especialidades', s.approval_date, { done: !!esp });
+          }
+        }
+        if (k === 'esp' && s.delivery_date && licBase && regimeOf(licBase.delivery_date) === 'novo')
+          push(s, 'deliberacao', s.delivery_date, { done: !!s.approval_date });
+      });
+      oficios.forEach(s => {
+        if (s.oficio_no_deadline) out.push({ stage: s, key: 'oficio', rule: R.oficio, label: 'Resposta a ofício (sem prazo)', who: 'nova', start: s.oficio_date, due: null, done: !!s.delivery_date, note: 'O ofício não indica prazo' });
+        else if (s.oficio_deadline) push(s, 'oficio', s.oficio_date, { due: s.oficio_deadline, done: !!s.delivery_date });
+        else out.push({ stage: s, key: 'oficio', rule: R.oficio, label: 'Resposta a ofício', who: 'nova', start: s.oficio_date, due: null, done: !!s.delivery_date, warn: 'Indica na fase o prazo do ofício (ou "sem prazo")' });
+      });
+      out.forEach(d => {
+        d.left = d.due ? diffDays(today, d.due) : null;
+        d.state = d.done ? 'done' : d.due == null ? 'none' : d.left < 0 ? 'late' : d.left <= Number(d.rule?.alert ?? 5) ? 'soon' : 'ok';
+      });
+      return out;
+    }
+    function camaraStateText(d) {
+      if (d.state === 'done') return d.who === 'camara' ? 'Decidido' : 'Cumprido';
+      if (d.state === 'none') return '—';
+      if (d.left < 0) return d.who === 'camara' ? `Passou há ${-d.left} ${d.left === -1 ? 'dia' : 'dias'}` : `Atrasado ${-d.left} ${d.left === -1 ? 'dia' : 'dias'}`;
+      return d.left === 0 ? 'Termina hoje' : `Faltam ${d.left} ${d.left === 1 ? 'dia' : 'dias'}`;
+    }
+    function camaraDeadlinesHtml(list, oficioCount) {
+      const rows = list.map(d => `
+        <div class="invoice-row cm-legal ${d.state}" data-cm-stage="${escapeHtml(d.stage.id)}">
+          <span><b>${escapeHtml(d.label)}</b><br><small>${escapeHtml(phaseName(d.stage))}${d.start ? ' · desde ' + escapeHtml(fmtDayMonthYear(d.start)) : ''}${d.due ? ' · até ' + escapeHtml(fmtDayMonthYear(d.due)) : ''}${d.rule?.hint ? ' · ' + escapeHtml(d.rule.hint) : ''}${d.regime === 'antigo' ? ' · regime anterior a 1/10/2026' : ''}</small>
+            ${d.state === 'late' && d.who === 'camara' ? '<small class="cm-tacit">Prazo ultrapassado: possível deferimento tácito — confirmar com a Câmara/jurista</small>' : ''}
+            ${d.warn ? `<small class="cm-warn">${escapeHtml(d.warn)}</small>` : ''}${d.note ? `<small class="cm-note">${escapeHtml(d.note)}</small>` : ''}</span>
+          <span class="cm-when ${d.state === 'late' ? 'late' : d.state === 'soon' ? 'soon' : d.state === 'done' ? 'ok' : ''}">${escapeHtml(camaraStateText(d))}<small>${d.who === 'camara' ? 'Câmara' : 'NOVA'}</small></span>
+        </div>`).join('');
+      return `<div class="gantt-wrap">
+          <div class="card-head"><h2>Prazos legais</h2><span>${oficioCount ? `${oficioCount} ${oficioCount === 1 ? 'resposta a ofício' : 'respostas a ofício'}` : 'sem ofícios'}</span></div>
+          ${rows || '<div class="gantt-empty">Os prazos aparecem quando a fase de PIP ou de licenciamento tiver data de entrega (a submissão). Os valores estão em Definições → Prazos camarários.</div>'}
+        </div>`;
     }
 
     // ================= HORAS ESPERADAS (alvo semanal) =================
@@ -10059,6 +10314,40 @@
       if (!weekly) return null;
       const days = [0, 1, 2, 3, 4].map(i => addDaysKey(mondayKey, i)).filter(k => isWorkday(k) && (!from || k >= from));
       return { weekly, from, days, expected: Math.round(days.length * weekly / 5 * 10) / 10 };
+    }
+
+    // Prazos camarários de todos os projetos ativos (para avisos e KPI)
+    async function loadCamaraOverview() {
+      const cfg = await loadCamaraCfg();
+      let projects, stages;
+      if (devMode) {
+        projects = MOCK_PROJECTS.filter(p => !p.archived_at);
+        stages = (window.__mockCamStages || MOCK_STAGES.map(s => ({ ...s, project_id: s.project_id || 'mock-1' })));
+      } else {
+        const pr = await supabase.from('projects').select('id, name, area, owner_id, archived_at').is('archived_at', null);
+        if (pr.error) throw pr.error;
+        projects = pr.data || [];
+        const ids = projects.map(p => p.id);
+        const st = ids.length ? await supabase.from('project_stages').select('*, stage_types(name)').in('project_id', ids) : { data: [] };
+        if (st.error) throw st.error;
+        stages = st.data || [];
+      }
+      const byP = {};
+      stages.forEach(s => (byP[s.project_id] = byP[s.project_id] || []).push(s));
+      return projects.map(p => ({ project: p, stages: byP[p.id] || [], deadlines: computeCamaraDeadlines(p, byP[p.id] || [], cfg) }));
+    }
+    async function loadCamaraAlerts(me) {
+      const all = await loadCamaraOverview();
+      const out = [];
+      all.forEach(({ project, deadlines }) => {
+        if (project.owner_id && project.owner_id !== me) return;
+        deadlines.filter(d => d.state === 'late' || d.state === 'soon').forEach(d => out.push({
+          kind: 'camara', project: project.id,
+          title: `${d.label}${d.state === 'late' && d.who === 'camara' ? ' — possível deferimento tácito' : ''}`,
+          sub: `${project.name} · ${phaseName(d.stage)} · até ${fmtDayMonthYear(d.due)}`,
+          when: camaraStateText(d), late: d.state === 'late' }));
+      });
+      return out;
     }
 
     const projectOwnerOf = p => p.projects?.owner_id ?? (devMode ? MOCK_PROJECTS.find(x => x.id === p.project_id)?.owner_id : null) ?? null;
@@ -10139,7 +10428,7 @@
         const todayKey = dateKey(new Date());
         const lastKey = addDaysKey(todayKey, 6);
 
-        const [milestones, phases, types, hours, alerts, breakAlerts, importAlerts, target, noOwner] = await Promise.all([
+        const [milestones, phases, types, hours, alerts, breakAlerts, importAlerts, target, noOwner, camaraAlerts] = await Promise.all([
           fetchMilestones({ from: todayKey, to: lastKey }),
           fetchActivePhases(),
           loadMilestoneTypes(),
@@ -10148,13 +10437,14 @@
           loadOpenBreakAlerts(me).catch(() => []),
           loadMonthlyImportAlerts().catch(() => []),
           loadHoursTarget().catch(() => null),
-          loadProjectsWithoutOwner().catch(() => [])
+          loadProjectsWithoutOwner().catch(() => []),
+          loadCamaraAlerts(me).catch(() => [])
         ]);
         const tg = target && me ? weekTarget(target, me, hours.mondayKey) : null;
         renderWeekHours(hoursEl, hours, tg);
         // Avisos de organização: horas em falta (a partir de sexta), projetos sem responsável,
         // fases em curso/seguintes sem ninguém nos projetos de que sou responsável
-        const teamAlerts = [];
+        const teamAlerts = [...camaraAlerts];
         const wd = new Date().getDay();
         const missing = missingHourDays(hours, tg);
         if ((wd === 5 || wd === 6 || wd === 0) && missing.length)
@@ -11432,6 +11722,7 @@
           <div class="span2"><label class="field-label">Entregue a</label><input type="date" id="ph-delivery" class="form-input" value="${escapeHtml(stage.delivery_date ?? '')}">
             <div class="field-hint">Preenche no dia em que a fase foi efetivamente entregue.</div></div>
         </div>
+        <div id="ph-camara"></div>
         <label class="field-label">Checklist</label>
         <div class="checklist" id="ph-checklist"><div class="field-hint" style="margin:0;">A carregar…</div></div>
         <div${isAwardStage(stage) ? ' hidden' : ''}>
@@ -11464,6 +11755,41 @@
         </details>
         <button type="button" id="ph-save" class="primary-btn">Guardar</button>
         <div id="ph-msg" class="form-msg"></div>`;
+
+      // Câmara: campos conforme o tipo de fase (PIP, licenciamento, especialidades, ofício)
+      const camaraBox = document.getElementById('ph-camara');
+      const drawCamara = () => {
+        const selType = document.getElementById('ph-type').value;
+        const tName = stage.stage_type_id && selType !== stage.stage_type_id ? types.find(t => t.id === selType)?.name : stage.stage_types?.name;
+        const k = camaraKind(tName);
+        const isRev = !!(document.getElementById('ph-rev').value.trim() || stage.revision_kind || stage.base_stage === false);
+        const cur = id => document.getElementById(id);
+        const keep = (id, v) => cur(id) ? (cur(id).type === 'checkbox' ? cur(id).checked : cur(id).value) : v;
+        const pip = keep('ph-pip', stage.pip_kind || ''), appr = keep('ph-approval', stage.approval_date || '');
+        const rk = keep('ph-revkind', stage.revision_kind || ''), od = keep('ph-ofdate', stage.oficio_date || ''),
+          odl = keep('ph-ofdeadline', stage.oficio_deadline || ''), onod = keep('ph-ofnone', !!stage.oficio_no_deadline);
+        let html = '';
+        if (k === 'pip') html += `<div class="form-grid"><div><label class="field-label" for="ph-pip">Tipo de PIP</label>
+            <select id="ph-pip" class="form-input"><option value="">Escolher…</option><option value="simples"${pip === 'simples' ? ' selected' : ''}>Simples</option><option value="qualificado"${pip === 'qualificado' ? ' selected' : ''}>Qualificado</option></select></div>
+            <div><label class="field-label" for="ph-approval">Decisão da Câmara a</label><input type="date" id="ph-approval" class="form-input" value="${escapeHtml(appr)}"></div></div>`;
+        if (k === 'lic' && !isRev) html += `<label class="field-label" for="ph-approval">Arquitetura aprovada a</label><input type="date" id="ph-approval" class="form-input" value="${escapeHtml(appr)}">
+            <div class="field-hint">A data de entrega é a submissão: conta o prazo da Câmara. A aprovação faz contar os 6 meses para as especialidades.</div>`;
+        if (k === 'esp') html += `<label class="field-label" for="ph-approval">Licença deferida a</label><input type="date" id="ph-approval" class="form-input" value="${escapeHtml(appr)}">`;
+        if ((k === 'lic' && isRev) || k === 'oficio') {
+          html += `<label class="field-label" for="ph-revkind">Esta revisão é…</label>
+            <select id="ph-revkind" class="form-input"><option value="">Escolher…</option><option value="oficio"${rk === 'oficio' || (k === 'oficio' && !rk) ? ' selected' : ''}>Resposta a ofício da Câmara</option><option value="aditamento"${rk === 'aditamento' ? ' selected' : ''}>Aditamento por alterações de projeto</option></select>`;
+          if (rk === 'oficio' || (k === 'oficio' && rk !== 'aditamento')) html += `<div class="form-grid">
+              <div><label class="field-label" for="ph-ofdate">Data do ofício</label><input type="date" id="ph-ofdate" class="form-input" value="${escapeHtml(od)}"></div>
+              <div><label class="field-label" for="ph-ofdeadline">Responder até</label><input type="date" id="ph-ofdeadline" class="form-input" value="${escapeHtml(odl)}"${onod ? ' disabled' : ''}></div></div>
+              <label class="check-row"><input type="checkbox" id="ph-ofnone"${onod ? ' checked' : ''}> O ofício não tem prazo</label>`;
+        }
+        camaraBox.innerHTML = html;
+        const rkSel = cur('ph-revkind'); if (rkSel) rkSel.addEventListener('change', drawCamara);
+        const none = cur('ph-ofnone'); if (none) none.addEventListener('change', () => { cur('ph-ofdeadline').disabled = none.checked; });
+      };
+      drawCamara();
+      document.getElementById('ph-type').addEventListener('change', drawCamara);
+      document.getElementById('ph-rev').addEventListener('change', drawCamara);
 
       const planEl = document.getElementById('ph-plan');
       const drawPlan = () => {
@@ -11543,6 +11869,18 @@
           excluded_from_invoicing: document.getElementById('ph-excluded').checked,
           ignores_breaks: document.getElementById('ph-ignores-breaks').checked
         };
+        // Câmara (só os campos que estão à vista)
+        const g = id => document.getElementById(id);
+        if (g('ph-pip')) patch.pip_kind = valOrNull(g('ph-pip').value);
+        if (g('ph-approval')) patch.approval_date = valOrNull(g('ph-approval').value);
+        if (g('ph-revkind')) {
+          patch.revision_kind = valOrNull(g('ph-revkind').value);
+          if (patch.revision_kind === 'oficio' || (!patch.revision_kind && g('ph-ofdate'))) {
+            patch.oficio_date = g('ph-ofdate') ? valOrNull(g('ph-ofdate').value) : null;
+            patch.oficio_no_deadline = !!g('ph-ofnone')?.checked;
+            patch.oficio_deadline = patch.oficio_no_deadline ? null : (g('ph-ofdeadline') ? valOrNull(g('ph-ofdeadline').value) : null);
+          } else { patch.oficio_date = null; patch.oficio_deadline = null; patch.oficio_no_deadline = false; }
+        }
         const btn = document.getElementById('ph-save');
         btn.disabled = true; btn.textContent = 'A guardar…';
         try {
