@@ -3868,6 +3868,8 @@
           : !p.archived_at && (projectsScope === 'all' || !statusByCode(p.status)?.is_closed)) &&
         (!term || (p.name ?? '').toLowerCase().includes(term) || (p.code ?? '').toLowerCase().includes(term))
       );
+      // Por código (24001, 24002…); sem código no fim
+      filtered.sort((a, b) => (!a.code) - (!b.code) || String(a.code ?? '').localeCompare(String(b.code ?? ''), 'pt', { numeric: true }) || String(a.name ?? '').localeCompare(String(b.name ?? ''), 'pt'));
       renderProjectsTable(filtered);
     }
     document.getElementById('projects-search').addEventListener('input', applyProjectFilters);
