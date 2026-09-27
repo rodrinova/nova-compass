@@ -1768,6 +1768,8 @@
   .hrow.lane-only .hdate b { font-size: 12px; color: var(--text-3); }
   .hrow.lane-only .hdate span { font-size: 11px; }
   .hrow.lane-only { min-height: 26px; }
+  .hdate .hruler { display: block; font-style: normal; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; white-space: nowrap; }
+  .hrow:has(.hdate.new-month) { border-top: 1px solid var(--border-strong); }
   .hcells.hstart { min-height: 26px; }
   .hrow.hfuture { background: color-mix(in srgb, var(--accent) 4%, transparent); }
   .hrow.hfuture .hdate b, .hrow.hfuture .hdate span { color: var(--accent); }
@@ -6546,16 +6548,19 @@
         });
       }
       html += `<div class="hrow today${openBreak ? ' paused' : ''}"><span class="hdate"><b>Hoje</b><span>${escapeHtml(fmtDayMonth(today))}</span></span>${lanesHtml(-1, today)}${cellsHtml(nowItems)}</div>`;
+      // Régua do tempo à esquerda: o mês (e o ano) aparece na primeira linha de cada mês
       let month = today.slice(0, 7);
-      dates.forEach((d, i) => {
-        if (d.slice(0, 7) !== month) {
-          month = d.slice(0, 7);
-          const [y, m] = month.split('-').map(Number);
-          html += `<div class="hrow hmonth${inPause(dateKey(new Date(y, m, 0))) ? ' paused' : ''}"><span class="hdate"></span>${lanesHtml(i, dateKey(new Date(y, m, 0)), true)}<div class="hmonth-label">${escapeHtml(monthName(d))}</div></div>`;
-        }
+      const rulerTag = d => {
+        if (d.slice(0, 7) === month) return '';
+        month = d.slice(0, 7);
         const x = parseDateKey(d);
+        return `<i class="hruler">${escapeHtml(GANTT_MONTHS[x.getMonth()])} ${String(x.getFullYear()).slice(2)}</i>`;
+      };
+      dates.forEach((d, i) => {
+        const x = parseDateKey(d);
+        const tag = rulerTag(d);
         const onlyStart = byDate[d].every(e => e.silent);
-        html += `<div class="hrow${inPause(d) ? ' paused' : ''}${onlyStart ? ' lane-only' : ''}"><span class="hdate"><b>${x.getDate()}</b><span>${escapeHtml(GANTT_MONTHS[x.getMonth()])}</span></span>${lanesHtml(i, d)}${onlyStart ? '<div class="hcells hstart"></div>' : cellsHtml(byDate[d])}</div>`;
+        html += `<div class="hrow${inPause(d) ? ' paused' : ''}${onlyStart ? ' lane-only' : ''}"><span class="hdate${tag ? ' new-month' : ''}">${tag}<b>${x.getDate()}</b>${tag ? '' : `<span>${escapeHtml(GANTT_MONTHS[x.getMonth()])}</span>`}</span>${lanesHtml(i, d)}${onlyStart ? '<div class="hcells hstart"></div>' : cellsHtml(byDate[d])}</div>`;
       });
       html += '</div>';
       return html;
