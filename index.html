@@ -146,6 +146,11 @@
   }
   #login-btn:hover { background: var(--accent-hover); }
   #login-btn:disabled { opacity: .6; cursor: default; }
+  .forgot-btn { display: block; margin: 12px auto 0; background: none; border: none; color: var(--accent); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; padding: 6px 8px; }
+  .forgot-btn:disabled { opacity: .5; }
+  .login-msg.success { color: var(--success); }
+  #reset-save-btn { width: 100%; padding: 14px; border: none; border-radius: 12px; background: var(--accent); color: var(--on-accent, #fff); font: inherit; font-size: 15px; font-weight: 650; cursor: pointer; margin-top: 4px; }
+  #reset-save-btn:disabled { opacity: .6; }
   .login-msg { font-size: 13px; margin-top: 12px; text-align: center; }
   .login-msg.error { color: var(--danger); }
 
@@ -1976,7 +1981,16 @@
         </button>
       </div>
       <button id="login-btn">Entrar</button>
+      <button type="button" class="forgot-btn" id="forgot-btn">Esqueci-me da palavra-passe</button>
       <div id="login-msg" class="login-msg"></div>
+      <div id="reset-panel" hidden style="margin-top:4px;">
+        <div style="text-align:center;font-size:14px;font-weight:600;color:var(--text);margin:0 0 4px;">Define a tua nova palavra-passe</div>
+        <div style="text-align:center;font-size:12.5px;color:var(--text-2);margin:0 0 12px;">Pelo menos 8 caracteres</div>
+        <div class="field-group"><input type="password" id="new-pw-1" placeholder="Nova palavra-passe" autocomplete="new-password"></div>
+        <div class="field-group"><input type="password" id="new-pw-2" placeholder="Repetir a nova palavra-passe" autocomplete="new-password"></div>
+        <button id="reset-save-btn" class="login-like-btn">Guardar e entrar</button>
+        <div id="reset-msg" class="login-msg"></div>
+      </div>
     </div>
   </div>
 
@@ -3816,10 +3830,58 @@
       });
     }
 
+    // Recuperar a palavra-passe: o link do email volta à app com type=recovery
+    const recoveringFromLink = /type=recovery/.test(location.hash + location.search);
+    function showRecovery() {
+      showLogin();
+      ['email-input', 'password-input', 'login-btn', 'forgot-btn', 'toggle-pw'].forEach(id => { const e = document.getElementById(id); if (e) (e.closest('.field-group') || e).style.display = 'none'; });
+      document.getElementById('reset-panel').hidden = false;
+      document.getElementById('new-pw-1').focus();
+    }
+    if (supabase.auth.onAuthStateChange) supabase.auth.onAuthStateChange(ev => { if (ev === 'PASSWORD_RECOVERY') showRecovery(); });
     async function init() {
       const { data: { session } } = await supabase.auth.getSession();
+      if (recoveringFromLink) { showRecovery(); return; }
       session ? showApp() : showLogin();
     }
+    document.getElementById('forgot-btn').addEventListener('click', async () => {
+      const email = emailInput.value.trim();
+      loginMsg.className = 'login-msg';
+      if (!email) { loginMsg.textContent = 'Escreve primeiro o teu email e toca outra vez em "Esqueci-me".'; loginMsg.classList.add('error'); emailInput.focus(); return; }
+      const btn = document.getElementById('forgot-btn');
+      btn.disabled = true;
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+        if (error) throw error;
+        loginMsg.textContent = `Se ${email} for da equipa, recebe dentro de momentos um email com o link para definir uma palavra-passe nova.`;
+        loginMsg.classList.add('success');
+      } catch (err) {
+        loginMsg.textContent = 'Não foi possível enviar o email: ' + err.message;
+        loginMsg.classList.add('error');
+      } finally { btn.disabled = false; }
+    });
+    document.getElementById('reset-save-btn').addEventListener('click', async () => {
+      const a = document.getElementById('new-pw-1').value, b = document.getElementById('new-pw-2').value;
+      const msg = document.getElementById('reset-msg');
+      msg.className = 'login-msg';
+      if (a.length < 8) { msg.textContent = 'A palavra-passe precisa de pelo menos 8 caracteres.'; msg.classList.add('error'); return; }
+      if (a !== b) { msg.textContent = 'As duas palavras-passe não são iguais.'; msg.classList.add('error'); return; }
+      const btn = document.getElementById('reset-save-btn');
+      btn.disabled = true; btn.textContent = 'A guardar…';
+      try {
+        const { error } = await supabase.auth.updateUser({ password: a });
+        if (error) throw error;
+        history.replaceState(null, '', location.pathname);
+        document.getElementById('reset-panel').hidden = true;
+        ['email-input', 'password-input', 'login-btn', 'forgot-btn', 'toggle-pw'].forEach(id => { const e = document.getElementById(id); if (e) (e.closest('.field-group') || e).style.display = ''; });
+        showApp();
+        showToast('Palavra-passe alterada');
+      } catch (err) {
+        msg.textContent = 'Não foi possível guardar: ' + err.message + (/expired|invalid/i.test(err.message) ? ' — o link expirou; pede um novo em "Esqueci-me".' : '');
+        msg.classList.add('error');
+        btn.disabled = false; btn.textContent = 'Guardar e entrar';
+      }
+    });
 
     loginBtn.addEventListener('click', async () => {
       const email = emailInput.value.trim();
