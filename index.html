@@ -1768,6 +1768,10 @@
   .cm-legal small.cm-note { color: var(--text-2); font-style: italic; }
   .cm-legal .cm-when small { text-align: right; margin-top: 0; }
   .cm-legal.done { opacity: .7; }
+  .hrow.hfuture { background: color-mix(in srgb, var(--accent) 4%, transparent); }
+  .hrow.hfuture .hdate b, .hrow.hfuture .hdate span { color: var(--accent); }
+  .hi.k-prazo .hi-dot { border-radius: 2px; transform: rotate(45deg) scale(.85); }
+  .hi.k-prazo.late b { color: var(--danger); }
   .cm-of { font-size: 12.5px; color: var(--text-2); }
   .ht-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0; font-size: 14px; }
   .ht-row .form-input { max-width: 200px; margin: 0; }
@@ -4488,6 +4492,9 @@
         const nAtas = projectNotes.length;
         const pid0 = project.id ?? projectId;
 
+        // Prazos (lei + manuais) para a linha do tempo: os futuros vão para "A seguir"
+        const camCfgDet = await loadCamaraCfg().catch(() => null);
+        const legalDet = camCfgDet ? computeCamaraDeadlines(project, stages, camCfgDet) : [];
         detailBody.innerHTML = `
           <div class="kpi-strip">
             <div class="kpi"><span>Honorários${valorExcluido > 0 ? ' NOVA' : ''}</span><b>${fmtEURShort(totalHonorarios)}</b></div>
@@ -4502,7 +4509,7 @@
           <nav class="detail-tabs" role="tablist">
             <button type="button" data-dtab="resumo" role="tab">Resumo</button>
             <button type="button" data-dtab="fases" role="tab">Fases<em>${stages.length}</em></button>
-            <button type="button" data-dtab="marcos" role="tab">Marcos e atas<em>${projectMarcos.length + nAtas}</em></button>
+            <button type="button" data-dtab="marcos" role="tab">Cronologia<em>${projectMarcos.length + nAtas}</em></button>
             <button type="button" data-dtab="camara" role="tab">Câmara</button>
             <button type="button" data-dtab="financas" role="tab">Finanças</button>
           </nav>
@@ -4547,7 +4554,7 @@
             <div class="gantt-wrap" id="project-history">
               <div class="card-head"><h2>Histórico</h2><span>do mais recente para o mais antigo</span></div>
               <div class="hist-legend"><span><i class="lg-lane"></i>lead time de cada fase</span><span><i class="lg-late"></i>além do previsto</span><span><i class="lg-pause"></i>projeto em pausa</span></div>
-              ${historyTimelineHtml({ project, stages, breaks, invoices, payments, marcos: projectMarcos, marcoTypes, notes: projectNotes })}
+              ${historyTimelineHtml({ project, stages, breaks, invoices, payments, marcos: projectMarcos, marcoTypes, notes: projectNotes, legal: legalDet })}
             </div>
           </section>
 
@@ -6298,8 +6305,8 @@
     // com os dias que o cliente levou a pagar). Por cima, um resumo para ler em 5 segundos.
     // No telemóvel as colunas passam a lista, cada acontecimento com a etiqueta da sua coluna.
     const HIST_COLORS = ['#714D79', '#3E6FA8', '#2F8A8A', '#B8842A', '#8A5A9E', '#5A6B7A', '#2E7D4F', '#A85A3E'];
-    const HIST_COLS = [['phase', 'Fases'], ['marco', 'Marcos e atas'], ['pause', 'Pausas'], ['bill', 'Faturação']];
-    function historyTimelineHtml({ project, stages, breaks, invoices, payments, marcos, marcoTypes, notes }) {
+    const HIST_COLS = [['phase', 'Fases'], ['marco', 'Marcos, prazos e atas'], ['pause', 'Pausas'], ['bill', 'Faturação']];
+    function historyTimelineHtml({ project, stages, breaks, invoices, payments, marcos, marcoTypes, notes, legal = [] }) {
       const today = dateKey(new Date());
       const ev = [];
       const add = (date, col, rank, o) => { if (date && date <= today) ev.push({ date, col, rank, ...o }); };
@@ -6343,6 +6350,25 @@
         add(m.event_date, 'marco', 2, { kind: 'marco', title: m.title, sub: [t?.name, m.done ? 'feito' : ''].filter(Boolean).join(' · '), color: t?.color || 'var(--accent)', marcoId: m.id });
       });
       notes.forEach(n => add(n.meeting_date, 'marco', 1, { kind: 'ata', title: n.title || 'Reunião', sub: 'Ata', color: 'var(--text-3)' }));
+      // --- A seguir: marcos futuros e prazos por cumprir (os atrasados vão para Hoje) ---
+      const future = [], overdue = [];
+      const leftTxt = d => { const n = diffDays(today, d); return n === 0 ? 'hoje' : n > 0 ? `faltam ${days(n)}` : `há ${days(-n)}`; };
+      marcos.forEach(m => {
+        if (m.auto_kind === 'delivery' || !m.event_date || m.event_date <= today) return;
+        const t = marcoTypes[m.type_id], isDl = t?.is_deadline || m.alert_days != null;
+        future.push({ date: m.event_date, col: 'marco', rank: 2, kind: isDl ? 'prazo' : 'marco', title: m.title, sub: [isDl ? 'Prazo manual' : t?.name, leftTxt(m.event_date)].filter(Boolean).join(' · '), color: t?.color || 'var(--accent)', marcoId: m.id });
+      });
+      marcos.forEach(m => {
+        const t = marcoTypes[m.type_id];
+        if (m.done || !m.event_date || m.event_date >= today || !(t?.is_deadline || m.alert_days != null)) return;
+        overdue.push({ col: 'marco', rank: 8, kind: 'prazo late', title: m.title, sub: `Prazo manual · passou ${leftTxt(m.event_date)}`, color: 'var(--danger)', marcoId: m.id });
+      });
+      legal.filter(d => d.due && d.state !== 'done').forEach(d => {
+        const who = d.who === 'camara' ? 'Prazo da Câmara' : 'Prazo NOVA';
+        const o = { col: 'marco', kind: 'prazo', title: d.label, sub: `${who} · ${leftTxt(d.due)}`, color: d.state === 'late' ? 'var(--danger)' : d.state === 'soon' ? 'var(--warning)' : 'var(--accent)', stageId: d.stage.id };
+        if (d.due > today) future.push({ ...o, date: d.due, rank: 3 });
+        else overdue.push({ ...o, rank: 8, kind: 'prazo late', sub: `${who} · ${d.who === 'camara' ? 'passou ' + leftTxt(d.due) + ' — possível deferimento tácito, confirmar' : 'atrasado ' + days(diffDays(d.due, today))}` });
+      });
       // --- Pausas ---
       const who = b => b.type === 'client' ? 'À espera do cliente' : b.type === 'municipality' ? 'À espera da Câmara' : '';
       breaks.forEach(b => {
@@ -6387,7 +6413,7 @@
           ${tile('Faturado · recebido', `${escapeHtml(fmtEURShort(billed))} · ${escapeHtml(fmtEURShort(received))}`, payAmtW ? `pagam em média em ${escapeHtml(days(Math.round(payDaysW / payAmtW)))}` : '')}
         </div>`;
 
-      if (!ev.length) return summary + '<div class="gantt-empty">Ainda não há histórico. Aparece aqui à medida que o projeto avança: adjudicação, entregas, marcos, pausas, faturas e atas.</div>';
+      if (!ev.length && !future.length) return summary + '<div class="gantt-empty">Ainda não há histórico. Aparece aqui à medida que o projeto avança: adjudicação, entregas, marcos, pausas, faturas e atas.</div>';
 
       // Linhas: um dia por linha (mais recente em cima)
       const byDate = {};
@@ -6433,6 +6459,17 @@
       const nowItems = [];
       running.forEach(l => nowItems.push({ col: 'phase', rank: 9, kind: 'now', title: phaseName(l.st), sub: l.planned ? (today > l.planned ? `Em curso · ${days(diffDays(l.planned, today))} além do previsto` : `Em curso · faltam ${days(diffDays(today, l.planned))}`) : 'Em curso', color: l.color, stageId: l.st.id }));
       if (openBreak) nowItems.push({ col: 'pause', rank: 9, kind: 'pause', title: openBreak.name || 'Pausa', sub: `Em pausa há ${days(diffDays(openBreak.start_date, today))}`, color: 'var(--warning)', breakId: openBreak.id });
+      nowItems.push(...overdue);
+      // A seguir (acima de Hoje): o mais distante em cima, o mais próximo junto a Hoje
+      if (future.length) {
+        const fBy = {};
+        future.forEach(e => (fBy[e.date] = fBy[e.date] || []).push(e));
+        html += `<div class="hrow hmonth hnext"><span class="hdate"></span>${lanesHtml(null)}<div class="hmonth-label">A seguir</div></div>`;
+        Object.keys(fBy).sort().reverse().forEach(d => {
+          const x = parseDateKey(d);
+          html += `<div class="hrow hfuture"><span class="hdate"><b>${x.getDate()}</b><span>${escapeHtml(GANTT_MONTHS[x.getMonth()])}${x.getFullYear() !== parseDateKey(today).getFullYear() ? ' ' + String(x.getFullYear()).slice(2) : ''}</span></span>${lanesHtml(null)}${cellsHtml(fBy[d])}</div>`;
+        });
+      }
       html += `<div class="hrow today${openBreak ? ' paused' : ''}"><span class="hdate"><b>Hoje</b><span>${escapeHtml(fmtDayMonth(today))}</span></span>${lanesHtml(-1, today)}${cellsHtml(nowItems)}</div>`;
       let month = today.slice(0, 7);
       dates.forEach((d, i) => {
