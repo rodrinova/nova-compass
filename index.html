@@ -3840,7 +3840,7 @@
       const since = addDaysKey(dateKey(new Date()), -365);
       const kind = s => camaraKind(s.stage_types?.name);
       const lic = new Set(stages.filter(s => kind(s) === 'lic' && s.delivery_date && s.delivery_date >= since).map(s => s.project_id));
-      const of = stages.filter(s => ((kind(s) === 'lic' && s.revision_kind === 'oficio') || kind(s) === 'oficio') && (s.oficio_date || s.delivery_date || '9999') >= since);
+      const of = stages.filter(s => (((kind(s) === 'lic' || kind(s) === 'pip') && s.revision_kind === 'oficio') || kind(s) === 'oficio') && (s.oficio_date || s.delivery_date || '9999') >= since);
       const ad = stages.filter(s => kind(s) === 'lic' && s.revision_kind === 'aditamento' && (s.delivery_date || '9999') >= since);
       if (!lic.size && !of.length) { el.hidden = true; return; }
       const avg = lic.size ? of.length / lic.size : null;
@@ -4359,7 +4359,7 @@
                   const isPartial = inv.paid > 0 && inv.paid < inv.amount;
                   const horas = hoursByStageId[s.id] || 0;
                   const faseLabel = escapeHtml(`${s.stage_types?.name ?? 'Fase'}${s.revision_label ? ' · ' + s.revision_label : ''}`);
-                  const notBilled = s.revision_kind === 'oficio' || camaraKind(s.stage_types?.name) === 'oficio';
+                  const notBilled = s.revision_kind === 'oficio' || camaraKind(s.stage_types?.name) === 'oficio';   // ofícios (licenciamento ou PIP)
                   const invoiceCell = notBilled && !isInvoiced
                     ? `<span class="invoice-status neutral" title="Respostas a ofício não se faturam">Não se fatura</span>`
                     : isExcluded
@@ -4870,12 +4870,16 @@
         const camBox = document.getElementById('revision-camara');
         const drawRevCamara = () => {
           const k = camaraKind(typeSel.selectedOptions[0]?.textContent);
-          if (k !== 'lic' && k !== 'oficio') { camBox.innerHTML = ''; return; }
+          if (k !== 'lic' && k !== 'oficio' && k !== 'pip') { camBox.innerHTML = ''; ['revision-value-type-toggle', 'revision-value-label', 'revision-value'].forEach(id => { const e = document.getElementById(id); if (e) e.hidden = false; }); return; }
           const cur = camBox.querySelector('[name="rv-kind"]:checked')?.value || (k === 'oficio' ? 'oficio' : '');
+          const pipKindCur = camBox.querySelector('#rv-pipkind')?.value || '';
           camBox.innerHTML = `
             <label class="field-label">Esta revisão é…</label>
             <label class="check-row"><input type="radio" name="rv-kind" value="oficio"${cur === 'oficio' ? ' checked' : ''}> Resposta a um ofício da Câmara</label>
-            <label class="check-row"><input type="radio" name="rv-kind" value="aditamento"${cur === 'aditamento' ? ' checked' : ''}> Aditamento por alterações de projeto</label>
+            ${k === 'pip'
+              ? `<label class="check-row"><input type="radio" name="rv-kind" value="novo"${cur === 'novo' ? ' checked' : ''}> Novo PIP</label>
+                 ${cur === 'novo' ? `<label class="field-label" for="rv-pipkind">Tipo de PIP</label><select id="rv-pipkind" class="form-input"><option value="">Escolher…</option><option value="simples"${pipKindCur === 'simples' ? ' selected' : ''}>Simples</option><option value="qualificado"${pipKindCur === 'qualificado' ? ' selected' : ''}>Qualificado</option></select>` : ''}`
+              : `<label class="check-row"><input type="radio" name="rv-kind" value="aditamento"${cur === 'aditamento' ? ' checked' : ''}> Aditamento por alterações de projeto</label>`}
             ${cur === 'oficio' ? `<div class="form-grid">
               <div><label class="field-label" for="rv-ofdate">Data do ofício</label><input type="date" id="rv-ofdate" class="form-input"></div>
               <div><label class="field-label" for="rv-ofdays">Prazo (dias úteis)</label><input type="text" inputmode="numeric" id="rv-ofdays" class="form-input" placeholder="ex: 30"></div></div>
@@ -4930,8 +4934,9 @@
           const rvKindEl = document.querySelector('#revision-camara [name="rv-kind"]:checked');
           const rvCam = {};
           if (document.querySelector('#revision-camara [name="rv-kind"]')) {
-            if (!rvKindEl) { msgEl.textContent = 'Diz se é resposta a ofício ou aditamento.'; msgEl.className = 'form-msg error'; return; }
+            if (!rvKindEl) { msgEl.textContent = 'Escolhe o que é esta revisão.'; msgEl.className = 'form-msg error'; return; }
             rvCam.revision_kind = rvKindEl.value;
+            if (rvKindEl.value === 'novo') { const pk = document.getElementById('rv-pipkind')?.value; if (pk) rvCam.pip_kind = pk; }
             if (rvKindEl.value === 'oficio') {
               const od = document.getElementById('rv-ofdate').value || null;
               const none = document.getElementById('rv-ofnone').checked;
@@ -9653,7 +9658,7 @@
       const dl = [...deadlines].sort((a, b) => a.event_date.localeCompare(b.event_date));
       const camCfg = await loadCamaraCfg().catch(() => null);
       const legal = camCfg ? computeCamaraDeadlines(project, stages, camCfg) : [];
-      const nOficios = stages.filter(s => (camaraKind(s.stage_types?.name) === 'lic' && s.revision_kind === 'oficio') || camaraKind(s.stage_types?.name) === 'oficio').length;
+      const nOficios = stages.filter(s => (['lic', 'pip'].includes(camaraKind(s.stage_types?.name)) && s.revision_kind === 'oficio') || camaraKind(s.stage_types?.name) === 'oficio').length;
 
       box.innerHTML = camaraDeadlinesHtml(legal, nOficios) + `
         <div class="gantt-wrap">
@@ -10187,7 +10192,8 @@
         old_lic_big:  { label: 'Licenciamento (regime 2024) acima de 2200 m²', days: 200, unit: 'corridos', alert: 10, who: 'camara', hint: 'prazo global, dias seguidos' },
         oficio:       { label: 'Resposta a ofício (prazo NOVA)', alert: 5, who: 'nova', hint: 'o prazo vem do ofício' },
         aviso_local:  { label: 'Enviar ao dono de obra o aviso a afixar no local', days: 10, unit: 'uteis', alert: 10, who: 'nova', hint: 'após a submissão do licenciamento' },
-        alvara:       { label: 'Levantar o alvará / pagar as taxas', months: 12, alert: 60, who: 'nova', hint: 'após a licença deferida' },
+        alvara:       { label: 'Validade da licença — levantar o alvará / pagar as taxas', months: 12, alert: 60, who: 'nova', hint: 'após a licença deferida' },
+        pip_validade: { label: 'Validade do PIP favorável', months: 24, alert: 90, who: 'nova', hint: '2 anos após a decisão; prorrogável por 1' },
         obra:         { label: 'Fim do prazo da obra — pedir licença de utilização ou prorrogação', alert: 90, who: 'nova', hint: 'prazo indicado no alvará' }
       }
     };
@@ -10243,10 +10249,14 @@
       // licenciamento base (a primeira submissão) e as revisões
       const lics = sorted.filter(s => kindOf(s) === 'lic');
       const licBase = lics.find(s => !isRevisionStage(s)) || lics[0] || null;
-      const oficios = sorted.filter(s => (kindOf(s) === 'lic' && s.revision_kind === 'oficio') || kindOf(s) === 'oficio');
+      const oficios = sorted.filter(s => ((kindOf(s) === 'lic' || kindOf(s) === 'pip') && s.revision_kind === 'oficio') || kindOf(s) === 'oficio');
+      // Validade do PIP favorável: o último PIP decidido; deixa de contar quando o licenciamento é submetido
+      const lastPip = sorted.filter(s => kindOf(s) === 'pip' && s.revision_kind !== 'oficio' && s.approval_date)
+        .sort((a, b) => a.approval_date.localeCompare(b.approval_date)).pop();
+      if (lastPip) push(lastPip, 'pip_validade', lastPip.approval_date, { done: lics.some(l => l.delivery_date && l.delivery_date >= lastPip.approval_date) });
       sorted.forEach(s => {
         const k = kindOf(s);
-        if (k === 'pip' && s.delivery_date) {
+        if (k === 'pip' && s.delivery_date && s.revision_kind !== 'oficio') {
           const reg = regimeOf(s.delivery_date);
           if (!s.pip_kind) { out.push({ stage: s, key: 'pip', label: 'PIP — decisão da Câmara', who: 'camara', start: s.delivery_date, due: null, warn: 'Indica na fase se é PIP simples ou qualificado', done: !!s.approval_date }); return; }
           push(s, (reg === 'antigo' ? 'old_pip_' : 'pip_') + s.pip_kind, s.delivery_date, { done: !!s.approval_date, regime: reg });
@@ -10344,7 +10354,7 @@
         projects = MOCK_PROJECTS.filter(p => !p.archived_at);
         stages = (window.__mockCamStages || MOCK_STAGES.map(s => ({ ...s, project_id: s.project_id || 'mock-1' })));
       } else {
-        const pr = await supabase.from('projects').select('id, name, area, owner_id, archived_at').is('archived_at', null);
+        const pr = await supabase.from('projects').select('id, name, area, owner_id, status, archived_at').is('archived_at', null);
         if (pr.error) throw pr.error;
         projects = pr.data || [];
         const ids = projects.map(p => p.id);
@@ -10359,8 +10369,10 @@
     async function loadCamaraAlerts(me) {
       const all = await loadCamaraOverview();
       const out = [];
+      await loadProjectStatuses();
       all.forEach(({ project, deadlines }) => {
         if (project.owner_id && project.owner_id !== me) return;
+        if (statusByCode(project.status)?.is_closed) return;   // concluído: sem avisos
         // Só o que depende de nós; a tramitação na Câmara fica no separador Câmara, sem avisos
         deadlines.filter(d => d.who === 'nova' && (d.state === 'late' || d.state === 'soon')).forEach(d => out.push({
           kind: 'camara', project: project.id,
@@ -11790,9 +11802,17 @@
         const rk = keep('ph-revkind', stage.revision_kind || ''), od = keep('ph-ofdate', stage.oficio_date || ''),
           odl = keep('ph-ofdeadline', stage.oficio_deadline || ''), onod = keep('ph-ofnone', !!stage.oficio_no_deadline);
         let html = '';
-        if (k === 'pip') html += `<div class="form-grid"><div><label class="field-label" for="ph-pip">Tipo de PIP</label>
+        const pipOficio = k === 'pip' && isRev && rk === 'oficio';
+        if (k === 'pip' && isRev) html += `<label class="field-label" for="ph-revkind">Esta revisão é…</label>
+            <select id="ph-revkind" class="form-input"><option value="">Escolher…</option><option value="oficio"${rk === 'oficio' ? ' selected' : ''}>Resposta a ofício da Câmara</option><option value="novo"${rk === 'novo' ? ' selected' : ''}>Novo PIP</option></select>`;
+        if (pipOficio) html += `<div class="form-grid">
+              <div><label class="field-label" for="ph-ofdate">Data do ofício</label><input type="date" id="ph-ofdate" class="form-input" value="${escapeHtml(od)}"></div>
+              <div><label class="field-label" for="ph-ofdeadline">Responder até</label><input type="date" id="ph-ofdeadline" class="form-input" value="${escapeHtml(odl)}"${onod ? ' disabled' : ''}></div></div>
+              <label class="check-row"><input type="checkbox" id="ph-ofnone"${onod ? ' checked' : ''}> O ofício não tem prazo</label>`;
+        if (k === 'pip' && !pipOficio) html += `<div class="form-grid"><div><label class="field-label" for="ph-pip">Tipo de PIP</label>
             <select id="ph-pip" class="form-input"><option value="">Escolher…</option><option value="simples"${pip === 'simples' ? ' selected' : ''}>Simples</option><option value="qualificado"${pip === 'qualificado' ? ' selected' : ''}>Qualificado</option></select></div>
-            <div><label class="field-label" for="ph-approval">Decisão da Câmara a</label><input type="date" id="ph-approval" class="form-input" value="${escapeHtml(appr)}"></div></div>`;
+            <div><label class="field-label" for="ph-approval">Decisão da Câmara a</label><input type="date" id="ph-approval" class="form-input" value="${escapeHtml(appr)}"></div></div>
+            <div class="field-hint">Com a decisão favorável conta a validade do PIP (2 anos) até ser submetido o licenciamento.</div>`;
         const avs = keep('ph-aviso', stage.aviso_local_sent || ''), alv = keep('ph-alvara', stage.alvara_date || ''), wd = keep('ph-works', stage.works_deadline || '');
         if (k === 'lic' && !isRev) html += `<div class="form-grid"><div><label class="field-label" for="ph-approval">Arquitetura aprovada a</label><input type="date" id="ph-approval" class="form-input" value="${escapeHtml(appr)}"></div>
             <div><label class="field-label" for="ph-aviso">Aviso para o local enviado a</label><input type="date" id="ph-aviso" class="form-input" value="${escapeHtml(avs)}"></div></div>
