@@ -853,17 +853,17 @@
   tr.break-row.active .break-note { color: var(--text); font-weight: 550; }
   .gantt-bar.break-bar.open { background: repeating-linear-gradient(45deg, var(--warning), var(--warning) 4px, var(--warning-soft) 4px, var(--warning-soft) 8px); }
   /* ---------- Histórico do projeto (timeline em colunas) ---------- */
-  .hist-sum { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 2px 0 16px; }
+  .hist-sum { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 2px 0 16px; }
   .hs-tile { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; min-width: 0; }
   .hs-tile span { display: block; font-size: 12px; font-weight: 650; letter-spacing: .03em; text-transform: uppercase; color: var(--text-3); }
   .hs-tile b { display: block; font-size: 15px; font-weight: 650; margin-top: 3px; overflow-wrap: break-word; }
   .hs-tile small { display: block; font-size: 12px; color: var(--text-2); margin-top: 2px; overflow-wrap: break-word; }
   .hs-tile small .late, .hs-tile.bad small { color: var(--danger); }
   .hs-tile.warn { background: var(--warning-soft); } .hs-tile.warn b { color: var(--warning); }
-  @media (max-width: 899px) { .hist-sum { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hist-sum .hs-tile:last-child { grid-column: 1 / -1; } }
+  @media (max-width: 899px) { .hist-sum { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .hist2 { position: relative; }
   .hrow { display: grid; grid-template-columns: 46px auto minmax(0, 1fr); align-items: stretch; }
-  .hcells { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, .8fr) minmax(0, 1fr); border-top: 1px solid var(--border); }
+  .hcells { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.1fr) minmax(0, .9fr); border-top: 1px solid var(--border); }
   .hc { border-left: 1px solid var(--border); padding: 4px 0; min-width: 0; }
   .hhead .hcells { border-top: none; }
   .hhead .hc { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-3); padding: 0 10px 8px; border-left-color: transparent; }
@@ -1768,6 +1768,11 @@
   .cm-legal small.cm-note { color: var(--text-2); font-style: italic; }
   .cm-legal .cm-when small { text-align: right; margin-top: 0; }
   .cm-legal.done { opacity: .7; }
+  .hrow.hfuture { background: color-mix(in srgb, var(--accent) 4%, transparent); }
+  .hrow.hfuture .hdate b, .hrow.hfuture .hdate span { color: var(--accent); }
+  .hi.k-prazo .hi-dot { border-radius: 2px; transform: rotate(45deg) scale(.85); }
+  .hi.k-prazo.late b { color: var(--danger); }
+  .cm-of { font-size: 12.5px; color: var(--text-2); }
   .ht-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0; font-size: 14px; }
   .ht-row .form-input { max-width: 200px; margin: 0; }
   .hours-of { font-size: 14px; font-weight: 500; color: var(--text-2); letter-spacing: 0; }
@@ -4487,6 +4492,9 @@
         const nAtas = projectNotes.length;
         const pid0 = project.id ?? projectId;
 
+        // Prazos (lei + manuais) para a linha do tempo: os futuros vão para "A seguir"
+        const camCfgDet = await loadCamaraCfg().catch(() => null);
+        const legalDet = camCfgDet ? computeCamaraDeadlines(project, stages, camCfgDet) : [];
         detailBody.innerHTML = `
           <div class="kpi-strip">
             <div class="kpi"><span>Honorários${valorExcluido > 0 ? ' NOVA' : ''}</span><b>${fmtEURShort(totalHonorarios)}</b></div>
@@ -4501,7 +4509,7 @@
           <nav class="detail-tabs" role="tablist">
             <button type="button" data-dtab="resumo" role="tab">Resumo</button>
             <button type="button" data-dtab="fases" role="tab">Fases<em>${stages.length}</em></button>
-            <button type="button" data-dtab="marcos" role="tab">Marcos e atas<em>${projectMarcos.length + nAtas}</em></button>
+            <button type="button" data-dtab="marcos" role="tab">Cronologia<em>${projectMarcos.length + nAtas}</em></button>
             <button type="button" data-dtab="camara" role="tab">Câmara</button>
             <button type="button" data-dtab="financas" role="tab">Finanças</button>
           </nav>
@@ -4546,7 +4554,7 @@
             <div class="gantt-wrap" id="project-history">
               <div class="card-head"><h2>Histórico</h2><span>do mais recente para o mais antigo</span></div>
               <div class="hist-legend"><span><i class="lg-lane"></i>lead time de cada fase</span><span><i class="lg-late"></i>além do previsto</span><span><i class="lg-pause"></i>projeto em pausa</span></div>
-              ${historyTimelineHtml({ project, stages, breaks, invoices, payments, marcos: projectMarcos, marcoTypes, notes: projectNotes })}
+              ${historyTimelineHtml({ project, stages, breaks, invoices, payments, marcos: projectMarcos, marcoTypes, notes: projectNotes, legal: legalDet })}
             </div>
           </section>
 
@@ -6297,8 +6305,8 @@
     // com os dias que o cliente levou a pagar). Por cima, um resumo para ler em 5 segundos.
     // No telemóvel as colunas passam a lista, cada acontecimento com a etiqueta da sua coluna.
     const HIST_COLORS = ['#714D79', '#3E6FA8', '#2F8A8A', '#B8842A', '#8A5A9E', '#5A6B7A', '#2E7D4F', '#A85A3E'];
-    const HIST_COLS = [['phase', 'Fases'], ['marco', 'Marcos e atas'], ['pause', 'Pausas'], ['bill', 'Faturação']];
-    function historyTimelineHtml({ project, stages, breaks, invoices, payments, marcos, marcoTypes, notes }) {
+    const HIST_COLS = [['phase', 'Fases'], ['marco', 'Marcos, prazos e atas'], ['pause', 'Pausas']];   // a faturação vive no separador Finanças
+    function historyTimelineHtml({ project, stages, breaks, invoices, payments, marcos, marcoTypes, notes, legal = [] }) {
       const today = dateKey(new Date());
       const ev = [];
       const add = (date, col, rank, o) => { if (date && date <= today) ev.push({ date, col, rank, ...o }); };
@@ -6342,6 +6350,25 @@
         add(m.event_date, 'marco', 2, { kind: 'marco', title: m.title, sub: [t?.name, m.done ? 'feito' : ''].filter(Boolean).join(' · '), color: t?.color || 'var(--accent)', marcoId: m.id });
       });
       notes.forEach(n => add(n.meeting_date, 'marco', 1, { kind: 'ata', title: n.title || 'Reunião', sub: 'Ata', color: 'var(--text-3)' }));
+      // --- A seguir: marcos futuros e prazos por cumprir (os atrasados vão para Hoje) ---
+      const future = [], overdue = [];
+      const leftTxt = d => { const n = diffDays(today, d); return n === 0 ? 'hoje' : n > 0 ? `faltam ${days(n)}` : `há ${days(-n)}`; };
+      marcos.forEach(m => {
+        if (m.auto_kind === 'delivery' || !m.event_date || m.event_date <= today) return;
+        const t = marcoTypes[m.type_id], isDl = t?.is_deadline || m.alert_days != null;
+        future.push({ date: m.event_date, col: 'marco', rank: 2, kind: isDl ? 'prazo' : 'marco', title: m.title, sub: [isDl ? 'Prazo manual' : t?.name, leftTxt(m.event_date)].filter(Boolean).join(' · '), color: t?.color || 'var(--accent)', marcoId: m.id });
+      });
+      marcos.forEach(m => {
+        const t = marcoTypes[m.type_id];
+        if (m.done || !m.event_date || m.event_date >= today || !(t?.is_deadline || m.alert_days != null)) return;
+        overdue.push({ col: 'marco', rank: 8, kind: 'prazo late', title: m.title, sub: `Prazo manual · passou ${leftTxt(m.event_date)}`, color: 'var(--danger)', marcoId: m.id });
+      });
+      legal.filter(d => d.due && d.state !== 'done').forEach(d => {
+        const who = d.who === 'camara' ? 'Prazo da Câmara' : 'Prazo NOVA';
+        const o = { col: 'marco', kind: 'prazo', title: d.label, sub: `${who} · ${leftTxt(d.due)}`, color: d.state === 'late' ? 'var(--danger)' : d.state === 'soon' ? 'var(--warning)' : 'var(--accent)', stageId: d.stage.id };
+        if (d.due > today) future.push({ ...o, date: d.due, rank: 3 });
+        else overdue.push({ ...o, rank: 8, kind: 'prazo late', sub: `${who} · ${d.who === 'camara' ? 'passou ' + leftTxt(d.due) + ' — possível deferimento tácito, confirmar' : 'atrasado ' + days(diffDays(d.due, today))}` });
+      });
       // --- Pausas ---
       const who = b => b.type === 'client' ? 'À espera do cliente' : b.type === 'municipality' ? 'À espera da Câmara' : '';
       breaks.forEach(b => {
@@ -6349,26 +6376,6 @@
         add(b.start_date, 'pause', 1, { kind: 'pause', title: b.name || 'Pausa', sub: ['Início', who(b)].filter(Boolean).join(' · '), color: 'var(--warning)', breakId: b.id });
         if (b.end_date) add(b.end_date, 'pause', 2, { kind: 'pause-end', title: b.name || 'Pausa', sub: `Fim · ${days(diffDays(b.start_date, b.end_date))} parado`, color: 'var(--warning)', breakId: b.id });
       });
-      // --- Faturação ---
-      const payBy = {};
-      (payments || []).forEach(pm => (payBy[pm.invoice_id] = payBy[pm.invoice_id] || []).push(pm));
-      let billed = 0, received = 0, payDaysW = 0, payAmtW = 0;
-      invoices.forEach(i => {
-        if (i.status === 'cancelled') return;
-        const nr = i.invoice_number || i.external_ref || '';
-        const fase = i.stage_id ? stages.find(x => String(x.id) === String(i.stage_id)) : null;
-        billed += Number(i.amount || 0);
-        add(i.issue_date, 'bill', 1, { kind: 'invoice', title: `${Number(i.amount) < 0 ? 'Nota de crédito' : 'Fatura'}${nr ? ' ' + nr : ''}`, sub: fase ? phaseName(fase) : 'sem fase', amount: eur(i.amount), color: 'var(--text-2)', invoiceId: i.id });
-        const pays = (payBy[i.id] && payBy[i.id].length) ? payBy[i.id].map(pm => ({ date: pm.paid_at, amount: Number(pm.amount) }))
-          : (Number(i.amount_paid) > 0 && i.payment_date ? [{ date: i.payment_date, amount: Number(i.amount_paid) }] : []);
-        pays.forEach(pm => {
-          if (!pm.date) return;
-          const d = Math.max(0, diffDays(i.issue_date, pm.date));
-          received += pm.amount; payDaysW += d * pm.amount; payAmtW += pm.amount;
-          add(pm.date, 'bill', 2, { kind: 'payment', title: 'Recebido', sub: `${nr ? nr + ' · ' : ''}${d === 0 ? 'no próprio dia' : days(d) + ' após a fatura'}`, amount: eur(pm.amount), color: 'var(--success)', invoiceId: i.id });
-        });
-      });
-
       // --- Resumo ---
       const closed = lanes.filter(l => !l.open && l.planned);
       const onTime = closed.filter(l => delta(l) <= 0).length;
@@ -6383,10 +6390,9 @@
             : tile('Agora', running.length ? escapeHtml(running.map(l => phaseName(l.st)).join(', ')) : '—', running.length && running[0].planned ? (today > running[0].planned ? `<span class="late">${escapeHtml(days(diffDays(running[0].planned, today)))} além do previsto</span>` : `previsto até ${escapeHtml(fmtDayMonthYear(running[0].planned))}`) : '')}
           ${tile('Entregas no prazo', closed.length ? `${onTime} de ${closed.length}` : '—', lates.length ? `atraso médio ${escapeHtml(days(Math.round(lates.reduce((a, b) => a + b, 0) / lates.length)))}` : closed.length ? 'sem atrasos' : '', lates.length ? 'bad' : '')}
           ${tile('Em pausa', pausedDays ? escapeHtml(days(pausedDays)) : '—', breaks.length ? `${breaks.length} pausa${breaks.length === 1 ? '' : 's'}` : '')}
-          ${tile('Faturado · recebido', `${escapeHtml(fmtEURShort(billed))} · ${escapeHtml(fmtEURShort(received))}`, payAmtW ? `pagam em média em ${escapeHtml(days(Math.round(payDaysW / payAmtW)))}` : '')}
         </div>`;
 
-      if (!ev.length) return summary + '<div class="gantt-empty">Ainda não há histórico. Aparece aqui à medida que o projeto avança: adjudicação, entregas, marcos, pausas, faturas e atas.</div>';
+      if (!ev.length && !future.length) return summary + '<div class="gantt-empty">Ainda não há histórico. Aparece aqui à medida que o projeto avança: adjudicação, entregas, marcos, prazos, pausas e atas.</div>';
 
       // Linhas: um dia por linha (mais recente em cima)
       const byDate = {};
@@ -6432,6 +6438,17 @@
       const nowItems = [];
       running.forEach(l => nowItems.push({ col: 'phase', rank: 9, kind: 'now', title: phaseName(l.st), sub: l.planned ? (today > l.planned ? `Em curso · ${days(diffDays(l.planned, today))} além do previsto` : `Em curso · faltam ${days(diffDays(today, l.planned))}`) : 'Em curso', color: l.color, stageId: l.st.id }));
       if (openBreak) nowItems.push({ col: 'pause', rank: 9, kind: 'pause', title: openBreak.name || 'Pausa', sub: `Em pausa há ${days(diffDays(openBreak.start_date, today))}`, color: 'var(--warning)', breakId: openBreak.id });
+      nowItems.push(...overdue);
+      // A seguir (acima de Hoje): o mais distante em cima, o mais próximo junto a Hoje
+      if (future.length) {
+        const fBy = {};
+        future.forEach(e => (fBy[e.date] = fBy[e.date] || []).push(e));
+        html += `<div class="hrow hmonth hnext"><span class="hdate"></span>${lanesHtml(null)}<div class="hmonth-label">A seguir</div></div>`;
+        Object.keys(fBy).sort().reverse().forEach(d => {
+          const x = parseDateKey(d);
+          html += `<div class="hrow hfuture"><span class="hdate"><b>${x.getDate()}</b><span>${escapeHtml(GANTT_MONTHS[x.getMonth()])}${x.getFullYear() !== parseDateKey(today).getFullYear() ? ' ' + String(x.getFullYear()).slice(2) : ''}</span></span>${lanesHtml(null)}${cellsHtml(fBy[d])}</div>`;
+        });
+      }
       html += `<div class="hrow today${openBreak ? ' paused' : ''}"><span class="hdate"><b>Hoje</b><span>${escapeHtml(fmtDayMonth(today))}</span></span>${lanesHtml(-1, today)}${cellsHtml(nowItems)}</div>`;
       let month = today.slice(0, 7);
       dates.forEach((d, i) => {
@@ -9667,7 +9684,7 @@
       const legal = camCfg ? computeCamaraDeadlines(project, stages, camCfg) : [];
       const nOficios = stages.filter(s => (['lic', 'pip'].includes(camaraKind(s.stage_types?.name)) && s.revision_kind === 'oficio') || camaraKind(s.stage_types?.name) === 'oficio').length;
 
-      box.innerHTML = camaraDeadlinesHtml(legal, nOficios) + `
+      box.innerHTML = camaraDeadlinesHtml(legal, nOficios, dl) + `
         <div class="gantt-wrap">
           <div class="card-head"><h2>Processo camarário</h2><button type="button" class="text-btn" id="cm-edit">Editar</button></div>
           <div class="invoice-row"><span>Município</span><span>${escapeHtml(project.municipality || '—')}</span></div>
@@ -9685,19 +9702,6 @@
               : '—'}</span></div>
             <div class="field-hint" style="margin:8px 0 0;">Guardada cifrada. Cada vez que alguém a vê ou copia fica registado${lastLog ? ` — último acesso: ${escapeHtml(ataMemberNames[lastLog.member_id] || 'alguém')}, ${escapeHtml(fmtDateTime(lastLog.at))}` : ''}.</div>`
             : '<div class="gantt-empty">Ainda sem acesso guardado. Guarda aqui o utilizador e a palavra-passe da plataforma da câmara: fica cifrada e só a equipa lhe chega.</div>'}
-        </div>
-
-        <div class="gantt-wrap">
-          <div class="card-head"><h2>Prazos a controlar</h2><button type="button" class="text-btn" id="cm-add-deadline">+ Novo prazo</button></div>
-          ${dl.length ? dl.map(m => {
-            const d = diffDays(today, m.event_date);
-            const when = m.done ? 'Cumprido' : d < 0 ? `Passou há ${-d} dias` : d === 0 ? 'Hoje' : `Faltam ${d} dias`;
-            const cls = m.done ? 'ok' : d < 0 ? 'late' : (m.alert_days != null && d <= m.alert_days) ? 'soon' : '';
-            return `<div class="invoice-row click-row" data-cm-marco="${escapeHtml(m.id)}">
-              <span>${escapeHtml(m.title)}<br><small style="color:var(--text-3)">${escapeHtml(fmtLongD(m.event_date))}${m.alert_days != null ? ' · aviso ' + Number(m.alert_days) + ' dias antes' : ''}</small></span>
-              <span class="cm-when ${cls}">${escapeHtml(when)}</span>
-            </div>`;
-          }).join('') : '<div class="gantt-empty">Sem prazos. Ex.: com a aprovação da arquitetura e especialidades, 12 meses para levantar o alvará — cria um prazo e a app avisa na Home.</div>'}
         </div>
 
         <div class="gantt-wrap">
@@ -10311,17 +10315,33 @@
       if (d.left < 0) return d.who === 'camara' ? `Passou há ${-d.left} ${d.left === -1 ? 'dia' : 'dias'}` : `Atrasado ${-d.left} ${d.left === -1 ? 'dia' : 'dias'}`;
       return d.left === 0 ? 'Termina hoje' : `Faltam ${d.left} ${d.left === 1 ? 'dia' : 'dias'}`;
     }
-    function camaraDeadlinesHtml(list, oficioCount) {
-      const rows = list.map(d => `
+    // Um só cartão "Prazos": os calculados pela lei (Câmara / NOVA) e os criados à mão, por data
+    function camaraDeadlinesHtml(list, oficioCount, manual = []) {
+      const today = dateKey(new Date());
+      const items = [
+        ...list.map(d => ({ d, due: d.due, done: d.state === 'done' })),
+        ...manual.map(m => ({ m, due: m.event_date, done: !!m.done }))
+      ].sort((a, b) => (a.done - b.done) || (a.due || '9999').localeCompare(b.due || '9999'));
+      const legalRow = d => `
         <div class="invoice-row cm-legal ${d.state}" data-cm-stage="${escapeHtml(d.stage.id)}">
           <span><b>${escapeHtml(d.label)}</b><br><small>${escapeHtml(phaseName(d.stage))}${d.start ? ' · desde ' + escapeHtml(fmtDayMonthYear(d.start)) : ''}${d.due ? ' · até ' + escapeHtml(fmtDayMonthYear(d.due)) : ''}${d.rule?.hint ? ' · ' + escapeHtml(d.rule.hint) : ''}${d.regime === 'antigo' ? ' · regime anterior a 1/10/2026' : ''}</small>
             ${d.state === 'late' && d.who === 'camara' ? '<small class="cm-tacit">Prazo ultrapassado: possível deferimento tácito — confirmar com a Câmara/jurista</small>' : ''}
             ${d.warn ? `<small class="cm-warn">${escapeHtml(d.warn)}</small>` : ''}${d.note ? `<small class="cm-note">${escapeHtml(d.note)}</small>` : ''}</span>
           <span class="cm-when ${d.state === 'late' ? 'late' : d.state === 'soon' ? 'soon' : d.state === 'done' ? 'ok' : ''}">${escapeHtml(camaraStateText(d))}<small>${d.who === 'camara' ? 'Câmara' : 'NOVA'}</small></span>
-        </div>`).join('');
+        </div>`;
+      const manualRow = m => {
+        const left = diffDays(today, m.event_date);
+        const when = m.done ? 'Cumprido' : left < 0 ? `Passou há ${-left} ${left === -1 ? 'dia' : 'dias'}` : left === 0 ? 'Hoje' : `Faltam ${left} ${left === 1 ? 'dia' : 'dias'}`;
+        const cls = m.done ? 'ok' : left < 0 ? 'late' : (m.alert_days != null && left <= m.alert_days) ? 'soon' : '';
+        return `<div class="invoice-row cm-legal ${m.done ? 'done' : ''}" data-cm-marco="${escapeHtml(m.id)}">
+          <span><b>${escapeHtml(m.title)}</b><br><small>até ${escapeHtml(fmtDayMonthYear(m.event_date))}${m.alert_days != null ? ' · aviso ' + Number(m.alert_days) + ' dias antes' : ''}</small></span>
+          <span class="cm-when ${cls}">${escapeHtml(when)}<small>Manual</small></span>
+        </div>`;
+      };
       return `<div class="gantt-wrap">
-          <div class="card-head"><h2>Prazos legais</h2><span>${oficioCount ? `${oficioCount} ${oficioCount === 1 ? 'resposta a ofício' : 'respostas a ofício'}` : 'sem ofícios'}</span></div>
-          ${rows || '<div class="gantt-empty">Os prazos aparecem quando a fase de PIP ou de licenciamento tiver data de entrega (a submissão). Os valores estão em Definições → Prazos camarários.</div>'}
+          <div class="card-head"><h2>Prazos</h2><span class="card-head-actions"><span class="cm-of">${oficioCount ? `${oficioCount} ${oficioCount === 1 ? 'resposta a ofício' : 'respostas a ofício'}` : 'sem ofícios'}</span><button type="button" class="text-btn" id="cm-add-deadline">+ Novo prazo</button></span></div>
+          ${items.length ? items.map(x => x.d ? legalRow(x.d) : manualRow(x.m)).join('')
+            : '<div class="gantt-empty">Os prazos da lei aparecem quando a fase de PIP ou de licenciamento tiver data de entrega (a submissão); os valores estão em Definições → Prazos camarários. Para outra data a vigiar, usa "+ Novo prazo".</div>'}
         </div>`;
     }
 
