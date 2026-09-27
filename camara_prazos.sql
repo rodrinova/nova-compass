@@ -20,7 +20,7 @@ alter table project_stages add column if not exists oficio_no_deadline boolean n
 alter table project_stages drop constraint if exists project_stages_pip_kind_check;
 alter table project_stages add constraint project_stages_pip_kind_check check (pip_kind is null or pip_kind in ('simples', 'qualificado'));
 alter table project_stages drop constraint if exists project_stages_revision_kind_check;
-alter table project_stages add constraint project_stages_revision_kind_check check (revision_kind is null or revision_kind in ('oficio', 'aditamento'));
+alter table project_stages add constraint project_stages_revision_kind_check check (revision_kind is null or revision_kind in ('oficio', 'aditamento', 'novo'));
 
 -- Prazos que dependem da NOVA (os da Câmara ficam informativos, sem avisos na Home):
 --  - aviso_local_sent: data em que se enviou ao dono de obra o aviso a afixar no local (após a submissão)
@@ -29,3 +29,5 @@ alter table project_stages add constraint project_stages_revision_kind_check che
 alter table project_stages add column if not exists aviso_local_sent date;
 alter table project_stages add column if not exists alvara_date date;
 alter table project_stages add column if not exists works_deadline date;
+
+-- revision_kind 'novo': numa revisão de PIP, um PIP novo (não é resposta a ofício)
