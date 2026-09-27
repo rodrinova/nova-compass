@@ -37,3 +37,9 @@ alter table project_stages add column if not exists works_deadline date;
 alter table project_stages add column if not exists waiting_on text;
 alter table project_stages drop constraint if exists project_stages_waiting_on_check;
 alter table project_stages add constraint project_stages_waiting_on_check check (waiting_on is null or waiting_on in ('camara', 'cliente', 'outro'));
+
+-- Causa de cada revisão de fase (KPI de qualidade no Mission Control):
+--  cliente = pedido do cliente · nova = retrabalho por razão nossa · camara = exigência da Câmara
+alter table project_stages add column if not exists revision_cause text;
+alter table project_stages drop constraint if exists project_stages_revision_cause_check;
+alter table project_stages add constraint project_stages_revision_cause_check check (revision_cause is null or revision_cause in ('cliente', 'nova', 'camara'));
