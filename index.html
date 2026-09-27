@@ -1765,6 +1765,10 @@
   .cm-legal small.cm-note { color: var(--text-2); font-style: italic; }
   .cm-legal .cm-when small { text-align: right; margin-top: 0; }
   .cm-legal.done { opacity: .7; }
+  .hrow.lane-only .hdate b { font-size: 12px; color: var(--text-3); }
+  .hrow.lane-only .hdate span { font-size: 11px; }
+  .hrow.lane-only { min-height: 26px; }
+  .hcells.hstart { min-height: 26px; }
   .hrow.hfuture { background: color-mix(in srgb, var(--accent) 4%, transparent); }
   .hrow.hfuture .hdate b, .hrow.hfuture .hdate span { color: var(--accent); }
   .hi.k-prazo .hi-dot { border-radius: 2px; transform: rotate(45deg) scale(.85); }
@@ -6425,12 +6429,14 @@
       const deltaBadge = d => d == null ? '' : d > 0 ? `<em class="hi-badge late">+${days(d)}</em>` : d < 0 ? `<em class="hi-badge early">${days(-d)} antes</em>` : '<em class="hi-badge ok">no prazo</em>';
 
       // --- Fases ---
+      // Uma entrada por fase (no dia em que acabou); a linha colorida vai do início ao fim.
+      // O início só marca a linha (sem entrada própria); fases sobrepostas ficam em linhas paralelas.
       lanes.forEach(l => {
         const nm = phaseName(l.st);
-        add(l.start, 'phase', 1, { kind: 'start', title: nm, sub: 'Início' + (l.planned ? ` · previsto até ${fmtDayMonthYear(l.planned)}` : ''), color: l.color, lane: l, edge: 'start', stageId: l.st.id });
-        if (l.planned && l.planned < l.end && l.planned <= today)
-          add(l.planned, 'phase', 2, { kind: 'planned', title: nm, sub: l.open ? 'Fim previsto — ainda por entregar' : 'Fim previsto', color: 'var(--danger)', lane: l, stageId: l.st.id });
-        if (!l.open) add(l.end, 'phase', 3, { kind: 'delivery', title: nm, sub: `${l.delivered ? 'Entregue' : 'Concluída'} · ${days(diffDays(l.start, l.end))} de trabalho`, color: l.color, lane: l, edge: 'end', stageId: l.st.id, badge: deltaBadge(delta(l)) });
+        add(l.start, 'phase', 0, { kind: 'lane-start', silent: true, lane: l, edge: 'start' });
+        if (!l.open) add(l.end, 'phase', 3, { kind: 'delivery', title: nm,
+          sub: `${fmtDayMonthYear(l.start)} → ${fmtDayMonthYear(l.end)} · ${days(diffDays(l.start, l.end))}${l.delivered ? ' · entregue' : ''}${l.planned && delta(l) > 0 ? ` · previsto ${fmtDayMonthYear(l.planned)}` : ''}`,
+          color: l.color, lane: l, edge: 'end', stageId: l.st.id, badge: deltaBadge(delta(l)) });
       });
       add(project.awarding_date, 'phase', 0, { kind: 'award', title: 'Adjudicação', sub: 'Arranque do projeto', color: 'var(--text)' });
       // --- Marcos (as entregas já estão nas fases) e atas ---
@@ -6463,8 +6469,9 @@
       const who = b => b.type === 'client' ? 'À espera do cliente' : b.type === 'municipality' ? 'À espera da Câmara' : '';
       breaks.forEach(b => {
         if (!b.start_date) return;
-        add(b.start_date, 'pause', 1, { kind: 'pause', title: b.name || 'Pausa', sub: ['Início', who(b)].filter(Boolean).join(' · '), color: 'var(--warning)', breakId: b.id });
-        if (b.end_date) add(b.end_date, 'pause', 2, { kind: 'pause-end', title: b.name || 'Pausa', sub: `Fim · ${days(diffDays(b.start_date, b.end_date))} parado`, color: 'var(--warning)', breakId: b.id });
+        // Uma entrada por pausa terminada (a aberta aparece em Hoje); o fundo mostra o intervalo
+        if (b.end_date && b.end_date <= today) add(b.end_date, 'pause', 2, { kind: 'pause', title: b.name || 'Pausa',
+          sub: [`${fmtDayMonthYear(b.start_date)} → ${fmtDayMonthYear(b.end_date)} · ${days(diffDays(b.start_date, b.end_date))} parado`, who(b)].filter(Boolean).join(' · '), color: 'var(--warning)', breakId: b.id });
       });
       // --- Resumo ---
       const closed = lanes.filter(l => !l.open && l.planned);
@@ -6516,7 +6523,7 @@
           </div>`;
       };
       const cellsHtml = list => `<div class="hcells">${HIST_COLS.map(([k]) => {
-          const mine = (list || []).filter(e => e.col === k).sort((a, b) => b.rank - a.rank);
+          const mine = (list || []).filter(e => e.col === k && !e.silent).sort((a, b) => b.rank - a.rank);
           return `<div class="hc hc-${k}${mine.length ? '' : ' empty'}">${mine.map(itemHtml).join('')}</div>`;
         }).join('')}</div>`;
       const monthName = d => { const t = parseDateKey(d).toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' }); return t.charAt(0).toUpperCase() + t.slice(1); };
@@ -6525,7 +6532,7 @@
       html += `<div class="hrow hhead"><span class="hdate"></span>${lanesHtml(null)}<div class="hcells">${HIST_COLS.map(([k, l]) => `<div class="hc hc-${k}">${l}</div>`).join('')}</div></div>`;
       // Hoje: o que está a decorrer
       const nowItems = [];
-      running.forEach(l => nowItems.push({ col: 'phase', rank: 9, kind: 'now', title: phaseName(l.st), sub: l.planned ? (today > l.planned ? `Em curso · ${days(diffDays(l.planned, today))} além do previsto` : `Em curso · faltam ${days(diffDays(today, l.planned))}`) : 'Em curso', color: l.color, stageId: l.st.id }));
+      running.forEach(l => nowItems.push({ col: 'phase', rank: 9, kind: 'now', title: phaseName(l.st), sub: `Desde ${fmtDayMonthYear(l.start)} · ` + (l.planned ? (today > l.planned ? `${days(diffDays(l.planned, today))} além do previsto` : `faltam ${days(diffDays(today, l.planned))}`) : 'em curso'), color: l.color, stageId: l.st.id }));
       if (openBreak) nowItems.push({ col: 'pause', rank: 9, kind: 'pause', title: openBreak.name || 'Pausa', sub: `Em pausa há ${days(diffDays(openBreak.start_date, today))}`, color: 'var(--warning)', breakId: openBreak.id });
       nowItems.push(...overdue);
       // A seguir (acima de Hoje): o mais distante em cima, o mais próximo junto a Hoje
@@ -6547,7 +6554,8 @@
           html += `<div class="hrow hmonth${inPause(dateKey(new Date(y, m, 0))) ? ' paused' : ''}"><span class="hdate"></span>${lanesHtml(i, dateKey(new Date(y, m, 0)), true)}<div class="hmonth-label">${escapeHtml(monthName(d))}</div></div>`;
         }
         const x = parseDateKey(d);
-        html += `<div class="hrow${inPause(d) ? ' paused' : ''}"><span class="hdate"><b>${x.getDate()}</b><span>${escapeHtml(GANTT_MONTHS[x.getMonth()])}</span></span>${lanesHtml(i, d)}${cellsHtml(byDate[d])}</div>`;
+        const onlyStart = byDate[d].every(e => e.silent);
+        html += `<div class="hrow${inPause(d) ? ' paused' : ''}${onlyStart ? ' lane-only' : ''}"><span class="hdate"><b>${x.getDate()}</b><span>${escapeHtml(GANTT_MONTHS[x.getMonth()])}</span></span>${lanesHtml(i, d)}${onlyStart ? '<div class="hcells hstart"></div>' : cellsHtml(byDate[d])}</div>`;
       });
       html += '</div>';
       return html;
