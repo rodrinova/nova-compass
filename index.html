@@ -1386,6 +1386,14 @@
   .status-picker:focus-within { box-shadow: var(--focus); }
   .status-picker.closed select { color: var(--text-2); }
   .detail-header .status-picker { margin-left: -4px; }
+  .owner-picker .owner-av { width: 22px; height: 22px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: 9.5px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; pointer-events: none; }
+  .owner-picker.none .owner-av { background: transparent; border: 1px dashed var(--border-strong); color: var(--text-2); }
+  .owner-picker.none select { color: var(--text-2); font-weight: 500; }
+  .detail-header .owner-picker { margin-left: 10px; }
+  .owner-picker { flex-wrap: nowrap; white-space: nowrap; }
+  .projects-table td.col-owner { min-width: 150px; }
+  @media (max-width: 1180px) { .projects-table .col-owner select { max-width: 110px; } }
+  @media (max-width: 700px) { .projects-table .col-owner select { position: absolute; inset: 0; opacity: 0; max-width: none; } .projects-table td.col-owner { min-width: 0; } .projects-table .owner-picker { padding: 9px; margin: -9px; } }
   .detail-header .status-picker select { font-size: 13px; }
   .status-select:focus { outline: none; border-color: var(--accent); box-shadow: var(--focus); }
   .list-toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; }
@@ -2405,6 +2413,58 @@
         });
       });
     }
+    // ---------- Responsável do projeto: escolha direta na lista e no topo da ficha ----------
+    let ownerMembersCache = null;
+    async function loadOwnerMembers() {
+      if (!ownerMembersCache) ownerMembersCache = await loadAllMembers().catch(() => []);
+      return ownerMembersCache;
+    }
+    const ownerName = id => (ownerMembersCache || []).find(m => String(m.id) === String(id))?.name ?? null;
+    function ownerOptionsHtml(current) {
+      const list = ownerMembersCache || [];
+      const known = !current || list.some(m => String(m.id) === String(current));
+      return `<option value=""${!current ? ' selected' : ''}>Sem responsável</option>` +
+        (!known ? `<option value="${escapeHtml(current)}" selected>—</option>` : '') +
+        list.map(m => `<option value="${escapeHtml(m.id)}"${String(m.id) === String(current) ? ' selected' : ''}>${escapeHtml(m.name)}</option>`).join('');
+    }
+    function ownerPickerHtml(ownerId, projectId) {
+      const nm = ownerName(ownerId);
+      return `<span class="status-picker owner-picker${ownerId ? '' : ' none'}"><span class="avatar owner-av">${ownerId ? escapeHtml(initials(nm || '?')) : '?'}</span>` +
+        `<select data-owner-project="${escapeHtml(projectId)}" aria-label="Responsável do projeto" title="Mudar responsável">${ownerOptionsHtml(ownerId)}</select></span>`;
+    }
+    function bindOwnerPickers(root, onSaved) {
+      root.querySelectorAll('select[data-owner-project]').forEach(sel => {
+        let current = sel.value || null;
+        const paint = v => {
+          sel.innerHTML = ownerOptionsHtml(v);
+          sel.value = v ?? '';
+          const av = sel.previousElementSibling;
+          av.textContent = v ? initials(ownerName(v) || '?') : '?';
+          sel.parentElement.classList.toggle('none', !v);
+          current = v;
+        };
+        const save = async v => {
+          await dbUpdate('projects', sel.dataset.ownerProject, { owner_id: v }, MOCK_PROJECTS);
+          paint(v);
+          invalidateActivePhases();
+          onSaved && onSaved(sel.dataset.ownerProject, v);
+        };
+        sel.addEventListener('click', e => e.stopPropagation());
+        sel.addEventListener('change', async () => {
+          const before = current, next = sel.value || null;
+          try {
+            await save(next);
+            showToast(next ? `Responsável: ${ownerName(next) ?? '—'}` : 'Projeto sem responsável', {
+              undo: () => save(before).catch(err => showToast('Não foi possível anular: ' + err.message, { type: 'error' }))
+            });
+          } catch (err) {
+            sel.value = before ?? '';
+            showToast('Não foi possível mudar o responsável: ' + err.message, { type: 'error' });
+          }
+        });
+      });
+    }
+
     function statusOptionsHtml(current) {
       const list = projectStatusCache || [];
       const known = list.some(s => s.code === current);
@@ -3624,6 +3684,7 @@
             <td class="col-name">${escapeHtml(p.name ?? 'Sem nome')}</td>
             <td class="col-area">${escapeHtml(p.area != null ? p.area + ' m²' : '—')}</td>
             <td class="col-type">${escapeHtml(noBreakHyphens(p.project_types?.name ?? '—'))}</td>
+            <td class="col-owner">${ownerPickerHtml(p.owner_id, p.id)}</td>
             <td class="col-status">${statusPickerHtml(p.status, p.id)}</td>
             <td class="col-value">${valor}</td>
           </tr>
@@ -3639,6 +3700,7 @@
               <th class="col-name">Nome</th>
               <th class="col-area">Área</th>
               <th class="col-type">Tipo</th>
+              <th class="col-owner">Responsável</th>
               <th class="col-status">Estado</th>
               <th class="col-value">Valor</th>
             </tr>
@@ -3653,6 +3715,10 @@
       bindStatusPickers(projectsContainer, (id, v) => {
         const p = allProjectsData.find(x => String(x.id) === String(id));
         if (p) p.status = v;
+      });
+      bindOwnerPickers(projectsContainer, (id, v) => {
+        const p = allProjectsData.find(x => String(x.id) === String(id));
+        if (p) p.owner_id = v;
       });
     }
 
@@ -3691,7 +3757,7 @@
           const [res, exRes] = await Promise.all([
             supabase
               .from('projects')
-              .select('id, name, code, area, status, commission_value, archived_at, project_types(name)')
+              .select('id, name, code, area, status, owner_id, commission_value, archived_at, project_types(name)')
               .order('created_at', { ascending: false }),
             supabase
               .from('project_stages')
@@ -3714,7 +3780,7 @@
           });
         }
 
-        await loadProjectStatuses();
+        await Promise.all([loadProjectStatuses(), loadOwnerMembers()]);
         allProjectsData = data || [];
         applyProjectFilters();
       } catch (err) {
@@ -3931,8 +3997,14 @@
 
         await loadProjectStatuses();
         const pillEl = document.getElementById('detail-status-pill');
-        pillEl.innerHTML = statusPickerHtml(project.status, project.id ?? projectId);
+        await loadOwnerMembers();
+        pillEl.innerHTML = statusPickerHtml(project.status, project.id ?? projectId) + ownerPickerHtml(project.owner_id, project.id ?? projectId);
         bindStatusPickers(pillEl, (id, v) => { project.status = v; });
+        bindOwnerPickers(pillEl, (id, v) => {
+          project.owner_id = v;
+          const row = document.getElementById('detail-owner-val');
+          if (row) row.innerHTML = v ? escapeHtml(ownerName(v) || '—') : '<span style="color:var(--text-3)">Sem responsável</span>';
+        });
         const clienteNome = project.clients?.name || project.client || 'Sem cliente';
         document.getElementById('detail-name').textContent = project.name ?? 'Sem nome';
         document.getElementById('nav-title').textContent = project.name ?? 'Projeto';
@@ -4303,7 +4375,7 @@
             <div class="invoice-row"><span>Código</span><span>${escapeHtml(project.code ?? '—')}</span></div>
             <div class="invoice-row"><span>Cliente</span><span>${project.client_id ? `<button type="button" class="text-btn" data-open-client="${escapeHtml(project.client_id)}">${escapeHtml(clienteNome)}</button>` : escapeHtml(clienteNome)}</span></div>
             ${project.client_entities ? `<div class="invoice-row"><span>Faturar a</span><span>${escapeHtml(project.client_entities.kind === 'company' ? project.client_entities.name : clienteNome + ' (a título pessoal)')}${project.client_entities.nif ? ' · NIF ' + escapeHtml(project.client_entities.nif) : ''}</span></div>` : ''}
-            <div class="invoice-row"><span>Responsável</span><span>${project.owner_id ? escapeHtml(ownerName || '—') : '<span style="color:var(--text-3)">Sem responsável</span>'}</span></div>
+            <div class="invoice-row"><span>Responsável</span><span id="detail-owner-val">${project.owner_id ? escapeHtml(ownerName || '—') : '<span style="color:var(--text-3)">Sem responsável</span>'}</span></div>
             <div class="invoice-row"><span>Tipo</span><span>${escapeHtml(project.project_types?.name ?? '—')}</span></div>
             <div class="invoice-row"><span>Morada</span><span>${escapeHtml(project.address ?? '—')}</span></div>
             <div class="invoice-row"><span>Área</span><span>${escapeHtml(project.area != null ? String(project.area).replace('.', ',') + ' m²' : '—')}</span></div>
