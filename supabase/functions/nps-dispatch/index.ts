@@ -122,41 +122,70 @@ async function plan(c: Cfg) {
 }
 
 // ---------- 2. Enviar ----------
+// Email nas duas línguas: primeiro a do cliente (ficha), logo a seguir a outra, para quem fale português ou inglês.
+const PH_EN: Record<string, string> = {
+  "estudo previo": "Schematic Design", "estudo preliminar": "Feasibility Study", "licenciamento": "Planning Application",
+  "execucao": "Construction Documents", "execucao ii": "Construction Documents II", "especialidades": "Engineering Design",
+  "levantamento topografico": "Topographic Survey", "pip": "Prior Information Request (PIP)", "propriedade horizontal": "Horizontal Property Regime",
+  "comunicacao previa": "Prior Notice", "licenca de utilizacao": "Occupancy Permit", "fecho do projeto": "Project close-out"
+};
+const phaseEn = (n: string) => PH_EN[norm(n)] ?? n;
 function emailFor(c: Cfg, q: any, reminder: boolean) {
-  const en = q.clients?.language === "en";
+  const first = q.clients?.language === "en" ? "en" : "pt";
   const project = q.projects?.name ?? "";
   const phase = q.phase_name ?? "";
   const link = (s?: number) => `${PAGE}?t=${q.token}${s == null ? "" : `&s=${s}`}`;
-  const what = q.kind === "fecho"
-    ? (en ? `the ${project} project` : `o projeto ${project}`)
-    : q.kind === "revisao"
-      ? (en ? `the revision of ${phase} for ${project}` : `a revisão de ${phase} do projeto ${project}`)
-      : (en ? `${phase} for ${project}` : `${phase} do projeto ${project}`);
-  const subject = (reminder ? (en ? "Reminder: " : "Lembrete: ") : "") +
-    (q.kind === "fecho"
-      ? (en ? `How was working with NOVA on ${project}?` : `Como foi trabalhar com a NOVA em ${project}?`)
-      : (en ? `How did ${phase} go? — ${project}` : `Como correu: ${phase} — ${project}`));
-  const intro = q.kind === "fecho"
-    ? (en ? `We have wrapped up ${esc(what)}. Thank you for your trust.` : `Concluímos ${esc(what)}. Obrigado pela confiança.`)
-    : (en ? `We recently delivered ${esc(what)}.` : `Entregámos recentemente ${esc(what)}.`);
-  const ask = en
-    ? "On a scale of 0 to 10, how likely are you to recommend NOVA Associates to a friend or colleague?"
-    : "Numa escala de 0 a 10, qual a probabilidade de recomendar a NOVA Associates a um amigo ou colega?";
+  const L = {
+    pt: {
+      hello: "Olá,",
+      intro: q.kind === "fecho" ? `Concluímos o projeto ${project}. Obrigado pela confiança.`
+        : q.kind === "revisao" ? `Entregámos recentemente a revisão de ${phase} do projeto ${project}.`
+        : `Entregámos recentemente a fase ${phase} do projeto ${project}.`,
+      help: "A sua opinião ajuda-nos a melhorar e demora menos de um minuto.",
+      ask: "Numa escala de 0 a 10, qual a probabilidade de recomendar a NOVA a um amigo, colega ou parceiro?",
+      lo: "Nada provável", hi: "Muito provável", thanks: "Obrigado",
+      unsubQ: "Prefere não receber estes pedidos?", unsub: "Deixar de receber",
+      subject: q.kind === "fecho" ? `Como foi trabalhar com a NOVA em ${project}?` : `Como correu: ${phase} — ${project}`,
+      short: "Como correu?", remind: "Lembrete: ",
+    },
+    en: {
+      hello: "Hello,",
+      intro: q.kind === "fecho" ? `We have completed the ${project} project. Thank you for your trust.`
+        : q.kind === "revisao" ? `We recently delivered the ${phaseEn(phase)} revision for ${project}.`
+        : `We recently delivered the ${phaseEn(phase)} stage for ${project}.`,
+      help: "Your opinion helps us improve and takes less than a minute.",
+      ask: "On a scale of 0 to 10, how likely are you to recommend NOVA to a friend, colleague or partner?",
+      lo: "Not likely", hi: "Very likely", thanks: "Thank you",
+      unsubQ: "Prefer not to receive these requests?", unsub: "Unsubscribe",
+      subject: q.kind === "fecho" ? `How was working with NOVA on ${project}?` : `How did it go: ${phaseEn(phase)} — ${project}`,
+      short: "How did it go?", remind: "Reminder: ",
+    },
+  };
+  const A = L[first], B = L[first === "pt" ? "en" : "pt"];
+  const second = first === "pt" ? "en" : "pt";
+  const subject = (reminder ? A.remind : "") + A.subject + " · " + B.short;
+  const font = "-apple-system,Segoe UI,Helvetica,Arial,sans-serif";
   const cells = Array.from({ length: 11 }, (_, i) =>
-    `<td style="padding:2px"><a href="${link(i)}" style="display:block;width:34px;height:34px;line-height:34px;text-align:center;border:1px solid #D3D1CA;border-radius:6px;color:#1B1A19;text-decoration:none;font:600 14px -apple-system,Segoe UI,Helvetica,Arial,sans-serif">${i}</a></td>`).join("");
-  const html = `<!doctype html><html><body style="margin:0;background:#F7F7F5;padding:24px 12px;font:15px/1.5 -apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#1B1A19">
+    `<td style="padding:2px"><a href="${link(i)}" style="display:block;width:34px;height:34px;line-height:34px;text-align:center;border:1px solid #D3D1CA;border-radius:6px;color:#1B1A19;text-decoration:none;font:600 14px ${font}">${i}</a></td>`).join("");
+  const html = `<!doctype html><html lang="${first}"><body style="margin:0;background:#F7F7F5;padding:24px 12px;font:15px/1.5 ${font};color:#1B1A19">
 <table role="presentation" width="100%" style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #E4E3DE;border-radius:10px"><tr><td style="padding:28px">
 <div style="font-weight:700;letter-spacing:.14em;color:#714D79;font-size:13px">NOVA ASSOCIATES</div>
-<p style="margin:20px 0 8px">${en ? "Hello," : "Olá,"}</p>
-<p style="margin:0 0 16px">${intro} ${en ? "Your opinion helps us improve — it takes less than a minute." : "A sua opinião ajuda-nos a melhorar e demora menos de um minuto."}</p>
-<p style="margin:0 0 12px;font-weight:600">${ask}</p>
+<div lang="${first}">
+<p style="margin:20px 0 8px">${A.hello}</p>
+<p style="margin:0 0 12px">${esc(A.intro)} ${A.help}</p>
+<p style="margin:0 0 4px;font-weight:600">${A.ask}</p>
+</div>
+<div lang="${second}" style="color:#6B6660;font-size:13.5px;margin:0 0 14px;padding-left:10px;border-left:2px solid #E4E3DE">
+<p style="margin:0 0 2px">${B.hello} ${esc(B.intro)} ${B.help}</p>
+<p style="margin:0;font-weight:600">${B.ask}</p>
+</div>
 <table role="presentation" style="border-collapse:collapse"><tr>${cells}</tr></table>
-<table role="presentation" width="100%" style="max-width:420px;font-size:12px;color:#736D66"><tr><td>${en ? "Not likely" : "Nada provável"}</td><td style="text-align:right">${en ? "Very likely" : "Muito provável"}</td></tr></table>
-<p style="margin:20px 0 0">${en ? "Thank you," : "Obrigado,"}<br>${esc(c.sender_name || "NOVA Associates")}</p>
+<table role="presentation" width="100%" style="max-width:420px;font-size:12px;color:#736D66"><tr><td>0 · ${A.lo} / ${B.lo}</td><td style="text-align:right">10 · ${A.hi} / ${B.hi}</td></tr></table>
+<p style="margin:20px 0 0">${A.thanks} · ${B.thanks},<br>${esc(c.sender_name || "NOVA Associates")}</p>
 </td></tr></table>
-<p style="max-width:560px;margin:14px auto 0;font-size:12px;color:#736D66;text-align:center">${en ? "Prefer not to receive these requests?" : "Prefere não receber estes pedidos?"} <a href="${PAGE}?t=${q.token}&optout=1" style="color:#736D66">${en ? "Unsubscribe" : "Deixar de receber"}</a></p>
+<p style="max-width:560px;margin:14px auto 0;font-size:12px;color:#736D66;text-align:center">${A.unsubQ} / ${B.unsubQ} <a href="${PAGE}?t=${q.token}&optout=1" style="color:#736D66">${A.unsub} / ${B.unsub}</a></p>
 </body></html>`;
-  const text = `${en ? "Hello," : "Olá,"}\n\n${intro.replace(/&[^;]+;/g, "")}\n\n${ask}\n${link()}\n\n${en ? "Unsubscribe" : "Deixar de receber"}: ${PAGE}?t=${q.token}&optout=1`;
+  const text = `${A.hello}\n\n${A.intro} ${A.help}\n\n${A.ask}\n${link()}\n\n---\n\n${B.hello}\n\n${B.intro} ${B.help}\n\n${B.ask}\n${link()}\n\n${A.unsub} / ${B.unsub}: ${PAGE}?t=${q.token}&optout=1`;
   return { subject, html, text };
 }
 

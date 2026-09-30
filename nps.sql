@@ -37,8 +37,10 @@ create table if not exists public.nps_requests (
   followup_done_at timestamptz,
   followup_note text,
   send_error text,
+  source text not null default 'auto' check (source in ('auto', 'excel')),   -- excel = respostas do formulário antigo
   created_at timestamptz not null default now()
 );
+alter table public.nps_requests add column if not exists source text not null default 'auto';
 create unique index if not exists nps_requests_stage_uq on public.nps_requests(stage_id) where stage_id is not null;
 create unique index if not exists nps_requests_close_uq on public.nps_requests(project_id) where kind = 'fecho';
 create index if not exists nps_requests_client_idx on public.nps_requests(client_id);

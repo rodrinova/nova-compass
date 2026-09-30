@@ -8367,6 +8367,7 @@
       { id: 'nps-2', project_id: 'mock-1', stage_id: 'stg-2', kind: 'fase', phase_name: 'Anteprojeto', client_id: 'cl-1', owner_id: 'mock-member-1', token: 'exemplo', status: 'answered', scheduled_for: '2026-01-23', sent_at: '2026-01-23T09:23:00Z', sent_to: 'geral@atlantico.pt', reminder_sent_at: '2026-01-28T09:23:00Z', answered_at: '2026-01-29T10:40:00Z', score: 5, comment: 'Demorámos a perceber as alterações entre versões. Faltou um resumo do que mudou.' },
       { id: 'nps-3', project_id: 'mock-1', stage_id: 'stg-3', kind: 'fase', phase_name: 'Licenciamento', client_id: 'cl-1', owner_id: 'mock-member-1', token: 'exemplo', status: 'scheduled', scheduled_for: '2026-03-13' },
       { id: 'nps-4', project_id: 'mock-3', stage_id: null, kind: 'fecho', phase_name: 'Fecho do projeto', client_id: 'cl-3', owner_id: 'mock-member-1', token: 'exemplo', status: 'answered', scheduled_for: '2026-02-01', sent_at: '2026-02-01T09:23:00Z', sent_to: 'obras@cm-gaia.pt', answered_at: '2026-02-02T15:00:00Z', score: 10, comment: null },
+      { id: 'nps-6', project_id: 'mock-2', stage_id: null, kind: 'fase', phase_name: 'Estudo Prévio', client_id: 'cl-2', owner_id: null, token: 'exemplo', status: 'answered', source: 'excel', scheduled_for: '2025-11-10', answered_at: '2025-11-10T00:08:37Z', score: 10, comment: 'I really appreciate the dedication with which the whole team works.' },
       { id: 'nps-5', project_id: 'mock-2', stage_id: null, kind: 'fase', phase_name: 'Estudo Prévio', client_id: 'cl-2', owner_id: null, token: 'exemplo', status: 'expired', scheduled_for: '2026-02-10', sent_at: '2026-02-10T09:23:00Z', sent_to: 'sousa@mail.pt' }
     ];
     async function loadNpsCfg() {
@@ -8405,12 +8406,14 @@
     function npsStats(list) {
       const a = list.filter(q => q.status === 'answered' && q.score != null);
       const pro = a.filter(q => q.score >= 9).length, det = a.filter(q => q.score <= 6).length;
-      const reached = list.filter(q => ['sent', 'answered', 'expired'].includes(q.status)).length;
+      // a taxa de resposta só conta os inquéritos enviados pela app (do Excel não se sabe quantos foram pedidos)
+      const sent = list.filter(q => q.source !== 'excel' && ['sent', 'answered', 'expired'].includes(q.status));
+      const reached = sent.length, answeredSent = sent.filter(q => q.status === 'answered').length;
       return {
-        n: a.length, pro, pas: a.length - pro - det, det, reached,
+        n: a.length, pro, pas: a.length - pro - det, det, reached, answeredSent,
         nps: a.length ? Math.round((pro - det) / a.length * 100) : null,
         avg: a.length ? a.reduce((t, q) => t + q.score, 0) / a.length : null,
-        rate: reached ? Math.round(a.length / reached * 100) : null
+        rate: reached ? Math.round(answeredSent / reached * 100) : null
       };
     }
     const fmtNps = v => v == null ? '—' : (v > 0 ? '+' : '') + v;
@@ -8468,7 +8471,7 @@
           <div class="nps-answer nps-${npsCat(q.score)}"><span class="nps-big num">${q.score}</span><div><b>${NPS_CAT_LABEL[npsCat(q.score)]}</b><span>respondeu a ${escapeHtml(d10(q.answered_at))}</span></div></div>
           ${q.comment ? `<blockquote class="nps-quote">${escapeHtml(q.comment)}</blockquote>` : '<div class="field-hint" style="margin-top:8px">Sem comentário.</div>'}`
           : `<div class="nps-state-line"><span class="nps-pill nps-${st.cls}" style="cursor:default">${escapeHtml(st.label)}</span><span>${escapeHtml(st.title)}</span></div>`}
-        <ol class="nps-steps">${steps.map(([t, v, on]) => `<li class="${on && v ? 'on' : ''}"><b>${escapeHtml(t)}</b><span>${escapeHtml(v || '—')}</span></li>`).join('')}</ol>
+        ${q.source === 'excel' ? '<div class="field-hint" style="margin-top:12px">Resposta do formulário antigo, importada do Excel.</div>' : `<ol class="nps-steps">${steps.map(([t, v, on]) => `<li class="${on && v ? 'on' : ''}"><b>${escapeHtml(t)}</b><span>${escapeHtml(v || '—')}</span></li>`).join('')}</ol>`}
         ${detractor ? `
           <div class="section-label" style="margin-top:16px">Acompanhamento</div>
           ${q.followup_done_at ? `<div class="field-hint" style="margin-top:4px">Falado com o cliente a ${escapeHtml(d10(q.followup_done_at))}.${q.followup_note ? ' ' + escapeHtml(q.followup_note) : ''}</div>`
@@ -8576,7 +8579,7 @@
         <div class="card-head mc-section-head"><h2>Satisfação dos clientes (NPS)</h2><span>${escapeHtml(r.label)}</span></div>
         <div class="mc-tiles">
           ${mcTile('NPS', fmtNps(s.nps), s.n ? `${s.n} ${s.n === 1 ? 'resposta' : 'respostas'} · de −100 a +100` : 'ainda sem respostas', npsTone(s.nps))}
-          ${mcTile('Taxa de resposta', s.rate != null ? s.rate + '%' : '—', s.reached ? `${s.n} de ${s.reached} ${s.reached === 1 ? 'inquérito enviado' : 'inquéritos enviados'}${pending ? ` · ${pending} à espera` : ''}` : 'nenhum inquérito enviado', s.rate != null && s.rate < 30 ? 'warn' : '')}
+          ${mcTile('Taxa de resposta', s.rate != null ? s.rate + '%' : '—', s.reached ? `${s.answeredSent} de ${s.reached} ${s.reached === 1 ? 'inquérito enviado' : 'inquéritos enviados'}${pending ? ` · ${pending} à espera` : ''}` : 'ainda nenhum enviado pela app', s.rate != null && s.rate < 30 ? 'warn' : '')}
           ${mcTile('Por acompanhar', followups, followups ? 'clientes com nota 0–6 por contactar' : 'nenhum detrator por contactar', followups ? 'bad' : '')}
         </div>
         ${s.n ? `<div class="gantt-wrap">

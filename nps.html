@@ -53,6 +53,11 @@
   .err { color: var(--danger); font-size: 14px; margin-top: 10px; }
   .foot { text-align: center; font-size: 12px; color: var(--text-2); margin-top: 18px; }
   .foot a { color: var(--text-2); }
+  .card { position: relative; }
+  .lang { position: absolute; top: 22px; right: 20px; display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .lang button { border: 0; background: transparent; color: var(--text-2); font: inherit; font-size: 13px; font-weight: 600; padding: 6px 10px; cursor: pointer; min-height: 32px; }
+  .lang button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+  .lang button:focus-visible { outline: none; box-shadow: var(--focus); }
   @keyframes in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
   @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
   @media (max-width: 420px) {
@@ -68,6 +73,7 @@
   <div class="card" id="card" aria-live="polite">
     <img class="logo logo-light" src="assets/nova-logo-plum-cropped.png" alt="NOVA Associates">
     <img class="logo logo-dark" src="assets/nova-logo-white-cropped.png" alt="NOVA Associates">
+    <div class="lang" id="lang" role="group" aria-label="Língua / Language" hidden><button type="button" data-l="pt" aria-pressed="true" lang="pt">PT</button><button type="button" data-l="en" aria-pressed="false" lang="en">EN</button></div>
     <div id="view"><p>…</p></div>
   </div>
   <div class="foot" id="foot"></div>
@@ -87,9 +93,9 @@
   const T = {
     pt: {
       bad: 'Este link não é válido ou já expirou.', err: 'Não foi possível guardar. Tente outra vez, por favor.',
-      title: (f) => f.kind === 'fecho' ? `Como foi trabalhar connosco em ${esc(f.project)}?` : f.kind === 'revisao' ? `Como correu a revisão de ${esc(f.phase)}?` : `Como correu ${esc(f.phase)}?`,
+      title: (f) => f.kind === 'fecho' ? `Como foi trabalhar connosco em ${esc(f.project)}?` : f.kind === 'revisao' ? `Como correu a revisão de ${esc(f.phase)}?` : `Como correu: ${esc(f.phase)}?`,
       sub: (f) => f.kind === 'fecho' ? 'Obrigado pela confiança. A sua opinião ajuda-nos a melhorar.' : `Projeto ${esc(f.project)}. A sua opinião ajuda-nos a melhorar e demora menos de um minuto.`,
-      ask: 'Numa escala de 0 a 10, qual a probabilidade de recomendar a NOVA Associates a um amigo ou colega?',
+      ask: 'Numa escala de 0 a 10, qual a probabilidade de recomendar a NOVA a um amigo, colega ou parceiro?',
       lo: 'Nada provável', hi: 'Muito provável',
       why: (s) => s <= 6 ? 'O que podíamos ter feito melhor?' : s <= 8 ? 'O que faltou para ser um 10?' : 'O que mais gostou?',
       opt: '(opcional)', send: 'Enviar', sending: 'A enviar…',
@@ -101,9 +107,9 @@
     },
     en: {
       bad: 'This link is not valid or has expired.', err: 'We could not save your answer. Please try again.',
-      title: (f) => f.kind === 'fecho' ? `How was working with us on ${esc(f.project)}?` : f.kind === 'revisao' ? `How did the ${esc(f.phase)} revision go?` : `How did ${esc(f.phase)} go?`,
+      title: (f) => f.kind === 'fecho' ? `How was working with us on ${esc(f.project)}?` : f.kind === 'revisao' ? `How did the ${esc(phaseIn(f.phase, 'en'))} revision go?` : `How did the ${esc(phaseIn(f.phase, 'en'))} stage go?`,
       sub: (f) => f.kind === 'fecho' ? 'Thank you for your trust. Your opinion helps us improve.' : `Project ${esc(f.project)}. Your opinion helps us improve — it takes less than a minute.`,
-      ask: 'On a scale of 0 to 10, how likely are you to recommend NOVA Associates to a friend or colleague?',
+      ask: 'On a scale of 0 to 10, how likely are you to recommend NOVA to a friend, colleague or partner?',
       lo: 'Not likely', hi: 'Very likely',
       why: (s) => s <= 6 ? 'What could we have done better?' : s <= 8 ? 'What would have made it a 10?' : 'What did you like the most?',
       opt: '(optional)', send: 'Send', sending: 'Sending…',
@@ -114,8 +120,22 @@
       foot: 'Prefer not to receive these requests?', footLink: 'Unsubscribe', demo: 'Example: answers are not saved.'
     }
   };
-  let t = T.pt;
-  const setLang = l => { t = T[l === 'en' ? 'en' : 'pt']; document.documentElement.lang = l === 'en' ? 'en' : 'pt-PT'; };
+  // Nomes das fases em inglês (o resto fica como está)
+  const PH_EN = {
+    "estudo previo": "Schematic Design", "estudo preliminar": "Feasibility Study", "licenciamento": "Planning Application",
+    "execucao": "Construction Documents", "execucao ii": "Construction Documents II", "especialidades": "Engineering Design",
+    "levantamento topografico": "Topographic Survey", "pip": "Prior Information Request (PIP)", "propriedade horizontal": "Horizontal Property Regime",
+    "comunicacao previa": "Prior Notice", "licenca de utilizacao": "Occupancy Permit", "fecho do projeto": "Project close-out"
+  };
+  const phaseIn = (n, l) => l === 'en' ? (PH_EN[String(n || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()] || n) : n;
+  let t = T.pt, lang = 'pt';
+  const setLang = l => {
+    lang = l === 'en' ? 'en' : 'pt'; t = T[lang]; document.documentElement.lang = lang === 'en' ? 'en' : 'pt-PT';
+    document.querySelectorAll('#lang button').forEach(b => b.setAttribute('aria-pressed', b.dataset.l === lang));
+  };
+  // Língua: a da ficha do cliente; se lá estiver português mas o browser for inglês, inglês. Sempre dá para trocar (PT | EN).
+  const browserLang = (navigator.languages || [navigator.language || '']).map(x => String(x).toLowerCase());
+  const pickLang = clientLang => clientLang === 'en' ? 'en' : browserLang.some(x => x.startsWith('pt')) ? 'pt' : browserLang.some(x => x.startsWith('en')) ? 'en' : 'pt';
   const check = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
   const message = (title, sub) => { view.innerHTML = `<div class="done"><div class="mark">${check}</div><h1>${title}</h1>${sub ? `<p>${sub}</p>` : ''}</div>`; document.getElementById('foot').innerHTML = ''; };
 
@@ -188,13 +208,29 @@
   (async () => {
     let form;
     try {
-      form = demo ? { ok: true, kind: 'fase', phase: 'Estudo Prévio', project: 'Projeto de exemplo', lang: (navigator.language || '').startsWith('en') ? 'en' : 'pt' }
+      form = demo ? { ok: true, kind: 'fase', phase: 'Estudo Prévio', project: 'Projeto de exemplo', lang: 'pt' }
         : await rpc('nps_form', { p_token: token });
     } catch { view.innerHTML = `<p>${T.pt.err}</p>`; return; }
     if (!form?.ok) { view.innerHTML = `<p>${T.pt.bad}</p>`; return; }
-    setLang(form.lang);
-    if (form.answered) { message(t.already); return; }
-    if (wantsOptOut) renderOptOut(form); else renderForm(form);
+    setLang(pickLang(form.lang));
+    const langBox = document.getElementById('lang');
+    langBox.hidden = false;
+    let current = form.answered ? 'answered' : wantsOptOut ? 'optout' : 'form';
+    const draw = () => current === 'answered' ? message(t.already) : current === 'optout' ? renderOptOut(form) : renderForm(form);
+    langBox.addEventListener('click', e => {
+      const b = e.target.closest('[data-l]'); if (!b || b.dataset.l === lang) return;
+      const keep = document.getElementById('comment')?.value;
+      const scoreBtn = view.querySelector('.scale [aria-checked="true"]');
+      setLang(b.dataset.l);
+      if (view.querySelector('.done')) { const h = view.querySelector('.done h1'); if (h && current === 'form') message(t.thanks, t.thanksSub); else if (current === 'optout') message(t.optDone); else draw(); return; }
+      draw();
+      if (scoreBtn) view.querySelector(`.scale [data-s="${scoreBtn.dataset.s}"]`)?.click();
+      if (keep) { const c = document.getElementById('comment'); if (c) c.value = keep; }
+    });
+    // saber em que ecrã estamos (para redesenhar na outra língua)
+    view.addEventListener('click', e => { if (e.target.closest('#no')) current = 'form'; });
+    document.getElementById('foot').addEventListener('click', e => { if (e.target.closest('#optout')) current = 'optout'; });
+    draw();
   })();
 })();
 </script>
