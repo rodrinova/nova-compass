@@ -5,7 +5,7 @@
 --    edited = a hora foi posta à mão (esqueci-me de marcar), fica assinalado no placar.
 --  * meeting_checkins: "Estou cá" em cada reunião/visita (marcos com hora de que a pessoa faz parte).
 --  * project_milestones.ended_at: quando a reunião acabou de facto ("Acabou"), para ver as que derrapam.
---  * Regras (horário, tolerância, minutos por café) em app_settings 'attendance', editáveis em Definições.
+--  * Regras (horário, tolerância, minutos por copo, limite do jantar de deboche) em app_settings 'attendance', editáveis em Definições.
 
 create table if not exists public.attendance (
   id uuid primary key default gen_random_uuid(),
@@ -47,6 +47,7 @@ insert into public.app_settings (key, value, updated_at) values ('attendance', j
   'start', '08:00',
   'end', '14:00',
   'tolerance', 5,
-  'minutes_per_coffee', 10,
+  'minutes_per_drink', 10,
+  'dinner_minutes', 30,
   'members', '{}'::jsonb
 ), now()) on conflict (key) do nothing;

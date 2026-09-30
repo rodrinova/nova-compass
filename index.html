@@ -1808,6 +1808,10 @@
   .board-jar.has { color: var(--warning); font-weight: 600; }
   .board-foot { margin-top: 8px; padding-top: 10px; border-top: 1px dashed var(--border-strong); font-size: 13.5px; color: var(--text-2); }
   .board-foot b { color: var(--text); }
+  .board-dinner { margin-top: 8px; font-size: 13.5px; color: var(--text-2); }
+  .board-dinner b { color: var(--text); }
+  .dinner-bar { height: 6px; border-radius: 3px; background: var(--track); margin-top: 6px; overflow: hidden; }
+  .dinner-bar span { display: block; height: 100%; background: var(--danger); border-radius: 3px; }
   .ht-row.at-row { display: grid; grid-template-columns: minmax(0, 1fr) 118px 118px; }
   @media (max-width: 480px) { .ht-row.at-row { grid-template-columns: 1fr 1fr; gap: 6px 10px; } .ht-row.at-row label { grid-column: 1 / -1; } .board-jar { min-width: 0; } }
   @media (max-width: 760px) {
@@ -8416,8 +8420,9 @@
     // ================= PONTUALIDADE: entradas, saídas e reuniões =================
     // Um toque em "Cheguei" / "Vou embora" (página Hoje). Dias fora (obra, Câmara, cliente) contam como a horas;
     // folgas não contam. Minutos de atraso (e saídas antes da hora, e chegadas tarde às reuniões) vão para a
-    // "jarra do café": à sexta, quem tem mais minutos paga os cafés. Regras em app_settings 'attendance'.
-    const ATT_DEFAULT = { from: '2026-10-01', start: '08:00', end: '14:00', tolerance: 5, minutes_per_coffee: 10, members: {} };
+    // jarra: à sexta, quem tem mais minutos na semana paga os copos; no fim do mês, quem tem mais minutos no mês
+    // (a partir de dinner_minutes) paga o jantar de deboche. Regras em app_settings 'attendance'.
+    const ATT_DEFAULT = { from: '2026-10-01', start: '08:00', end: '14:00', tolerance: 5, minutes_per_drink: 10, dinner_minutes: 30, members: {} };
     let mockAttCfg = { ...ATT_DEFAULT, from: '2026-09-01' };
     let mockAttendance = (() => {
       const mon = mondayOf(dateKey(new Date())), out = [];
@@ -8438,7 +8443,8 @@
     async function loadAttCfg() {
       if (devMode) return { ...ATT_DEFAULT, ...mockAttCfg };
       const r = await supabase.from('app_settings').select('value').eq('key', 'attendance').maybeSingle();
-      return { ...ATT_DEFAULT, ...(r.data?.value || {}) };
+      const v = r.data?.value || {};
+      return { ...ATT_DEFAULT, ...v, minutes_per_drink: v.minutes_per_drink ?? v.minutes_per_coffee ?? ATT_DEFAULT.minutes_per_drink };
     }
     async function saveAttCfg(v) {
       if (devMode) { mockAttCfg = v; return; }
@@ -8525,7 +8531,7 @@
       });
     }
     const attFirst = n => String(n || '').split(' ')[0];
-    const coffees = (min, cfg) => Math.floor(min / (Number(cfg.minutes_per_coffee) || 10));
+    const drinks = (min, cfg) => Math.floor(min / (Number(cfg.minutes_per_drink) || 10));
 
     // ---- Cartão "Ponto" e placar da semana (página Hoje) ----
     let attTimer = null;
@@ -8540,7 +8546,9 @@
           box.innerHTML = `<div class="punch-soon"><b>Pontualidade a partir de ${escapeHtml(fmtDayMonth(cfg.from))}</b><span>Horário ${escapeHtml(cfg.start)}–${escapeHtml(cfg.end)}, com ${cfg.tolerance} min de tolerância. Um toque em "Cheguei" ao chegar e em "Vou embora" ao sair.</span></div>`;
           return;
         }
-        const [members, rows, types, ms] = await Promise.all([loadAllMembers(), loadAttendance(addDaysKey(mon, -7), fri), loadMilestoneTypes(), fetchMilestones({ from: mon, to: fri })]);
+        const monthStart = today.slice(0, 8) + '01', monthEnd = addDaysKey(addMonthsKey(monthStart, 1), -1);
+        const loadFrom = monthStart < addDaysKey(mon, -7) ? monthStart : addDaysKey(mon, -7), loadTo = monthEnd > fri ? monthEnd : fri;
+        const [members, rows, types, ms] = await Promise.all([loadAllMembers(), loadAttendance(loadFrom, loadTo), loadMilestoneTypes(), fetchMilestones({ from: loadFrom, to: loadTo })]);
         const typeMap = Object.fromEntries(types.map(t => [t.id, t]));
         const meetings = ms.filter(m => isMeeting(m, typeMap));
         const checkins = await loadCheckins(meetings.map(m => m.id));
@@ -8584,6 +8592,13 @@
         const withJar = board.filter(b => b.jar > 0).sort((a, b) => b.jar - a.jar);
         const payer = withJar[0];
         const friday = new Date().getDay() >= 5 || new Date().getDay() === 0;
+        // Jantar de deboche: quem tem mais minutos no mês (a partir de dinner_minutes)
+        const mFrom = monthStart < cfg.from ? cfg.from : monthStart;
+        const month = mFrom <= today ? attBoard(members, rows, meetings, checkins, cfg, mFrom, today).sort((a, b) => b.jar - a.jar) : [];
+        const dinnerMin = Number(cfg.dinner_minutes) || 30;
+        const dinner = month[0] && month[0].jar > 0 ? month[0] : null;
+        const monthName = new Date(`${monthStart}T12:00:00`).toLocaleDateString('pt-PT', { month: 'long' });
+        const lastWorkday = (() => { let d = monthEnd; while (!isWorkday(d)) d = addDaysKey(d, -1); return d; })();
         const best = [...board].filter(b => b.counted).sort((a, b) => (b.onTime / b.counted) - (a.onTime / a.counted) || a.jar - b.jar)[0];
         const dot = x => `<i class="pd pd-${x.state}" title="${escapeHtml(fmtDayMonth(x.day))}: ${x.state === 'on' ? 'a horas' : x.state === 'late' ? [x.late && `${x.late} min de atraso`, x.early && `saiu ${x.early} min antes`].filter(Boolean).join(', ') : x.state === 'out' ? 'fora (conta como a horas)' : x.state === 'off' ? 'folga' : x.state === 'missing' ? 'sem registo' : x.state === 'waiting' ? 'ainda não chegou' : '—'}"></i>`;
         box.hidden = false;
@@ -8593,14 +8608,20 @@
             <div class="punch-main">${main}</div>${forgot}${meetHtml ? `<div class="punch-meets"><div class="section-label" style="margin:12px 0 4px">Reuniões agora</div>${meetHtml}</div>` : ''}
           </div>
           <div class="board">
-            <div class="card-head"><h2>Placar da semana</h2><span>☕ 1 café a cada ${cfg.minutes_per_coffee} min</span></div>
+            <div class="card-head"><h2>Placar da semana</h2><span>🍺 1 copo a cada ${cfg.minutes_per_drink} min</span></div>
             ${board.map(b => `<div class="board-row${b.m.id === me ? ' me' : ''}">
               <span class="board-name">${escapeHtml(attFirst(b.m.name))}${best && b === best && b.onTime === b.counted && b.counted ? ' <span title="O mais pontual da semana">🏆</span>' : ''}</span>
               <span class="board-dots">${b.days.map(dot).join('')}</span>
               <span class="board-num">${b.counted ? `${b.onTime}/${b.counted}` : '—'}</span>
-              <span class="board-jar${b.jar ? ' has' : ''}" title="${b.jar} min na jarra (atrasos, saídas antes da hora e reuniões)">${b.jar ? `${b.jar} min${coffees(b.jar, cfg) ? ` · ☕ ${coffees(b.jar, cfg)}` : ''}` : '0 min'}</span>
+              <span class="board-jar${b.jar ? ' has' : ''}" title="${b.jar} min na jarra esta semana (atrasos, saídas antes da hora e reuniões)">${b.jar ? `${b.jar} min${drinks(b.jar, cfg) ? ` · 🍺 ${drinks(b.jar, cfg)}` : ''}` : '0 min'}</span>
             </div>`).join('')}
-            <div class="board-foot">${payer ? `${friday ? 'Esta semana paga os cafés' : 'Por agora vai a pagar os cafés'}: <b>${escapeHtml(attFirst(payer.m.name))}</b> ☕` : 'Jarra vazia: ninguém paga cafés… por agora.'}</div>
+            <div class="board-foot">${payer ? `🍺 ${friday ? 'Esta semana paga os copos' : 'Por agora vai a pagar os copos'}: <b>${escapeHtml(attFirst(payer.m.name))}</b>` : '🍺 Jarra vazia: ninguém paga copos… por agora.'}</div>
+            <div class="board-dinner">🍽️ Jantar de deboche de ${escapeHtml(monthName)}: ${dinner
+              ? (dinner.jar >= dinnerMin
+                ? `${today >= lastWorkday ? 'paga' : 'vai a pagar'} <b>${escapeHtml(attFirst(dinner.m.name))}</b> (${dinner.jar} min no mês)`
+                : `<b>${escapeHtml(attFirst(dinner.m.name))}</b> vai à frente com ${dinner.jar} min. Aos ${dinnerMin} min paga o jantar.`)
+              : 'ninguém na jarra este mês.'}
+              ${dinner ? `<div class="dinner-bar" title="${dinner.jar} de ${dinnerMin} min"><span style="width:${Math.min(100, Math.round(dinner.jar / dinnerMin * 100))}%"></span></div>` : ''}</div>
           </div>`;
         box.querySelectorAll('[data-punch]').forEach(b => b.addEventListener('click', () => attAction(b.dataset.punch, me, cfg, b.dataset.day || today, rows)));
         box.querySelectorAll('[data-meet-in]').forEach(b => b.addEventListener('click', () => meetingCheckIn(b.dataset.meetIn, me, me)));
@@ -8697,26 +8718,27 @@
             <div><label class="field-label" for="at-start">Entrada</label><input type="time" id="at-start" class="form-input" value="${escapeHtml(cfg.start)}"></div>
             <div><label class="field-label" for="at-end">Saída</label><input type="time" id="at-end" class="form-input" value="${escapeHtml(cfg.end)}"></div>
             <div><label class="field-label" for="at-tol">Tolerância (min)</label><input type="text" inputmode="numeric" id="at-tol" class="form-input" value="${escapeHtml(String(cfg.tolerance))}"></div>
-            <div><label class="field-label" for="at-cof">Jarra: 1 café a cada (min)</label><input type="text" inputmode="numeric" id="at-cof" class="form-input" value="${escapeHtml(String(cfg.minutes_per_coffee))}"></div>
+            <div><label class="field-label" for="at-cof">1 copo a cada (min)</label><input type="text" inputmode="numeric" id="at-cof" class="form-input" value="${escapeHtml(String(cfg.minutes_per_drink))}"></div>
+            <div><label class="field-label" for="at-din">Jantar de deboche a partir de (min no mês)</label><input type="text" inputmode="numeric" id="at-din" class="form-input" value="${escapeHtml(String(cfg.dinner_minutes))}"></div>
           </div>
           <label class="field-label" for="at-from">A contar de</label><input type="date" id="at-from" class="form-input" style="max-width:220px" value="${escapeHtml(cfg.from)}">
           <label class="field-label">Horário diferente por pessoa <span style="font-weight:400;color:var(--text-2)">(vazio = horário geral)</span></label>
           ${members.map(m => `<div class="ht-row at-row"><label>${escapeHtml(m.name)}</label>
             <input type="time" class="form-input" data-at-start="${escapeHtml(m.id)}" value="${escapeHtml(cfg.members?.[m.id]?.start || '')}" aria-label="Entrada de ${escapeHtml(m.name)}">
             <input type="time" class="form-input" data-at-end="${escapeHtml(m.id)}" value="${escapeHtml(cfg.members?.[m.id]?.end || '')}" aria-label="Saída de ${escapeHtml(m.name)}"></div>`).join('')}
-          <div class="field-hint">Os minutos de atraso, as saídas antes da hora e as chegadas tarde às reuniões vão para a jarra do café. Dias fora (obra, Câmara, cliente) contam como a horas; folgas não contam.</div>
+          <div class="field-hint">Os minutos de atraso, as saídas antes da hora e as chegadas tarde às reuniões vão para a jarra. À sexta, quem tem mais minutos na semana paga os copos; no fim do mês, quem tem mais minutos no mês (a partir do limite) paga o jantar de deboche. Dias fora (obra, Câmara, cliente) contam como a horas; folgas não contam.</div>
           <button type="button" class="secondary-btn" id="at-save" style="width:auto;padding:11px 18px;">Guardar</button>`;
         document.getElementById('at-save').addEventListener('click', async () => {
-          const tol = numOrNull(document.getElementById('at-tol').value), cof = numOrNull(document.getElementById('at-cof').value);
+          const tol = numOrNull(document.getElementById('at-tol').value), cof = numOrNull(document.getElementById('at-cof').value), din = numOrNull(document.getElementById('at-din').value);
           const start = document.getElementById('at-start').value, end = document.getElementById('at-end').value;
           if (!start || !end || end <= start) { showToast('A saída tem de ser depois da entrada.', { type: 'error' }); return; }
-          if (tol == null || tol < 0 || tol > 60 || !cof || cof < 1) { showToast('Tolerância de 0 a 60 min e pelo menos 1 min por café.', { type: 'error' }); return; }
+          if (tol == null || tol < 0 || tol > 60 || !cof || cof < 1 || !din || din < 1) { showToast('Tolerância de 0 a 60 min, e minutos por copo e para o jantar maiores que 0.', { type: 'error' }); return; }
           const mem = {};
           members.forEach(m => {
             const s = box.querySelector(`[data-at-start="${CSS.escape(m.id)}"]`).value, e = box.querySelector(`[data-at-end="${CSS.escape(m.id)}"]`).value;
             if (s || e) mem[m.id] = { ...(s ? { start: s } : {}), ...(e ? { end: e } : {}) };
           });
-          try { await saveAttCfg({ ...cfg, start, end, tolerance: Math.round(tol), minutes_per_coffee: Math.round(cof), from: document.getElementById('at-from').value || cfg.from, members: mem }); showToast('Horário guardado'); }
+          try { await saveAttCfg({ ...cfg, start, end, tolerance: Math.round(tol), minutes_per_drink: Math.round(cof), dinner_minutes: Math.round(din), minutes_per_coffee: undefined, from: document.getElementById('at-from').value || cfg.from, members: mem }); showToast('Horário guardado'); }
           catch (err) { showToast('Não foi possível guardar: ' + err.message, { type: 'error' }); }
         });
       } catch (err) { box.innerHTML = `<div class="error-box">Erro ao carregar: ${escapeHtml(err.message)}</div>`; }
@@ -8734,12 +8756,12 @@
       const overN = over.filter(x => x > 5);
       return `
         <div class="gantt-wrap">
-          <div class="card-head"><h2>Pontualidade</h2><span>${escapeHtml(r.label)} · jarra: 1 café a cada ${cfg.minutes_per_coffee} min</span></div>
+          <div class="card-head"><h2>Pontualidade</h2><span>${escapeHtml(r.label)} · jarra: 1 copo a cada ${cfg.minutes_per_drink} min</span></div>
           <div class="table-scroll"><table class="mini-table mc-table"><thead><tr><th>Pessoa</th><th class="col-value">Dias a horas</th><th class="col-value">Atrasos</th><th class="col-value">Atraso médio</th><th class="col-value">Saídas antes</th><th class="col-value">Reuniões a horas</th><th class="col-value">Jarra</th></tr></thead><tbody>
             ${board.map(b => `<tr><td>${escapeHtml(b.m.name)}${b.edited ? ` <small title="Dias com horas postas à mão">✎ ${b.edited}</small>` : ''}</td>
               <td class="col-value${b.counted && b.onTime / b.counted < 0.8 ? ' warn-text' : ''}">${b.counted ? mcPct(b.onTime, b.counted) + '%' : '—'}</td>
               <td class="col-value">${b.lateDays || '—'}</td><td class="col-value">${b.lateAvg ? b.lateAvg + ' min' : '—'}</td><td class="col-value">${b.earlyDays || '—'}</td>
-              <td class="col-value">${b.meetings ? `${b.meetOnTime}/${b.meetings}` : '—'}</td><td class="col-value">${b.jar ? `${b.jar} min · ☕ ${coffees(b.jar, cfg)}` : '—'}</td></tr>`).join('')}
+              <td class="col-value">${b.meetings ? `${b.meetOnTime}/${b.meetings}` : '—'}</td><td class="col-value">${b.jar ? `${b.jar} min · ☕ ${drinks(b.jar, cfg)}` : '—'}</td></tr>`).join('')}
           </tbody></table></div>
           <div class="field-hint">${ended.length ? `Reuniões com fim registado: ${ended.length}. Passaram da hora: ${overN.length}${overN.length ? `, em média ${Math.round(overN.reduce((t, x) => t + x, 0) / overN.length)} min a mais` : ''}.` : 'Carrega em "Acabou" no fim das reuniões para ver as que passam da hora.'}</div>
         </div>`;
@@ -8762,6 +8784,7 @@
       { id: 'nps-2', project_id: 'mock-1', stage_id: 'stg-2', kind: 'fase', phase_name: 'Anteprojeto', client_id: 'cl-1', owner_id: 'mock-member-1', token: 'exemplo', status: 'answered', scheduled_for: '2026-01-23', sent_at: '2026-01-23T09:23:00Z', sent_to: 'geral@atlantico.pt', reminder_sent_at: '2026-01-28T09:23:00Z', answered_at: '2026-01-29T10:40:00Z', score: 5, comment: 'Demorámos a perceber as alterações entre versões. Faltou um resumo do que mudou.' },
       { id: 'nps-3', project_id: 'mock-1', stage_id: 'stg-3', kind: 'fase', phase_name: 'Licenciamento', client_id: 'cl-1', owner_id: 'mock-member-1', token: 'exemplo', status: 'scheduled', scheduled_for: '2026-03-13' },
       { id: 'nps-4', project_id: 'mock-3', stage_id: null, kind: 'fecho', phase_name: 'Fecho do projeto', client_id: 'cl-3', owner_id: 'mock-member-1', token: 'exemplo', status: 'answered', scheduled_for: '2026-02-01', sent_at: '2026-02-01T09:23:00Z', sent_to: 'obras@cm-gaia.pt', answered_at: '2026-02-02T15:00:00Z', score: 10, comment: null },
+      { id: 'nps-7', project_id: 'mock-3', stage_id: null, kind: 'fase', phase_name: 'Licenciamento', client_id: 'cl-3', owner_id: 'mock-member-1', token: 'exemplo', status: 'answered', scheduled_for: dateKey(new Date()), sent_at: new Date(Date.now() - 2 * 86400000).toISOString(), answered_at: new Date(Date.now() - 86400000).toISOString(), score: 9, comment: 'Muito bom acompanhamento com a Câmara.' },
       { id: 'nps-6', project_id: 'mock-2', stage_id: null, kind: 'fase', phase_name: 'Estudo Prévio', client_id: 'cl-2', owner_id: null, token: 'exemplo', status: 'answered', source: 'excel', scheduled_for: '2025-11-10', answered_at: '2025-11-10T00:08:37Z', score: 10, comment: 'I really appreciate the dedication with which the whole team works.' },
       { id: 'nps-5', project_id: 'mock-2', stage_id: null, kind: 'fase', phase_name: 'Estudo Prévio', client_id: 'cl-2', owner_id: null, token: 'exemplo', status: 'expired', scheduled_for: '2026-02-10', sent_at: '2026-02-10T09:23:00Z', sent_to: 'sousa@mail.pt' }
     ];
@@ -8848,6 +8871,7 @@
         }
       } catch (err) { showToast('Não foi possível abrir o NPS: ' + err.message, { type: 'error' }); return; }
       if (!q) return;
+      if (q.status === 'answered') markNpsSeen(q.id);
       const st = npsState(q, cfg);
       const ready = npsEmailReady(cfg);
       const d10 = v => v ? fmtDayMonthYear(String(v).slice(0, 10)) : null;
@@ -8914,7 +8938,11 @@
       });
     }
 
-    // Avisos na Hoje: detratores por acompanhar e inquéritos parados (sem email configurado, cliente sem email)
+    // Respostas já vistas neste aparelho (para o aviso "Nova avaliação" sair depois de aberto)
+    const npsSeenKey = 'nova.npsSeen';
+    const npsSeen = () => { try { return new Set(JSON.parse(localStorage.getItem(npsSeenKey) || '[]')); } catch { return new Set(); } };
+    const markNpsSeen = id => { try { const s = npsSeen(); s.add(id); localStorage.setItem(npsSeenKey, JSON.stringify([...s].slice(-300))); } catch {} };
+    // Avisos na Hoje: respostas novas (toda a equipa), detratores por acompanhar e inquéritos parados
     async function loadNpsAlerts(me) {
       const [cfg, reqs] = await Promise.all([loadNpsCfg(), loadNpsRequests()]);
       let projects = {}, emails = {};
@@ -8930,6 +8958,17 @@
       const mine = q => { const p = projects[q.project_id]; return p && !p.archived_at && (!p.owner_id || p.owner_id === me); };
       const today = dateKey(new Date());
       const out = [];
+      // Resposta nova (últimos 14 dias, ainda não aberta neste aparelho): aparece a toda a equipa
+      const seen = npsSeen(), since = Date.now() - 14 * 86400000;
+      const isDetrAlert = q => mine(q) && q.score <= 6 && !q.followup_done_at;
+      reqs.filter(q => q.status === 'answered' && q.source !== 'excel' && q.answered_at && new Date(q.answered_at).getTime() >= since && !seen.has(q.id) && !isDetrAlert(q))
+        .sort((a, b) => String(b.answered_at).localeCompare(String(a.answered_at)))
+        .forEach(q => out.push({
+          kind: 'nps', nps: q.id, project: q.project_id, late: q.score <= 6,
+          title: `Nova avaliação: NPS ${q.score}${q.score >= 9 ? ' 🎉' : ''}`,
+          sub: [projects[q.project_id]?.name, npsGroupName(q), q.comment ? '“' + q.comment.slice(0, 80) + (q.comment.length > 80 ? '…' : '') + '”' : 'sem comentário'].filter(Boolean).join(' · '),
+          when: 'Ver'
+        }));
       reqs.filter(q => mine(q) && q.status === 'answered' && q.score <= 6 && !q.followup_done_at).forEach(q => out.push({
         kind: 'nps', nps: q.id, project: q.project_id, late: true,
         title: `Cliente pouco satisfeito: NPS ${q.score}`,
@@ -12401,11 +12440,11 @@
         kw: 'ponto entrada saida chegar cheguei sair picar pontualidade horario presenca atraso reuniao',
         tour: [{ go: 'nav:home', sel: '#today-punch .punch, #today-punch', text: 'Toca em «Cheguei» ao chegar e em «Vou embora» ao sair.' }] },
       { id: 'jarra', cat: 'horas', ctx: ['home', 'finance:time'],
-        q: 'funciona o placar e a jarra do café',
-        a: 'Cada minuto de atraso vai para a jarra de quem se atrasou. À sexta, quem tem mais minutos paga os cafés.',
-        steps: ['No cartão **Placar da semana** (página [[Hoje]]) vês os dias de cada um: verde a horas, amarelo atrasado, cinzento fora ou folga.', 'Vão para a jarra: os **minutos de atraso** à entrada (além da tolerância), as **saídas antes da hora** e as **chegadas tarde às reuniões**.', 'Cada 10 minutos na jarra vale um ☕.', 'À sexta, a app diz quem **paga os cafés** da semana. 🏆 marca quem chegou sempre a horas.', 'O histórico de cada pessoa está em [[Mission Control]] → **Tempo** → **Pontualidade**.'],
-        kw: 'placar jarra cafe cafes ranking pontualidade atrasos quem paga competicao semana',
-        tour: [{ go: 'nav:home', sel: '#today-punch .board, #today-punch', text: 'O placar da semana e a jarra do café.' }] },
+        q: 'funciona o placar, os copos e o jantar de deboche',
+        a: 'Cada minuto de atraso vai para a jarra de quem se atrasou. À sexta, quem tem mais minutos paga os copos; no fim do mês, o pior paga o jantar de deboche.',
+        steps: ['No cartão **Placar da semana** (página [[Hoje]]) vês os dias de cada um: verde a horas, amarelo atrasado, cinzento fora ou folga.', 'Vão para a jarra: os **minutos de atraso** à entrada (além da tolerância), as **saídas antes da hora** e as **chegadas tarde às reuniões**.', 'Cada 10 minutos na jarra vale um 🍺.', 'À sexta, a app diz quem **paga os copos** da semana. 🏆 marca quem chegou sempre a horas.', 'No fim do mês, quem tiver mais minutos no mês (a partir de 30) paga o 🍽️ **jantar de deboche**. A barra mostra quem vai à frente.', 'O histórico de cada pessoa está em [[Mission Control]] → **Tempo** → **Pontualidade**.'],
+        kw: 'placar jarra copos copo cerveja jantar deboche ranking pontualidade atrasos quem paga competicao semana mes',
+        tour: [{ go: 'nav:home', sel: '#today-punch .board, #today-punch', text: 'O placar da semana: copos à sexta, jantar de deboche no fim do mês.' }] },
       { id: 'horas-nf', cat: 'horas', ctx: ['horas'],
         q: 'separo horas faturáveis e não faturáveis no mesmo dia',
         a: 'Na célula do dia, toca na seta ⌄: aparecem dois campos, faturável e não faturável.',
