@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>NOVA Associates</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  /* Página pública do NPS: o cliente responde sem conta. Só fala com a base de dados através de
+     nps_form / nps_submit / nps_opt_out, com o código (t) do seu pedido. */
+  :root {
+    --bg: #F7F7F5; --surface: #FFFFFF; --border: #E4E3DE; --border-strong: #D3D1CA;
+    --text: #1B1A19; --text-2: #6B6660; --accent: #714D79; --on-accent: #FFFFFF;
+    --accent-soft: rgba(113, 77, 121, 0.09); --focus: 0 0 0 3px rgba(113, 77, 121, 0.25);
+    --danger: #C4453D;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111113; --surface: #18181B; --border: #27272C; --border-strong: #36363C;
+      --text: #ECECEE; --text-2: #A0A0A8; --accent: #B797BE; --on-accent: #16121A;
+      --accent-soft: rgba(183, 151, 190, 0.13); --focus: 0 0 0 3px rgba(183, 151, 190, 0.3);
+      --danger: #E07A72;
+    }
+    .logo-light { display: none; }
+    .logo-dark { display: block !important; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  main { max-width: 560px; margin: 0 auto; padding: max(24px, env(safe-area-inset-top)) 16px 40px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 28px 24px; }
+  .logo { height: 26px; margin-bottom: 24px; }
+  .logo-dark { display: none; }
+  h1 { font-size: 21px; line-height: 1.3; margin: 0 0 8px; font-weight: 650; letter-spacing: -0.01em; }
+  p { margin: 0 0 16px; color: var(--text-2); }
+  .scale { display: grid; grid-template-columns: repeat(11, 1fr); gap: 5px; margin: 20px 0 6px; }
+  .scale button { aspect-ratio: 1; min-height: 40px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); border-radius: 8px; font: inherit; font-size: 15px; font-weight: 600; line-height: 1; cursor: pointer; transition: background .15s, color .15s, transform .1s; padding: 0; }
+  .scale button:hover { background: var(--accent-soft); }
+  .scale button:focus-visible { outline: none; box-shadow: var(--focus); }
+  .scale button[aria-checked="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); transform: scale(1.06); }
+  .ends { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-2); }
+  .more { margin-top: 24px; display: none; }
+  .more.show { display: block; animation: in .25s ease; }
+  label { display: block; font-weight: 600; margin-bottom: 8px; }
+  textarea { width: 100%; min-height: 110px; border: 1px solid var(--border-strong); border-radius: 8px; padding: 12px; font: inherit; color: var(--text); background: var(--surface); resize: vertical; }
+  textarea:focus { outline: none; box-shadow: var(--focus); border-color: var(--accent); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 0 22px; border: 0; border-radius: 8px; background: var(--accent); color: var(--on-accent); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 16px; width: 100%; }
+  .btn:disabled { opacity: .55; cursor: default; }
+  .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--border-strong); }
+  .done { text-align: center; padding: 12px 0; }
+  .done .mark { width: 56px; height: 56px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px; animation: pop .35s ease; }
+  .err { color: var(--danger); font-size: 14px; margin-top: 10px; }
+  .foot { text-align: center; font-size: 12px; color: var(--text-2); margin-top: 18px; }
+  .foot a { color: var(--text-2); }
+  @keyframes in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
+  @media (max-width: 420px) {
+    .card { padding: 24px 16px; }
+    .scale { grid-template-columns: repeat(6, 1fr); }
+    .ends { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="card" id="card" aria-live="polite">
+    <img class="logo logo-light" src="assets/nova-logo-plum-cropped.png" alt="NOVA Associates">
+    <img class="logo logo-dark" src="assets/nova-logo-white-cropped.png" alt="NOVA Associates">
+    <div id="view"><p>…</p></div>
+  </div>
+  <div class="foot" id="foot"></div>
+</main>
+<script>
+(() => {
+  const SUPABASE_URL = 'https://syatogsavmrcgjcuydtu.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5YXRvZ3Nhdm1yY2dqY3V5ZHR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMzc0NzEsImV4cCI6MjA5MDcxMzQ3MX0.Pcu3vfXKtbdqFWV0gv2b9ReHpwMErj40hbw_PgkFVBM';
+  const q = new URLSearchParams(location.search);
+  const token = (q.get('t') || '').trim();
+  const preset = q.get('s');
+  const wantsOptOut = q.get('optout') === '1';
+  const demo = token === 'exemplo';
+  const view = document.getElementById('view');
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  const T = {
+    pt: {
+      bad: 'Este link não é válido ou já expirou.', err: 'Não foi possível guardar. Tente outra vez, por favor.',
+      title: (f) => f.kind === 'fecho' ? `Como foi trabalhar connosco em ${esc(f.project)}?` : f.kind === 'revisao' ? `Como correu a revisão de ${esc(f.phase)}?` : `Como correu ${esc(f.phase)}?`,
+      sub: (f) => f.kind === 'fecho' ? 'Obrigado pela confiança. A sua opinião ajuda-nos a melhorar.' : `Projeto ${esc(f.project)}. A sua opinião ajuda-nos a melhorar e demora menos de um minuto.`,
+      ask: 'Numa escala de 0 a 10, qual a probabilidade de recomendar a NOVA Associates a um amigo ou colega?',
+      lo: 'Nada provável', hi: 'Muito provável',
+      why: (s) => s <= 6 ? 'O que podíamos ter feito melhor?' : s <= 8 ? 'O que faltou para ser um 10?' : 'O que mais gostou?',
+      opt: '(opcional)', send: 'Enviar', sending: 'A enviar…',
+      thanks: 'Obrigado!', thanksSub: 'A sua resposta foi registada. Lemos todas as respostas com atenção.',
+      already: 'Já respondeu a este inquérito. Obrigado!',
+      optTitle: 'Deixar de receber estes pedidos?', optSub: 'Não voltaremos a enviar-lhe inquéritos de satisfação. Continuará a receber tudo o resto do seu projeto normalmente.',
+      optYes: 'Sim, deixar de receber', optNo: 'Afinal quero responder', optDone: 'Feito. Não voltará a receber estes pedidos.',
+      foot: 'Não quer receber estes pedidos?', footLink: 'Deixar de receber', demo: 'Exemplo: as respostas não são guardadas.'
+    },
+    en: {
+      bad: 'This link is not valid or has expired.', err: 'We could not save your answer. Please try again.',
+      title: (f) => f.kind === 'fecho' ? `How was working with us on ${esc(f.project)}?` : f.kind === 'revisao' ? `How did the ${esc(f.phase)} revision go?` : `How did ${esc(f.phase)} go?`,
+      sub: (f) => f.kind === 'fecho' ? 'Thank you for your trust. Your opinion helps us improve.' : `Project ${esc(f.project)}. Your opinion helps us improve — it takes less than a minute.`,
+      ask: 'On a scale of 0 to 10, how likely are you to recommend NOVA Associates to a friend or colleague?',
+      lo: 'Not likely', hi: 'Very likely',
+      why: (s) => s <= 6 ? 'What could we have done better?' : s <= 8 ? 'What would have made it a 10?' : 'What did you like the most?',
+      opt: '(optional)', send: 'Send', sending: 'Sending…',
+      thanks: 'Thank you!', thanksSub: 'Your answer has been recorded. We read every answer carefully.',
+      already: 'You have already answered this survey. Thank you!',
+      optTitle: 'Stop receiving these requests?', optSub: 'We will not send you satisfaction surveys again. Everything else about your project stays the same.',
+      optYes: 'Yes, unsubscribe', optNo: 'I want to answer instead', optDone: 'Done. You will not receive these requests again.',
+      foot: 'Prefer not to receive these requests?', footLink: 'Unsubscribe', demo: 'Example: answers are not saved.'
+    }
+  };
+  let t = T.pt;
+  const setLang = l => { t = T[l === 'en' ? 'en' : 'pt']; document.documentElement.lang = l === 'en' ? 'en' : 'pt-PT'; };
+  const check = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  const message = (title, sub) => { view.innerHTML = `<div class="done"><div class="mark">${check}</div><h1>${title}</h1>${sub ? `<p>${sub}</p>` : ''}</div>`; document.getElementById('foot').innerHTML = ''; };
+
+  if (!token) { view.innerHTML = `<p>${T.pt.bad}</p>`; return; }
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } });
+  const rpc = async (fn, args) => { const { data, error } = await sb.rpc(fn, args); if (error) throw error; return data; };
+
+  function renderOptOut(form) {
+    view.innerHTML = `<h1>${t.optTitle}</h1><p>${t.optSub}</p>
+      <button class="btn" id="yes">${t.optYes}</button><button class="btn ghost" id="no">${t.optNo}</button>`;
+    document.getElementById('foot').innerHTML = '';
+    document.getElementById('no').onclick = () => renderForm(form);
+    document.getElementById('yes').onclick = async (e) => {
+      e.target.disabled = true;
+      try { if (!demo) { const r = await rpc('nps_opt_out', { p_token: token }); if (!r?.ok) throw new Error(); } message(t.optDone); }
+      catch { e.target.disabled = false; view.insertAdjacentHTML('beforeend', `<div class="err">${t.err}</div>`); }
+    };
+  }
+
+  function renderForm(form) {
+    let score = preset != null && /^(10|[0-9])$/.test(preset) ? Number(preset) : null;
+    view.innerHTML = `
+      <h1>${t.title(form)}</h1><p>${t.sub(form)}</p>
+      <div id="ask-label" style="font-weight:600">${t.ask}</div>
+      <div class="scale" role="radiogroup" aria-labelledby="ask-label">
+        ${Array.from({ length: 11 }, (_, i) => `<button type="button" role="radio" aria-checked="false" data-s="${i}" tabindex="-1">${i}</button>`).join('')}
+      </div>
+      <div class="ends"><span>0 · ${t.lo}</span><span>10 · ${t.hi}</span></div>
+      <div class="more" id="more">
+        <label for="comment"><span id="why"></span> <span style="font-weight:400;color:var(--text-2)">${t.opt}</span></label>
+        <textarea id="comment" maxlength="2000"></textarea>
+        <button class="btn" id="send">${t.send}</button>
+        <div id="msg"></div>
+      </div>
+      ${demo ? `<p style="margin-top:16px;font-size:13px">${t.demo}</p>` : ''}`;
+    document.getElementById('foot').innerHTML = `${t.foot} <a href="#" id="optout">${t.footLink}</a>`;
+    document.getElementById('optout').onclick = (e) => { e.preventDefault(); renderOptOut(form); };
+    const btns = [...view.querySelectorAll('.scale button')];
+    const pick = (s, focus) => {
+      score = s;
+      btns.forEach(b => { const on = Number(b.dataset.s) === s; b.setAttribute('aria-checked', on); b.tabIndex = on ? 0 : -1; if (on && focus) b.focus(); });
+      document.getElementById('why').textContent = t.why(s);
+      document.getElementById('more').classList.add('show');
+    };
+    btns[0].tabIndex = 0;
+    btns.forEach(b => {
+      b.onclick = () => pick(Number(b.dataset.s));
+      b.onkeydown = (e) => {
+        const d = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
+        if (d) { e.preventDefault(); pick(Math.max(0, Math.min(10, (score ?? (d > 0 ? -1 : 11)) + d)), true); }
+      };
+    });
+    if (score != null) pick(score);
+    document.getElementById('send').onclick = async (e) => {
+      if (score == null) return;
+      const btn = e.target; btn.disabled = true; btn.textContent = t.sending;
+      try {
+        if (!demo) {
+          const r = await rpc('nps_submit', { p_token: token, p_score: score, p_comment: document.getElementById('comment').value });
+          if (!r?.ok) { message(t.already); return; }
+        }
+        message(t.thanks, t.thanksSub);
+      } catch {
+        btn.disabled = false; btn.textContent = t.send;
+        document.getElementById('msg').innerHTML = `<div class="err">${t.err}</div>`;
+      }
+    };
+  }
+
+  (async () => {
+    let form;
+    try {
+      form = demo ? { ok: true, kind: 'fase', phase: 'Estudo Prévio', project: 'Projeto de exemplo', lang: (navigator.language || '').startsWith('en') ? 'en' : 'pt' }
+        : await rpc('nps_form', { p_token: token });
+    } catch { view.innerHTML = `<p>${T.pt.err}</p>`; return; }
+    if (!form?.ok) { view.innerHTML = `<p>${T.pt.bad}</p>`; return; }
+    setLang(form.lang);
+    if (form.answered) { message(t.already); return; }
+    if (wantsOptOut) renderOptOut(form); else renderForm(form);
+  })();
+})();
+</script>
+</body>
+</html>
