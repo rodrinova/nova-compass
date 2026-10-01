@@ -396,7 +396,7 @@
   /* ---------- Linhas "rótulo | valor" ---------- */
   .invoice-row {
     display: flex; justify-content: space-between; align-items: center; gap: var(--sp-2-5);
-    padding: var(--sp-2-5) 0; border-bottom: 1px solid var(--border); font-size: var(--fs-md);
+    padding: var(--sp-2-5) 0; border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent); font-size: var(--fs-md);
   }
   .invoice-row:last-child { border-bottom: none; }
   .invoice-row:first-child { padding-top: var(--sp-0-5); }
@@ -991,12 +991,11 @@
   .anim-in .ind-bar > span { transform-origin: left; animation: growX .8s var(--ease) backwards .2s; }
   .fin-charts.one { grid-template-columns: 1fr; }
   .fin-more { margin-top: var(--sp-4); }
-  .fin-more > summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: var(--sp-2); padding: var(--sp-3); border: 1px dashed var(--border-strong); border-radius: var(--r-lg); font-size: var(--fs-md); font-weight: var(--fw-semibold); color: var(--text-2); }
+  .fin-more > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: var(--sp-1); padding: var(--sp-2) 0; font-size: var(--fs-md); font-weight: var(--fw-semibold); color: var(--accent); }
   .fin-more > summary::-webkit-details-marker { display: none; }
-  .fin-more > summary::after { content: '⌄'; font-size: var(--fs-lg); transition: transform var(--t) var(--ease); }
-  .fin-more[open] > summary { border-style: solid; color: var(--text); }
-  .fin-more[open] > summary::after { transform: rotate(180deg); }
-  .fin-more > summary:hover { background: var(--surface-2); }
+  .fin-more > summary::after { content: '›'; font-size: var(--fs-lg); transition: transform var(--t) var(--ease); }
+  .fin-more[open] > summary::after { transform: rotate(90deg); }
+  .fin-more > summary:hover { text-decoration: underline; }
   .goal-list { padding: var(--sp-1) var(--sp-4); }
   .goal-row { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(80px, 1fr) 48px; gap: var(--sp-3); align-items: center; padding: var(--sp-2-5) 0; border-top: 1px solid var(--border); }
   .goal-row:first-child { border-top: none; }
@@ -1714,6 +1713,10 @@
   .click-row { cursor: pointer; }
   .click-row:hover td, .invoice-row.click-row:hover { background: var(--surface-2); }
   .invoice-row.click-row { margin: 0 -8px; padding-left: var(--sp-2); padding-right: var(--sp-2); border-radius: var(--r-sm); }
+  /* Estado pressionado igual em todas as linhas que abrem e nos separadores */
+  .invoice-row.click-row:active, .mm-row.click-row:active, .project-row:active td, .click-row:active td { background: var(--surface-3); }
+  .invoice-row.click-row, .mm-row.click-row { transition: background var(--t-fast, .12s) ease, transform var(--t-fast, .12s) ease; }
+  .invoice-row.click-row:active, .mm-row.click-row:active { transform: scale(.995); }
   .ph-row { grid-template-columns: minmax(0, 1.4fr) minmax(60px, 1fr) auto auto auto; }
   @media (max-width: 560px) { .ph-row { grid-template-columns: minmax(0, 1fr) auto auto; } .ph-row .ph-due { display: none; } }
   /* ---------- Entrada: logo NOVA (1,25 s, uma vez por sessão) ---------- */
@@ -1876,6 +1879,10 @@
   .pay-extra .form-input { margin: 0; }
   .pay-taxed { font-size: var(--fs-sm); color: var(--text-2); display: flex; align-items: center; gap: var(--sp-1); white-space: nowrap; }
   @media (max-width: 480px) { .pay-extra { grid-template-columns: minmax(0, 1fr) 80px 32px; } .pay-extra [data-k="name"] { grid-column: 1 / -1; } .pay-taxed { grid-column: 1 / 2; } }
+  /* Atalhos de teclado no painel de ajuda (só com teclado/rato) */
+  .help-keys { margin-top: var(--sp-4); font-size: var(--fs-sm); color: var(--text-2); display: grid; gap: var(--sp-1); }
+  .help-keys kbd { display: inline-block; min-width: 22px; text-align: center; padding: 1px 6px; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: var(--r-xs); background: var(--surface); font: var(--fw-semibold) var(--fs-xs)/1.5 inherit; color: var(--text); margin-right: 4px; }
+  @media (pointer: coarse) { .help-keys { display: none; } }
   /* ---- Viabilidade de terrenos ---- */
   .fz-defaults { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-2) var(--sp-3); background: var(--warning-soft); color: var(--text); border-radius: var(--r-md); padding: var(--sp-2-5) var(--sp-3); margin: 0 0 var(--sp-3); font-size: var(--fs-sm); }
   .fz-defaults[hidden] { display: none; }
@@ -6864,7 +6871,7 @@
           expenses = MOCK_EXPENSES;
           MOCK_PROJECTS.forEach(p => { projectMap[p.id] = p.name; });
         } else {
-          const res = await supabase.from('expenses').select('*, expense_categories(name)').is('archived_at', null).order('date', { ascending: false });
+          const res = await selectAll(() => supabase.from('expenses').select('*, expense_categories(name)').is('archived_at', null).order('date', { ascending: false }).order('id'));
           if (res.error) throw res.error;
           expenses = res.data || [];
 
@@ -7817,7 +7824,7 @@
       const [p, s, i, e] = await Promise.all([
         supabase.from('projects').select('id, code, name, client_id, client_entity_id, commission_value, archived_at, clients(name)'),
         supabase.from('project_stages').select('id, project_id, stage_order, status, percentage, fixed_value, excluded_from_invoicing, delivery_date, end_date, revision_label, billing_archived_at, billing_archive_note, stage_types(name)'),
-        supabase.from('invoices').select('*').order('issue_date', { ascending: false }),
+        selectAll(() => supabase.from('invoices').select('*').order('issue_date', { ascending: false }).order('id')),
         (await clientsTablesReady()) ? supabase.from('client_entities').select('id, client_id, kind, name, nif, address') : Promise.resolve({ data: [] })
       ]);
       for (const r of [p, s, i]) if (r.error) throw r.error;
@@ -8193,11 +8200,11 @@
           txs: mb.txs, matches: mb.matches, statements: mb.statements, projects: MOCK_PROJECTS, stages: MOCK_STAGES.map(s => ({ ...s, project_id: 'mock-1' })) };
       }
       const [inv, exp, cat, rul, txs, mat, st, pr, sg] = await Promise.all([
-        supabase.from('invoices').select('id, project_id, stage_id, invoice_number, external_ref, doc_type, customer_name, customer_nif, issue_date, amount, gross_amount, amount_paid, payment_date, status, archived_at'),
-        supabase.from('expenses').select('*').is('archived_at', null),
+        selectAll(() => supabase.from('invoices').select('id, project_id, stage_id, invoice_number, external_ref, doc_type, customer_name, customer_nif, issue_date, amount, gross_amount, amount_paid, payment_date, status, archived_at').order('id')),
+        selectAll(() => supabase.from('expenses').select('*').is('archived_at', null).order('id')),
         supabase.from('expense_categories').select('*').order('name'),
         supabase.from('bank_rules').select('*'),
-        supabase.from('bank_transactions').select('*').order('date', { ascending: false }),
+        selectAll(() => supabase.from('bank_transactions').select('*').order('date', { ascending: false }).order('id')),
         supabase.from('bank_receipt_matches').select('*'),
         supabase.from('bank_statements').select('*').order('period_to', { ascending: false }),
         supabase.from('projects').select('id, name, code, archived_at').order('name'),
@@ -8729,7 +8736,7 @@
           supabase.from('projects').select('id, name, code, awarding_date, archived_at, status'),
           supabase.from('project_stages').select('*, stage_types(name, break_immune)'),
           supabase.from('project_breaks').select('project_id, start_date, end_date, after_stage_id'),
-          supabase.from('time_entries').select('user_id, project_id, date, hours').gte('date', since)
+          selectAll(() => supabase.from('time_entries').select('user_id, project_id, date, hours').gte('date', since).order('id'))
         ]);
         for (const r of [pr, st, br, tm]) if (r.error) throw r.error;
         projects = pr.data || []; stages = st.data || []; breaks = br.data || []; entries = tm.data || [];
@@ -9621,7 +9628,7 @@
             supabase.from('projects').select('id, name, code, awarding_date, project_type_id, commission_value, archived_at, status'),
             supabase.from('project_types').select('id, name').order('name'),
             supabase.from('project_stages').select('id, project_id, percentage, fixed_value, excluded_from_invoicing, billing_archived_at'),
-            supabase.from('time_entries').select('hours, billable, date').gte('date', from),
+            selectAll(() => supabase.from('time_entries').select('hours, billable, date').gte('date', from).order('id')),
             supabase.from('company_goals').select('*').eq('year', finYear)
           ]);
           for (const r of [p, t, s, h, g]) if (r.error) throw r.error;
@@ -10076,15 +10083,28 @@
           label: 'Faturação', big: revYoY != null ? pct(revYoY) : escapeHtml(fmtEURShort(m.revenue)), unit: revYoY != null ? `vs ${y - 1}` : '', caption: revYoY != null ? 'mesmo período do ano anterior' : `faturados em ${y} · sem ano anterior para comparar`,
           t: tone(revYoY, 0, -10), sub: '<span class="ind-link">definir objetivo →</span>', eur: `${escapeHtml(fmtEURShort(m.revenue))} faturados`, detail: 'goals-edit'
         });
+      // Meses do ano (até ao mês passado) sem extrato do banco: os custos estão incompletos e a margem fica inflacionada
+      const missingMonths = (() => {
+        const lastFull = isCur ? addDaysKey(`${today.slice(0, 7)}-01`, -1) : to;
+        const out = [];
+        for (let mth = 1; mth <= 12; mth++) {
+          const a = `${y}-${String(mth).padStart(2, '0')}-01`, z = addDaysKey(mth === 12 ? `${y + 1}-01-01` : `${y}-${String(mth + 1).padStart(2, '0')}-01`, -1);
+          if (z > lastFull) break;
+          if (!b.statements.some(st => st.period_from && st.period_to && st.period_from <= z && st.period_to >= a)) out.push(a);
+        }
+        return out;
+      })();
       const indMargin = indCard({
           label: 'Margem EBITDA', big: margin != null ? Math.round(margin) + '%' : '—', unit: 'da faturação', caption: marginGoal != null ? `objetivo ${Math.round(marginGoal)}%` : 'o que sobra depois dos custos',
           barPct: margin != null ? margin : null, barPace: marginGoal != null ? marginGoal / 100 : null,
           t: marginGoal != null ? tone(margin, marginGoal, marginGoal - 5) : tone(margin, 15, 0),
-          sub: margin != null && prevMargin != null ? `${margin - prevMargin >= 0 ? '▲' : '▼'} ${Math.abs(Math.round(margin - prevMargin))} p.p. vs ${y - 1}` : '',
+          sub: !b.statements.length ? '<span class="warn">⚠ ainda sem extratos do banco: os custos estão incompletos e a margem parece maior do que é</span>'
+            : missingMonths.length ? `<span class="warn">⚠ faltam extratos de ${missingMonths.length} ${missingMonths.length === 1 ? 'mês' : 'meses'}: os custos estão incompletos e a margem parece maior do que é</span>`
+            : margin != null && prevMargin != null ? `${margin - prevMargin >= 0 ? '▲' : '▼'} ${Math.abs(Math.round(margin - prevMargin))} p.p. vs ${y - 1}` : '',
           eur: `EBITDA ${escapeHtml(fmtEURShort(m.ebitda))} · custos ${escapeHtml(fmtEURShort(m.costs))}`, detail: 'costs'
         });
       const indPipeline = indCard({
-          label: 'Carteira e cobrança', big: rec.backlogMonths != null ? rec.backlogMonths.toLocaleString('pt-PT', { maximumFractionDigits: 1 }) : '—', unit: 'meses', caption: 'de trabalho garantido por faturar',
+          label: 'Trabalho em carteira', big: rec.backlogMonths != null ? Math.round(rec.backlogMonths).toLocaleString('pt-PT') : '—', unit: rec.backlogMonths != null && Math.round(rec.backlogMonths) === 1 ? 'mês' : 'meses', caption: 'de trabalho adjudicado por faturar, ao ritmo atual',
           bigT: tone(rec.backlogMonths, 6, 3),
           t: [tone(rec.backlogMonths, 6, 3), tone(rec.dso, dsoGoal ?? 45, (dsoGoal ?? 45) * 1.5, false), tone(over60Share, 10, 25, false)].reduce((w, x) => x === 'bad' || w === 'bad' ? 'bad' : x === 'warn' || w === 'warn' ? 'warn' : (x || w), ''),
           sub: `${rec.dso != null ? `recebem em ${Math.round(rec.dso)} dias${dsoGoal ? ` (objetivo ${dsoGoal})` : ''}` : 'prazo de recebimento por calcular'} · <span class="${over60Share > 25 ? 'bad' : over60Share > 10 ? 'warn' : ''}">${Math.round(over60Share)}% da dívida com +60 dias</span>`,
@@ -10135,7 +10155,7 @@
           <div class="gantt-wrap chart-card"><div class="card-head"><h2>Faturação acumulada</h2><span class="chart-legend"><i class="cur"></i>${y}${revPrev.some(v => v) ? `<i class="prev"></i>${y - 1}` : ''}${revGoal ? '<i class="goal"></i>objetivo' : ''}</span></div>${cumulativeSvg(revCur, revPrev, revGoal, upto, window.innerWidth >= 1000 ? 1040 : 640)}</div>
           </div>
           <details class="fin-more" id="fin-more">
-            <summary>Ver mais: objetivos, tesouraria, custos e custo/hora</summary>
+            <summary>Objetivos, tesouraria, custos e custo/hora</summary>
             <div class="section-label" id="fin-more-goals">Objetivos ${y}</div>
             <div class="gantt-wrap goal-list">${GOAL_METRICS.map(goalRow).join('')}
               <div class="goal-foot"><button type="button" class="text-btn" data-fin-goals>Editar objetivos</button>${m.uncategorized ? `<span class="fin-note">${m.uncategorized} despesa(s) de ${y} sem categoria contam com IVA incluído.</span>` : ''}</div>
@@ -10702,7 +10722,7 @@
       const [p, s, t] = await Promise.all([
         supabase.from('projects').select('id, project_type_id, area, fractions'),
         supabase.from('project_stages').select('id, project_id, stage_type_id, start_date, end_date, delivery_date').eq('status', 'done'),
-        supabase.from('time_entries').select('stage_id, hours').not('stage_id', 'is', null)
+        selectAll(() => supabase.from('time_entries').select('stage_id, hours').not('stage_id', 'is', null).order('id'))
       ]);
       const hoursByStage = {};
       (t.data || []).forEach(e => { hoursByStage[e.stage_id] = (hoursByStage[e.stage_id] || 0) + Number(e.hours || 0); });
@@ -11007,12 +11027,12 @@
         supabase.from('clients').select('id, name, email, phone, address, notes, nif, language, nps_opt_out').order('name'),
         supabase.from('client_entities').select('*').order('created_at'),
         supabase.from('projects').select('id, name, code, status, awarding_date, client_id, client_entity_id, archived_at, commission_value'),
-        supabase.from('invoices').select('project_id, stage_id, amount, issue_date').gte('issue_date', from),
+        selectAll(() => supabase.from('invoices').select('project_id, stage_id, amount, issue_date').gte('issue_date', from).order('id')),
         supabase.from('project_stages').select('id').eq('excluded_from_invoicing', true),
-        supabase.from('time_entries').select('project_id, stage_id, hours').gte('date', from).not('project_id', 'is', null),
+        selectAll(() => supabase.from('time_entries').select('project_id, stage_id, hours').gte('date', from).not('project_id', 'is', null).order('id')),
         loadClientScoreWeights(),
         // Em dívida: faturas (de qualquer ano) ainda não pagas por inteiro
-        supabase.from('invoices').select('project_id, amount, amount_paid, issue_date, status, archived_at').is('archived_at', null)
+        selectAll(() => supabase.from('invoices').select('project_id, amount, amount_paid, issue_date, status, archived_at').is('archived_at', null).order('id'))
       ]);
       for (const r of [c, e, p, inv, t]) if (r.error) throw r.error;
       const excluded = new Set((ex.data || []).map(s => s.id));
@@ -12027,7 +12047,7 @@
       let invs;
       if (devMode) invs = (window.__mockInv || MOCK_INVOICES).map(i => ({ ...i }));
       else {
-        const r = await supabase.from('invoices').select('amount, amount_paid, issue_date, status, archived_at').lt('issue_date', lim);
+        const r = await selectAll(() => supabase.from('invoices').select('amount, amount_paid, issue_date, status, archived_at').lt('issue_date', lim).order('id'));
         if (r.error) throw r.error;
         invs = r.data || [];
       }
@@ -13339,7 +13359,13 @@
           <button type="button" class="nav-icon-btn" id="help-panel-close" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
         ${helpSearchBarHtml('help-panel-input')}
         <div id="help-panel-list">${here.length ? `<div class="section-label">Neste ecrã</div><div class="help-list">${here.map(g => helpGuideHtml(g, false)).join('')}</div>` : ''}</div>
-        <button type="button" class="text-btn help-all" id="help-all">Ver o manual completo ›</button>`;
+        <button type="button" class="text-btn help-all" id="help-all">Ver o manual completo ›</button>
+        <div class="help-keys"><div class="section-label">Atalhos de teclado</div>
+          <div><kbd>N</kbd> novo (horas, marco, ata, despesa, projeto, terreno)</div>
+          <div><kbd>H</kbd> horas</div>
+          <div><kbd>E</kbd> entrada / fechar o tasco</div>
+          <div><kbd>/</kbd> ou <kbd class="kbd-cmdk">${isMac ? '⌘K' : 'Ctrl K'}</kbd> pesquisar</div>
+          <div><kbd>?</kbd> esta ajuda · <kbd>Esc</kbd> fechar</div></div>`;
       panel.hidden = false;
       document.getElementById('help-panel-overlay').hidden = false;
       requestAnimationFrame(() => panel.classList.add('open'));
@@ -13474,6 +13500,23 @@
       if (e.key === 'Escape') { if (helpTour) endHelpTour(); else closeHelpPanel(); }
       const typing = /input|textarea|select/i.test(document.activeElement?.tagName || '') || document.activeElement?.isContentEditable;
       if (e.key === '?' && !typing && appScreen.style.display !== 'none' && !e.metaKey && !e.ctrlKey) { e.preventDefault(); openHelpPanel(); }
+      // Atalhos (fora de campos e de janelas abertas): N novo · H horas · E entrada/saída · / pesquisar
+      const qm = document.getElementById('quick-modal');
+      const busy = (qm && getComputedStyle(qm).display !== 'none') || !document.getElementById('cmdk')?.hidden || !document.getElementById('help-panel')?.hidden
+        || (document.getElementById('fab-menu')?.style.display && document.getElementById('fab-menu').style.display !== 'none');
+      if (typing || busy || e.metaKey || e.ctrlKey || e.altKey || appScreen.style.display === 'none') return;
+      const k = e.key.toLowerCase();
+      if (k === 'n') { e.preventDefault(); (document.querySelector('#home-fab:not([hidden])') && getComputedStyle(document.getElementById('home-fab')).display !== 'none' ? document.getElementById('home-fab') : document.getElementById('side-new-btn')).click(); }
+      else if (k === 'h') { e.preventDefault(); navStack = []; NAV_ACTIONS.horas(); }
+      else if (e.key === '/') { e.preventDefault(); openCmdk(); }
+      else if (k === 'e') {
+        e.preventDefault();
+        const punch = () => document.querySelector('#today-punch [data-punch="in"], #today-punch [data-punch="leave"]');
+        if (currentViewState?.name !== 'home') { navStack = []; NAV_ACTIONS.home(); }
+        let tries = 0;
+        const go = () => { const b = punch(); if (b) b.click(); else if (tries++ < 20) setTimeout(go, 150); else showToast('Hoje já está marcado (ou estás fora / de folga).'); };
+        go();
+      }
     });
     document.getElementById('top-help-btn').addEventListener('click', openHelpPanel);
     document.getElementById('help-panel-overlay').addEventListener('click', closeHelpPanel);
@@ -13691,7 +13734,7 @@
           <div class="gantt-wrap">
             <div class="card-head"><h2>Horário e seguro</h2></div>
             <div class="form-grid">
-              <div><label class="field-label" style="margin-top:0;">Horas por semana (por omissão)</label><input type="text" inputmode="decimal" id="pay-hw" class="form-input" value="${escapeHtml(cfg.calendar.hours_week)}"></div>
+              <div><label class="field-label" style="margin-top:0;">Horas por semana (referência)</label><input type="text" inputmode="decimal" id="pay-hw" class="form-input" value="${escapeHtml(cfg.calendar.hours_week)}"></div>
               <div><label class="field-label" style="margin-top:0;">Dias de férias por ano</label><input type="text" inputmode="numeric" id="pay-vac" class="form-input" value="${escapeHtml(cfg.calendar.vacation_days)}"></div>
               <div><label class="field-label">Feriado municipal (dia-mês)</label><input type="text" id="pay-muni" class="form-input" placeholder="24-06" value="${escapeHtml(cfg.calendar.municipal_holiday ? cfg.calendar.municipal_holiday.split('-').reverse().join('-') : '')}"></div>
               <div><label class="field-label">Seguro de acidentes de trabalho (€/ano)</label><input type="text" inputmode="decimal" id="pay-at" class="form-input" value="${escapeHtml(cfg.at_insurance_year ?? '')}" placeholder="${hc.atEstimated && hc.atYear ? 'estimativa: ' + escapeHtml(fmtEUR(hc.atYear)) : 'valor da apólice'}"></div>
@@ -13849,8 +13892,8 @@
     // ================= VIABILIDADE DE TERRENOS (estudo para o investidor) =================
     // Mesma estrutura do Excel de viabilidade (CST), com correções: a comissão imobiliária é custo de quem
     // vende (sai da receita), a aquisição inclui IMT e Imposto do Selo, e o ROI sem reservas divide pelo custo
-    // sem reservas. Valores por omissão em app_settings 'feasibility'; cada terreno guarda os seus em
-    // land_plots.feasibility (só o que for diferente do por omissão).
+    // sem reservas. Valores de referência em app_settings 'feasibility'; cada terreno guarda os seus em
+    // land_plots.feasibility (só o que for diferente da referência).
     const FEAS_DEFAULT = {
       acq_type: 'urban', imt_custom: null, imt_exempt: false, stamp_pct: 0.8, acq_other: null,
       sellable_pct: 90,
@@ -13877,7 +13920,7 @@
       if (r.error) throw r.error;
       feasCfgCache = null;
     }
-    // Valores do terreno = por omissão + os do terreno (as áreas vêm da ficha quando não estão escritas)
+    // Valores do terreno = referência + os do terreno (as áreas vêm da ficha quando não estão escritas)
     function feasInputs(p, cfg = feasCfgCache || FEAS_DEFAULT) {
       const f = p.feasibility || {};
       const base = plotAreas(p);
@@ -14056,7 +14099,7 @@
         </div>
         <div class="op-actions">
           <button type="button" class="primary-btn" id="fz-save">Guardar viabilidade</button>
-          <button type="button" class="text-btn" id="fz-reset">Repor os valores por omissão</button>
+          <button type="button" class="text-btn" id="fz-reset">Repor os valores de referência</button>
           <div id="fz-msg" class="form-msg"></div>
         </div>`;
       const setPath = (path, v) => { const k = path.split('.'); if (k.length === 2) f[k[0]] = { ...f[k[0]], [k[1]]: v }; else f[path] = v; };
@@ -14141,7 +14184,7 @@
             </div>` : ''}
           </div>`;
       };
-      // Valores diferentes dos por omissão (Definições → Viabilidade de terrenos): assinalados, com ↺ para repor
+      // Valores diferentes dos de referência (Definições → Viabilidade de terrenos): assinalados, com ↺ para repor
       const DEF_PATHS = ['sellable_pct', 'cost.housing', 'cost.common', 'cost.parking', 'cost.commerce', 'cost.green', 'cost.infra', 'lic_pct', 'proj_pct', 'cont_pct', 'mgmt_pct', 'vat_pct', 'comm_pct', 'occupancy', 'rent_opex_pct', 'delta_pct'];
       const getPath = (o, path) => path.split('.').reduce((x, k) => x?.[k], o);
       const markDefaults = () => {
@@ -14156,18 +14199,18 @@
             n++;
             if (!r) { r = document.createElement('button'); r.type = 'button'; r.className = 'fz-reset1'; el.after(r);
               r.addEventListener('click', () => { setPath(path, getPath(S.cfg, path)); el.value = getPath(S.cfg, path); S.dirty = true; drawResult(); markDefaults(); }); }
-            r.textContent = `↺ por omissão: ${fmtNum(def)}`;
-            r.title = 'Repor o valor por omissão (Definições → Viabilidade de terrenos)';
+            r.textContent = `↺ referência: ${fmtNum(def)}`;
+            r.title = 'Repor o valor de referência (Definições → Viabilidade de terrenos)';
           } else if (r) r.remove();
         });
         const banner = document.getElementById('fz-defaults');
         banner.hidden = !n;
-        banner.innerHTML = n ? `<span>⚠ ${n} ${n === 1 ? 'valor diferente' : 'valores diferentes'} dos por omissão neste terreno (assinalados).</span><button type="button" class="text-btn" id="fz-reset-all">Repor todos</button>` : '';
+        banner.innerHTML = n ? `<span>⚠ ${n} ${n === 1 ? 'valor diferente' : 'valores diferentes'} dos de referência neste terreno (assinalados).</span><button type="button" class="text-btn" id="fz-reset-all">Repor todos</button>` : '';
         document.getElementById('fz-reset-all')?.addEventListener('click', () => document.getElementById('fz-reset').click());
       };
       view.querySelectorAll('.fz-form [data-f]').forEach(el => el.addEventListener('input', markDefaults));
       drawTyp(); drawResult(); markDefaults();
-      // Guardar só o que é diferente do por omissão (e as áreas)
+      // Guardar só o que é diferente da referência (e as áreas)
       const diff = () => {
         const out = {};
         Object.keys(f).forEach(k => {
@@ -14193,7 +14236,7 @@
         const prev = JSON.parse(JSON.stringify(S.f));
         S.f = JSON.parse(JSON.stringify(feasInputs({ ...p, feasibility: { housing_area: f.housing_area, commerce_area: f.commerce_area, below_area: f.below_area, green_area: f.green_area, infra_area: f.infra_area, typologies: f.typologies } }, S.cfg)));
         S.dirty = true; renderFeasEditor();
-        showToast('Valores por omissão repostos (as áreas e as tipologias ficam)', { ms: 8000, undo: () => { S.f = prev; renderFeasEditor(); } });
+        showToast('Valores de referência repostos (as áreas e as tipologias ficam)', { ms: 8000, undo: () => { S.f = prev; renderFeasEditor(); } });
       });
       document.getElementById('fz-print').addEventListener('click', () => {
         openQuickModal('Resumo para o investidor', `
@@ -14295,14 +14338,14 @@
       w.document.open(); w.document.write(html); w.document.close();
     }
 
-    // ---------- Definições → Viabilidade de terrenos (valores por omissão) ----------
+    // ---------- Definições → Viabilidade de terrenos (valores de referência) ----------
     async function loadFeasSettings() {
       const box = document.getElementById('settings-feas-container');
       try {
         const cfg = await loadFeasCfg();
         const num = (k, label, val) => `<div><label class="field-label">${label}</label><input type="text" inputmode="decimal" class="form-input" data-fs="${k}" value="${escapeHtml(val ?? '')}"></div>`;
         box.innerHTML = `
-          <div class="field-hint" style="margin-top:0;">Valores de partida de cada viabilidade nova. Em cada terreno podes mudá-los.</div>
+          <div class="field-hint" style="margin-top:0;">Valores de referência da NOVA para cada viabilidade nova. Em cada terreno podes ajustá-los (ficam assinalados e com ↺ para repor).</div>
           <div class="section-label op-form-sec">Construção (€/m²)</div>
           <div class="form-grid fz-grid3">
             ${num('cost.housing', 'Habitação', cfg.cost.housing)}${num('cost.common', 'Áreas comuns', cfg.cost.common)}${num('cost.parking', 'Estacionamento', cfg.cost.parking)}
@@ -14328,7 +14371,7 @@
           });
           if (bad) return formError('fs-msg', 'Preenche todos os valores com números.');
           const { typologies, ...save } = next;
-          try { await saveFeasCfg({ ...save, typologies }); showToast('Valores por omissão guardados'); }
+          try { await saveFeasCfg({ ...save, typologies }); showToast('Valores de referência guardados'); }
           catch (err) { formError('fs-msg', 'Não foi possível guardar: ' + err.message); }
         });
       } catch (err) { box.innerHTML = `<div class="error-box">Não foi possível carregar: ${escapeHtml(err.message)}</div>`; }
@@ -14353,6 +14396,9 @@
       const t = ' ' + normTxt(text || '').replace(/[^a-z0-9]+/g, ' ') + ' ';
       return PT_REGIONS.find(r => r.places.some(pl => t.includes(' ' + pl + ' ')))?.name || null;
     };
+    // Um terreno pode ter várias tipologias de uso (ex.: habitação multifamiliar + comércio)
+    const plotTypes = p => p?.project_type_ids?.length ? p.project_type_ids : (p?.project_type_id ? [p.project_type_id] : []);
+    const plotTypeNames = (p, typeById) => plotTypes(p).map(t => typeById[t]?.name).filter(Boolean).join(' + ');
     const SEGMENTS = [['economico', 'Económico'], ['medio', 'Médio'], ['premium', 'Premium']];
     const STRATEGIES = [['sale', 'Construir e vender'], ['rent', 'Construir e arrendar'], ['both', 'Venda ou arrendamento']];
     // Segmento do produto pelo preço de venda (€/m² ou preço médio por fração)
@@ -14374,9 +14420,13 @@
       const add = (w, s, text, tip) => parts.push({ w, s: Math.max(0, Math.min(1, s)), text, tip });
       let capInv = 100;
       // Tipologia
-      if (inv.project_type_ids?.length && p.project_type_id) {
-        const ok = inv.project_type_ids.includes(p.project_type_id);
-        add(20, ok ? 1 : 0, ok ? 'tipologia que procura' : `procura ${inv.project_type_ids.map(t => typeById[t]?.name).filter(Boolean).join(', ') || 'outra tipologia'}`);
+      const pts = plotTypes(p);
+      if (inv.project_type_ids?.length && pts.length) {
+        const hit = pts.filter(t => inv.project_type_ids.includes(t));
+        // todas as tipologias do terreno são das que procura = 1; só algumas = parcial
+        const sc = hit.length === pts.length ? 1 : hit.length ? 0.6 : 0;
+        add(20, sc, sc === 1 ? 'tipologia que procura' : sc ? `procura ${hit.map(t => typeById[t]?.name).filter(Boolean).join(', ')}, não ${pts.filter(t => !hit.includes(t)).map(t => typeById[t]?.name).filter(Boolean).join(', ')}` : `procura ${inv.project_type_ids.map(t => typeById[t]?.name).filter(Boolean).join(', ') || 'outra tipologia'}`);
+        if (sc && sc < 1) pitch.push(`separar a parte de ${hit.map(t => typeById[t]?.name).filter(Boolean).join(', ')} para ele, ou juntar-lhe um parceiro para o resto`);
       }
       // Investimento (com tolerância: 50% fora do intervalo → 0)
       if (ticket && (inv.invest_min != null || inv.invest_max != null)) {
@@ -14438,7 +14488,7 @@
       }
       // Características (palavras do perfil encontradas no terreno)
       if (inv.tags?.length) {
-        const txt = normTxt([typeById[p.project_type_id]?.name, p.pdm_class, p.notes, p.name, c.commerce ? 'comercio' : '', p.has_approved_project ? 'aprovado' : ''].join(' '));
+        const txt = normTxt([plotTypeNames(p, typeById), p.pdm_class, p.notes, p.name, c.commerce ? 'comercio' : '', p.has_approved_project ? 'aprovado' : ''].join(' '));
         const hit = inv.tags.filter(t => t && txt.includes(normTxt(t)));
         if (hit.length) add(5, 1, 'procura ' + hit.join(', '));
       }
@@ -14454,7 +14504,7 @@
       mine.forEach(x => {
         const q = (ctx.plots || []).find(y => y.id === x.plot_id); if (!q) return;
         const qc = feasCalc(q), qt = qc.hasCosts ? qc.costGlobal : Number(q.asking_price) || null;
-        const sim = (q.project_type_id && q.project_type_id === p.project_type_id ? 1 : 0) + (regionOf(q.municipality) && regionOf(q.municipality) === regionOf(p.municipality) ? 1 : 0)
+        const sim = (plotTypes(q).some(t => plotTypes(p).includes(t)) ? 1 : 0) + (regionOf(q.municipality) && regionOf(q.municipality) === regionOf(p.municipality) ? 1 : 0)
           + (qt && ticket && Math.abs(qt - ticket) / Math.max(qt, ticket) < 0.35 ? 1 : 0);
         if (sim < 2) return;
         if (['interested', 'proposal'].includes(x.status)) { hist += 6; histText.push(`interessou-se por «${q.name}», parecido`); }
@@ -14512,9 +14562,9 @@
       { id: 'inv-b', name: 'Ana Ribeiro', company: '', email: '', phone: '', client_id: null, project_type_ids: ['pt-2'], fractions_min: null, fractions_max: null, invest_min: 300000, invest_max: 900000, zones: ['Matosinhos', 'Maia'], approved_pref: 'approved', notes: '', active: true, strategy: 'both', min_roi: 15, min_yield: 5, segment: 'premium', tags: [] }
     ];
     let mockPlots = [
-      { id: 'lp-1', name: 'Terreno da Rua do Campo', status: 'analysis', origin: 'network', client_id: null, source_name: 'João (mediador)', scout_id: 'mock-member-1', address: 'Rua do Campo, 120', municipality: 'Vila Nova de Gaia', parish: 'Canidelo', maps_url: '', docs_url: '', land_area: 1200, asking_price: 450000, project_type_id: 'pt-1', has_approved_project: false, pdm_class: 'Espaço residencial — tipo II', pdm_index: 1.2, max_floors: 4, buildable_area: null, fractions_est: 12, build_cost_m2: 1100, other_costs_pct: 15, sale_price_m2: 3200, sellable_ratio: 80, notes: 'Frente de rua com 30 m.', risks: 'Confirmar servidão de passagem a nascente.', created_at: '2026-09-20T10:00:00Z',
+      { id: 'lp-1', name: 'Terreno da Rua do Campo', status: 'analysis', origin: 'network', client_id: null, source_name: 'João (mediador)', scout_id: 'mock-member-1', address: 'Rua do Campo, 120', municipality: 'Vila Nova de Gaia', parish: 'Canidelo', maps_url: '', docs_url: '', land_area: 1200, asking_price: 450000, project_type_id: 'pt-1', project_type_ids: ['pt-1'], has_approved_project: false, pdm_class: 'Espaço residencial — tipo II', pdm_index: 1.2, max_floors: 4, buildable_area: null, fractions_est: 12, build_cost_m2: 1100, other_costs_pct: 15, sale_price_m2: 3200, sellable_ratio: 80, notes: 'Frente de rua com 30 m.', risks: 'Confirmar servidão de passagem a nascente.', created_at: '2026-09-20T10:00:00Z',
         feasibility: { housing_area: 1440, below_area: 300, sale_mode: 'typology', typologies: [{ name: 'T1', units: 6, area: 55, price: 260000, rent: 1100 }, { name: 'T2', units: 6, area: 80, price: 340000, rent: 1350 }], cost: { housing: 1500, common: 1000, parking: 700 }, rent_on: true } },
-      { id: 'lp-2', name: 'Lote em Matosinhos Sul', status: 'registered', origin: 'client', client_id: 'cl-2', source_name: '', scout_id: null, address: '', municipality: 'Matosinhos', parish: '', maps_url: '', docs_url: '', land_area: 450, asking_price: 280000, project_type_id: 'pt-2', has_approved_project: true, pdm_class: '', pdm_index: null, max_floors: 2, buildable_area: 260, fractions_est: 1, build_cost_m2: null, other_costs_pct: null, sale_price_m2: null, sellable_ratio: null, notes: '', risks: '', created_at: '2026-09-28T10:00:00Z' }
+      { id: 'lp-2', name: 'Lote em Matosinhos Sul', status: 'registered', origin: 'client', client_id: 'cl-2', source_name: '', scout_id: null, address: '', municipality: 'Matosinhos', parish: '', maps_url: '', docs_url: '', land_area: 450, asking_price: 280000, project_type_id: 'pt-2', project_type_ids: ['pt-2'], has_approved_project: true, pdm_class: '', pdm_index: null, max_floors: 2, buildable_area: 260, fractions_est: 1, build_cost_m2: null, other_costs_pct: null, sale_price_m2: null, sellable_ratio: null, notes: '', risks: '', created_at: '2026-09-28T10:00:00Z' }
     ];
     let mockPresentations = [];
     let mockProposals = [];
@@ -14611,7 +14661,7 @@
         const list = d.plots.filter(match).filter(p => oppsPlotFilter === 'open' ? PLOT_OPEN.includes(p.status) : oppsPlotFilter === 'won' ? p.status === 'won' : ['lost', 'discarded'].includes(p.status));
         const row = p => {
           const c = plotCalc(p), nFit = fitsFor(p).length, nPres = (presByPlot[p.id] || []).length;
-          const sub = [p.municipality, p.land_area ? fmtNum(p.land_area) + ' m²' : null, typeById[p.project_type_id]?.name,
+          const sub = [p.municipality, p.land_area ? fmtNum(p.land_area) + ' m²' : null, plotTypeNames(p, typeById),
             p.origin === 'client' ? 'cliente' + (clientById[p.client_id] ? ' ' + clientById[p.client_id].name : '') : p.source_name ? 'network · ' + p.source_name : 'network',
             p.scout_id && memberById[p.scout_id] ? 'acompanha ' + memberById[p.scout_id].name.split(' ')[0] : null].filter(Boolean).join(' · ');
           return `<div class="invoice-row click-row op-row" data-plot="${escapeHtml(p.id)}">
@@ -14711,8 +14761,9 @@
           <div><label class="field-label">Área do terreno (m²)</label><input type="text" inputmode="decimal" id="pl-area" class="form-input" value="${v('land_area')}"></div>
           <div><label class="field-label">Preço pedido (€)</label><input type="text" inputmode="decimal" id="pl-price" class="form-input" value="${v('asking_price')}"></div>
         </div>
-        <label class="field-label">Tipologia</label>
-        <select id="pl-type" class="form-input"><option value="">Por definir</option>${d.types.map(t => `<option value="${escapeHtml(t.id)}"${t.id === p.project_type_id ? ' selected' : ''}>${escapeHtml(t.name)}</option>`).join('')}</select>
+        <label class="field-label">Tipologias de uso</label>
+        <div class="op-chips" id="pl-types">${d.types.map(t => `<label class="op-chip"><input type="checkbox" value="${escapeHtml(t.id)}"${plotTypes(p).includes(t.id) ? ' checked' : ''}><span>${escapeHtml(t.name)}</span></label>`).join('')}</div>
+        <div class="field-hint">Podes escolher mais do que uma (ex.: habitação multifamiliar e comércio).</div>
         <label class="check-row"><input type="checkbox" id="pl-approved"${p.has_approved_project ? ' checked' : ''}> Já tem projeto aprovado</label>
 
         <div class="section-label op-form-sec">Urbanismo (PDM)</div>
@@ -14756,7 +14807,7 @@
           name, origin, client_id: origin === 'client' ? picker.get().clientId : null, source_name: origin === 'client' ? null : valOrNull(g('pl-source')),
           scout_id: g('pl-scout') || null, address: valOrNull(g('pl-address')), municipality: valOrNull(g('pl-muni')), parish: valOrNull(g('pl-parish')),
           maps_url: valOrNull(g('pl-maps')), docs_url: valOrNull(g('pl-docs')), land_area: numOrNull(g('pl-area')), asking_price: numOrNull(g('pl-price')),
-          project_type_id: g('pl-type') || null, has_approved_project: document.getElementById('pl-approved').checked,
+          ...(() => { const ids = [...document.querySelectorAll('#pl-types input:checked')].map(cb => cb.value); return { project_type_ids: ids, project_type_id: ids[0] || null }; })(), has_approved_project: document.getElementById('pl-approved').checked,
           pdm_class: valOrNull(g('pl-pdm')), pdm_index: numOrNull(g('pl-index')), max_floors: numOrNull(g('pl-floors')),
           buildable_area: numOrNull(g('pl-build')), fractions_est: numOrNull(g('pl-fractions')),
           notes: valOrNull(g('pl-notes')), risks: valOrNull(g('pl-risks'))
@@ -14835,7 +14886,7 @@
               <div class="card-head"><h2>Terreno</h2></div>
               ${kv('Área do terreno', p.land_area ? escapeHtml(fmtNum(p.land_area)) + ' m²' : txt(null))}
               ${kv('Preço pedido', eur(p.asking_price))}
-              ${kv('Tipologia', txt(typeById[p.project_type_id]?.name))}
+              ${kv(plotTypes(p).length > 1 ? 'Tipologias' : 'Tipologia', txt(plotTypeNames(p, typeById)))}
               ${kv('Projeto aprovado', p.has_approved_project ? 'Sim' : 'Não')}
               ${kv('Morada', txt([p.address, p.parish].filter(Boolean).join(', ')))}
               ${kv('Mapa', link(p.maps_url, 'Abrir mapa'))}
@@ -15335,18 +15386,18 @@
         const sumEl = document.getElementById('pp-pct-sum');
         if (sumEl) { const sum = pp.phases.reduce((t, x) => t + (Number(x.pct) || 0), 0), off = Math.abs(sum - 100) > 0.01; sumEl.className = off ? 'warn-text' : ''; sumEl.textContent = fmtNum(sum) + '%' + (off ? ' — devia dar 100%' : ''); }
       };
-      // Valores por omissão (custo/hora calculado, objetivo €/h, especialidades-modelo da tipologia): avisa e deixa repor
+      // Valores de referência (custo/hora calculado, objetivo €/h, especialidades-modelo da tipologia): avisa e deixa repor
       const ppDefaults = () => {
         const out = [];
         const defCph = S.cfg.cost_per_hour ?? S.autoCph, defRate = S.cfg.target_rate;
         const preset = specialtyPreset(S.cfg, pp.project_type_id);
         const norm = l => JSON.stringify((l || []).filter(x => (x.name || '').trim()).map(x => [x.name.trim(), x.mode === 'm2' ? 'm2' : 'fixed', Number(x.value) || 0]));
-        if (defCph != null && pp.cost_per_hour != null && Math.abs(Number(pp.cost_per_hour) - Number(defCph)) > 0.005) out.push(['cph', `custo/hora ${fmtEUR(pp.cost_per_hour)} (por omissão ${fmtEUR(defCph)})`, () => { pp.cost_per_hour = defCph; document.getElementById('pp-cph').value = defCph; }]);
-        if (defRate != null && pp.target_rate != null && Math.abs(Number(pp.target_rate) - Number(defRate)) > 0.005) out.push(['rate', `objetivo ${fmtEUR(pp.target_rate)}/h (por omissão ${fmtEUR(defRate)}/h)`, () => { pp.target_rate = defRate; }]);
+        if (defCph != null && pp.cost_per_hour != null && Math.abs(Number(pp.cost_per_hour) - Number(defCph)) > 0.005) out.push(['cph', `custo/hora ${fmtEUR(pp.cost_per_hour)} (referência ${fmtEUR(defCph)})`, () => { pp.cost_per_hour = defCph; document.getElementById('pp-cph').value = defCph; }]);
+        if (defRate != null && pp.target_rate != null && Math.abs(Number(pp.target_rate) - Number(defRate)) > 0.005) out.push(['rate', `objetivo ${fmtEUR(pp.target_rate)}/h (referência ${fmtEUR(defRate)}/h)`, () => { pp.target_rate = defRate; }]);
         if (norm(pp.specialties) !== norm(preset)) out.push(['spec', 'especialidades diferentes da lista-modelo da tipologia', () => { pp.specialties = preset; drawSpecs(); }]);
         const box = document.getElementById('pp-defaults');
         box.hidden = !out.length || locked;
-        box.innerHTML = out.length ? `<span>⚠ Diferente dos valores por omissão: ${out.map(([k, t]) => `${escapeHtml(t)} <button type="button" class="fz-reset1" data-ppreset="${k}">↺ repor</button>`).join(' · ')}</span>${out.length > 1 ? '<button type="button" class="text-btn" data-ppreset="all">Repor todos</button>' : ''}` : '';
+        box.innerHTML = out.length ? `<span>⚠ Diferente dos valores de referência: ${out.map(([k, t]) => `${escapeHtml(t)} <button type="button" class="fz-reset1" data-ppreset="${k}">↺ repor</button>`).join(' · ')}</span>${out.length > 1 ? '<button type="button" class="text-btn" data-ppreset="all">Repor todos</button>' : ''}` : '';
         box.querySelectorAll('[data-ppreset]').forEach(b => b.addEventListener('click', () => {
           out.filter(([k]) => b.dataset.ppreset === 'all' || k === b.dataset.ppreset).forEach(([, , fn]) => fn());
           S.dirty = true; recalc(); ppDefaults();
@@ -15955,7 +16006,7 @@
       }
       html += `<div class="ts-foot">
           <button type="button" class="secondary-btn ts-add" data-ts-add>+ Acrescentar linha</button>
-          <span class="field-hint">Escreve as horas e sai da célula: fica gravado. Aceita 1,5 ou 1:30${tsNarrow.matches ? '' : ', e uma nota a seguir (ex.: <b>2 revisão de plantas</b>)'}. Para apagar, deixa vazio. Cada dia tem dois campos: <b class="ts-leg f">F</b> faturável e <b class="ts-leg nf">NF</b> não faturável.</span>
+          <span class="field-hint"><b class="ts-leg f">F</b> faturável · <b class="ts-leg nf">NF</b> não faturável · grava ao sair da célula (ajuda no <b>?</b>)</span>
           <button type="button" class="text-btn" data-ts-list>Ver registos</button>
         </div>`;
       box.innerHTML = html;
@@ -16122,12 +16173,22 @@
         document.getElementById('tsl-project').style.display = mode === 'project' ? 'block' : 'none';
         document.getElementById('tsl-other').style.display = mode === 'other' ? 'block' : 'none';
       });
-      const [projects, cats] = await Promise.all([
+      const [projects, cats, myPhases] = await Promise.all([
         devMode ? MOCK_PROJECTS : supabase.from('projects').select('id, name, code').is('archived_at', null).order('name').then(r => r.data || []),
-        loadTimeCategories()
+        loadTimeCategories(),
+        fetchActivePhases().then(ph => ph.filter(p => (p.assignee_ids || []).includes(tsState?.me))).catch(() => [])
       ]);
+      // Primeiro os projetos das minhas fases ativas, depois os usados há pouco, depois os outros
+      const mine = [...new Set(myPhases.map(p => String(p.project_id)))];
+      const recentIds = [...new Set((tsState?.lines || []).map(l => l.project_id).filter(Boolean).map(String))].filter(id => !mine.includes(id));
+      const label = p => escapeHtml((p.code ? p.code + ' — ' : '') + p.name);
+      const optP = p => `<option value="${escapeHtml(p.id)}">${label(p)}</option>`;
+      const byId = id => projects.find(p => String(p.id) === id);
+      const others = projects.filter(p => !mine.includes(String(p.id)) && !recentIds.includes(String(p.id)));
       document.getElementById('tsl-proj').innerHTML = '<option value="">Escolhe o projeto</option>' +
-        projects.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml((p.code ? p.code + ' — ' : '') + p.name)}</option>`).join('');
+        (mine.length ? `<optgroup label="As minhas fases">${mine.map(byId).filter(Boolean).map(optP).join('')}</optgroup>` : '') +
+        (recentIds.length ? `<optgroup label="Usados há pouco">${recentIds.map(byId).filter(Boolean).map(optP).join('')}</optgroup>` : '') +
+        (mine.length || recentIds.length ? `<optgroup label="Todos os projetos">${others.map(optP).join('')}</optgroup>` : others.map(optP).join(''));
       document.getElementById('tsl-cat').innerHTML = '<option value="">Escolhe a categoria</option>' +
         cats.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
       document.getElementById('tsl-proj').addEventListener('change', async (e) => {
@@ -16146,6 +16207,10 @@
         const opt = s => `<option value="${escapeHtml(s.id)}">${escapeHtml((s.stage_types?.name ?? 'Fase') + (s.revision_label ? ' ' + s.revision_label : ''))}</option>`;
         sel.innerHTML = '<option value="">Escolhe a fase</option>' + open.map(opt).join('') +
           (done.length ? `<optgroup label="Concluídas">${done.map(opt).join('')}</optgroup>` : '');
+        // Já escolhida: a minha fase atribuída neste projeto, ou a fase em curso, ou a primeira por fazer
+        const mineHere = myPhases.find(p => String(p.project_id) === String(pid) && open.some(s => String(s.id) === String(p.id)));
+        const cur = mineHere ? open.find(s => String(s.id) === String(mineHere.id)) : open.find(s => ['wip', 'in_progress', 'active', 'review'].includes(s.status)) || open[0];
+        if (cur) sel.value = cur.id;
       });
       document.getElementById('tsl-ok').addEventListener('click', () => {
         const msg = document.getElementById('tsl-msg');
@@ -16232,6 +16297,18 @@
       if (devMode) { const o = (mockArr || []).find(x => String(x.id) === String(id)); if (o) Object.assign(o, patch); return; }
       const r = await supabase.from(table).update(patch).eq('id', id);
       if (r.error) throw r.error;
+    }
+    // O Supabase devolve no máximo 1000 linhas por pedido: lê página a página até ao fim.
+    // make() cria a consulta (com uma ordem estável, ex.: .order('id')); devolve { data, error } como uma consulta normal.
+    async function selectAll(make, page = 1000) {
+      const data = [];
+      for (let from = 0; from < 200000; from += page) {
+        const r = await make().range(from, from + page - 1);
+        if (r.error) return { data: null, error: r.error };
+        data.push(...(r.data || []));
+        if (!r.data || r.data.length < page) break;
+      }
+      return { data, error: null };
     }
     async function dbInsert(table, row, mockArr) {
       if (devMode) { const o = { id: table + '-' + Date.now(), ...row }; if (mockArr) mockArr.push(o); return o; }

@@ -159,3 +159,7 @@ alter table public.investors
   add column if not exists min_yield numeric,
   add column if not exists segment text,
   add column if not exists tags text[] not null default '{}';
+
+-- Um terreno pode ter mais do que uma tipologia de uso
+alter table public.land_plots add column if not exists project_type_ids uuid[] not null default '{}';
+update public.land_plots set project_type_ids = array[project_type_id] where project_type_id is not null and cardinality(project_type_ids) = 0;
