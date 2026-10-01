@@ -1483,6 +1483,11 @@
   .alert-row.month .alert-icon { background: var(--accent-soft); color: var(--accent); }
   .alert-row.month .alert-when { color: var(--accent); }
   .alert-row.pause .alert-icon svg { width: 11px; height: 11px; fill: var(--warning); }
+  /* Só o urgente tem cor; o resto fica neutro */
+  .alert-row.team:not(.late):not(.soon) .alert-icon, .alert-row.month:not(.soon) .alert-icon, .alert-row.pause .alert-icon { background: var(--surface-2); color: var(--text-2); }
+  .alert-row.pause .alert-icon svg { fill: var(--text-2); }
+  .alert-row:not(.late):not(.soon) .alert-when { color: var(--text-2); }
+  .alerts-toggle { display: block; margin: var(--sp-2) 0 0; }
   .checklist { border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--sp-2-5) var(--sp-3); background: var(--surface); }
   .ck-head { display: flex; align-items: center; gap: var(--sp-2-5); margin-bottom: var(--sp-1-5); font-size: var(--fs-sm); color: var(--text-2); }
   .ck-head span { white-space: nowrap; }
@@ -11557,43 +11562,71 @@
       if (!bankTo || bankTo < addDaysKey(prevEnd, -3)) out.push({ kind: 'bank', title: `Carregar o extrato do banco de ${monthName}`, sub: 'Millennium → extrato combinado em PDF → Saúde financeira → Importar extrato' });
       return out;
     }
+    // Avisos da Hoje: uma só lista por urgência (atrasado → esta semana → resto → fecho do mês).
+    // Mostra os 3 mais urgentes; o resto fica em "Mais N avisos". Cor só no que é urgente.
+    let alertsExpanded = false;
     function renderDeadlineAlerts(el, rows, breakRows = [], importRows = [], teamRows = []) {
       if (!rows.length && !breakRows.length && !importRows.length && !teamRows.length) { el.hidden = true; el.innerHTML = ''; return; }
       const today = dateKey(new Date());
-      el.hidden = false;
-      el.innerHTML = `<div class="card-head"><h2>Avisos</h2><span>${[importRows.length && 'fecho do mês', teamRows.some(r => r.kind === 'nps') && 'clientes', teamRows.some(r => r.kind === 'camara') && 'câmaras', teamRows.some(r => !['camara', 'nps'].includes(r.kind)) && 'organização', breakRows.length && 'pausas', rows.length && 'prazos'].filter(Boolean).join(' · ')}</span></div>` + teamRows.map(r => `
-          <div class="alert-row team${r.late ? ' late' : r.kind === 'camara' || r.kind === 'nps' ? ' soon' : ''}" data-alert-team="${r.kind}"${r.project ? ` data-project="${escapeHtml(r.project)}"` : ''}${r.nps ? ` data-nps="${escapeHtml(r.nps)}"` : ''}>
-            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : r.kind === 'nps' ? '★' : '+'}</span>
+      const dayOfMonth = new Date().getDate();
+      const items = [];
+      // pri: 0 atrasado/crítico · 1 esta semana · 2 resto · 3 fecho do mês (sobe a 1 depois do dia 10)
+      teamRows.forEach(r => {
+        const urgent = r.late ? 'late' : (r.kind === 'camara' || r.kind === 'debt') ? 'soon' : '';
+        items.push({ pri: r.late ? 0 : urgent ? 1 : 2, date: r.due || '9999', html: `
+          <div class="alert-row team${urgent ? ' ' + urgent : ''}" data-alert-team="${r.kind}"${r.project ? ` data-project="${escapeHtml(r.project)}"` : ''}${r.nps ? ` data-nps="${escapeHtml(r.nps)}"` : ''}>
+            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : r.kind === 'nps' ? '★' : r.kind === 'debt' ? '€' : '+'}</span>
             <span class="alert-text"><b>${escapeHtml(r.title)}</b><span>${escapeHtml(r.sub)}</span></span>
             <span class="alert-when">${escapeHtml(r.when)}</span>
-          </div>`).join('') + importRows.map(r => `
-          <div class="alert-row month" data-alert-import="${r.kind}">
+          </div>` });
+      });
+      importRows.forEach(r => items.push({ pri: dayOfMonth > 10 ? 1 : 3, date: '9999', html: `
+          <div class="alert-row month${dayOfMonth > 10 ? ' soon' : ''}" data-alert-import="${r.kind}">
             <span class="alert-icon" aria-hidden="true">↑</span>
             <span class="alert-text"><b>${escapeHtml(r.title)}</b><span>${escapeHtml(r.sub)}</span></span>
             <span class="alert-when">Carregar</span>
-          </div>`).join('') + breakRows.map(b => {
+          </div>` }));
+      breakRows.forEach(b => {
         const d = diffDays(b.start_date, today);
         const who = b.type === 'client' ? 'à espera do cliente' : b.type === 'municipality' ? 'à espera da Câmara' : '';
-        return `<div class="alert-row pause" data-alert-break="${escapeHtml(b.id)}" data-project="${escapeHtml(b.project_id)}">
+        items.push({ pri: 2, date: b.start_date || '9999', html: `<div class="alert-row pause" data-alert-break="${escapeHtml(b.id)}" data-project="${escapeHtml(b.project_id)}">
             <span class="alert-icon" aria-hidden="true"><svg viewBox="0 0 12 12"><rect x="2.5" y="2" width="2.4" height="8" rx=".8"/><rect x="7.1" y="2" width="2.4" height="8" rx=".8"/></svg></span>
             <span class="alert-text"><b>Pausa: ${escapeHtml(b.name || 'sem descrição')}</b><span>${escapeHtml([b.project_name, who, 'desde ' + fmtDayMonthYear(b.start_date)].filter(Boolean).join(' · '))}</span></span>
             <span class="alert-when">${d <= 0 ? 'Desde hoje' : `Há ${d} ${d === 1 ? 'dia' : 'dias'}`}</span>
-          </div>`;
-      }).join('') + rows.map(m => {
+          </div>` });
+      });
+      rows.forEach(m => {
         const d = diffDays(today, m.event_date);
         const when = d < 0 ? `Passou há ${-d} ${d === -1 ? 'dia' : 'dias'}` : d === 0 ? 'Termina hoje' : d === 1 ? 'Termina amanhã' : `Faltam ${d} dias`;
-        return `<div class="alert-row${d < 0 ? ' late' : d <= 7 ? ' soon' : ''}" data-alert-marco="${escapeHtml(m.id)}">
+        items.push({ pri: d < 0 ? 0 : d <= 7 ? 1 : 2, date: m.event_date, html: `<div class="alert-row${d < 0 ? ' late' : d <= 7 ? ' soon' : ''}" data-alert-marco="${escapeHtml(m.id)}">
             <span class="alert-icon" aria-hidden="true">!</span>
             <span class="alert-text"><b>${escapeHtml(m.title)}</b><span>${escapeHtml([m.project_name, parseDateKey(m.event_date).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })].filter(Boolean).join(' · '))}</span></span>
             <span class="alert-when">${escapeHtml(when)}</span>
-          </div>`;
-      }).join('');
+          </div>` });
+      });
+      items.sort((x, y) => x.pri - y.pri || String(x.date).localeCompare(String(y.date)));
+      const SHOW = 3;
+      const urgentN = items.filter(i => i.pri <= 1).length;
+      const hiddenN = Math.max(0, items.length - SHOW);
+      el.hidden = false;
+      el.innerHTML = `<div class="card-head"><h2>Avisos</h2><span>${urgentN ? `${urgentN} ${urgentN === 1 ? 'urgente' : 'urgentes'} · ` : ''}${items.length} no total</span></div>
+        ${items.slice(0, SHOW).map(i => i.html).join('')}
+        ${hiddenN ? `<div class="alerts-more"${alertsExpanded ? '' : ' hidden'}>${items.slice(SHOW).map(i => i.html).join('')}</div>
+          <button type="button" class="text-btn alerts-toggle" aria-expanded="${alertsExpanded}">${alertsExpanded ? 'Mostrar menos' : `Mais ${hiddenN} ${hiddenN === 1 ? 'aviso' : 'avisos'}`}</button>` : ''}`;
+      const tg = el.querySelector('.alerts-toggle');
+      if (tg) tg.addEventListener('click', () => {
+        alertsExpanded = !alertsExpanded;
+        el.querySelector('.alerts-more').hidden = !alertsExpanded;
+        tg.setAttribute('aria-expanded', alertsExpanded);
+        tg.textContent = alertsExpanded ? 'Mostrar menos' : `Mais ${hiddenN} ${hiddenN === 1 ? 'aviso' : 'avisos'}`;
+      });
       el.querySelectorAll('[data-alert-marco]').forEach(r => r.addEventListener('click', () =>
         openMarcoModal({ milestoneId: r.dataset.alertMarco, onSuccess: () => renderToday() })));
       el.querySelectorAll('[data-alert-team]').forEach(r => r.addEventListener('click', () => {
         const k = r.dataset.alertTeam;
         if (k === 'hours') openHorasModule();
         else if (k === 'owner') openProjectsModule();
+        else if (k === 'debt') { navStack = []; openBillingModule('toreceive'); }
         else if (k === 'camara') { detailTabByProject[r.dataset.project] = 'camara'; openDetail(r.dataset.project); }
         else if (k === 'nps') openNpsModal(r.dataset.nps, () => renderToday());
         else { detailTabByProject[r.dataset.project] = 'fases'; openDetail(r.dataset.project); }
@@ -11607,6 +11640,23 @@
         detailTabByProject[r.dataset.project] = 'fases';
         openDetail(r.dataset.project);
       }));
+    }
+    // Dívida crítica (só sócios): faturas por receber emitidas há mais de 60 dias
+    async function loadDebtAlert() {
+      const m = await getCurrentMember();
+      if (m && !/partner|s[oó]cio/i.test(m.role || '')) return [];
+      const lim = addDaysKey(dateKey(new Date()), -60);
+      let invs;
+      if (devMode) invs = (window.__mockInv || MOCK_INVOICES).map(i => ({ ...i }));
+      else {
+        const r = await supabase.from('invoices').select('amount, amount_paid, issue_date, status, archived_at').lt('issue_date', lim);
+        if (r.error) throw r.error;
+        invs = r.data || [];
+      }
+      const over = invs.filter(i => i.status !== 'cancelled' && !i.archived_at && i.issue_date && i.issue_date < lim && Number(i.amount || 0) - Number(i.amount_paid || 0) > 0.5);
+      if (!over.length) return [];
+      const total = over.reduce((t, i) => t + Number(i.amount || 0) - Number(i.amount_paid || 0), 0);
+      return [{ kind: 'debt', late: true, title: `${fmtEURShort(total)} em dívida há mais de 60 dias`, sub: `${over.length} ${over.length === 1 ? 'fatura' : 'faturas'} por receber · ver em Faturação`, when: 'Cobrar' }];
     }
 
     // ================= PRAZOS CAMARÁRIOS (RJUE) =================
@@ -11849,7 +11899,7 @@
           kind: 'camara', project: project.id,
           title: d.label,
           sub: `${project.name} · ${phaseName(d.stage)} · até ${fmtDayMonthYear(d.due)}`,
-          when: camaraStateText(d), late: d.state === 'late' }));
+          when: camaraStateText(d), late: d.state === 'late', due: d.due }));
       });
       return out;
     }
@@ -11933,7 +11983,7 @@
         const lastKey = addDaysKey(todayKey, 6);
         renderAttendance(me);
 
-        const [milestones, phases, types, hours, alerts, breakAlerts, importAlerts, target, noOwner, camaraAlerts, npsAlerts] = await Promise.all([
+        const [milestones, phases, types, hours, alerts, breakAlerts, importAlerts, target, noOwner, camaraAlerts, npsAlerts, debtAlerts] = await Promise.all([
           fetchMilestones({ from: todayKey, to: lastKey }),
           fetchActivePhases(),
           loadMilestoneTypes(),
@@ -11944,13 +11994,14 @@
           loadHoursTarget().catch(() => null),
           loadProjectsWithoutOwner().catch(() => []),
           loadCamaraAlerts(me).catch(() => []),
-          loadNpsAlerts(me).catch(() => [])
+          loadNpsAlerts(me).catch(() => []),
+          loadDebtAlert().catch(() => [])
         ]);
         const tg = target && me ? weekTarget(target, me, hours.mondayKey) : null;
         renderWeekHours(hoursEl, hours, tg);
         // Avisos de organização: horas em falta (a partir de sexta), projetos sem responsável,
         // fases em curso/seguintes sem ninguém nos projetos de que sou responsável
-        const teamAlerts = [...npsAlerts, ...camaraAlerts];
+        const teamAlerts = [...debtAlerts, ...npsAlerts, ...camaraAlerts];
         const wd = new Date().getDay();
         const missing = missingHourDays(hours, tg);
         if ((wd === 5 || wd === 6 || wd === 0) && missing.length)
