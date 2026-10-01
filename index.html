@@ -3835,7 +3835,7 @@
         entry = mockTimeLog.find(e => e.id === id);
       } else {
         const res = await supabase.from('time_entries').select('*').eq('id', id).single();
-        if (res.error) { alert('Erro ao carregar imputação: ' + res.error.message); return; }
+        if (res.error) { showError('abrir este registo de horas', res.error); return; }
         entry = res.data;
       }
       if (!entry) return;
@@ -3880,7 +3880,7 @@
         }
         loadHorasHistory();
       } catch (err) {
-        alert('Erro ao eliminar: ' + err.message);
+        showError('eliminar', err);
       }
     }
 
@@ -4024,7 +4024,7 @@
               if (cat) cat.name = newValue;
             } else {
               const res = await supabase.from('time_categories').update({ name: newValue }).eq('id', catId);
-              if (res.error) { alert('Erro ao guardar: ' + res.error.message); el.classList.remove('editing'); el.textContent = rawValue; return; }
+              if (res.error) { showError('guardar', res.error); el.classList.remove('editing'); el.textContent = rawValue; return; }
             }
             el.dataset.raw = newValue;
             el.classList.remove('editing');
@@ -4056,7 +4056,7 @@
             }
             loadCategories();
           } catch (err) {
-            alert('Erro ao eliminar: ' + err.message);
+            showError('eliminar', err);
           }
         });
       });
@@ -4076,7 +4076,7 @@
           }
           loadCategories();
         } catch (err) {
-          alert('Erro ao criar categoria: ' + err.message);
+          showError('criar a categoria', err);
         } finally {
           addBtn.disabled = false;
         }
@@ -6418,7 +6418,7 @@
         closeQuickModal();
         await loadDespesas();
       } catch (err) {
-        alert('Erro ao arquivar: ' + err.message);
+        showError('arquivar', err);
       }
     }
 
@@ -13147,7 +13147,25 @@
     document.querySelectorAll('.kbd-cmdk').forEach(k => { k.textContent = isMac ? '⌘K' : 'Ctrl K'; });
 
     // ================= AVISOS (toasts) =================
+    // Erros técnicos do servidor ou da rede → linguagem simples
+    function plainError(msg) {
+      const m = String(msg || '');
+      if (/failed to fetch|networkerror|load failed|network request failed/i.test(m)) return 'Sem ligação à internet. Verifica a rede e tenta outra vez.';
+      if (/jwt expired|invalid jwt|not authenticated|refresh token/i.test(m)) return 'A sessão expirou. Sai e volta a entrar.';
+      if (/row-level security|permission denied|not authorized|42501/i.test(m)) return 'Não tens permissão para fazer isto.';
+      if (/violates foreign key|23503/i.test(m)) return 'Há outros registos ligados a este (horas, faturas ou fases), por isso não dá para apagar.';
+      if (/duplicate key|23505|already exists/i.test(m)) return 'Já existe um registo igual.';
+      if (/violates not-null|23502/i.test(m)) return 'Falta preencher um campo obrigatório.';
+      if (/invalid input syntax|22P02|22007|22008/i.test(m)) return 'Um dos valores não está no formato certo (data ou número).';
+      if (/timeout|timed out|57014/i.test(m)) return 'O servidor demorou demasiado a responder. Tenta outra vez.';
+      return m;
+    }
+    // Erro numa ação: "Não foi possível <ação>: <motivo em linguagem simples>"
+    function showError(action, err) {
+      showToast(`Não foi possível ${action}. ${plainError(err?.message || err)}`, { type: 'error', ms: 6000 });
+    }
     function showToast(message, { type = 'info', undo = null, ms = 3800 } = {}) {
+      if (type === 'error') message = String(message).replace(/(:\s*)(.+)$/, (all, sep, tail) => { const p = plainError(tail); return p === tail ? all : sep + p; });
       const root = document.getElementById('toast-root');
       const el = document.createElement('div');
       el.className = 'toast' + (type === 'error' ? ' error' : '');
@@ -13815,7 +13833,11 @@
     }
     const numOrNull = v => (v === '' || v == null ? null : Number(String(v).replace(',', '.')));
     const valOrNull = v => (v === '' || v == null ? null : v);
-    function formError(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.className = 'form-msg error'; }
+    function formError(id, msg) {
+      const el = document.getElementById(id);
+      const text = String(msg).replace(/(:\s*)(.+)$/, (all, sep, tail) => { const p = plainError(tail); return p === tail ? all : sep + p; });
+      el.textContent = text; el.className = 'form-msg error';
+    }
 
     async function loadStageTypes() {
       if (devMode) return MOCK_STAGE_TYPES;
@@ -14597,7 +14619,7 @@
                 if (res.error) throw res.error;
               }
               loadMilestoneTypeSettings();
-            } catch (err) { alert('Erro ao eliminar: ' + err.message); }
+            } catch (err) { showError('eliminar', err); }
           });
         });
 
@@ -14617,7 +14639,7 @@
             }
             loadMilestoneTypeSettings();
           } catch (err) {
-            alert('Erro ao criar tipo: ' + err.message);
+            showError('criar o tipo', err);
           } finally { addBtn.disabled = false; }
         });
       } catch (err) {
@@ -14636,7 +14658,7 @@
           existing = mockMilestones.find(m => m.id === milestoneId);
         } else {
           const res = await supabase.from('project_milestones').select('*').eq('id', milestoneId).single();
-          if (res.error) { alert('Erro ao carregar o marco: ' + res.error.message); return; }
+          if (res.error) { showError('abrir o marco', res.error); return; }
           existing = res.data;
           const own = await supabase.from('milestone_owners').select('member_id').eq('milestone_id', milestoneId);
           existing.owner_ids = (own.data || []).map(o => o.member_id);
@@ -14862,7 +14884,7 @@
             }
             closeQuickModal();
             if (onSuccess) onSuccess(); else loadAgenda();
-          } catch (err) { alert('Erro ao eliminar: ' + err.message); }
+          } catch (err) { showError('eliminar', err); }
         });
       }
 
