@@ -163,3 +163,6 @@ alter table public.investors
 -- Um terreno pode ter mais do que uma tipologia de uso
 alter table public.land_plots add column if not exists project_type_ids uuid[] not null default '{}';
 update public.land_plots set project_type_ids = array[project_type_id] where project_type_id is not null and cardinality(project_type_ids) = 0;
+
+-- Variantes de um terreno (outra densidade/preço sem mexer no original)
+alter table public.land_plots add column if not exists variant_of uuid references public.land_plots(id) on delete set null;

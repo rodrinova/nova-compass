@@ -312,6 +312,8 @@
     border-radius: var(--radius-lg);
   }
   .gantt-wrap { padding: var(--sp-4) var(--sp-5); }
+  /* Cartões ligeiramente separados na vertical, em todas as páginas */
+  .gantt-wrap { margin-bottom: var(--sp-2-5); }
 
   /* ---------- Botões ---------- */
   .primary-btn {
@@ -1405,7 +1407,7 @@
   @media (max-width: 899px) {
     .detail-tabs { top: calc(52px + env(safe-area-inset-top, 0px)); margin: 0 -16px var(--sp-4); padding: var(--sp-2) var(--sp-4); }
   }
-  [data-dpanel] > .gantt-wrap + .gantt-wrap, [data-dpanel] > * + .gantt-wrap { margin-top: var(--sp-3); }
+  [data-dpanel] > .gantt-wrap + .gantt-wrap, [data-dpanel] > * + .gantt-wrap { margin-top: var(--sp-0-5); }
   .card-head .text-btn { font-size: var(--fs-sm); }
 
   /* ---------- Estados de projeto ---------- */
@@ -1883,7 +1885,65 @@
   .help-keys { margin-top: var(--sp-4); font-size: var(--fs-sm); color: var(--text-2); display: grid; gap: var(--sp-1); }
   .help-keys kbd { display: inline-block; min-width: 22px; text-align: center; padding: 1px 6px; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: var(--r-xs); background: var(--surface); font: var(--fw-semibold) var(--fs-xs)/1.5 inherit; color: var(--text); margin-right: 4px; }
   @media (pointer: coarse) { .help-keys { display: none; } }
+  /* ---- Página do terreno (folha) ---- */
+  .fz-big small b { display: inline; font-size: inherit; margin: 0; letter-spacing: 0; }
+  .ps-steps button { white-space: nowrap; }
+  @media (max-width: 560px) {
+    .mm-row .mm-body { flex-basis: calc(100% - 52px); }
+    .ps-actions { width: 100%; } .ps-actions .secondary-btn { flex: 1; }
+  }
+  .ps-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); margin-bottom: var(--sp-2); flex-wrap: wrap; }
+  .ps-title { flex: 1; min-width: 240px; }
+  .ps-name { width: 100%; font-size: var(--fs-2xl); font-weight: var(--fw-semibold); letter-spacing: -0.02em; border: 1px solid transparent; background: none; color: var(--text); padding: 2px 6px; margin-left: -7px; border-radius: var(--r-sm); }
+  .ps-name:hover, .ps-inline:hover { border-color: var(--border); }
+  .ps-name:focus, .ps-inline:focus { outline: none; border-color: var(--accent); background: var(--surface); }
+  .ps-sub { display: flex; align-items: center; gap: var(--sp-3); }
+  .ps-inline { border: 1px solid transparent; background: none; color: var(--text-2); font-size: var(--fs-sm); padding: 2px 6px; margin-left: -7px; border-radius: var(--r-sm); width: 220px; max-width: 60vw; }
+  .ps-saved { font-size: var(--fs-xs); color: var(--text-3); }
+  .ps-saved.ok { color: var(--success); } .ps-saved.bad { color: var(--danger); }
+  .ps-actions { display: flex; gap: var(--sp-2); align-items: center; }
+  .ps-actions .secondary-btn { width: auto; margin: 0; padding: 0 var(--sp-4); height: 38px; }
+  .ps-variant { font-size: var(--fs-sm); color: var(--text-2); margin-bottom: var(--sp-2); }
+  .ps-stage { display: flex; align-items: center; gap: var(--sp-2) var(--sp-3); flex-wrap: wrap; margin: var(--sp-1) 0 var(--sp-2); }
+  .ps-steps { margin: 0; overflow-x: auto; max-width: 100%; scrollbar-width: none; }
+  .ps-outcome { width: auto; margin: 0; height: 36px; }
+  .ps-types { margin-bottom: var(--sp-3); }
+  .ps-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(300px, 1fr); gap: 0 var(--sp-3); align-items: start; }
+  @media (max-width: 900px) { .ps-grid { grid-template-columns: 1fr; } }
+  .ps-cells { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3) var(--sp-3); }
+  @media (min-width: 1200px) { .ps-cells { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .ps-cells label { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--text-2); }
+  .ps-cells .form-input { margin: 0; background: color-mix(in srgb, var(--accent-soft) 60%, var(--surface)); font-variant-numeric: tabular-nums; font-weight: var(--fw-medium); }
+  .ps-mode { border: none; background: none; color: var(--accent); font-size: var(--fs-xs); font-weight: var(--fw-semibold); cursor: pointer; padding: 0 0 0 4px; }
+  .ps-typ-note { font-style: normal; font-size: var(--fs-sm); color: var(--text-3); padding: var(--sp-2) 0; }
+  .ps-result { position: sticky; top: 64px; }
+  @media (max-width: 900px) { .ps-result { position: static; } }
+  .ps-detail > summary { cursor: pointer; list-style: none; display: flex; gap: var(--sp-2); align-items: baseline; flex-wrap: wrap; }
+  .ps-detail > summary::-webkit-details-marker { display: none; }
+  .ps-detail > summary::before { content: '›'; color: var(--accent); font-weight: var(--fw-semibold); transition: transform var(--t) var(--ease); display: inline-block; }
+  .ps-detail[open] > summary::before { transform: rotate(90deg); }
+  .ps-detail[open] > summary { margin-bottom: var(--sp-2); }
+  .ps-dgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2) var(--sp-6); }
+  .ps-dgrid .ps-wide { grid-column: 1 / -1; }
+  @media (max-width: 900px) { .ps-dgrid { grid-template-columns: 1fr; } }
+  .form-input.fz-bad { border-color: var(--danger); }
+  .op-listbar { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); align-items: center; justify-content: space-between; margin-bottom: var(--sp-3); }
+  .op-listbar .op-filter { margin: 0; }
+  .op-row .op-roi { flex-shrink: 0; text-align: right; min-width: 64px; display: flex; flex-direction: column; }
+  .op-row .op-roi b { font-variant-numeric: tabular-nums; font-size: var(--fs-md); }
+  .op-row .op-roi small { font-size: var(--fs-xs); color: var(--text-3); }
+  .op-row.op-variant { padding-left: var(--sp-6); }
+  .op-row.op-variant .bl-title::before { content: '↳ '; color: var(--text-3); }
   /* ---- Viabilidade de terrenos ---- */
+  .fz-mix { margin-top: var(--sp-4); padding-top: var(--sp-3); border-top: 1px solid var(--border); }
+  .fz-mix .field-label b { float: right; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .fz-mix input[type="range"] { width: 100%; accent-color: var(--accent); margin: var(--sp-2) 0 0; height: var(--tap, 44px); }
+  .fz-mix input[type="range"].fz-changed { box-shadow: none; outline: 2px solid var(--warning-soft); border-radius: var(--r-sm); }
+  .fz-mix-scale { display: flex; justify-content: space-between; font-size: var(--fs-xs); color: var(--text-3); margin-top: -6px; }
+  .fz-mix-res { margin-top: var(--sp-2); font-size: var(--fs-md); }
+  .fz-mix-list { display: flex; flex-wrap: wrap; gap: var(--sp-1-5); margin-top: var(--sp-1-5); }
+  .fz-mix-list span { background: var(--accent-soft); color: var(--text); border-radius: var(--r-full); padding: 3px var(--sp-2-5); font-size: var(--fs-sm); }
+  .fz-mix-list b { color: var(--accent); font-weight: var(--fw-semibold); }
   .fz-defaults { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-2) var(--sp-3); background: var(--warning-soft); color: var(--text); border-radius: var(--r-md); padding: var(--sp-2-5) var(--sp-3); margin: 0 0 var(--sp-3); font-size: var(--fs-sm); }
   .fz-defaults[hidden] { display: none; }
   .form-input.fz-changed { border-color: var(--warning); box-shadow: 0 0 0 2px var(--warning-soft); }
@@ -2478,9 +2538,13 @@
       <button type="button" class="nav-item" data-nav="projects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg><span>Projetos</span></button>
       <button type="button" class="nav-item" data-nav="horas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span>Horas</span></button>
       <button type="button" class="nav-item" data-nav="agenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Agenda</span></button>
-      <button type="button" class="nav-item" id="tab-more"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5.5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18.5" cy="12" r="1.7"/></svg><span>Mais</span></button>
+      <button type="button" class="nav-item" id="tab-more"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5.5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18.5" cy="12" r="1.7"/></svg><span>Menu</span></button>
     </nav>
     <div class="more-sheet" id="more-sheet">
+      <button type="button" class="nav-item" data-nav="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/></svg><span>Hoje</span></button>
+      <button type="button" class="nav-item" data-nav="projects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg><span>Projetos</span></button>
+      <button type="button" class="nav-item" data-nav="horas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span>Horas</span></button>
+      <button type="button" class="nav-item" data-nav="agenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Agenda</span></button>
       <button type="button" class="nav-item" data-nav="clients"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 19.5c.8-3.3 3.4-5 6.5-5s5.7 1.7 6.5 5"/><path d="M15.5 5.2a3.5 3.5 0 010 6.6M17.8 14.8c1.9.7 3.2 2.3 3.7 4.7"/></svg><span>Clientes</span></button>
       <button type="button" class="nav-item" data-nav="opps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0113 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg><span>Oportunidades</span></button>
       <button type="button" class="nav-item" data-nav="billing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 6.5A7 7 0 1 0 17.5 17.5"/><path d="M4.5 10.5h9M4.5 13.5h9"/></svg><span>Faturação</span></button>
@@ -5900,7 +5964,7 @@
       else if (action === 'projeto') openNewProjectModal();
       else if (action === 'ata') openNewAtaModal(null);
       else if (action === 'despesa') openNewExpenseModal(null);
-      else if (action === 'terreno') openPlotModal(null, id => openPlotView(id));
+      else if (action === 'terreno') openNewPlotQuick();
     }
 
     // ---------- Novo projeto ----------
@@ -13362,7 +13426,7 @@
         <button type="button" class="text-btn help-all" id="help-all">Ver o manual completo ›</button>
         <div class="help-keys"><div class="section-label">Atalhos de teclado</div>
           <div><kbd>N</kbd> novo (horas, marco, ata, despesa, projeto, terreno)</div>
-          <div><kbd>H</kbd> horas</div>
+          <div><kbd>H</kbd> horas · <kbd>T</kbd> terreno novo</div>
           <div><kbd>E</kbd> entrada / fechar o tasco</div>
           <div><kbd>/</kbd> ou <kbd class="kbd-cmdk">${isMac ? '⌘K' : 'Ctrl K'}</kbd> pesquisar</div>
           <div><kbd>?</kbd> esta ajuda · <kbd>Esc</kbd> fechar</div></div>`;
@@ -13508,6 +13572,7 @@
       const k = e.key.toLowerCase();
       if (k === 'n') { e.preventDefault(); (document.querySelector('#home-fab:not([hidden])') && getComputedStyle(document.getElementById('home-fab')).display !== 'none' ? document.getElementById('home-fab') : document.getElementById('side-new-btn')).click(); }
       else if (k === 'h') { e.preventDefault(); navStack = []; NAV_ACTIONS.horas(); }
+      else if (k === 't') { e.preventDefault(); openNewPlotQuick(); }
       else if (e.key === '/') { e.preventDefault(); openCmdk(); }
       else if (k === 'e') {
         e.preventDefault();
@@ -13903,8 +13968,32 @@
       typologies: [{ name: 'T0', units: null, area: 35, price: null, rent: null }, { name: 'T1', units: null, area: 55, price: null, rent: null },
         { name: 'T2', units: null, area: 75, price: null, rent: null }, { name: 'T3', units: null, area: 100, price: null, rent: null }],
       rent_on: false, rent_m2: null, occupancy: 90, rent_opex_pct: 20,
+      avg_unit_area: 75, typ_markup: 15,
       delta_pct: 10
     };
+    // Áreas brutas mínimas por tipologia (RGEU, art. 67.º); a média estimada = mínimo + uma margem (15% por referência)
+    const RGEU_MIN = [['T0', 35], ['T1', 52], ['T2', 72], ['T3', 91], ['T4', 105], ['T5', 122]];
+    // Frações e distribuição de tipologias a partir da área vendável e da área média escolhida.
+    // A mistura usa as duas tipologias à volta da área média, nas proporções que dão exatamente essa média.
+    function unitMix(sellable, avg, markupPct = 15) {
+      const typ = RGEU_MIN.map(([name, min]) => ({ name, min, area: Math.round(min * (1 + (Number(markupPct) || 0) / 100)) }));
+      avg = Math.max(35, Math.min(150, Number(avg) || 75));
+      const n = sellable > 0 ? Math.max(1, Math.floor(sellable / avg)) : 0;
+      let w;
+      if (avg <= typ[0].area) w = [[0, 1]];
+      else if (avg >= typ[typ.length - 1].area) w = [[typ.length - 1, 1]];
+      else {
+        const i = typ.findIndex((t, k) => k < typ.length - 1 && avg >= t.area && avg <= typ[k + 1].area);
+        const lo = typ[i], hi = typ[i + 1], wHi = (avg - lo.area) / (hi.area - lo.area);
+        w = [[i, 1 - wHi], [i + 1, wHi]];
+      }
+      // unidades por tipologia (arredondadas a somar n)
+      const raw = w.map(([i, x]) => ({ ...typ[i], exact: n * x }));
+      raw.forEach(r => { r.units = Math.floor(r.exact); });
+      let left = n - raw.reduce((t, r) => t + r.units, 0);
+      [...raw].sort((a, b) => (b.exact - b.units) - (a.exact - a.units)).forEach(r => { if (left > 0) { r.units++; left--; } });
+      return { n, avg, mix: raw.filter(r => r.units > 0).map(({ name, area, min, units }) => ({ name, area, min, units })), typ };
+    }
     const IMT_TYPES = [['urban', 'Terreno para construção / prédio urbano', 6.5], ['rustic', 'Prédio rústico', 5], ['custom', 'Outra taxa', null]];
     let feasCfgCache = null, mockFeasCfg = null;
     async function loadFeasCfg() {
@@ -13957,7 +14046,8 @@
       const costGlobal = acquisition + construction + indirect + reserves + vat;
       // Vendas: tipologias (unidades × preço médio) ou €/m² × área vendável; + comércio
       const typ = (f.typologies || []).filter(t => N(t.units) > 0);
-      const units = typ.length ? typ.reduce((t, x) => t + N(x.units), 0) : N(p.fractions_est);
+      const autoMix = unitMix(sellable, f.avg_unit_area, f.typ_markup);
+      const units = typ.length ? typ.reduce((t, x) => t + N(x.units), 0) : N(p.fractions_est) || autoMix.n;
       const housingSales = f.sale_mode === 'typology' ? typ.reduce((t, x) => t + N(x.units) * N(x.price), 0) : sellable * N(f.sale_m2);
       const salesGross = (housingSales + commerce * N(f.commerce_sale_m2)) * s.sales;
       const commission = salesGross * N(f.comm_pct) / 100 * (1 + N(f.comm_vat) / 100);
@@ -13973,7 +14063,7 @@
       return {
         price, imtRate, imt, stamp, acqOther, acquisition, housing, sellable, common, commerce, below, lines, construction,
         licences, projects, muni, indirect, contingency, management, reserves, vat, costGlobal, units, housingSales,
-        salesGross, commission, salesNet, profit, roi, roiNoRes, margin: salesGross ? profit / salesGross : null,
+        salesGross, commission, salesNet, profit, roi, roiNoRes, autoMix, margin: salesGross ? profit / salesGross : null,
         rentMonth, rentYear, rentNet, yieldGross: costGlobal && rentYear ? rentYear / costGlobal : null, yieldNet: costGlobal && rentNet ? rentNet / costGlobal : null,
         ratios: { abc: abc ? price / abc : null, revenue: salesNet ? price / salesNet : null, unit: units ? price / units : null, cost: costGlobal ? price / costGlobal : null },
         avgPrice: units ? salesGross / units : null, hasSales: salesGross > 0, hasCosts: construction > 0
@@ -13985,274 +14075,6 @@
     }
     const pct = (v, dec = 1) => v == null || !Number.isFinite(v) ? '—' : (v * 100).toLocaleString('pt-PT', { maximumFractionDigits: dec }) + '%';
 
-    // ---------- Página da viabilidade ----------
-    let feasState = null;
-    async function openFeasView(plotId) {
-      pushCurrentView({ name: 'feas', plotId });
-      hideAllViews();
-      const view = document.getElementById('feas-view');
-      view.style.display = 'block';
-      beginLoad(view, 'feas:' + plotId, '<div class="gantt-wrap">' + SKELETON(5) + '</div><div class="gantt-wrap">' + SKELETON(6) + '</div>');
-      try {
-        const [d, cfg] = await Promise.all([loadOppsData(), loadFeasCfg()]);
-        oppsCache = d;
-        const p = d.plots.find(x => String(x.id) === String(plotId));
-        if (!p) { view.innerHTML = '<div class="error-box">Terreno não encontrado.</div>'; return; }
-        document.getElementById('nav-title').textContent = 'Viabilidade · ' + p.name;
-        feasState = { p, cfg, f: JSON.parse(JSON.stringify(feasInputs(p, cfg))), dirty: false, lang: 'pt' };
-        renderFeasEditor();
-      } catch (err) {
-        view.innerHTML = /feasibility/.test(err.message || '') ? '<div class="error-box">Falta o campo da viabilidade na base de dados (oportunidades.sql).</div>'
-          : `<div class="error-box">Não foi possível abrir a viabilidade: ${escapeHtml(err.message)}</div>`;
-      }
-    }
-    function renderFeasEditor() {
-      const S = feasState, p = S.p, f = S.f, view = document.getElementById('feas-view');
-      const num = (id, val, ph = '') => `<input type="text" inputmode="decimal" class="form-input" data-f="${id}" value="${escapeHtml(val ?? '')}" placeholder="${escapeHtml(ph)}">`;
-      const area = plotAreas(p);
-      view.innerHTML = `
-        <div class="detail-header">
-          <div class="titles"><h2>Viabilidade</h2><div class="sub">${escapeHtml([p.name, p.municipality, p.land_area ? fmtNum(p.land_area) + ' m² de terreno' : null].filter(Boolean).join(' · '))}</div></div>
-          <button type="button" class="secondary-btn" id="fz-print">Resumo para o investidor</button>
-        </div>
-        <div class="fz-defaults" id="fz-defaults" hidden></div>
-        <div class="fz-layout">
-          <div class="fz-form">
-            <div class="gantt-wrap">
-              <div class="card-head"><h2>1 · Aquisição</h2></div>
-              <div class="form-grid">
-                <div><label class="field-label" style="margin-top:0;">Preço do terreno (€)</label><input type="text" class="form-input" value="${escapeHtml(p.asking_price ?? '')}" disabled title="Muda em Editar, na ficha do terreno"></div>
-                <div><label class="field-label" style="margin-top:0;">IMT</label><select class="form-input" data-f="acq_type">${IMT_TYPES.map(([k, l, r]) => `<option value="${k}"${k === f.acq_type ? ' selected' : ''}>${escapeHtml(l)}${r != null ? ` (${fmtNum(r)}%)` : ''}</option>`).join('')}</select></div>
-                <div${f.acq_type === 'custom' ? '' : ' hidden'} id="fz-imt-custom"><label class="field-label">Taxa de IMT (%)</label>${num('imt_custom', f.imt_custom)}</div>
-                <div><label class="field-label">Escritura, registos e outros (€)</label>${num('acq_other', f.acq_other, 'ex.: 3000')}</div>
-              </div>
-              <label class="check-row"><input type="checkbox" data-f="imt_exempt"${f.imt_exempt ? ' checked' : ''}> Isento de IMT (compra para revenda — confirmar com o contabilista)</label>
-              <div class="field-hint">Imposto do Selo: ${escapeHtml(fmtNum(f.stamp_pct))}% do preço. O IMT e o Selo calculam-se sobre o maior entre o preço e o valor patrimonial (VPT).</div>
-            </div>
-
-            <div class="gantt-wrap">
-              <div class="card-head"><h2>2 · Áreas</h2></div>
-              <div class="form-grid">
-                <div><label class="field-label" style="margin-top:0;">Construção — habitação (m²)</label>${num('housing_area', f.housing_area, area.build != null ? 'da ficha: ' + fmtNum(area.build) : '')}</div>
-                <div><label class="field-label" style="margin-top:0;">Área vendável (% da habitação)</label>${num('sellable_pct', f.sellable_pct)}</div>
-                <div><label class="field-label">Comércio (m²)</label>${num('commerce_area', f.commerce_area)}</div>
-                <div><label class="field-label">Abaixo do solo / estacionamento (m²)</label>${num('below_area', f.below_area)}</div>
-                <div><label class="field-label">Áreas verdes (m²)</label>${num('green_area', f.green_area)}</div>
-                <div><label class="field-label">Infraestruturas (m²)</label>${num('infra_area', f.infra_area)}</div>
-              </div>
-              <div class="field-hint" id="fz-area-hint"></div>
-            </div>
-
-            <div class="gantt-wrap">
-              <div class="card-head"><h2>3 · Custos de construção (€/m²)</h2></div>
-              <div class="form-grid fz-grid3">
-                <div><label class="field-label" style="margin-top:0;">Habitação</label>${num('cost.housing', f.cost.housing)}</div>
-                <div><label class="field-label" style="margin-top:0;">Áreas comuns</label>${num('cost.common', f.cost.common)}</div>
-                <div><label class="field-label" style="margin-top:0;">Estacionamento</label>${num('cost.parking', f.cost.parking)}</div>
-                <div><label class="field-label">Comércio</label>${num('cost.commerce', f.cost.commerce)}</div>
-                <div><label class="field-label">Áreas verdes</label>${num('cost.green', f.cost.green)}</div>
-                <div><label class="field-label">Infraestruturas</label>${num('cost.infra', f.cost.infra)}</div>
-              </div>
-              <div class="section-label op-form-sec">Custos indiretos, reservas e IVA</div>
-              <div class="form-grid fz-grid3">
-                <div><label class="field-label" style="margin-top:0;">Licenças (%)</label>${num('lic_pct', f.lic_pct)}</div>
-                <div><label class="field-label" style="margin-top:0;">Projetos (%)</label>${num('proj_pct', f.proj_pct)}</div>
-                <div><label class="field-label" style="margin-top:0;">Taxas municipais (€)</label>${num('muni_fees', f.muni_fees, 'TMU, compensações')}</div>
-                <div><label class="field-label">Contingência (%)</label>${num('cont_pct', f.cont_pct)}</div>
-                <div><label class="field-label">Gestão (%)</label>${num('mgmt_pct', f.mgmt_pct)}</div>
-                <div><label class="field-label">IVA da construção (%)</label>${num('vat_pct', f.vat_pct)}</div>
-              </div>
-              <div class="field-hint">Licenças e projetos em % da construção; reservas em % da construção + indiretos. O IVA da construção é custo porque a venda de habitação não tem IVA (confirmar se se aplica a taxa de 6%).</div>
-            </div>
-
-            <div class="gantt-wrap">
-              <div class="card-head"><h2>4 · Venda</h2></div>
-              <div class="segmented" id="fz-sale-mode"><button type="button" data-m="m2" class="${f.sale_mode !== 'typology' ? 'active' : ''}">€/m² na zona</button><button type="button" data-m="typology" class="${f.sale_mode === 'typology' ? 'active' : ''}">Preço por tipologia</button></div>
-              <div id="fz-sale-m2"${f.sale_mode === 'typology' ? ' hidden' : ''}>
-                <label class="field-label">Preço médio de venda na zona (€/m²)</label>${num('sale_m2', f.sale_m2, 'ex.: 4500')}
-              </div>
-              <div id="fz-typ"></div>
-              <div class="form-grid">
-                <div><label class="field-label">Comércio — venda (€/m²)</label>${num('commerce_sale_m2', f.commerce_sale_m2)}</div>
-                <div><label class="field-label">Comissão imobiliária (%) + IVA</label>${num('comm_pct', f.comm_pct)}</div>
-              </div>
-              <div class="field-hint">A comissão é paga por quem vende: sai da receita (${escapeHtml(fmtNum(f.comm_pct))}% + IVA ${escapeHtml(fmtNum(f.comm_vat))}%).</div>
-            </div>
-
-            <div class="gantt-wrap">
-              <div class="card-head"><h2>5 · Arrendamento e cenários</h2></div>
-              <label class="check-row" style="margin-top:0;"><input type="checkbox" data-f="rent_on"${f.rent_on ? ' checked' : ''}> Mostrar também o cenário de arrendamento</label>
-              <div id="fz-rent"${f.rent_on ? '' : ' hidden'}>
-                <div class="form-grid fz-grid3">
-                  <div><label class="field-label">Renda (€/m²/mês)</label>${num('rent_m2', f.rent_m2, 'ou por tipologia')}</div>
-                  <div><label class="field-label">Ocupação (%)</label>${num('occupancy', f.occupancy)}</div>
-                  <div><label class="field-label">Despesas (% da renda)</label>${num('rent_opex_pct', f.rent_opex_pct, 'IMI, condomínio, gestão')}</div>
-                </div>
-              </div>
-              <div class="form-grid">
-                <div><label class="field-label">Variação dos cenários (%)</label>${num('delta_pct', f.delta_pct)}</div>
-              </div>
-              <div class="field-hint">Os cenários conservador e otimista mexem nas vendas e na construção com esta variação.</div>
-            </div>
-          </div>
-          <div class="fz-result" id="fz-result"></div>
-        </div>
-        <div class="op-actions">
-          <button type="button" class="primary-btn" id="fz-save">Guardar viabilidade</button>
-          <button type="button" class="text-btn" id="fz-reset">Repor os valores de referência</button>
-          <div id="fz-msg" class="form-msg"></div>
-        </div>`;
-      const setPath = (path, v) => { const k = path.split('.'); if (k.length === 2) f[k[0]] = { ...f[k[0]], [k[1]]: v }; else f[path] = v; };
-      view.querySelectorAll('.fz-form [data-f]').forEach(el => el.addEventListener(el.type === 'checkbox' || el.tagName === 'SELECT' ? 'change' : 'input', () => {
-        const k = el.dataset.f;
-        const v = el.type === 'checkbox' ? el.checked : el.tagName === 'SELECT' ? el.value : numOrNull(el.value);
-        setPath(k, v); S.dirty = true;
-        if (k === 'acq_type') document.getElementById('fz-imt-custom').hidden = v !== 'custom';
-        if (k === 'rent_on') { document.getElementById('fz-rent').hidden = !v; drawTyp(); }
-        drawResult();
-      }));
-      document.getElementById('fz-sale-mode').addEventListener('click', e => {
-        const b = e.target.closest('[data-m]'); if (!b) return;
-        f.sale_mode = b.dataset.m; S.dirty = true;
-        document.querySelectorAll('#fz-sale-mode button').forEach(x => x.classList.toggle('active', x === b));
-        document.getElementById('fz-sale-m2').hidden = f.sale_mode === 'typology';
-        drawTyp(); drawResult();
-      });
-      const drawTyp = () => {
-        const box = document.getElementById('fz-typ');
-        const show = f.sale_mode === 'typology' || f.rent_on;
-        if (!show) { box.innerHTML = ''; return; }
-        box.innerHTML = `
-          <div class="fz-typ-head" style="--cols:${(f.sale_mode === 'typology') + !!f.rent_on}"><span>Tipologia</span><span>Unid.</span><span>Área (m²)</span>${f.sale_mode === 'typology' ? '<span>Preço médio (€)</span>' : ''}${f.rent_on ? '<span>Renda (€/mês)</span>' : ''}<span></span></div>
-          ${(f.typologies || []).map((t, i) => `<div class="fz-typ-row" data-i="${i}" style="--cols:${(f.sale_mode === 'typology') + !!f.rent_on}">
-            <input type="text" class="form-input" data-k="name" value="${escapeHtml(t.name || '')}" aria-label="Tipologia" placeholder="Tipologia">
-            <input type="text" inputmode="numeric" class="form-input" data-k="units" value="${escapeHtml(t.units ?? '')}" aria-label="Unidades de ${escapeHtml(t.name || '')}" placeholder="unid.">
-            <input type="text" inputmode="decimal" class="form-input" data-k="area" value="${escapeHtml(t.area ?? '')}" aria-label="Área de ${escapeHtml(t.name || '')}" placeholder="m²">
-            ${f.sale_mode === 'typology' ? `<input type="text" inputmode="decimal" class="form-input" data-k="price" value="${escapeHtml(t.price ?? '')}" aria-label="Preço de ${escapeHtml(t.name || '')}" placeholder="preço €">` : ''}
-            ${f.rent_on ? `<input type="text" inputmode="decimal" class="form-input" data-k="rent" value="${escapeHtml(t.rent ?? '')}" aria-label="Renda de ${escapeHtml(t.name || '')}" placeholder="renda €/mês">` : ''}
-            <button type="button" class="op-spec-del" data-del="${i}" aria-label="Tirar ${escapeHtml(t.name || '')}">×</button>
-          </div>`).join('')}
-          <button type="button" class="text-btn" id="fz-typ-add">+ Tipologia</button>`;
-        box.querySelectorAll('.fz-typ-row').forEach(row => row.addEventListener('input', e => {
-          const t = f.typologies[Number(row.dataset.i)], k = e.target.dataset.k;
-          f.typologies = f.typologies.map((x, i) => i === Number(row.dataset.i) ? { ...x, [k]: k === 'name' ? e.target.value : numOrNull(e.target.value) } : x);
-          S.dirty = true; drawResult();
-        }));
-        box.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => { f.typologies = f.typologies.filter((_, i) => i !== Number(b.dataset.del)); S.dirty = true; drawTyp(); drawResult(); }));
-        document.getElementById('fz-typ-add').addEventListener('click', () => { f.typologies = [...(f.typologies || []), { name: 'T' + (f.typologies || []).length, units: null, area: null, price: null, rent: null }]; S.dirty = true; drawTyp(); });
-      };
-      const drawResult = () => {
-        const c = feasCalc(p, f), sc = feasScenarios(p, f);
-        const e = n => escapeHtml(fmtEUR(Math.round(n)));
-        const typArea = (f.typologies || []).reduce((t, x) => t + (Number(x.units) || 0) * (Number(x.area) || 0), 0);
-        document.getElementById('fz-area-hint').textContent = c.housing
-          ? `Vendável ${fmtNum(Math.round(c.sellable))} m² · comuns ${fmtNum(Math.round(c.common))} m²${typArea && f.sale_mode === 'typology' ? ` · tipologias somam ${fmtNum(Math.round(typArea))} m²${Math.abs(typArea - c.sellable) > c.sellable * 0.05 ? ' (diferente da área vendável)' : ''}` : ''}`
-          : 'Escreve a área de construção de habitação (ou preenche a área do terreno e o índice na ficha).';
-        const row = (l, v, cls = '') => `<div class="${cls}"><span>${l}</span><b>${v}</b></div>`;
-        document.getElementById('fz-result').innerHTML = `
-          <div class="gantt-wrap fz-sticky">
-            <div class="fz-big"><span>Lucro do promotor</span><b class="${c.profit < 0 ? 'late' : ''}">${c.hasSales && c.hasCosts ? e(c.profit) : '—'}</b>
-              <small>${c.hasSales && c.hasCosts ? `ROI ${pct(c.roi)} · ${pct(c.roiNoRes)} sem reservas · margem ${pct(c.margin)} das vendas` : 'Preenche as áreas, os custos e a venda.'}</small></div>
-            <div class="op-sum">
-              ${row('Aquisição', e(c.acquisition))}
-              ${row(`<small>terreno ${e(c.price)} · IMT ${fmtNum(c.imtRate)}% ${e(c.imt)} · Selo ${e(c.stamp)}${c.acqOther ? ' · outros ' + e(c.acqOther) : ''}</small>`, '', 'fz-sub')}
-              ${row('Construção', e(c.construction))}
-              ${c.lines.filter(l => l.area).map(l => row(`<small>${escapeHtml(l.label)}: ${escapeHtml(fmtNum(Math.round(l.area)))} m² × ${e(l.unit)}</small>`, `<small>${e(l.value)}</small>`, 'fz-sub')).join('')}
-              ${row('Custos indiretos', e(c.indirect))}
-              ${row('Reservas (contingência + gestão)', e(c.reserves))}
-              ${row(`IVA da construção (${fmtNum(f.vat_pct)}%)`, e(c.vat))}
-              ${row('Custo global', e(c.costGlobal), 'op-sum-total')}
-              ${row('Vendas', e(c.salesGross))}
-              ${row(`Comissão imobiliária (${fmtNum(f.comm_pct)}% + IVA)`, '− ' + e(c.commission))}
-              ${row('Receita líquida', e(c.salesNet), 'op-sum-total')}
-            </div>
-            <div class="section-label">Cenários (± ${escapeHtml(fmtNum(f.delta_pct))}%)</div>
-            <div class="fz-scen">${sc.map(([l, x]) => `<div><span>${l}</span><b class="${x.profit < 0 ? 'late' : ''}">${x.hasSales ? pct(x.roi) : '—'}</b><small>${x.hasSales ? e(x.profit) : ''}</small></div>`).join('')}</div>
-            <div class="section-label">Rácios</div>
-            <div class="op-sum">
-              ${row('Terreno por m² de construção', c.ratios.abc ? e(c.ratios.abc) + '/m²' : '—')}
-              ${row('Terreno / receita', pct(c.ratios.revenue))}
-              ${row('Terreno / custo global', pct(c.ratios.cost))}
-              ${row(`Terreno por fração${c.units ? ` (${c.units})` : ''}`, c.ratios.unit ? e(c.ratios.unit) : '—')}
-              ${row('Preço médio por fração', c.avgPrice ? e(c.avgPrice) : '—')}
-            </div>
-            ${f.rent_on ? `<div class="section-label">Arrendamento</div>
-            <div class="op-sum">
-              ${row('Renda por ano (com ocupação)', c.rentYear ? e(c.rentYear) : '—')}
-              ${row('Yield bruto', pct(c.yieldGross, 2))}
-              ${row(`Yield líquido (− ${fmtNum(f.rent_opex_pct)}% despesas)`, pct(c.yieldNet, 2))}
-            </div>` : ''}
-          </div>`;
-      };
-      // Valores diferentes dos de referência (Definições → Viabilidade de terrenos): assinalados, com ↺ para repor
-      const DEF_PATHS = ['sellable_pct', 'cost.housing', 'cost.common', 'cost.parking', 'cost.commerce', 'cost.green', 'cost.infra', 'lic_pct', 'proj_pct', 'cont_pct', 'mgmt_pct', 'vat_pct', 'comm_pct', 'occupancy', 'rent_opex_pct', 'delta_pct'];
-      const getPath = (o, path) => path.split('.').reduce((x, k) => x?.[k], o);
-      const markDefaults = () => {
-        let n = 0;
-        DEF_PATHS.forEach(path => {
-          const el = view.querySelector(`.fz-form [data-f="${path}"]`); if (!el) return;
-          const def = getPath(S.cfg, path), cur = getPath(f, path);
-          const diff = cur != null && def != null && Math.abs(Number(cur) - Number(def)) > 1e-9;
-          el.classList.toggle('fz-changed', diff);
-          let r = el.parentElement.querySelector('.fz-reset1');
-          if (diff) {
-            n++;
-            if (!r) { r = document.createElement('button'); r.type = 'button'; r.className = 'fz-reset1'; el.after(r);
-              r.addEventListener('click', () => { setPath(path, getPath(S.cfg, path)); el.value = getPath(S.cfg, path); S.dirty = true; drawResult(); markDefaults(); }); }
-            r.textContent = `↺ referência: ${fmtNum(def)}`;
-            r.title = 'Repor o valor de referência (Definições → Viabilidade de terrenos)';
-          } else if (r) r.remove();
-        });
-        const banner = document.getElementById('fz-defaults');
-        banner.hidden = !n;
-        banner.innerHTML = n ? `<span>⚠ ${n} ${n === 1 ? 'valor diferente' : 'valores diferentes'} dos de referência neste terreno (assinalados).</span><button type="button" class="text-btn" id="fz-reset-all">Repor todos</button>` : '';
-        document.getElementById('fz-reset-all')?.addEventListener('click', () => document.getElementById('fz-reset').click());
-      };
-      view.querySelectorAll('.fz-form [data-f]').forEach(el => el.addEventListener('input', markDefaults));
-      drawTyp(); drawResult(); markDefaults();
-      // Guardar só o que é diferente da referência (e as áreas)
-      const diff = () => {
-        const out = {};
-        Object.keys(f).forEach(k => {
-          if (k === 'cost') { const c = {}; Object.keys(f.cost).forEach(x => { if (f.cost[x] !== S.cfg.cost[x]) c[x] = f.cost[x]; }); if (Object.keys(c).length) out.cost = c; }
-          else if (k === 'typologies') { if (JSON.stringify(f.typologies) !== JSON.stringify(S.cfg.typologies)) out.typologies = f.typologies; }
-          else if (/_area$/.test(k)) { if (f[k] != null && !(k === 'housing_area' && f[k] === plotAreas(p).build && !(p.feasibility || {}).housing_area)) out[k] = f[k]; }
-          else if (JSON.stringify(f[k]) !== JSON.stringify(S.cfg[k])) out[k] = f[k];
-        });
-        return out;
-      };
-      document.getElementById('fz-save').addEventListener('click', async () => {
-        const bad = Object.entries(f).some(([k, v]) => typeof v === 'number' && Number.isNaN(v)) || Object.values(f.cost).some(v => Number.isNaN(v));
-        if (bad) return formError('fz-msg', 'Há um número inválido (usa só algarismos e vírgula).');
-        try {
-          const val = diff();
-          await dbUpdate('land_plots', p.id, { feasibility: val, updated_at: new Date().toISOString() }, mockPlots);
-          p.feasibility = val; S.dirty = false;
-          if (p.status === 'registered') await dbUpdate('land_plots', p.id, { status: 'analysis' }, mockPlots);
-          showToast('Viabilidade guardada');
-        } catch (err) { formError('fz-msg', 'Não foi possível guardar: ' + err.message); }
-      });
-      document.getElementById('fz-reset').addEventListener('click', () => {
-        const prev = JSON.parse(JSON.stringify(S.f));
-        S.f = JSON.parse(JSON.stringify(feasInputs({ ...p, feasibility: { housing_area: f.housing_area, commerce_area: f.commerce_area, below_area: f.below_area, green_area: f.green_area, infra_area: f.infra_area, typologies: f.typologies } }, S.cfg)));
-        S.dirty = true; renderFeasEditor();
-        showToast('Valores de referência repostos (as áreas e as tipologias ficam)', { ms: 8000, undo: () => { S.f = prev; renderFeasEditor(); } });
-      });
-      document.getElementById('fz-print').addEventListener('click', () => {
-        openQuickModal('Resumo para o investidor', `
-          <label class="field-label" style="margin-top:0;">Língua</label>
-          <div class="segmented" id="fz-lang"><button type="button" data-l="pt" class="active">Português</button><button type="button" data-l="en">English</button></div>
-          <label class="check-row"><input type="checkbox" id="fz-p-scen" checked> Incluir os cenários</label>
-          <label class="check-row"><input type="checkbox" id="fz-p-rent"${f.rent_on ? ' checked' : ''}> Incluir o arrendamento</label>
-          <button type="button" class="primary-btn" id="fz-p-go">Abrir o resumo</button>`);
-        let lang = 'pt';
-        document.getElementById('fz-lang').addEventListener('click', e => { const b = e.target.closest('[data-l]'); if (!b) return; lang = b.dataset.l; document.querySelectorAll('#fz-lang button').forEach(x => x.classList.toggle('active', x === b)); });
-        document.getElementById('fz-p-go').addEventListener('click', () => {
-          const o = { lang, scen: document.getElementById('fz-p-scen').checked, rent: document.getElementById('fz-p-rent').checked };
-          closeQuickModal(); printFeasibility(p, f, o);
-        });
-      });
-    }
     // Resumo da viabilidade para o investidor (janela para imprimir / guardar em PDF)
     function printFeasibility(p, f, o) {
       const en = o.lang === 'en', T = (a, b) => en ? b : a, loc = en ? 'en-GB' : 'pt-PT';
@@ -14356,6 +14178,7 @@
             ${num('sellable_pct', 'Área vendável (%)', cfg.sellable_pct)}${num('lic_pct', 'Licenças (%)', cfg.lic_pct)}${num('proj_pct', 'Projetos (%)', cfg.proj_pct)}
             ${num('cont_pct', 'Contingência (%)', cfg.cont_pct)}${num('mgmt_pct', 'Gestão (%)', cfg.mgmt_pct)}${num('vat_pct', 'IVA da construção (%)', cfg.vat_pct)}
             ${num('comm_pct', 'Comissão imobiliária (%)', cfg.comm_pct)}${num('comm_vat', 'IVA da comissão (%)', cfg.comm_vat)}${num('stamp_pct', 'Imposto do Selo (%)', cfg.stamp_pct)}
+            ${num('avg_unit_area', 'Área média por fração (m²)', cfg.avg_unit_area)}${num('typ_markup', 'Margem sobre o mínimo RGEU (%)', cfg.typ_markup)}
             ${num('occupancy', 'Ocupação no arrendamento (%)', cfg.occupancy)}${num('rent_opex_pct', 'Despesas do arrendamento (%)', cfg.rent_opex_pct)}${num('delta_pct', 'Variação dos cenários (%)', cfg.delta_pct)}
           </div>
           <div class="field-hint">IMT: 6,5% em terrenos para construção e prédios urbanos, 5% em rústicos (2026). Escolhe-se em cada terreno.</div>
@@ -14616,7 +14439,7 @@
     const fmtRangeN = (a, b, u) => a != null && b != null ? `${a}–${b} ${u}` : a != null ? `${a}+ ${u}` : b != null ? `até ${b} ${u}` : '';
 
     // ---------- Página Oportunidades ----------
-    let oppsTab = 'plots', oppsPlotFilter = 'open', oppsCache = null;
+    let oppsTab = 'plots', oppsPlotFilter = 'open', oppsPlotSort = 'stage', oppsCache = null;
     async function openOppsModule(tab) {
       if (tab) oppsTab = tab;
       pushCurrentView({ name: 'opps' });
@@ -14659,25 +14482,37 @@
       if (oppsTab === 'plots') {
         const match = p => !q || normTxt([p.name, p.municipality, p.parish, p.address, p.source_name, clientById[p.client_id]?.name].join(' ')).includes(q);
         const list = d.plots.filter(match).filter(p => oppsPlotFilter === 'open' ? PLOT_OPEN.includes(p.status) : oppsPlotFilter === 'won' ? p.status === 'won' : ['lost', 'discarded'].includes(p.status));
-        const row = p => {
-          const c = plotCalc(p), nFit = fitsFor(p).length, nPres = (presByPlot[p.id] || []).length;
-          const sub = [p.municipality, p.land_area ? fmtNum(p.land_area) + ' m²' : null, plotTypeNames(p, typeById),
-            p.origin === 'client' ? 'cliente' + (clientById[p.client_id] ? ' ' + clientById[p.client_id].name : '') : p.source_name ? 'network · ' + p.source_name : 'network',
-            p.scout_id && memberById[p.scout_id] ? 'acompanha ' + memberById[p.scout_id].name.split(' ')[0] : null].filter(Boolean).join(' · ');
-          return `<div class="invoice-row click-row op-row" data-plot="${escapeHtml(p.id)}">
+        // Linha: o que interessa para decidir — ROI, investimento e o melhor investidor
+        const mctxL = { typeById, plots: d.plots, presentations: d.presentations };
+        const rowData = p => {
+          const c = plotCalc(p), v = c.feas, ok = v.hasSales && v.hasCosts;
+          const best = d.investors.filter(i => i.active !== false && !(presByPlot[p.id] || []).some(x => x.investor_id === i.id))
+            .map(i => ({ i, m: investorMatch(i, p, mctxL) })).filter(x => x.m.known).sort((a, b) => b.m.score - a.m.score)[0];
+          return { p, c, v, ok, best };
+        };
+        const row = ({ p, c, v, ok, best }) => {
+          const nPres = (presByPlot[p.id] || []).length;
+          const sub = [p.municipality, plotTypeNames(p, typeById), v.units ? v.units + (v.units === 1 ? ' fração' : ' frações') : null, c.price != null ? 'terreno ' + fmtEURShort(c.price) : null,
+            p.variant_of ? 'variante' : null].filter(Boolean).join(' · ');
+          return `<div class="invoice-row click-row op-row${p.variant_of ? ' op-variant' : ''}" data-plot="${escapeHtml(p.id)}">
             <span><b class="bl-title">${escapeHtml(p.name)}</b><br><small>${escapeHtml(sub)}</small></span>
-            <span class="op-fit">${nPres ? `<em>apresentado a ${nPres}</em>` : nFit ? `<em class="hi">${nFit} ${nFit === 1 ? 'investidor encaixa' : 'investidores encaixam'}</em>` : ''}</span>
-            <span class="amount">${c.price != null ? escapeHtml(fmtEURShort(c.price)) : ''}</span>
+            <span class="op-fit">${nPres ? `<em>apresentado a ${nPres}</em>` : best && best.m.score >= 50 ? `<em class="hi">${escapeHtml(best.i.name)} · ${best.m.score}</em>` : ''}</span>
+            <span class="op-roi">${ok ? `<b class="${v.roi < 0 ? 'late' : ''}">${escapeHtml(pct(v.roi, 0))}</b><small>${escapeHtml(fmtEURShort(v.costGlobal))}</small>` : '<small class="muted">sem estudo</small>'}</span>
           </div>`;
         };
         const filters = [['open', 'Em curso'], ['won', 'Ganhos'], ['closed', 'Perdidos e descartados']];
-        body = `<div class="segmented op-filter" id="opps-plot-filter">${filters.map(([k, l]) => `<button type="button" data-pf="${k}" class="${k === oppsPlotFilter ? 'active' : ''}">${l}</button>`).join('')}</div>`;
-        if (!list.length) body += `<div class="gantt-wrap"><div class="gantt-empty">${q ? 'Nenhum terreno encontrado.' : oppsPlotFilter === 'open' ? 'Ainda não há terrenos em curso. Toca em <b>+ Terreno</b> para registar o primeiro.' : 'Nada aqui.'}</div></div>`;
-        else if (oppsPlotFilter === 'open') body += PLOT_OPEN.map(st => {
-          const g = list.filter(p => p.status === st);
+        // variantes logo a seguir ao original
+        const rows = list.map(rowData);
+        const ordered = oppsPlotSort === 'roi' ? [...rows].sort((a, b) => (b.ok ? b.v.roi : -9) - (a.ok ? a.v.roi : -9))
+          : rows.filter(r => !r.p.variant_of || !list.some(x => x.id === r.p.variant_of)).flatMap(r => [r, ...rows.filter(x => x.p.variant_of === r.p.id)]);
+        body = `<div class="op-listbar"><div class="segmented op-filter" id="opps-plot-filter">${filters.map(([k, l]) => `<button type="button" data-pf="${k}" class="${k === oppsPlotFilter ? 'active' : ''}">${l}</button>`).join('')}</div>
+          <div class="segmented op-filter" id="opps-plot-sort"><button type="button" data-ps="stage" class="${oppsPlotSort !== 'roi' ? 'active' : ''}">Por etapa</button><button type="button" data-ps="roi" class="${oppsPlotSort === 'roi' ? 'active' : ''}">Por ROI</button></div></div>`;
+        if (!list.length) body += `<div class="gantt-wrap"><div class="gantt-empty">${q ? 'Nenhum terreno encontrado.' : oppsPlotFilter === 'open' ? 'Ainda não há terrenos em curso. Toca em <b>+ Terreno</b> (ou tecla <b>T</b>) para registar o primeiro.' : 'Nada aqui.'}</div></div>`;
+        else if (oppsPlotFilter === 'open' && oppsPlotSort !== 'roi') body += PLOT_OPEN.map(st => {
+          const g = ordered.filter(r => r.p.status === st);
           return g.length ? `<div class="section-label">${escapeHtml(optLabel(PLOT_STATUSES, st))} · ${g.length}</div><div class="gantt-wrap">${g.map(row).join('')}</div>` : '';
         }).join('');
-        else body += `<div class="gantt-wrap">${list.map(row).join('')}</div>`;
+        else body += `<div class="gantt-wrap">${ordered.map(row).join('')}</div>`;
       } else if (oppsTab === 'match') {
         // Melhores combinações terreno × investidor (ainda não apresentados)
         const presentedPairs = new Set(d.presentations.map(x => x.plot_id + '|' + x.investor_id));
@@ -14723,265 +14558,490 @@
         ${body}`;
       box.querySelectorAll('[data-otab]').forEach(b => b.addEventListener('click', () => { oppsTab = b.dataset.otab; document.getElementById('opps-search').value = ''; renderOpps(); }));
       box.querySelectorAll('[data-pf]').forEach(b => b.addEventListener('click', () => { oppsPlotFilter = b.dataset.pf; renderOpps(); }));
+      box.querySelectorAll('[data-ps]').forEach(b => b.addEventListener('click', () => { oppsPlotSort = b.dataset.ps; renderOpps(); }));
       const s = document.getElementById('opps-search');
       s.addEventListener('input', () => { const pos = s.selectionStart; renderOpps(); const s2 = document.getElementById('opps-search'); s2.focus(); s2.setSelectionRange(pos, pos); });
       box.querySelectorAll('[data-plot]').forEach(r => r.addEventListener('click', () => openPlotView(r.dataset.plot)));
       box.querySelectorAll('[data-investor]').forEach(r => r.addEventListener('click', () => openInvestorModal(invById[r.dataset.investor], loadOpps)));
       box.querySelectorAll('[data-proposal]').forEach(r => r.addEventListener('click', () => openProposalView(r.dataset.proposal)));
       document.getElementById('opps-new').addEventListener('click', () => {
-        if (oppsTab === 'plots' || oppsTab === 'match') openPlotModal(null, id => openPlotView(id));
+        if (oppsTab === 'plots' || oppsTab === 'match') openNewPlotQuick();
         else if (oppsTab === 'investors') openInvestorModal(null, loadOpps);
         else openProposalView(null);
       });
     }
 
-    // ---------- Terreno: registar / editar ----------
-    async function openPlotModal(plot, onSaved) {
-      const isEdit = !!plot, p = plot || { origin: 'network', sellable_ratio: 80 };
+    // ---------- Terreno novo: só nome e concelho; o resto preenche-se na página ----------
+    async function openNewPlotQuick(variantOf = null) {
       const d = oppsCache || await loadOppsData();
-      const me = await getCurrentMember();
-      const v = k => escapeHtml(p[k] ?? '');
-      openQuickModal(isEdit ? 'Editar terreno' : 'Novo terreno', `
+      openQuickModal('Novo terreno', `
         <label class="field-label" style="margin-top:0;">Nome</label>
-        <input type="text" id="pl-name" class="form-input" placeholder="ex.: Terreno da Rua do Campo" value="${v('name')}">
-        <label class="field-label">De onde veio</label>
-        <div class="segmented" id="pl-origin"><button type="button" data-o="network" class="${p.origin !== 'client' ? 'active' : ''}">Da nossa network</button><button type="button" data-o="client" class="${p.origin === 'client' ? 'active' : ''}">Trazido por um cliente</button></div>
-        <div id="pl-client-wrap"${p.origin === 'client' ? '' : ' hidden'}><label class="field-label">Cliente</label>${clientPickerHtml('pl-client')}</div>
-        <div id="pl-source-wrap"${p.origin === 'client' ? ' hidden' : ''}><label class="field-label">Quem nos falou dele</label><input type="text" id="pl-source" class="form-input" placeholder="ex.: João (mediador), anúncio, contacto do Nuno" value="${v('source_name')}"></div>
-        <label class="field-label">Quem acompanha</label>
-        <select id="pl-scout" class="form-input"><option value="">Ninguém em particular</option>${(d.members || []).map(m => `<option value="${escapeHtml(m.id)}"${String(m.id) === String(p.scout_id ?? (isEdit ? '' : me?.id)) ? ' selected' : ''}>${escapeHtml(m.name)}</option>`).join('')}</select>
-        <label class="field-label">Morada</label><input type="text" id="pl-address" class="form-input" value="${v('address')}">
-        <div class="form-grid">
-          <div><label class="field-label">Concelho</label><input type="text" id="pl-muni" class="form-input" placeholder="ex.: Vila Nova de Gaia" value="${v('municipality')}"></div>
-          <div><label class="field-label">Freguesia</label><input type="text" id="pl-parish" class="form-input" value="${v('parish')}"></div>
-        </div>
-        <label class="field-label">Link do mapa</label><input type="url" id="pl-maps" class="form-input" placeholder="cola o link do Google Maps" value="${v('maps_url')}">
-        <label class="field-label">Pasta com fotos e documentos</label><input type="url" id="pl-docs" class="form-input" placeholder="link da pasta (Drive, Dropbox…)" value="${v('docs_url')}">
-        <div class="form-grid">
-          <div><label class="field-label">Área do terreno (m²)</label><input type="text" inputmode="decimal" id="pl-area" class="form-input" value="${v('land_area')}"></div>
-          <div><label class="field-label">Preço pedido (€)</label><input type="text" inputmode="decimal" id="pl-price" class="form-input" value="${v('asking_price')}"></div>
-        </div>
-        <label class="field-label">Tipologias de uso</label>
-        <div class="op-chips" id="pl-types">${d.types.map(t => `<label class="op-chip"><input type="checkbox" value="${escapeHtml(t.id)}"${plotTypes(p).includes(t.id) ? ' checked' : ''}><span>${escapeHtml(t.name)}</span></label>`).join('')}</div>
-        <div class="field-hint">Podes escolher mais do que uma (ex.: habitação multifamiliar e comércio).</div>
-        <label class="check-row"><input type="checkbox" id="pl-approved"${p.has_approved_project ? ' checked' : ''}> Já tem projeto aprovado</label>
-
-        <div class="section-label op-form-sec">Urbanismo (PDM)</div>
-        <label class="field-label" style="margin-top:0;">Classe de espaço</label><input type="text" id="pl-pdm" class="form-input" placeholder="ex.: Espaço residencial — tipo II" value="${v('pdm_class')}">
-        <div class="form-grid">
-          <div><label class="field-label">Índice de utilização</label><input type="text" inputmode="decimal" id="pl-index" class="form-input" placeholder="ex.: 0,8" value="${v('pdm_index')}"></div>
-          <div><label class="field-label">Pisos máximos</label><input type="text" inputmode="numeric" id="pl-floors" class="form-input" value="${v('max_floors')}"></div>
-          <div><label class="field-label">Área de construção (m²)</label><input type="text" inputmode="decimal" id="pl-build" class="form-input" value="${v('buildable_area')}"></div>
-          <div><label class="field-label">Frações estimadas</label><input type="text" inputmode="numeric" id="pl-fractions" class="form-input" value="${v('fractions_est')}"></div>
-        </div>
-        <div class="field-hint" id="pl-build-hint"></div>
-
-        <div class="section-label op-form-sec">Notas e riscos</div>
-        <label class="field-label" style="margin-top:0;">Notas</label><textarea id="pl-notes" class="form-input" rows="3">${v('notes')}</textarea>
-        <label class="field-label">Riscos e pontos de atenção</label><textarea id="pl-risks" class="form-input" rows="3" placeholder="servidões, RAN/REN, acessos, ruído…">${v('risks')}</textarea>
-        <button type="button" class="primary-btn" id="pl-save">${isEdit ? 'Guardar' : 'Registar terreno'}</button>
-        ${isEdit ? '<button type="button" class="text-btn danger-text" id="pl-delete" style="margin-top:12px;">Eliminar terreno</button>' : ''}
-        <div id="pl-msg" class="form-msg"></div>`);
-      let origin = p.origin === 'client' ? 'client' : 'network';
-      const picker = await mountClientPicker('pl-client', { clientId: p.client_id || null });
-      document.getElementById('pl-origin').addEventListener('click', e => {
-        const b = e.target.closest('[data-o]'); if (!b) return;
-        origin = b.dataset.o;
-        document.querySelectorAll('#pl-origin button').forEach(x => x.classList.toggle('active', x === b));
-        document.getElementById('pl-client-wrap').hidden = origin !== 'client';
-        document.getElementById('pl-source-wrap').hidden = origin === 'client';
-      });
-      const hint = () => {
-        const a = numOrNull(document.getElementById('pl-area').value), i = numOrNull(document.getElementById('pl-index').value);
-        const el = document.getElementById('pl-build-hint');
-        el.textContent = a && i && !document.getElementById('pl-build').value.trim()
-          ? `Sem área de construção escrita, a app usa área × índice = ${fmtNum(Math.round(a * i))} m².` : 'Se deixares a área de construção vazia, a app calcula-a com a área do terreno × índice.';
-      };
-      ['pl-area', 'pl-index', 'pl-build'].forEach(id => document.getElementById(id).addEventListener('input', hint));
-      hint();
-      document.getElementById('pl-save').addEventListener('click', async () => {
-        const name = document.getElementById('pl-name').value.trim();
-        if (!name) return formError('pl-msg', 'Indica um nome para o terreno.');
-        const g = id => document.getElementById(id).value.trim();
-        const row = {
-          name, origin, client_id: origin === 'client' ? picker.get().clientId : null, source_name: origin === 'client' ? null : valOrNull(g('pl-source')),
-          scout_id: g('pl-scout') || null, address: valOrNull(g('pl-address')), municipality: valOrNull(g('pl-muni')), parish: valOrNull(g('pl-parish')),
-          maps_url: valOrNull(g('pl-maps')), docs_url: valOrNull(g('pl-docs')), land_area: numOrNull(g('pl-area')), asking_price: numOrNull(g('pl-price')),
-          ...(() => { const ids = [...document.querySelectorAll('#pl-types input:checked')].map(cb => cb.value); return { project_type_ids: ids, project_type_id: ids[0] || null }; })(), has_approved_project: document.getElementById('pl-approved').checked,
-          pdm_class: valOrNull(g('pl-pdm')), pdm_index: numOrNull(g('pl-index')), max_floors: numOrNull(g('pl-floors')),
-          buildable_area: numOrNull(g('pl-build')), fractions_est: numOrNull(g('pl-fractions')),
-          notes: valOrNull(g('pl-notes')), risks: valOrNull(g('pl-risks'))
-        };
-        if (Object.entries(row).some(([k, x]) => typeof x === 'number' && Number.isNaN(x))) return formError('pl-msg', 'Há um número inválido (usa só algarismos e vírgula).');
+        <input type="text" id="np-pl-name" class="form-input" placeholder="ex.: Terreno da Rua do Campo" autocomplete="off">
+        <label class="field-label">Concelho</label>
+        <input type="text" id="np-pl-muni" class="form-input" placeholder="ex.: Vila Nova de Gaia" autocomplete="off">
+        <label class="field-label">Tipologias de uso <small class="muted">(opcional)</small></label>
+        <div class="op-chips" id="np-pl-types">${d.types.map(t => `<label class="op-chip"><input type="checkbox" value="${escapeHtml(t.id)}"><span>${escapeHtml(t.name)}</span></label>`).join('')}</div>
+        <button type="button" class="primary-btn" id="np-pl-go">Criar e abrir</button>
+        <div id="np-pl-msg" class="form-msg"></div>`);
+      const go = async () => {
+        const name = document.getElementById('np-pl-name').value.trim();
+        if (!name) return formError('np-pl-msg', 'Dá um nome ao terreno.');
+        const ids = [...document.querySelectorAll('#np-pl-types input:checked')].map(cb => cb.value);
         try {
-          let id = p.id;
-          if (isEdit) await dbUpdate('land_plots', p.id, { ...row, updated_at: new Date().toISOString() }, mockPlots);
-          else id = (await dbInsert('land_plots', { ...row, status: 'registered', created_by: me?.id ?? null, created_at: new Date().toISOString() }, mockPlots)).id;
-          closeQuickModal(); showToast(isEdit ? 'Terreno guardado' : 'Terreno registado');
-          onSaved && onSaved(id);
-        } catch (err) { formError('pl-msg', 'Não foi possível guardar: ' + err.message); }
-      });
-      if (isEdit) document.getElementById('pl-delete').addEventListener('click', async () => {
-        if (!window.confirm(`Eliminar o terreno "${p.name}"? As apresentações a investidores também são apagadas. As propostas ficam, sem terreno.`)) return;
-        try { await dbDelete('land_plots', p.id, mockPlots); closeQuickModal(); showToast('Terreno eliminado'); navStack = []; openOppsModule('plots'); }
-        catch (err) { formError('pl-msg', 'Não foi possível eliminar: ' + err.message); }
-      });
+          const me = await getCurrentMember();
+          const r = await dbInsert('land_plots', { name, municipality: valOrNull(document.getElementById('np-pl-muni').value.trim()), status: 'registered', origin: 'network',
+            project_type_ids: ids, project_type_id: ids[0] || null, scout_id: me?.id ?? null, created_by: me?.id ?? null, created_at: new Date().toISOString(), sellable_ratio: null }, mockPlots);
+          closeQuickModal(); cmdkPlots = null;
+          openPlotView(r.id);
+        } catch (err) { formError('np-pl-msg', 'Não foi possível criar: ' + err.message); }
+      };
+      document.getElementById('np-pl-go').addEventListener('click', go);
+      ['np-pl-name', 'np-pl-muni'].forEach(id => document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') go(); }));
+      setTimeout(() => document.getElementById('np-pl-name')?.focus(), 50);
+    }
+    // Duplicar como variante (outra densidade, outro preço) sem mexer no original
+    async function duplicatePlot(p) {
+      const d = oppsCache || await loadOppsData();
+      const root = p.variant_of || p.id;
+      const n = d.plots.filter(x => x.variant_of === root).length + 2;
+      const { id, created_at, updated_at, project_id, ...copy } = p;
+      const base = d.plots.find(x => x.id === root)?.name || p.name;
+      try {
+        const r = await dbInsert('land_plots', { ...JSON.parse(JSON.stringify(copy)), name: `${base} — variante ${n}`, variant_of: root, status: p.status === 'won' ? 'analysis' : p.status, created_at: new Date().toISOString() }, mockPlots);
+        showToast('Variante criada: muda à vontade, o original fica igual'); cmdkPlots = null;
+        openPlotView(r.id);
+      } catch (err) { showError('duplicar', err); }
     }
 
-    // ---------- Ficha do terreno ----------
-    async function openPlotView(plotId) {
+    // ---------- Página do terreno: tudo numa folha, grava sozinha ----------
+    // Em cima as premissas que mudam o resultado (como as células amarelas do Excel) e os resultados ao vivo;
+    // por baixo os investidores e, fechado em "Mais detalhe", o resto (custos, áreas, tipologias, dados, notas).
+    async function openFeasView(plotId) { return openPlotView(plotId, { detail: true }); }
+    async function openPlotView(plotId, opts = {}) {
       pushCurrentView({ name: 'plot', plotId });
       hideAllViews();
       const view = document.getElementById('plot-view');
       view.style.display = 'block';
-      beginLoad(view, 'plot:' + plotId, '<div class="gantt-wrap">' + SKELETON(4) + '</div><div class="gantt-wrap">' + SKELETON(4) + '</div>');
+      beginLoad(view, 'plot:' + plotId, '<div class="gantt-wrap">' + SKELETON(5) + '</div><div class="gantt-wrap">' + SKELETON(4) + '</div>');
       try {
-        const d = oppsCache = await loadOppsData();
+        const [d, cfg] = await Promise.all([loadOppsData(), loadFeasCfg()]);
+        oppsCache = d;
         d.partner = isPartnerMember(await getCurrentMember());
         const p = d.plots.find(x => String(x.id) === String(plotId));
         if (!p) { view.innerHTML = '<div class="error-box">Terreno não encontrado.</div>'; return; }
         document.getElementById('nav-title').textContent = p.name;
-        const typeById = Object.fromEntries(d.types.map(t => [t.id, t]));
-        const memberById = Object.fromEntries((d.members || []).map(m => [m.id, m]));
-        const clientById = Object.fromEntries((d.clients || []).map(c => [c.id, c]));
-        const invById = Object.fromEntries(d.investors.map(i => [i.id, i]));
-        const c = plotCalc(p);
-        const pres = d.presentations.filter(x => x.plot_id === p.id);
-        const presented = new Set(pres.map(x => x.investor_id));
-        const mctx = { typeById, plots: d.plots, presentations: d.presentations };
-        const others = d.investors.filter(i => i.active !== false && !presented.has(i.id)).map(i => ({ i, m: investorMatch(i, p, mctx) })).sort((a, b) => b.m.score - a.m.score);
-        const ranked = others.filter(x => x.m.known && x.m.score >= 50), weak = others.filter(x => !(x.m.known && x.m.score >= 50));
-        const props = d.proposals.filter(x => x.plot_id === p.id);
-        const kv = (label, value, cls = '') => `<div class="invoice-row op-kv"><span>${label}</span><span class="${cls}">${value}</span></div>`;
-        const eur = n => n != null ? escapeHtml(fmtEUR(n)) : '<span class="muted">—</span>';
-        const txt = s => s ? escapeHtml(s) : '<span class="muted">—</span>';
-        const link = (url, label) => url && /^https?:\/\//i.test(url) ? `<a class="text-btn" href="${escapeHtml(url)}" target="_blank" rel="noopener">${label}</a>` : '<span class="muted">—</span>';
-        const origin = p.origin === 'client' ? 'Trazido por ' + (clientById[p.client_id]?.name || 'um cliente') : 'Network' + (p.source_name ? ' · ' + p.source_name : '');
-        const presRow = x => {
-          const i = invById[x.investor_id];
-          return `<div class="invoice-row op-pres">
-            <span><b class="bl-title">${escapeHtml(i?.name || 'Investidor')}</b><br><small>apresentado a ${escapeHtml(fmtDayMonthYear(x.presented_on))}</small></span>
-            <select class="form-input op-pres-status" data-pres="${escapeHtml(x.id)}" aria-label="Resposta de ${escapeHtml(i?.name || '')}">${PRES_STATUSES.map(([k, l]) => `<option value="${k}"${k === x.status ? ' selected' : ''}>${l}</option>`).join('')}</select>
-          </div>`;
-        };
-        const fitRow = x => `<div class="mm-row">
-            ${matchBadge(x.m)}
-            <div class="mm-body"><div class="mm-head"><b class="bl-title">${escapeHtml(x.i.name)}</b>${x.i.company ? ` <small class="muted">· ${escapeHtml(x.i.company)}</small>` : ''} <em class="mm-label">${escapeHtml(x.m.label)}</em></div>${matchWhyHtml(x.m)}</div>
-            <button type="button" class="secondary-btn op-present" data-present="${escapeHtml(x.i.id)}">Apresentar</button>
-          </div>`;
-        view.innerHTML = `
-          <div class="detail-header">
-            <div class="titles"><h2>${escapeHtml(p.name)}</h2>
-              <div class="sub">${escapeHtml([origin, p.municipality, p.scout_id && memberById[p.scout_id] ? 'acompanha ' + memberById[p.scout_id].name : null].filter(Boolean).join(' · '))}</div></div>
-            <button type="button" class="secondary-btn" id="pl-edit">Editar</button>
-          </div>
-          <div class="op-stage">
-            <label class="field-label" for="pl-status" style="margin:0;">Etapa</label>
-            <select id="pl-status" class="form-input">${PLOT_STATUSES.map(([k, l]) => `<option value="${k}"${k === p.status ? ' selected' : ''}>${l}</option>`).join('')}</select>
-            ${p.closed_reason && ['lost', 'discarded'].includes(p.status) ? `<small>${escapeHtml(p.closed_reason)}</small>` : ''}
-            ${p.project_id ? `<button type="button" class="text-btn" data-open-project="${escapeHtml(p.project_id)}">Abrir o projeto →</button>` : ''}
-          </div>
-          <div class="op-grid">
-            <div class="gantt-wrap">
-              <div class="card-head"><h2>Terreno</h2></div>
-              ${kv('Área do terreno', p.land_area ? escapeHtml(fmtNum(p.land_area)) + ' m²' : txt(null))}
-              ${kv('Preço pedido', eur(p.asking_price))}
-              ${kv(plotTypes(p).length > 1 ? 'Tipologias' : 'Tipologia', txt(plotTypeNames(p, typeById)))}
-              ${kv('Projeto aprovado', p.has_approved_project ? 'Sim' : 'Não')}
-              ${kv('Morada', txt([p.address, p.parish].filter(Boolean).join(', ')))}
-              ${kv('Mapa', link(p.maps_url, 'Abrir mapa'))}
-              ${kv('Fotos e documentos', link(p.docs_url, 'Abrir pasta'))}
-            </div>
-            <div class="gantt-wrap">
-              <div class="card-head"><h2>Urbanismo (PDM)</h2></div>
-              ${kv('Classe de espaço', txt(p.pdm_class))}
-              ${kv('Índice de utilização', p.pdm_index != null ? escapeHtml(fmtNum(p.pdm_index)) : txt(null))}
-              ${kv('Pisos máximos', p.max_floors != null ? escapeHtml(String(p.max_floors)) : txt(null))}
-              ${kv('Área de construção', c.build != null ? escapeHtml(fmtNum(c.build)) + ' m²' + (c.buildAuto ? ' <small class="muted">(área × índice)</small>' : '') : txt(null))}
-              ${kv('Frações estimadas', p.fractions_est != null ? escapeHtml(String(p.fractions_est)) : txt(null))}
-            </div>
-            <div class="gantt-wrap">
-              <div class="card-head"><h2>Viabilidade</h2><button type="button" class="text-btn" id="pl-feas">${c.feas.hasCosts ? 'Abrir' : 'Fazer'}</button></div>
-              ${c.feas.hasCosts && c.feas.hasSales ? `
-                ${kv('Investimento total', `<b>${eur(c.feas.costGlobal)}</b>`)}
-                ${kv('Receita líquida', eur(c.feas.salesNet) + ' <small class="muted">sem comissão</small>')}
-                ${kv('<b>Lucro do promotor</b>', `<b class="${c.feas.profit < 0 ? 'late' : ''}">${eur(c.feas.profit)}</b>`)}
-                ${kv('ROI', `<b>${escapeHtml(pct(c.feas.roi))}</b> <small class="muted">${escapeHtml(pct(c.feas.roiNoRes))} sem reservas</small>`)}
-                ${kv('Cenários', feasScenarios(p).map(([l, x]) => `<small class="muted">${l.slice(0, 4)}.</small> ${escapeHtml(pct(x.roi, 0))}`).join(' · '))}`
-              : `<div class="gantt-empty">${c.feas.hasCosts ? 'Falta o preço de venda.' : 'Ainda sem estudo.'} A viabilidade segue o vosso Excel: aquisição com IMT e Selo, construção por componente, reservas, IVA, venda por €/m² ou por tipologia (sem a comissão), cenários e arrendamento.</div>`}
-            </div>
-          </div>
-          <div class="gantt-wrap">
-            <div class="card-head"><h2>Investidores</h2><span>${d.investors.length ? '' : '<button type="button" class="text-btn" id="pl-go-investors">+ Investidor</button>'}</span></div>
-            ${pres.length ? `<div class="section-label" style="margin-top:0;">Já apresentado a</div>${pres.map(presRow).join('')}` : ''}
-            ${ranked.length ? `<div class="section-label"${pres.length ? '' : ' style="margin-top:0;"'}>Matchmaker — por ordem de encaixe</div>${ranked.map(fitRow).join('')}` : ''}
-            ${weak.some(x => x.m.known) ? `<details class="mm-more"><summary>Não encaixam agora (${weak.filter(x => x.m.known).length}) — ver porquê e o que mudar</summary>${weak.filter(x => x.m.known).map(fitRow).join('')}</details>` : ''}
-            ${!pres.length && !ranked.length ? `<div class="gantt-empty">${d.investors.length ? 'Nenhum investidor encaixa neste terreno (ainda). Completa a tipologia, o concelho e a viabilidade, ou revê os perfis dos investidores.' : 'Ainda não há investidores. Regista-os em Oportunidades → Investidores.'}</div>` : ''}
-            ${others.length ? `<div class="op-present-other"><select class="form-input" id="pl-other-inv" aria-label="Outro investidor"><option value="">Apresentar a outro investidor…</option>${weak.map(x => `<option value="${escapeHtml(x.i.id)}">${escapeHtml(x.i.name)}${x.m.known ? ' · ' + x.m.score : ''}</option>`).join('')}</select></div>` : ''}
-          </div>
-          ${d.partner ? `<div class="gantt-wrap">
-            <div class="card-head"><h2>Proposta de honorários</h2><button type="button" class="text-btn" id="pl-new-prop">+ Nova proposta</button></div>
-            ${props.length ? props.map(x => `<div class="invoice-row click-row" data-proposal="${escapeHtml(x.id)}"><span><b class="bl-title">${escapeHtml([x.ref, x.title].filter(Boolean).join(' · '))}</b><br><small>${escapeHtml(optLabel(PROP_STATUSES, x.status))}${x.sent_on ? ' · enviada a ' + escapeHtml(fmtDayMonth(x.sent_on)) : ''}</small></span><span class="amount">${x.total ? escapeHtml(fmtEURShort(x.total)) : ''}</span></div>`).join('')
-              : '<div class="gantt-empty">Quando um investidor avançar, cria aqui a proposta: a app estima as horas com base nos projetos parecidos que já fizemos.</div>'}
-          </div>` : ''}
-          ${p.notes || p.risks ? `<div class="gantt-wrap">
-            <div class="card-head"><h2>Notas e riscos</h2></div>
-            ${p.notes ? `<p class="op-note">${escapeHtml(p.notes)}</p>` : ''}
-            ${p.risks ? `<p class="op-note op-risk"><b>Riscos:</b> ${escapeHtml(p.risks)}</p>` : ''}
-          </div>` : ''}`;
-        const reopen = () => { suppressNavPush = true; openPlotView(p.id); };
-        document.getElementById('pl-edit').addEventListener('click', () => openPlotModal(p, reopen));
-        document.getElementById('pl-feas').addEventListener('click', () => openFeasView(p.id));
-        view.querySelectorAll('[data-open-project]').forEach(b => b.addEventListener('click', () => openDetail(b.dataset.openProject)));
-        view.querySelectorAll('[data-proposal]').forEach(b => b.addEventListener('click', () => openProposalView(b.dataset.proposal)));
-        document.getElementById('pl-go-investors')?.addEventListener('click', () => openInvestorModal(null, reopen));
-        document.getElementById('pl-status').addEventListener('change', async e => {
-          const st = e.target.value, prev = p.status;
-          const save = async (reason) => {
-            try {
-              await dbUpdate('land_plots', p.id, { status: st, closed_reason: reason ?? null, updated_at: new Date().toISOString() }, mockPlots);
-              showToast('Etapa: ' + optLabel(PLOT_STATUSES, st), { ms: 8000, undo: async () => { await dbUpdate('land_plots', p.id, { status: prev, closed_reason: p.closed_reason ?? null }, mockPlots); reopen(); } });
-              reopen();
-            } catch (err) { showError('mudar a etapa', err); e.target.value = prev; }
-          };
-          if (['lost', 'discarded'].includes(st)) {
-            openQuickModal(st === 'lost' ? 'Terreno perdido' : 'Terreno descartado', `
-              <label class="field-label" style="margin-top:0;">Porquê? (opcional)</label>
-              <input type="text" id="pl-reason" class="form-input" maxlength="200" placeholder="${st === 'lost' ? 'ex.: vendido a outro promotor' : 'ex.: índice baixo, preço alto, RAN'}">
-              <button type="button" class="primary-btn" id="pl-reason-go">Guardar</button>`);
-            const go = () => { closeQuickModal(); save(valOrNull(document.getElementById('pl-reason').value.trim())); };
-            document.getElementById('pl-reason-go').addEventListener('click', go);
-            document.getElementById('pl-reason').addEventListener('keydown', ev => { if (ev.key === 'Enter') go(); });
-            e.target.value = prev;
-          } else save(null);
-        });
-        const present = async (invId) => {
-          try {
-            await dbInsert('land_presentations', { plot_id: p.id, investor_id: invId, presented_on: dateKey(new Date()), status: 'presented' }, mockPresentations);
-            if (['registered', 'analysis'].includes(p.status)) await dbUpdate('land_plots', p.id, { status: 'presented', updated_at: new Date().toISOString() }, mockPlots);
-            showToast('Apresentado a ' + (invById[invId]?.name || 'investidor'));
-            reopen();
-          } catch (err) { showError('registar a apresentação', err); }
-        };
-        view.querySelectorAll('[data-present]').forEach(b => b.addEventListener('click', () => present(b.dataset.present)));
-        document.getElementById('pl-other-inv')?.addEventListener('change', e => { if (e.target.value) present(e.target.value); });
-        view.querySelectorAll('[data-pres]').forEach(sel => sel.addEventListener('change', async () => {
-          try {
-            await dbUpdate('land_presentations', sel.dataset.pres, { status: sel.value }, mockPresentations);
-            const x = pres.find(y => String(y.id) === sel.dataset.pres);
-            if (sel.value === 'proposal' && d.partner) {
-              showToast('Boa! Cria a proposta de honorários', { ms: 8000 });
-              openProposalView(null, { plot: p, investor: invById[x?.investor_id] });
-            } else { showToast('Resposta guardada'); reopen(); }
-          } catch (err) { showError('guardar', err); }
-        }));
-        document.getElementById('pl-new-prop')?.addEventListener('click', () => {
-          const keen = pres.find(x => ['proposal', 'interested'].includes(x.status));
-          openProposalView(null, { plot: p, investor: keen ? invById[keen.investor_id] : null });
-        });
+        renderPlotSheet(view, p, d, cfg, opts);
       } catch (err) {
         view.innerHTML = `<div class="error-box">Não foi possível abrir o terreno: ${escapeHtml(err.message)}</div>`;
       }
+    }
+    function renderPlotSheet(view, p, d, cfg, opts = {}) {
+      const typeById = Object.fromEntries(d.types.map(t => [t.id, t]));
+      const invById = Object.fromEntries(d.investors.map(i => [i.id, i]));
+      const f = JSON.parse(JSON.stringify(feasInputs(p, cfg)));
+      const S = { p, f, cfg, d };
+      const v = k => escapeHtml(p[k] ?? '');
+      const num = (path, val, ph = '', extra = '') => `<input type="text" inputmode="decimal" class="form-input" data-f="${path}" value="${escapeHtml(val ?? '')}" placeholder="${escapeHtml(ph)}"${extra}>`;
+      const pnum = (col, ph = '') => `<input type="text" inputmode="decimal" class="form-input" data-p="${col}" value="${v(col)}" placeholder="${escapeHtml(ph)}">`;
+      const ptxt = (col, ph = '', type = 'text') => `<input type="${type}" class="form-input" data-p="${col}" value="${v(col)}" placeholder="${escapeHtml(ph)}">`;
+      const root = p.variant_of ? d.plots.find(x => x.id === p.variant_of) : null;
+      const variants = d.plots.filter(x => x.variant_of && x.variant_of === (p.variant_of || p.id) && x.id !== p.id);
+      const areaHint = () => { const a = plotAreas(p); return a.buildAuto ? `área × índice = ${fmtNum(a.build)} m²` : 'ex.: 1440'; };
+      const stageBtns = PLOT_OPEN.map(k => `<button type="button" data-st="${k}" class="${p.status === k ? 'active' : ''}">${escapeHtml(optLabel(PLOT_STATUSES, k))}</button>`).join('');
+      view.innerHTML = `
+        <div class="ps-head">
+          <div class="ps-title">
+            <input type="text" class="ps-name" data-p="name" value="${v('name')}" aria-label="Nome do terreno">
+            <div class="ps-sub"><input type="text" class="ps-inline" data-p="municipality" value="${v('municipality')}" placeholder="concelho" aria-label="Concelho">
+              <span class="ps-saved" id="ps-saved" aria-live="polite"></span></div>
+          </div>
+          <div class="ps-actions">
+            <button type="button" class="secondary-btn" id="ps-print">Resumo para o investidor</button>
+            <button type="button" class="nav-icon-btn" id="ps-more" aria-label="Mais ações"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
+          </div>
+        </div>
+        ${root ? `<div class="ps-variant">Variante de <button type="button" class="text-btn" data-open-plot="${escapeHtml(root.id)}">${escapeHtml(root.name)}</button>${variants.length ? ` · outras: ${variants.map(x => `<button type="button" class="text-btn" data-open-plot="${escapeHtml(x.id)}">${escapeHtml(x.name.replace(root.name + ' — ', ''))}</button>`).join(', ')}` : ''}</div>`
+          : variants.length ? `<div class="ps-variant">Variantes: ${variants.map(x => `<button type="button" class="text-btn" data-open-plot="${escapeHtml(x.id)}">${escapeHtml(x.name.replace(p.name + ' — ', ''))}</button>`).join(', ')}</div>` : ''}
+        <div class="ps-stage">
+          <div class="segmented ps-steps" id="ps-steps">${stageBtns}</div>
+          <select class="form-input ps-outcome" id="ps-outcome" aria-label="Fechar o terreno">
+            <option value="">${['won', 'lost', 'discarded'].includes(p.status) ? escapeHtml(optLabel(PLOT_STATUSES, p.status)) : 'Fechar…'}</option>
+            <option value="won">Ganho</option><option value="lost">Perdido</option><option value="discarded">Descartado</option>
+            ${['won', 'lost', 'discarded'].includes(p.status) ? '<option value="analysis">Reabrir</option>' : ''}
+          </select>
+          ${p.closed_reason && ['lost', 'discarded'].includes(p.status) ? `<small class="muted">${escapeHtml(p.closed_reason)}</small>` : ''}
+          ${p.project_id ? `<button type="button" class="text-btn" data-open-project="${escapeHtml(p.project_id)}">Abrir o projeto →</button>` : ''}
+        </div>
+        <div class="op-chips ps-types" id="ps-types">${d.types.map(t => `<label class="op-chip"><input type="checkbox" value="${escapeHtml(t.id)}"${plotTypes(p).includes(t.id) ? ' checked' : ''}><span>${escapeHtml(t.name)}</span></label>`).join('')}</div>
+
+        <div class="ps-grid">
+          <div class="gantt-wrap ps-inputs">
+            <div class="card-head"><h2>Premissas</h2><small class="muted">o resto usa os valores de referência</small></div>
+            <div class="ps-cells">
+              <label><span>Preço do terreno (€)</span>${pnum('asking_price', 'ex.: 450000')}</label>
+              <label><span>Área do terreno (m²)</span>${pnum('land_area', 'ex.: 1200')}</label>
+              <label><span>Índice de utilização</span>${pnum('pdm_index', 'ex.: 1,2')}</label>
+              <label><span>Área de construção (m²)</span>${pnum('buildable_area', areaHint())}</label>
+              <label><span>Área vendável (%)</span>${num('sellable_pct', f.sellable_pct)}</label>
+              <label><span>Construção (€/m²)</span>${num('cost.housing', f.cost.housing)}</label>
+              <label class="ps-sale"><span>Venda <button type="button" class="ps-mode" id="ps-sale-mode">${f.sale_mode === 'typology' ? 'por tipologia' : '€/m² na zona'} ⇄</button></span>
+                ${f.sale_mode === 'typology' ? '<em class="ps-typ-note">preços em Tipologias, mais abaixo</em>' : num('sale_m2', f.sale_m2, 'ex.: 4500')}</label>
+            </div>
+            <div class="fz-mix">
+              <label class="field-label" for="fz-avg">Área média por fração <b id="fz-avg-v">${escapeHtml(fmtNum(f.avg_unit_area))} m²</b></label>
+              <input type="range" id="fz-avg" min="35" max="150" step="1" data-f="avg_unit_area" value="${escapeHtml(f.avg_unit_area)}">
+              <div class="fz-mix-scale"><span>35 m² · T0</span><span>150 m² · T5</span></div>
+              <div id="fz-mix-out"></div>
+            </div>
+          </div>
+          <div class="gantt-wrap ps-result" id="fz-result"></div>
+        </div>
+
+        <div class="gantt-wrap" id="ps-investors"></div>
+
+        <details class="gantt-wrap ps-detail" id="ps-detail"${opts.detail ? ' open' : ''}>
+          <summary><b>Mais detalhe</b> <small class="muted">custos, áreas, tipologias, IMT, arrendamento, dados e notas</small></summary>
+          <div class="fz-defaults" id="fz-defaults" hidden></div>
+          <div class="ps-dgrid">
+            <section>
+              <div class="section-label">Construção (€/m²) e custos</div>
+              <div class="form-grid fz-grid3">
+                <div><label class="field-label">Áreas comuns</label>${num('cost.common', f.cost.common)}</div>
+                <div><label class="field-label">Estacionamento</label>${num('cost.parking', f.cost.parking)}</div>
+                <div><label class="field-label">Comércio</label>${num('cost.commerce', f.cost.commerce)}</div>
+                <div><label class="field-label">Áreas verdes</label>${num('cost.green', f.cost.green)}</div>
+                <div><label class="field-label">Infraestruturas</label>${num('cost.infra', f.cost.infra)}</div>
+                <div><label class="field-label">Taxas municipais (€)</label>${num('muni_fees', f.muni_fees, 'TMU…')}</div>
+                <div><label class="field-label">Licenças (%)</label>${num('lic_pct', f.lic_pct)}</div>
+                <div><label class="field-label">Projetos (%)</label>${num('proj_pct', f.proj_pct)}</div>
+                <div><label class="field-label">IVA construção (%)</label>${num('vat_pct', f.vat_pct)}</div>
+                <div><label class="field-label">Contingência (%)</label>${num('cont_pct', f.cont_pct)}</div>
+                <div><label class="field-label">Gestão (%)</label>${num('mgmt_pct', f.mgmt_pct)}</div>
+                <div><label class="field-label">Comissão (%) + IVA</label>${num('comm_pct', f.comm_pct)}</div>
+              </div>
+            </section>
+            <section>
+              <div class="section-label">Aquisição</div>
+              <div class="form-grid">
+                <div><label class="field-label">IMT</label><select class="form-input" data-f="acq_type">${IMT_TYPES.map(([k, l, r]) => `<option value="${k}"${k === f.acq_type ? ' selected' : ''}>${escapeHtml(l)}${r != null ? ` (${fmtNum(r)}%)` : ''}</option>`).join('')}</select></div>
+                <div id="fz-imt-custom"${f.acq_type === 'custom' ? '' : ' hidden'}><label class="field-label">Taxa de IMT (%)</label>${num('imt_custom', f.imt_custom)}</div>
+                <div><label class="field-label">Escritura e registos (€)</label>${num('acq_other', f.acq_other, 'ex.: 3000')}</div>
+              </div>
+              <label class="check-row"><input type="checkbox" data-f="imt_exempt"${f.imt_exempt ? ' checked' : ''}> Isento de IMT (revenda — confirmar)</label>
+              <div class="section-label">Outras áreas (m²)</div>
+              <div class="form-grid">
+                <div><label class="field-label">Habitação (se diferente)</label>${num('housing_area', (p.feasibility || {}).housing_area ?? '', 'igual à de construção')}</div>
+                <div><label class="field-label">Comércio</label>${num('commerce_area', f.commerce_area)}</div>
+                <div><label class="field-label">Abaixo do solo</label>${num('below_area', f.below_area)}</div>
+                <div><label class="field-label">Áreas verdes</label>${num('green_area', f.green_area)}</div>
+                <div><label class="field-label">Infraestruturas</label>${num('infra_area', f.infra_area)}</div>
+                <div><label class="field-label">Comércio — venda (€/m²)</label>${num('commerce_sale_m2', f.commerce_sale_m2)}</div>
+              </div>
+            </section>
+            <section class="ps-wide">
+              <div class="section-label">Tipologias</div>
+              <div id="fz-typ"></div>
+            </section>
+            <section>
+              <div class="section-label">Arrendamento e cenários</div>
+              <label class="check-row" style="margin-top:0;"><input type="checkbox" data-f="rent_on"${f.rent_on ? ' checked' : ''}> Mostrar o arrendamento</label>
+              <div class="form-grid">
+                <div><label class="field-label">Renda (€/m²/mês)</label>${num('rent_m2', f.rent_m2, 'ou por tipologia')}</div>
+                <div><label class="field-label">Ocupação (%)</label>${num('occupancy', f.occupancy)}</div>
+                <div><label class="field-label">Despesas (% da renda)</label>${num('rent_opex_pct', f.rent_opex_pct)}</div>
+                <div><label class="field-label">Variação dos cenários (%)</label>${num('delta_pct', f.delta_pct)}</div>
+              </div>
+            </section>
+            <section>
+              <div class="section-label">Terreno e contacto</div>
+              <div class="form-grid">
+                <div><label class="field-label">Morada</label>${ptxt('address')}</div>
+                <div><label class="field-label">Freguesia</label>${ptxt('parish')}</div>
+                <div><label class="field-label">Quem nos falou dele</label>${ptxt('source_name', 'mediador, contacto…')}</div>
+                <div><label class="field-label">Quem acompanha</label><select class="form-input" data-p="scout_id"><option value="">Ninguém em particular</option>${(d.members || []).map(m => `<option value="${escapeHtml(m.id)}"${String(m.id) === String(p.scout_id) ? ' selected' : ''}>${escapeHtml(m.name)}</option>`).join('')}</select></div>
+                <div><label class="field-label">Link do mapa</label>${ptxt('maps_url', 'Google Maps', 'url')}</div>
+                <div><label class="field-label">Pasta (fotos, documentos)</label>${ptxt('docs_url', 'Drive, Dropbox…', 'url')}</div>
+                <div><label class="field-label">Classe de espaço (PDM)</label>${ptxt('pdm_class')}</div>
+                <div><label class="field-label">Pisos máximos</label>${pnum('max_floors')}</div>
+              </div>
+              <label class="check-row"><input type="checkbox" data-p="has_approved_project"${p.has_approved_project ? ' checked' : ''}> Já tem projeto aprovado</label>
+            </section>
+            <section>
+              <div class="section-label">Notas e riscos</div>
+              <textarea class="form-input" data-p="notes" rows="3" placeholder="Notas">${v('notes')}</textarea>
+              <textarea class="form-input" data-p="risks" rows="3" placeholder="Riscos: servidões, RAN/REN, acessos…" style="margin-top:8px;">${v('risks')}</textarea>
+            </section>
+          </div>
+          <button type="button" class="text-btn" id="fz-reset">Repor os valores de referência</button>
+        </details>
+        ${d.partner ? `<div class="gantt-wrap" id="ps-props"></div>` : ''}`;
+
+      // ---- Gravação automática ----
+      const savedEl = document.getElementById('ps-saved');
+      let pTimer = null, fTimer = null; const pPatch = {};
+      const flagSaving = () => { savedEl.textContent = 'a gravar…'; savedEl.className = 'ps-saved'; };
+      const flagSaved = () => { savedEl.textContent = 'gravado ✓'; savedEl.className = 'ps-saved ok'; };
+      const flagErr = err => { savedEl.textContent = 'não gravou — ' + plainError(err.message); savedEl.className = 'ps-saved bad'; };
+      const savePlot = () => {
+        clearTimeout(pTimer); flagSaving();
+        pTimer = setTimeout(async () => {
+          const patch = { ...pPatch }; Object.keys(pPatch).forEach(k => delete pPatch[k]);
+          try { await dbUpdate('land_plots', p.id, { ...patch, updated_at: new Date().toISOString() }, mockPlots); flagSaved();
+            if ('name' in patch) document.getElementById('nav-title').textContent = p.name; }
+          catch (err) { flagErr(err); }
+        }, 600);
+      };
+      const diff = () => {
+        const out = {};
+        Object.keys(f).forEach(k => {
+          if (k === 'cost') { const c = {}; Object.keys(f.cost).forEach(x => { if (f.cost[x] !== cfg.cost[x]) c[x] = f.cost[x]; }); if (Object.keys(c).length) out.cost = c; }
+          else if (k === 'typologies') { if (JSON.stringify(f.typologies) !== JSON.stringify(cfg.typologies)) out.typologies = f.typologies; }
+          else if (k === 'housing_area') { if ((p.feasibility || {}).housing_area != null || S.housingTyped) { if (f.housing_area != null && S.housingTyped !== false) out.housing_area = f.housing_area; } }
+          else if (/_area$/.test(k)) { if (f[k] != null) out[k] = f[k]; }
+          else if (JSON.stringify(f[k]) !== JSON.stringify(cfg[k])) out[k] = f[k];
+        });
+        return out;
+      };
+      const saveFeas = () => {
+        clearTimeout(fTimer); flagSaving();
+        fTimer = setTimeout(async () => {
+          const val = diff();
+          const units = feasCalc({ ...p, feasibility: val }).units || null;
+          try {
+            const patch = { feasibility: val, fractions_est: units, updated_at: new Date().toISOString() };
+            if (p.status === 'registered') { patch.status = 'analysis'; p.status = 'analysis'; document.querySelectorAll('#ps-steps button').forEach(b => b.classList.toggle('active', b.dataset.st === 'analysis')); }
+            await dbUpdate('land_plots', p.id, patch, mockPlots);
+            p.feasibility = val; p.fractions_est = units; flagSaved();
+          } catch (err) { flagErr(err); }
+        }, 800);
+      };
+      const setPath = (path, val) => { const k = path.split('.'); if (k.length === 2) f[k[0]] = { ...f[k[0]], [k[1]]: val }; else f[path] = val; };
+      const getPath = (o, path) => path.split('.').reduce((x, k) => x?.[k], o);
+      // Campos do terreno
+      view.querySelectorAll('[data-p]').forEach(el => el.addEventListener(el.type === 'checkbox' || el.tagName === 'SELECT' ? 'change' : 'input', () => {
+        const col = el.dataset.p;
+        let val = el.type === 'checkbox' ? el.checked : el.tagName === 'SELECT' ? (el.value || null) : el.inputMode === 'decimal' ? numOrNull(el.value) : (el.value.trim() || null);
+        if (typeof val === 'number' && Number.isNaN(val)) { el.classList.add('fz-bad'); return; }
+        el.classList.remove('fz-bad');
+        if (col === 'name' && !val) return;
+        p[col] = val; pPatch[col] = val;
+        if (['land_area', 'pdm_index', 'buildable_area'].includes(col)) {
+          const b = view.querySelector('[data-p="buildable_area"]'); if (b && col !== 'buildable_area') b.placeholder = areaHint();
+          if (!(p.feasibility || {}).housing_area && !S.housingTyped) f.housing_area = plotAreas(p).build;
+        }
+        savePlot(); drawResult(); drawInvestors();
+      }));
+      document.getElementById('ps-types').addEventListener('change', () => {
+        const ids = [...document.querySelectorAll('#ps-types input:checked')].map(cb => cb.value);
+        p.project_type_ids = ids; p.project_type_id = ids[0] || null;
+        pPatch.project_type_ids = ids; pPatch.project_type_id = ids[0] || null; savePlot(); drawInvestors();
+      });
+      // Campos do estudo
+      view.querySelectorAll('[data-f]').forEach(el => el.addEventListener(el.type === 'checkbox' || el.tagName === 'SELECT' ? 'change' : 'input', () => {
+        const k = el.dataset.f;
+        let val = el.type === 'checkbox' ? el.checked : el.tagName === 'SELECT' ? el.value : numOrNull(el.value);
+        if (typeof val === 'number' && Number.isNaN(val)) { el.classList.add('fz-bad'); return; }
+        el.classList.remove('fz-bad');
+        if (k === 'housing_area') { S.housingTyped = val != null; if (val == null) val = plotAreas(p).build; }
+        setPath(k, val);
+        if (k === 'acq_type') document.getElementById('fz-imt-custom').hidden = val !== 'custom';
+        if (k === 'rent_on') drawTyp();
+        saveFeas(); drawResult(); drawInvestors(); markDefaults();
+      }));
+      document.getElementById('ps-sale-mode').addEventListener('click', () => {
+        f.sale_mode = f.sale_mode === 'typology' ? 'm2' : 'typology';
+        saveFeas(); renderPlotSheet(view, p, d, cfg, { detail: document.getElementById('ps-detail').open || f.sale_mode === 'typology', keepSaved: true });
+        if (f.sale_mode === 'typology') setTimeout(() => document.getElementById('fz-typ')?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 50);
+      });
+      // ---- Tipologias (tabela) ----
+      const drawTyp = () => {
+        const box = document.getElementById('fz-typ');
+        const cols = (f.sale_mode === 'typology') + !!f.rent_on;
+        box.innerHTML = `
+          <div class="fz-typ-head" style="--cols:${cols}"><span>Tipologia</span><span>Unid.</span><span>Área (m²)</span>${f.sale_mode === 'typology' ? '<span>Preço médio (€)</span>' : ''}${f.rent_on ? '<span>Renda (€/mês)</span>' : ''}<span></span></div>
+          ${(f.typologies || []).map((t, i) => `<div class="fz-typ-row" data-i="${i}" style="--cols:${cols}">
+            <input type="text" class="form-input" data-k="name" value="${escapeHtml(t.name || '')}" aria-label="Tipologia" placeholder="Tipologia">
+            <input type="text" inputmode="numeric" class="form-input" data-k="units" value="${escapeHtml(t.units ?? '')}" aria-label="Unidades de ${escapeHtml(t.name || '')}" placeholder="unid.">
+            <input type="text" inputmode="decimal" class="form-input" data-k="area" value="${escapeHtml(t.area ?? '')}" aria-label="Área de ${escapeHtml(t.name || '')}" placeholder="m²">
+            ${f.sale_mode === 'typology' ? `<input type="text" inputmode="decimal" class="form-input" data-k="price" value="${escapeHtml(t.price ?? '')}" aria-label="Preço de ${escapeHtml(t.name || '')}" placeholder="preço €">` : ''}
+            ${f.rent_on ? `<input type="text" inputmode="decimal" class="form-input" data-k="rent" value="${escapeHtml(t.rent ?? '')}" aria-label="Renda de ${escapeHtml(t.name || '')}" placeholder="renda €/mês">` : ''}
+            <button type="button" class="op-spec-del" data-del="${i}" aria-label="Tirar ${escapeHtml(t.name || '')}">×</button>
+          </div>`).join('')}
+          <button type="button" class="text-btn" id="fz-typ-add">+ Tipologia</button>
+          <div class="field-hint" style="margin:4px 0 0;">${f.typologies?.some(t => Number(t.units) > 0) ? 'As frações e o mix vêm desta tabela.' : 'Sem unidades aqui, as frações vêm da área média por fração (lá em cima).'}</div>`;
+        box.querySelectorAll('.fz-typ-row').forEach(row => row.addEventListener('input', e => {
+          const i = Number(row.dataset.i), k = e.target.dataset.k;
+          f.typologies = f.typologies.map((x, j) => j === i ? { ...x, [k]: k === 'name' ? e.target.value : numOrNull(e.target.value) } : x);
+          saveFeas(); drawResult(); drawInvestors();
+        }));
+        box.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => { f.typologies = f.typologies.filter((_, i) => i !== Number(b.dataset.del)); saveFeas(); drawTyp(); drawResult(); drawInvestors(); }));
+        document.getElementById('fz-typ-add').addEventListener('click', () => { f.typologies = [...(f.typologies || []), { name: 'T' + (f.typologies || []).length, units: null, area: null, price: null, rent: null }]; saveFeas(); drawTyp(); });
+      };
+      // ---- Resultados ao vivo ----
+      const drawResult = () => {
+        const c = feasCalc(p, f), sc = feasScenarios(p, f), mx = c.autoMix;
+        const e = n => escapeHtml(fmtEUR(Math.round(n)));
+        document.getElementById('fz-avg-v').textContent = fmtNum(f.avg_unit_area) + ' m²';
+        const fromTable = (f.typologies || []).some(t => Number(t.units) > 0);
+        document.getElementById('fz-mix-out').innerHTML = mx.n ? `
+          <div class="fz-mix-res"><b>≈ ${fromTable ? c.units : mx.n} ${(fromTable ? c.units : mx.n) === 1 ? 'fração' : 'frações'}</b> <span class="muted">${fromTable ? '(da tabela de tipologias)' : `(${escapeHtml(fmtNum(Math.round(c.sellable)))} m² vendáveis ÷ ${escapeHtml(fmtNum(mx.avg))} m²)`}</span></div>
+          ${fromTable ? '' : `<div class="fz-mix-list">${mx.mix.map(m => `<span><b>${m.units}× ${m.name}</b> ~${m.area} m²</span>`).join('')}</div>
+          <button type="button" class="text-btn" id="fz-mix-use">Passar para a tabela de tipologias</button>`}`
+          : '<div class="field-hint" style="margin:4px 0 0;">Indica a área de construção (ou a área do terreno e o índice) para estimar as frações.</div>';
+        document.getElementById('fz-mix-use')?.addEventListener('click', () => {
+          const prev = (f.typologies || []);
+          f.typologies = mx.mix.map(m => ({ name: m.name, units: m.units, area: m.area, price: prev.find(x => x.name === m.name)?.price ?? null, rent: prev.find(x => x.name === m.name)?.rent ?? null }));
+          saveFeas(); drawTyp(); drawResult();
+          document.getElementById('ps-detail').open = true;
+          showToast(`Tipologias: ${mx.mix.map(m => `${m.units}× ${m.name}`).join(' + ')}`);
+        });
+        const ok = c.hasSales && c.hasCosts;
+        const row = (l, val, cls = '') => `<div class="${cls}"><span>${l}</span><b>${val}</b></div>`;
+        document.getElementById('fz-result').innerHTML = `
+          <div class="fz-big"><span>Lucro do promotor</span><b class="${ok && c.profit < 0 ? 'late' : ''}">${ok ? e(c.profit) : '—'}</b>
+            <small>${ok ? `ROI <b>${pct(c.roi)}</b> · ${pct(c.roiNoRes)} sem reservas` : !c.hasCosts ? 'Falta a área de construção.' : 'Falta o preço de venda.'}</small></div>
+          <div class="op-sum">
+            ${row('Investimento total', c.hasCosts ? e(c.costGlobal) : '—', 'op-sum-total')}
+            ${row('<small>terreno + IMT/Selo</small>', `<small>${e(c.acquisition)}</small>`, 'fz-sub')}
+            ${row('<small>construção + indiretos + reservas + IVA</small>', `<small>${e(c.construction + c.indirect + c.reserves + c.vat)}</small>`, 'fz-sub')}
+            ${row('Receita líquida', ok ? e(c.salesNet) : '—')}
+            ${row('<small>vendas − comissão</small>', ok ? `<small>${e(c.salesGross)} − ${e(c.commission)}</small>` : '', 'fz-sub')}
+            ${c.units ? row('Por fração', `${c.avgPrice ? e(c.avgPrice) + ' · ' : ''}terreno ${c.ratios.unit ? e(c.ratios.unit) : '—'}`) : ''}
+          </div>
+          <div class="fz-scen">${sc.map(([l, x]) => `<div><span>${l}</span><b class="${x.profit < 0 ? 'late' : ''}">${ok ? pct(x.roi) : '—'}</b></div>`).join('')}</div>
+          ${f.rent_on && c.rentYear ? `<div class="op-sum">${row('Yield bruto / líquido', `${pct(c.yieldGross, 2)} / ${pct(c.yieldNet, 2)}`)}</div>` : ''}`;
+      };
+      // ---- Investidores: os 3 melhores do matchmaker + já apresentados ----
+      const drawInvestors = () => {
+        const box = document.getElementById('ps-investors');
+        const pres = d.presentations.filter(x => x.plot_id === p.id);
+        const presented = new Set(pres.map(x => x.investor_id));
+        const mctx = { typeById, plots: d.plots, presentations: d.presentations };
+        const ranked = d.investors.filter(i => i.active !== false && !presented.has(i.id)).map(i => ({ i, m: investorMatch(i, p, mctx) })).filter(x => x.m.known).sort((a, b) => b.m.score - a.m.score);
+        const top = ranked.filter(x => x.m.score >= 50).slice(0, 3), rest = ranked.filter(x => !top.includes(x));
+        const fitRow = x => `<div class="mm-row">${matchBadge(x.m)}
+            <div class="mm-body"><div class="mm-head"><b class="bl-title">${escapeHtml(x.i.name)}</b>${x.i.company ? ` <small class="muted">· ${escapeHtml(x.i.company)}</small>` : ''} <em class="mm-label">${escapeHtml(x.m.label)}</em></div>${matchWhyHtml(x.m)}</div>
+            <button type="button" class="secondary-btn op-present" data-present="${escapeHtml(x.i.id)}">Apresentar</button></div>`;
+        box.innerHTML = `<div class="card-head"><h2>Investidores</h2>${d.investors.length ? '' : '<button type="button" class="text-btn" id="pl-go-investors">+ Investidor</button>'}</div>
+          ${pres.length ? pres.map(x => `<div class="invoice-row op-pres"><span><b class="bl-title">${escapeHtml(invById[x.investor_id]?.name || 'Investidor')}</b><br><small>apresentado a ${escapeHtml(fmtDayMonthYear(x.presented_on))}</small></span>
+              <select class="form-input op-pres-status" data-pres="${escapeHtml(x.id)}">${PRES_STATUSES.map(([k, l]) => `<option value="${k}"${k === x.status ? ' selected' : ''}>${l}</option>`).join('')}</select></div>`).join('') : ''}
+          ${top.length ? top.map(fitRow).join('') : `<div class="gantt-empty">${d.investors.length ? 'Ainda nenhum investidor com bom encaixe. Preenche as premissas e as tipologias de uso.' : 'Ainda não há investidores registados.'}</div>`}
+          ${rest.length ? `<details class="mm-more"><summary>Outros ${rest.length} investidores — ver porquê e o que mudar</summary>${rest.map(fitRow).join('')}</details>` : ''}`;
+        box.querySelectorAll('[data-present]').forEach(b => b.addEventListener('click', async () => {
+          try {
+            await dbInsert('land_presentations', { plot_id: p.id, investor_id: b.dataset.present, presented_on: dateKey(new Date()), status: 'presented' }, mockPresentations);
+            if (!devMode) d.presentations.push({ plot_id: p.id, investor_id: b.dataset.present, presented_on: dateKey(new Date()), status: 'presented', id: 'tmp' });
+            if (['registered', 'analysis'].includes(p.status)) { await dbUpdate('land_plots', p.id, { status: 'presented' }, mockPlots); p.status = 'presented'; document.querySelectorAll('#ps-steps button').forEach(x => x.classList.toggle('active', x.dataset.st === 'presented')); }
+            showToast('Apresentado a ' + (invById[b.dataset.present]?.name || 'investidor'));
+            suppressNavPush = true; openPlotView(p.id);
+          } catch (err) { showError('registar a apresentação', err); }
+        }));
+        box.querySelectorAll('[data-pres]').forEach(sel => sel.addEventListener('change', async () => {
+          try {
+            await dbUpdate('land_presentations', sel.dataset.pres, { status: sel.value }, mockPresentations);
+            const x = d.presentations.find(y => String(y.id) === sel.dataset.pres); if (x) x.status = sel.value;
+            if (sel.value === 'proposal' && d.partner) { showToast('Boa! Cria a proposta de honorários', { ms: 8000 }); openProposalView(null, { plot: p, investor: invById[x?.investor_id] }); }
+            else showToast('Resposta guardada');
+          } catch (err) { showError('guardar', err); }
+        }));
+        document.getElementById('pl-go-investors')?.addEventListener('click', () => openInvestorModal(null, () => { suppressNavPush = true; openPlotView(p.id); }));
+      };
+      // ---- Propostas ----
+      const drawProps = () => {
+        const box = document.getElementById('ps-props'); if (!box) return;
+        const props = d.proposals.filter(x => x.plot_id === p.id);
+        box.innerHTML = `<div class="card-head"><h2>Proposta de honorários</h2><button type="button" class="text-btn" id="pl-new-prop">+ Nova proposta</button></div>
+          ${props.length ? props.map(x => `<div class="invoice-row click-row" data-proposal="${escapeHtml(x.id)}"><span><b class="bl-title">${escapeHtml([x.ref, x.title].filter(Boolean).join(' · '))}</b><br><small>${escapeHtml(optLabel(PROP_STATUSES, x.status))}</small></span><span class="amount">${x.total ? escapeHtml(fmtEURShort(x.total)) : ''}</span></div>`).join('')
+            : '<div class="gantt-empty">Quando um investidor avançar, a proposta nasce daqui já preenchida.</div>'}`;
+        box.querySelectorAll('[data-proposal]').forEach(b => b.addEventListener('click', () => openProposalView(b.dataset.proposal)));
+        document.getElementById('pl-new-prop').addEventListener('click', () => {
+          const keen = d.presentations.find(x => x.plot_id === p.id && ['proposal', 'interested'].includes(x.status));
+          openProposalView(null, { plot: p, investor: keen ? invById[keen.investor_id] : null });
+        });
+      };
+      // ---- Valores diferentes dos de referência ----
+      const DEF_PATHS = ['avg_unit_area', 'sellable_pct', 'cost.housing', 'cost.common', 'cost.parking', 'cost.commerce', 'cost.green', 'cost.infra', 'lic_pct', 'proj_pct', 'cont_pct', 'mgmt_pct', 'vat_pct', 'comm_pct', 'occupancy', 'rent_opex_pct', 'delta_pct'];
+      const markDefaults = () => {
+        let n = 0;
+        DEF_PATHS.forEach(path => {
+          const el = view.querySelector(`[data-f="${path}"]`); if (!el) return;
+          const def = getPath(cfg, path), cur = getPath(f, path);
+          const dif = cur != null && def != null && Math.abs(Number(cur) - Number(def)) > 1e-9;
+          el.classList.toggle('fz-changed', dif);
+          let r = el.parentElement.querySelector('.fz-reset1');
+          if (dif) {
+            n++;
+            if (!r) { r = document.createElement('button'); r.type = 'button'; r.className = 'fz-reset1'; el.after(r);
+              r.addEventListener('click', ev => { ev.preventDefault(); setPath(path, getPath(cfg, path)); el.value = getPath(cfg, path); saveFeas(); drawResult(); drawInvestors(); markDefaults(); }); }
+            r.textContent = `↺ referência: ${fmtNum(def)}`;
+          } else if (r) r.remove();
+        });
+        const banner = document.getElementById('fz-defaults');
+        banner.hidden = !n;
+        banner.innerHTML = n ? `<span>⚠ ${n} ${n === 1 ? 'valor diferente' : 'valores diferentes'} dos de referência neste terreno (assinalados).</span><button type="button" class="text-btn" id="fz-reset-all">Repor todos</button>` : '';
+        document.getElementById('fz-reset-all')?.addEventListener('click', () => document.getElementById('fz-reset').click());
+      };
+      document.getElementById('fz-reset').addEventListener('click', () => {
+        const prev = JSON.parse(JSON.stringify(f));
+        DEF_PATHS.forEach(path => setPath(path, getPath(cfg, path)));
+        ['lic_pct', 'proj_pct', 'stamp_pct', 'comm_vat'].forEach(k => { f[k] = cfg[k]; });
+        saveFeas(); renderPlotSheet(view, p, d, cfg, { detail: true });
+        showToast('Valores de referência repostos', { ms: 8000, undo: () => { Object.assign(f, prev); p.feasibility = { ...(p.feasibility || {}), ...prev }; renderPlotSheet(view, p, d, cfg, { detail: true }); saveFeas(); } });
+      });
+      // ---- Etapa ----
+      const setStatus = async (st, reason = null) => {
+        const prev = p.status;
+        try {
+          await dbUpdate('land_plots', p.id, { status: st, closed_reason: reason, updated_at: new Date().toISOString() }, mockPlots);
+          p.status = st; p.closed_reason = reason;
+          showToast('Etapa: ' + optLabel(PLOT_STATUSES, st), { ms: 8000, undo: async () => { await dbUpdate('land_plots', p.id, { status: prev }, mockPlots); p.status = prev; renderPlotSheet(view, p, d, cfg); } });
+          renderPlotSheet(view, p, d, cfg, { detail: document.getElementById('ps-detail')?.open });
+        } catch (err) { showError('mudar a etapa', err); }
+      };
+      document.getElementById('ps-steps').addEventListener('click', e => { const b = e.target.closest('[data-st]'); if (b && b.dataset.st !== p.status) setStatus(b.dataset.st); });
+      document.getElementById('ps-outcome').addEventListener('change', e => {
+        const st = e.target.value; e.target.value = '';
+        if (!st) return;
+        if (st === 'lost' || st === 'discarded') {
+          openQuickModal(st === 'lost' ? 'Terreno perdido' : 'Terreno descartado', `
+            <label class="field-label" style="margin-top:0;">Porquê? (opcional)</label>
+            <input type="text" id="pl-reason" class="form-input" maxlength="200" placeholder="${st === 'lost' ? 'ex.: vendido a outro promotor' : 'ex.: índice baixo, preço alto, RAN'}">
+            <button type="button" class="primary-btn" id="pl-reason-go">Guardar</button>`);
+          const go = () => { const r = valOrNull(document.getElementById('pl-reason').value.trim()); closeQuickModal(); setStatus(st, r); };
+          document.getElementById('pl-reason-go').addEventListener('click', go);
+          document.getElementById('pl-reason').addEventListener('keydown', ev => { if (ev.key === 'Enter') go(); });
+        } else setStatus(st);
+      });
+      // ---- Ações ----
+      view.querySelectorAll('[data-open-plot]').forEach(b => b.addEventListener('click', () => openPlotView(b.dataset.openPlot)));
+      view.querySelectorAll('[data-open-project]').forEach(b => b.addEventListener('click', () => openDetail(b.dataset.openProject)));
+      document.getElementById('ps-print').addEventListener('click', () => {
+        openQuickModal('Resumo para o investidor', `
+          <label class="field-label" style="margin-top:0;">Língua</label>
+          <div class="segmented" id="fz-lang"><button type="button" data-l="pt" class="active">Português</button><button type="button" data-l="en">English</button></div>
+          <label class="check-row"><input type="checkbox" id="fz-p-scen" checked> Incluir os cenários</label>
+          <label class="check-row"><input type="checkbox" id="fz-p-rent"${f.rent_on ? ' checked' : ''}> Incluir o arrendamento</label>
+          <button type="button" class="primary-btn" id="fz-p-go">Abrir o resumo</button>`);
+        let lang = 'pt';
+        document.getElementById('fz-lang').addEventListener('click', e => { const b = e.target.closest('[data-l]'); if (!b) return; lang = b.dataset.l; document.querySelectorAll('#fz-lang button').forEach(x => x.classList.toggle('active', x === b)); });
+        document.getElementById('fz-p-go').addEventListener('click', () => { const o = { lang, scen: document.getElementById('fz-p-scen').checked, rent: document.getElementById('fz-p-rent').checked }; closeQuickModal(); printFeasibility(p, f, o); });
+      });
+      document.getElementById('ps-more').addEventListener('click', () => {
+        const el = mountCellPopover(document.getElementById('ps-more'), 'Mais ações', `<b>${escapeHtml(p.name)}</b><span>mais ações</span>`, `
+          <button type="button" class="assign-opt" data-act="dup"><span class="assign-opt-name">Duplicar como variante</span></button>
+          <button type="button" class="assign-opt" data-act="del"><span class="assign-opt-name">Eliminar terreno</span></button>`);
+        if (!el) return;
+        el.addEventListener('click', async e => {
+          const b = e.target.closest('[data-act]'); if (!b) return;
+          closeAssignPopover();
+          if (b.dataset.act === 'dup') duplicatePlot(p);
+          else if (window.confirm(`Eliminar o terreno "${p.name}"? As apresentações a investidores também são apagadas.`)) {
+            try { await dbDelete('land_plots', p.id, mockPlots); showToast('Terreno eliminado'); navStack = []; openOppsModule('plots'); } catch (err) { showError('eliminar', err); }
+          }
+        });
+      });
+      drawTyp(); drawResult(); drawInvestors(); drawProps(); markDefaults();
+      if (opts.keepSaved) flagSaving();
     }
 
     // ---------- Investidor: perfil de investimento ----------
@@ -15669,7 +15729,7 @@
     const cmdk = document.getElementById('cmdk');
     const cmdkInput = document.getElementById('cmdk-input');
     const cmdkList = document.getElementById('cmdk-list');
-    let cmdkProjects = null, cmdkItems = [], cmdkIndex = 0;
+    let cmdkProjects = null, cmdkPlots = null, cmdkItems = [], cmdkIndex = 0;
     const normText = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
     async function openCmdk() {
@@ -15680,6 +15740,10 @@
       cmdkIndex = 0;
       renderCmdk();
       cmdkInput.focus();
+      if (!cmdkPlots) {
+        (devMode ? Promise.resolve({ data: mockPlots }) : supabase.from('land_plots').select('id, name, municipality, status').order('name'))
+          .then(r => { cmdkPlots = r.data || []; if (!cmdk.hidden) renderCmdk(); }).catch(() => { cmdkPlots = []; });
+      }
       if (!cmdkProjects) {
         try {
           if (devMode) cmdkProjects = MOCK_PROJECTS;
@@ -15702,7 +15766,9 @@
       const guides = q.length >= 3 ? helpSearch(cmdkInput.value).slice(0, /^como\b/.test(q) ? 5 : 3) : [];
       const guideItems = guides.map(g => ({ group: 'Ajuda', label: helpTitle(g), run: () => openHelpModule(g.q) }));
       const projItems = projs.map(p => ({ group: 'Projetos', label: p.name, sub: p.code || '', run: () => openDetail(p.id) }));
-      cmdkItems = /^como\b/.test(q) ? [...guideItems, ...projItems, ...acts] : [...projItems, ...acts, ...guideItems];
+      const plotItems = q ? (cmdkPlots || []).filter(p => normText([p.name, p.municipality].join(' ')).includes(q)).slice(0, 6)
+        .map(p => ({ group: 'Terrenos', label: p.name, sub: [p.municipality, optLabel(PLOT_STATUSES, p.status)].filter(Boolean).join(' · '), run: () => openPlotView(p.id) })) : [];
+      cmdkItems = /^como\b/.test(q) ? [...guideItems, ...projItems, ...plotItems, ...acts] : [...projItems, ...plotItems, ...acts, ...guideItems];
       if (cmdkIndex >= cmdkItems.length) cmdkIndex = Math.max(0, cmdkItems.length - 1);
       let html = '', lastGroup = null;
       cmdkItems.forEach((it, i) => {
