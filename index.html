@@ -1834,6 +1834,25 @@
   .client-owed.old b { color: var(--warning); }
   .clients-table td.col-owed small { display: block; font-size: var(--fs-xs); }
   @media (max-width: 600px) { .clients-table .col-owed small { display: none; } }
+  /* ---- Pessoas, salários e custo/hora ---- */
+  .pay-hero { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--sp-5); flex-wrap: wrap; }
+  .pay-hero-main span, .pay-hero-parts span { display: block; color: var(--text-2); font-size: var(--fs-sm); }
+  .pay-hero-main b { display: block; font-size: var(--fs-num); font-weight: var(--fw-semibold); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1.1; margin: var(--sp-1) 0; }
+  .pay-hero-main small, .pay-hero-parts small { color: var(--text-3); font-size: var(--fs-xs); }
+  .pay-hero-parts { display: flex; gap: var(--sp-6); }
+  .pay-hero-parts b { display: block; font-size: var(--fs-lg); font-variant-numeric: tabular-nums; }
+  .pay-figs { text-align: right; flex-shrink: 0; }
+  .pay-figs b { font-variant-numeric: tabular-nums; }
+  .pay-figs small { display: block; color: var(--text-3); font-size: var(--fs-xs); }
+  #settings-payroll-container .muted { color: var(--text-3); }
+  .pay-law summary { cursor: pointer; list-style: none; padding: var(--sp-1) 0; }
+  .pay-law summary::-webkit-details-marker { display: none; }
+  .pay-law textarea { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: var(--fs-sm); height: auto; }
+  .pay-dep { display: inline-block; width: 80px; height: 30px; margin: 0 var(--sp-1); padding: 0 var(--sp-2); }
+  .pay-extra { display: grid; grid-template-columns: minmax(0, 1fr) 90px auto 32px; gap: var(--sp-2); align-items: center; margin-bottom: var(--sp-2); }
+  .pay-extra .form-input { margin: 0; }
+  .pay-taxed { font-size: var(--fs-sm); color: var(--text-2); display: flex; align-items: center; gap: var(--sp-1); white-space: nowrap; }
+  @media (max-width: 480px) { .pay-extra { grid-template-columns: minmax(0, 1fr) 80px 32px; } .pay-extra [data-k="name"] { grid-column: 1 / -1; } .pay-taxed { grid-column: 1 / 2; } }
   /* ---- Oportunidades: terrenos, investidores, propostas ---- */
   .op-search { margin: 0 0 var(--sp-3); }
   .op-filter { margin: 0 0 var(--sp-3); }
@@ -2603,6 +2622,7 @@
             <button type="button" class="settings-link" data-sec="categories"><span>Horário, horas e categorias</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button type="button" class="settings-link" data-sec="mtypes"><span>Tipos de marco</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <div class="settings-group">Finanças</div>
+            <button type="button" class="settings-link" data-sec="payroll"><span>Pessoas, salários e custo/hora</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button type="button" class="settings-link" data-sec="finance"><span>Impostos e categorias de despesa</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <div class="settings-group">Clientes</div>
             <button type="button" class="settings-link" data-sec="nps"><span>Satisfação (NPS)</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
@@ -2636,6 +2656,10 @@
           <section class="settings-sec" data-sec-panel="mtypes" hidden>
             <h2 class="settings-title">Tipos de marco</h2>
             <div class="gantt-wrap" id="settings-mtypes-container"><div class="detail-loading">A carregar...</div></div>
+          </section>
+          <section class="settings-sec" data-sec-panel="payroll" hidden>
+            <h2 class="settings-title">Pessoas, salários e custo/hora</h2>
+            <div id="settings-payroll-container"><div class="gantt-wrap"><div class="detail-loading">A carregar...</div></div></div>
           </section>
           <section class="settings-sec" data-sec-panel="finance" hidden>
             <h2 class="settings-title">Impostos e categorias de despesa</h2>
@@ -3637,7 +3661,7 @@
       checklists: () => loadChecklistTemplateSettings(), categories: () => loadCategories(),
       mtypes: () => loadMilestoneTypeSettings(), clientscore: () => loadClientScoreSettings(),
       finance: () => loadFinanceSettingsPanel(), camara: () => loadCamaraSettings(),
-      nps: () => loadNpsSettings(), proposals: () => loadProposalSettings()
+      nps: () => loadNpsSettings(), proposals: () => loadProposalSettings(), payroll: () => loadPayrollSettings()
     };
     let settingsSection = 'models';
     const settingsNarrow = window.matchMedia('(max-width: 759px)');
@@ -11796,7 +11820,7 @@
         const urgent = r.late ? 'late' : (r.kind === 'camara' || r.kind === 'debt') ? 'soon' : '';
         items.push({ pri: r.late ? 0 : urgent ? 1 : 2, date: r.due || '9999', html: `
           <div class="alert-row team${urgent ? ' ' + urgent : ''}" data-alert-team="${r.kind}"${r.project ? ` data-project="${escapeHtml(r.project)}"` : ''}${r.nps ? ` data-nps="${escapeHtml(r.nps)}"` : ''}>
-            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : r.kind === 'nps' ? '★' : r.kind === 'debt' ? '€' : '+'}</span>
+            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : r.kind === 'nps' ? '★' : r.kind === 'debt' ? '€' : r.kind === 'law' ? '§' : '+'}</span>
             <span class="alert-text"><b>${escapeHtml(r.title)}</b><span>${escapeHtml(r.sub)}</span></span>
             <span class="alert-when">${escapeHtml(r.when)}</span>
           </div>` });
@@ -11848,6 +11872,7 @@
         if (k === 'hours') openHorasModule();
         else if (k === 'owner') openProjectsModule();
         else if (k === 'debt') { navStack = []; openBillingModule('toreceive'); }
+        else if (k === 'law') { navStack = []; openSettingsModule(); showSettingsSection('payroll'); }
         else if (k === 'camara') { detailTabByProject[r.dataset.project] = 'camara'; openDetail(r.dataset.project); }
         else if (k === 'nps') openNpsModal(r.dataset.nps, () => renderToday());
         else { detailTabByProject[r.dataset.project] = 'fases'; openDetail(r.dataset.project); }
@@ -12204,7 +12229,7 @@
         const lastKey = addDaysKey(todayKey, 6);
         renderAttendance(me);
 
-        const [milestones, phases, types, hours, alerts, breakAlerts, importAlerts, target, noOwner, camaraAlerts, npsAlerts, debtAlerts] = await Promise.all([
+        const [milestones, phases, types, hours, alerts, breakAlerts, importAlerts, target, noOwner, camaraAlerts, npsAlerts, debtAlerts, lawAlerts] = await Promise.all([
           fetchMilestones({ from: todayKey, to: lastKey }),
           fetchActivePhases(),
           loadMilestoneTypes(),
@@ -12216,13 +12241,14 @@
           loadProjectsWithoutOwner().catch(() => []),
           loadCamaraAlerts(me).catch(() => []),
           loadNpsAlerts(me).catch(() => []),
-          loadDebtAlert().catch(() => [])
+          loadDebtAlert().catch(() => []),
+          loadPayrollLawAlert().catch(() => [])
         ]);
         const tg = target && me ? weekTarget(target, me, hours.mondayKey) : null;
         renderWeekHours(hoursEl, hours, tg);
         // Avisos de organização: horas em falta (a partir de sexta), projetos sem responsável,
         // fases em curso/seguintes sem ninguém nos projetos de que sou responsável
-        const teamAlerts = [...debtAlerts, ...npsAlerts, ...camaraAlerts];
+        const teamAlerts = [...lawAlerts, ...debtAlerts, ...npsAlerts, ...camaraAlerts];
         const wd = new Date().getDay();
         const missing = missingHourDays(hours, tg);
         if ((wd === 5 || wd === 6 || wd === 0) && missing.length)
@@ -12871,9 +12897,15 @@
       { id: 'custo-hora', cat: 'opps', ctx: ['settings:proposals', 'proposal'],
         q: 'mudo o custo/hora, o objetivo de 150 €/h e as especialidades-modelo',
         a: 'Definições → Propostas de honorários.',
-        steps: ['Abre [[Definições]] → **Propostas de honorários**.', '**Custo/hora da NOVA**: quanto nos custa, em média, uma hora de trabalho (salários, encargos e custos fixos a dividir pelas horas). Serve para a margem.', '**Valor/hora objetivo**: 150 €/h. Também fica nos Objetivos do Mission Control.', 'Em **Especialidades**, escolhe a tipologia e ajusta a lista-modelo (nome, €/m² ou valor fixo). Tipologias sem lista própria usam a lista geral.'],
+        steps: ['Abre [[Definições]] → **Pessoas, salários e custo/hora**: o custo/hora é calculado aí (custos de funcionamento + salários ÷ horas úteis do ano).', 'Em **Propostas de honorários** só escreves um custo/hora se quiseres substituir o calculado.', '**Valor/hora objetivo**: 150 €/h. Também fica nos Objetivos do Mission Control.', 'Em **Especialidades**, escolhe a tipologia e ajusta a lista-modelo (nome, €/m² ou valor fixo). Tipologias sem lista própria usam a lista geral.'],
         kw: 'custo hora objetivo 150 especialidades subcontratacao estruturas aguas avac modelo',
         tour: [{ go: 'settings:proposals', sel: '#ps-cph', text: 'Custo/hora, objetivo e especialidades-modelo: tudo aqui.' }] },
+      { id: 'salarios', cat: 'mc', ctx: ['settings:payroll', 'settings:proposals', 'home'],
+        q: 'configuro os salários e vejo o custo/hora da NOVA',
+        a: 'Definições → Pessoas, salários e custo/hora. A app calcula o custo para a empresa (lei de 2026) e o custo/hora.',
+        steps: ['Abre [[Definições]] → **Pessoas, salários e custo/hora** → [[+ Pessoa]].', 'Escolhe a pessoa e o **regime** (gerente com funções de gerência: empresa 23,75% e pessoa 11% para a Segurança Social).', 'Escreve o **salário bruto**, o **subsídio de alimentação** por dia (cartão isento até 10,46 €, dinheiro até 6,15 €), a situação de IRS e as **outras remunerações** (marca se são tributadas).', 'A app mostra o **líquido** estimado, o **custo anual para a empresa** (14 salários + Segurança Social + alimentação + outras) e o custo por hora útil.', 'No topo está o **custo/hora da NOVA**: custos de funcionamento dos últimos 12 meses (sem salários nem o Glenn) mais os salários, a dividir pelas horas úteis do ano (horas por semana, sem férias nem feriados). É o valor que as propostas usam.', 'Em janeiro de cada ano a Hoje avisa para atualizar as tabelas de IRS e os valores legais.'],
+        kw: 'salario salarios bruto liquido custo hora empresa seguranca social tsu irs retencao subsidio alimentacao refeicao pessoas quadro ferias feriados',
+        tour: [{ go: 'settings:payroll', sel: '#pay-add', text: 'Acrescenta aqui cada pessoa e o salário.' }] },
       // ---------- Clientes e satisfação ----------
       { id: 'cliente', cat: 'clients', ctx: ['clients', 'client'],
         q: 'crio um cliente e ponho o NIF para faturar',
@@ -13314,6 +13346,369 @@
     document.getElementById('top-help-btn').addEventListener('click', openHelpPanel);
     document.getElementById('help-panel-overlay').addEventListener('click', closeHelpPanel);
 
+    // ================= PESSOAS E SALÁRIOS · CUSTO/HORA DA NOVA =================
+    // Custo/hora = (custos de funcionamento dos últimos 12 meses, anualizados + custo anual dos salários para a
+    // empresa) ÷ horas úteis do ano (horas/semana de cada pessoa, sem férias nem feriados).
+    // Os valores legais (Segurança Social, subsídio de alimentação, tabelas de retenção de IRS) são os de 2026
+    // e ficam em app_settings 'payroll'; quando o ano muda, a Hoje avisa para os atualizar.
+    // Tabelas de retenção (Continente, trabalho dependente) — Despacho n.º 233-A/2026. Cada linha: até (lim),
+    // taxa marginal (%), parcela a abater (número, ou { k, x } = taxa × k × (x − R)). I e II têm os mesmos escalões.
+    const IRS_ROWS_I_II_2026 = [
+      { lim: 920, rate: 0, ded: 0 }, { lim: 1042, rate: 12.5, ded: { k: 2.6, x: 1273.85 } }, { lim: 1108, rate: 15.7, ded: { k: 1.35, x: 1554.83 } },
+      { lim: 1154, rate: 15.7, ded: 94.71 }, { lim: 1212, rate: 21.2, ded: 158.18 }, { lim: 1819, rate: 24.1, ded: 193.33 },
+      { lim: 2119, rate: 31.1, ded: 320.66 }, { lim: 2499, rate: 34.9, ded: 401.19 }, { lim: 3305, rate: 38.36, ded: 487.66 },
+      { lim: 5547, rate: 39.69, ded: 531.62 }, { lim: 20221, rate: 44.95, ded: 823.40 }, { lim: null, rate: 47.17, ded: 1272.31 }
+    ];
+    const PAYROLL_LAW_2026 = {
+      year: 2026,
+      source: 'Despacho n.º 233-A/2026 (tabelas de retenção), Código Contributivo (art. 53.º e 69.º), CIRS art. 2.º n.º 3 b) 2) (subsídio de alimentação), OE 2026',
+      regimes: {
+        moe: { label: 'Gerente com funções de gerência', er: 23.75, ee: 11 },
+        moe_nm: { label: 'Membro de órgão estatutário sem gerência', er: 20.3, ee: 9.3 },
+        employee: { label: 'Trabalhador por conta de outrem', er: 23.75, ee: 11 }
+      },
+      meal_cash: 6.15, meal_card: 10.46, min_wage: 920,
+      irs: {
+        I: { label: 'Não casado sem dependentes, ou casado com dois titulares', dep: 21.43, rows: IRS_ROWS_I_II_2026 },
+        II: { label: 'Não casado com dependentes', dep: 34.29, rows: IRS_ROWS_I_II_2026 },
+        III: { label: 'Casado, único titular', dep: 42.86, rows: [
+          { lim: 991, rate: 0, ded: 0 }, { lim: 1042, rate: 12.5, ded: { k: 2.6, x: 1372.15 } }, { lim: 1108, rate: 12.5, ded: { k: 1.35, x: 1677.85 } },
+          { lim: 1119, rate: 12.5, ded: 96.17 }, { lim: 1432, rate: 12.72, ded: 98.64 }, { lim: 1962, rate: 15.7, ded: 141.32 },
+          { lim: 2240, rate: 19.38, ded: 213.53 }, { lim: 2773, rate: 22.77, ded: 289.47 }, { lim: 3389, rate: 25.7, ded: 370.72 },
+          { lim: 5965, rate: 28.81, ded: 476.12 }, { lim: 20265, rate: 38.43, ded: 1049.96 }, { lim: null, rate: 47.17, ded: 2821.13 }
+        ] }
+      }
+    };
+    const PAYROLL_DEFAULT = {
+      law: PAYROLL_LAW_2026,
+      calendar: { vacation_days: 22, municipal_holiday: '06-24', hours_week: 30 },
+      at_insurance_year: null,             // seguro de acidentes de trabalho: prémio anual da apólice
+      exclude_words: ['glenn'],            // despesas com estas palavras não contam para o custo de funcionamento
+      people: []
+    };
+    let mockPayrollCfg = { ...PAYROLL_DEFAULT, at_insurance_year: 450, people: [
+      { id: 'pp-1', member_id: 'mock-member-1', name: 'Rodrigo Alves', regime: 'moe', gross: 1800, duodecimos: false, meal_daily: 10.46, meal_mode: 'card', irs_table: 'I', dependents: 0, hours_week: 30, start: '2026-10-01', extras: [], active: true },
+      { id: 'pp-2', member_id: 'm2', name: 'Nuno', regime: 'moe', gross: 1800, duodecimos: false, meal_daily: 10.46, meal_mode: 'card', irs_table: 'III', dependents: 1, hours_week: 30, start: '2026-10-01', extras: [{ name: 'Compensação de teletrabalho', monthly: 30, taxable: false }], active: true },
+      { id: 'pp-3', member_id: 'm3', name: 'Rute', regime: 'moe', gross: 1800, duodecimos: false, meal_daily: 6.15, meal_mode: 'cash', irs_table: 'I', dependents: 0, hours_week: 30, start: '2026-10-01', extras: [], active: true }
+    ] };
+    async function loadPayrollCfg() {
+      let v;
+      if (devMode) v = mockPayrollCfg;
+      else { const r = await supabase.from('app_settings').select('value').eq('key', 'payroll').maybeSingle(); v = r.data?.value || {}; }
+      return { ...PAYROLL_DEFAULT, ...v, law: v.law || PAYROLL_LAW_2026, calendar: { ...PAYROLL_DEFAULT.calendar, ...(v.calendar || {}) }, people: v.people || [] };
+    }
+    async function savePayrollCfg(v) {
+      if (devMode) { mockPayrollCfg = JSON.parse(JSON.stringify(v)); return; }
+      const r = await supabase.from('app_settings').upsert({ key: 'payroll', value: v, updated_at: new Date().toISOString() });
+      if (r.error) throw r.error;
+    }
+    // Retenção na fonte de IRS de um mês (fórmula das tabelas de 2026)
+    function irsWithholding(R, table, dependents = 0) {
+      if (!table || !(R > 0)) return 0;
+      const row = table.rows.find(x => x.lim == null || R <= x.lim) || table.rows[table.rows.length - 1];
+      const rate = row.rate / 100;
+      const ded = typeof row.ded === 'object' && row.ded ? rate * row.ded.k * (row.ded.x - R) : Number(row.ded) || 0;
+      return Math.max(0, Math.round((R * rate - ded - (rate > 0 ? table.dep * (dependents || 0) : 0)) * 100) / 100);
+    }
+    // Dias e horas úteis de um ano: dias de semana, sem feriados nacionais nem o municipal, menos as férias
+    function workYear(year, cal, hoursWeek) {
+      let days = 0;
+      const muni = cal.municipal_holiday ? `${year}-${cal.municipal_holiday}` : null;
+      for (let k = `${year}-01-01`; k <= `${year}-12-31`; k = addDaysKey(k, 1)) if (isWorkday(k) && k !== muni) days++;
+      const worked = Math.max(0, days - (Number(cal.vacation_days) || 0));
+      return { workdays: days, worked, hours: worked * (Number(hoursWeek) || 0) / 5 };
+    }
+    // Uma pessoa: custo anual para a empresa, líquido mensal estimado e horas úteis do ano
+    function personPay(p, cfg, year = new Date().getFullYear()) {
+      const law = cfg.law, reg = law.regimes[p.regime] || law.regimes.moe;
+      const gross = Number(p.gross) || 0;
+      const wy = workYear(year, cfg.calendar, p.hours_week ?? cfg.calendar.hours_week);
+      const limit = p.meal_mode === 'cash' ? law.meal_cash : law.meal_card;
+      const mealDay = Number(p.meal_daily) || 0;
+      const mealYear = mealDay * wy.worked;
+      const mealExcessYear = Math.max(0, mealDay - limit) * wy.worked;
+      const extras = (p.extras || []).map(x => ({ ...x, year: (Number(x.monthly) || 0) * 12 }));
+      const extrasTaxed = extras.filter(x => x.taxable).reduce((t, x) => t + x.year, 0);
+      const extrasFree = extras.filter(x => !x.taxable).reduce((t, x) => t + x.year, 0);
+      const salaryYear = gross * 14;
+      const ssBase = salaryYear + extrasTaxed + mealExcessYear;
+      const ssEmployer = ssBase * reg.er / 100, ssEmployee = ssBase * reg.ee / 100;
+      const costYear = salaryYear + ssEmployer + mealYear + extrasTaxed + extrasFree;
+      // Líquido de um mês normal (sem subsídios): bruto + extras − SS − IRS + alimentação (média em 11 meses)
+      const mealMonth = mealYear / 11, mealExcessMonth = mealExcessYear / 11;
+      const taxedMonth = gross + extrasTaxed / 12 + mealExcessMonth;
+      const irsMonth = irsWithholding(taxedMonth, law.irs[p.irs_table] || law.irs.I, p.dependents);
+      const ssMonth = taxedMonth * reg.ee / 100;
+      const netMonth = gross + extrasTaxed / 12 + extrasFree / 12 + mealMonth - ssMonth - irsMonth;
+      // Subsídios de férias e de Natal: retenção autónoma, à taxa do mês
+      const effRate = taxedMonth ? irsMonth / taxedMonth : 0;
+      const netSubsidy = gross - gross * reg.ee / 100 - gross * effRate;
+      return { gross, reg, wy, mealYear, mealExcessYear, limit, salaryYear, ssEmployer, ssEmployee, extrasTaxed, extrasFree, costYear,
+        irsMonth, ssMonth, netMonth, netSubsidy, netYear: netMonth * 12 + netSubsidy * 2, perHour: wy.hours ? costYear / wy.hours : null };
+    }
+    // Custos de funcionamento: despesas dos últimos 12 meses (sem IVA dedutível), sem salários nem o que
+    // tiver as palavras excluídas; anualizado pelos dias com extratos carregados
+    async function operatingCosts(cfg, base) {
+      base = base || await loadBankBase();
+      const catMap = Object.fromEntries(base.categories.map(c => [c.id, c]));
+      const today = dateKey(new Date()), from365 = addDaysKey(today, -365);
+      const starts = base.statements.map(s => s.period_from).filter(Boolean).sort();
+      const firstData = starts[0] || base.expenses.map(e => e.date).filter(Boolean).sort()[0] || today;
+      const from = firstData > from365 ? firstData : from365;
+      const days = Math.max(1, diffDays(from, today));
+      const words = (cfg.exclude_words || []).map(w => normTxt(w)).filter(Boolean);
+      const groups = {};
+      let total = 0, excluded = 0, payroll = 0;
+      base.expenses.filter(e => e.date >= from && e.date <= today).forEach(e => {
+        const v = expenseNet(e, catMap), cat = catMap[e.category_id];
+        if (cat?.is_payroll) { payroll += v; return; }
+        if (words.some(w => normTxt(e.description || '').includes(w))) { excluded += v; return; }
+        total += v;
+        const g = cat?.name || 'Sem categoria';
+        groups[g] = (groups[g] || 0) + v;
+      });
+      const factor = days < 365 ? 365 / days : 1;
+      return { from, to: today, days, total, annual: total * factor, factor, excluded, payroll,
+        groups: Object.entries(groups).map(([name, v]) => ({ name, v })).sort((a, b) => b.v - a.v) };
+    }
+    // Custo/hora da NOVA (usado nas propostas): { total, ops, salaries, hours, ... }
+    async function computeHourCost(cfg, base) {
+      cfg = cfg || await loadPayrollCfg();
+      const year = new Date().getFullYear();
+      const people = cfg.people.filter(p => p.active !== false);
+      const pays = people.map(p => ({ p, pay: personPay(p, cfg, year) }));
+      const hours = pays.reduce((t, x) => t + x.pay.wy.hours, 0);
+      const salaries = pays.reduce((t, x) => t + x.pay.costYear, 0) + (Number(cfg.at_insurance_year) || 0);
+      let ops = null;
+      try { ops = await operatingCosts(cfg, base); } catch (e) { console.error('Custos de funcionamento:', e); }
+      const opsHour = ops && hours ? ops.annual / hours : null, salHour = hours ? salaries / hours : null;
+      return { year, people: pays, hours, salaries, ops, opsHour, salHour,
+        total: hours ? (opsHour || 0) + (salHour || 0) : null, lawOutdated: (cfg.law?.year || 0) < year };
+    }
+    // Aviso na Hoje (sócios): ano novo → atualizar as tabelas de IRS e os valores legais
+    async function loadPayrollLawAlert() {
+      const m = await getCurrentMember();
+      if (m && !/partner|s[oó]cio/i.test(m.role || '')) return [];
+      const cfg = await loadPayrollCfg();
+      const y = new Date().getFullYear();
+      if ((cfg.law?.year || 0) >= y) return [];
+      return [{ kind: 'law', late: true, title: `Atualizar as tabelas de IRS de ${y}`,
+        sub: `Os salários e o custo/hora ainda usam a lei de ${cfg.law?.year || '—'}: tabelas de retenção, Segurança Social e subsídio de alimentação. Pede a atualização ao Claude ou edita em Definições → Pessoas e salários.`, when: 'Atualizar' }];
+    }
+
+    // ---------- Definições → Pessoas e salários ----------
+    const tableText = t => t.rows.map(r => [r.lim == null ? 'acima' : String(r.lim).replace('.', ','), String(r.rate).replace('.', ',') + '%',
+      typeof r.ded === 'object' && r.ded ? `${String(r.ded.k).replace('.', ',')} × (${String(r.ded.x).replace('.', ',')} − R)` : String(r.ded).replace('.', ',')].join(' | ')).join('\n');
+    function parseTableText(txt) {
+      const n = s => Number(String(s).trim().replace(/\s/g, '').replace('%', '').replace(',', '.'));
+      return txt.split('\n').map(l => l.trim()).filter(Boolean).map(l => {
+        const [a, b, c] = l.split('|').map(s => s.trim());
+        const m = /([\d.,]+)\s*[×x*]\s*\(\s*([\d.,]+)\s*[−-]\s*R\s*\)/i.exec(c || '');
+        const row = { lim: /acima|^$/i.test(a) ? null : n(a), rate: n(b), ded: m ? { k: n(m[1]), x: n(m[2]) } : n(c || 0) };
+        if ((row.lim != null && Number.isNaN(row.lim)) || Number.isNaN(row.rate) || (typeof row.ded === 'number' && Number.isNaN(row.ded))) throw new Error('Linha inválida: ' + l);
+        return row;
+      });
+    }
+    async function loadPayrollSettings() {
+      const box = document.getElementById('settings-payroll-container');
+      try {
+        const [cfg, members] = await Promise.all([loadPayrollCfg(), loadAllMembers().catch(() => [])]);
+        const hc = await computeHourCost(cfg);
+        const law = cfg.law, y = hc.year;
+        const eur = n => n != null ? escapeHtml(fmtEUR(n)) : '—';
+        const people = cfg.people;
+        box.innerHTML = `
+          ${hc.lawOutdated ? `<div class="archived-banner" style="display:flex;"><span>Os valores legais são de <b>${law.year}</b>. É preciso atualizar as tabelas de IRS e os valores de ${y} (em baixo, em «Valores legais»).</span></div>` : ''}
+          <div class="gantt-wrap pay-hero">
+            <div class="pay-hero-main"><span>Custo/hora da NOVA</span><b>${hc.total != null ? eur(hc.total) + '/h' : '—'}</b>
+              <small>${hc.hours ? `${escapeHtml(fmtNum(Math.round(hc.hours)))} horas úteis em ${y} · usado nas propostas de honorários` : 'Acrescenta as pessoas em baixo para calcular as horas do ano.'}</small></div>
+            <div class="pay-hero-parts">
+              <div><span>Funcionamento</span><b>${hc.opsHour != null ? eur(hc.opsHour) + '/h' : '—'}</b><small>${hc.ops ? eur(hc.ops.annual) + ' por ano' : 'sem extratos'}</small></div>
+              <div><span>Salários</span><b>${hc.salHour != null ? eur(hc.salHour) + '/h' : '—'}</b><small>${eur(hc.salaries)} por ano</small></div>
+            </div>
+          </div>
+
+          <div class="gantt-wrap">
+            <div class="card-head"><h2>Pessoas</h2><button type="button" class="text-btn" id="pay-add">+ Pessoa</button></div>
+            ${people.length ? people.map((p, i) => { const r = personPay(p, cfg, y); return `
+              <div class="invoice-row click-row${p.active === false ? ' bl-archived' : ''}" data-person="${i}">
+                <span><b class="bl-title">${escapeHtml(p.name || 'Sem nome')}</b><br><small>${escapeHtml([r.reg.label, eur(p.gross) + ' brutos × 14', p.meal_daily ? `alimentação ${fmtEUR(p.meal_daily)}/dia (${p.meal_mode === 'cash' ? 'dinheiro' : 'cartão'})` : null, `${p.hours_week ?? cfg.calendar.hours_week} h/semana`].filter(Boolean).join(' · '))}</small></span>
+                <span class="pay-figs"><b>${eur(r.costYear)}</b><small>por ano · ${r.perHour != null ? eur(r.perHour) + '/h' : '—'}</small><small>líquido ≈ ${eur(r.netMonth)}/mês</small></span>
+              </div>`; }).join('') : '<div class="gantt-empty">Ainda sem pessoas. Toca em <b>+ Pessoa</b>: salário, subsídio de alimentação e outras remunerações — a app calcula o custo para a empresa.</div>'}
+            ${cfg.at_insurance_year ? `<div class="invoice-row"><span>Seguro de acidentes de trabalho</span><span class="amount">${eur(cfg.at_insurance_year)}/ano</span></div>` : ''}
+          </div>
+
+          <div class="gantt-wrap">
+            <div class="card-head"><h2>Custos de funcionamento</h2></div>
+            ${hc.ops ? `
+              <div class="field-hint" style="margin:0 0 8px;">Despesas de ${escapeHtml(fmtDayMonthYear(hc.ops.from))} a ${escapeHtml(fmtDayMonthYear(hc.ops.to))}, sem IVA dedutível${hc.ops.factor > 1.001 ? ` — só há ${Math.round(hc.ops.days / 30.4)} meses de extratos, por isso a app estima o ano (× ${escapeHtml(fmtNum(Math.round(hc.ops.factor * 100) / 100))})` : ''}. Não contam: categorias de salários${(cfg.exclude_words || []).length ? ' e despesas com «' + escapeHtml(cfg.exclude_words.join('», «')) + '»' : ''}.</div>
+              ${hc.ops.groups.slice(0, 8).map(g => `<div class="invoice-row"><span>${escapeHtml(g.name)}</span><span class="amount">${eur(g.v)}</span></div>`).join('')}
+              <div class="op-sum"><div><span>Total no período</span><b>${eur(hc.ops.total)}</b></div><div class="op-sum-total"><span>Por ano</span><b>${eur(hc.ops.annual)}</b></div>
+              ${hc.ops.excluded ? `<div><span>Excluído (palavras)</span><b class="muted">${eur(hc.ops.excluded)}</b></div>` : ''}${hc.ops.payroll ? `<div><span>Salários (contam pelo quadro)</span><b class="muted">${eur(hc.ops.payroll)}</b></div>` : ''}</div>`
+              : '<div class="gantt-empty">Sem despesas para calcular. Carrega os extratos do banco no Mission Control.</div>'}
+            <label class="field-label">Não contar despesas com estas palavras</label>
+            <input type="text" id="pay-exclude" class="form-input" value="${escapeHtml((cfg.exclude_words || []).join(', '))}" placeholder="ex.: glenn">
+            <div class="field-hint">Os salários pagos por transferência ficam de fora se a despesa tiver uma categoria marcada como salários (Definições → Impostos e categorias de despesa).</div>
+          </div>
+
+          <div class="gantt-wrap">
+            <div class="card-head"><h2>Horário e seguro</h2></div>
+            <div class="form-grid">
+              <div><label class="field-label" style="margin-top:0;">Horas por semana (por omissão)</label><input type="text" inputmode="decimal" id="pay-hw" class="form-input" value="${escapeHtml(cfg.calendar.hours_week)}"></div>
+              <div><label class="field-label" style="margin-top:0;">Dias de férias por ano</label><input type="text" inputmode="numeric" id="pay-vac" class="form-input" value="${escapeHtml(cfg.calendar.vacation_days)}"></div>
+              <div><label class="field-label">Feriado municipal (dia-mês)</label><input type="text" id="pay-muni" class="form-input" placeholder="24-06" value="${escapeHtml(cfg.calendar.municipal_holiday ? cfg.calendar.municipal_holiday.split('-').reverse().join('-') : '')}"></div>
+              <div><label class="field-label">Seguro de acidentes de trabalho (€/ano)</label><input type="text" inputmode="decimal" id="pay-at" class="form-input" value="${escapeHtml(cfg.at_insurance_year ?? '')}"></div>
+            </div>
+            <div class="field-hint">${(() => { const w = workYear(y, cfg.calendar, cfg.calendar.hours_week); return `${y}: ${w.workdays} dias úteis − ${cfg.calendar.vacation_days} de férias = ${w.worked} dias de trabalho → ${fmtNum(Math.round(w.hours))} h por pessoa a ${cfg.calendar.hours_week} h/semana.`; })()}</div>
+            <button type="button" class="primary-btn" id="pay-save">Guardar</button>
+            <div id="pay-msg" class="form-msg"></div>
+          </div>
+
+          <details class="gantt-wrap pay-law">
+            <summary><b>Valores legais de ${law.year}</b> <small class="muted">Segurança Social, subsídio de alimentação e tabelas de IRS</small></summary>
+            <div class="field-hint">Fonte: ${escapeHtml(law.source || '')}. Não há contribuições para os fundos de compensação (FCT/FGCT) em 2026.</div>
+            ${Object.values(law.regimes).map(r => `<div class="invoice-row"><span>${escapeHtml(r.label)}</span><span>empresa ${escapeHtml(fmtNum(r.er))}% · pessoa ${escapeHtml(fmtNum(r.ee))}%</span></div>`).join('')}
+            <div class="invoice-row"><span>Subsídio de alimentação isento por dia</span><span>${eur(law.meal_cash)} em dinheiro · ${eur(law.meal_card)} em cartão</span></div>
+            <div class="invoice-row"><span>Salário mínimo</span><span>${eur(law.min_wage)}</span></div>
+            <div class="form-grid">
+              <div><label class="field-label">Ano dos valores</label><input type="text" inputmode="numeric" id="law-year" class="form-input" value="${escapeHtml(law.year)}"></div>
+              <div><label class="field-label">Salário mínimo (€)</label><input type="text" inputmode="decimal" id="law-min" class="form-input" value="${escapeHtml(law.min_wage)}"></div>
+              <div><label class="field-label">Alimentação isenta — dinheiro (€/dia)</label><input type="text" inputmode="decimal" id="law-cash" class="form-input" value="${escapeHtml(law.meal_cash)}"></div>
+              <div><label class="field-label">Alimentação isenta — cartão (€/dia)</label><input type="text" inputmode="decimal" id="law-card" class="form-input" value="${escapeHtml(law.meal_card)}"></div>
+            </div>
+            ${Object.entries(law.irs).map(([k, t]) => `
+              <label class="field-label">Tabela ${k} — ${escapeHtml(t.label)}</label>
+              <div class="field-hint" style="margin:0 0 4px;">Uma linha por escalão: <b>até | taxa | parcela a abater</b> (número, ou «k × (valor − R)»). Por dependente: <input type="text" inputmode="decimal" class="form-input pay-dep" data-dep="${k}" value="${escapeHtml(t.dep)}" aria-label="Parcela por dependente da tabela ${k}"> €</div>
+              <textarea class="form-input pay-table" data-table="${k}" rows="6" spellcheck="false">${escapeHtml(tableText(t))}</textarea>`).join('')}
+            <button type="button" class="secondary-btn" id="law-save" style="width:auto;padding:0 var(--sp-5);">Guardar valores legais</button>
+            <div id="law-msg" class="form-msg"></div>
+          </details>`;
+        box.querySelectorAll('[data-person]').forEach(r => r.addEventListener('click', () => openPersonModal(cfg, Number(r.dataset.person), members, loadPayrollSettings)));
+        document.getElementById('pay-add').addEventListener('click', () => openPersonModal(cfg, null, members, loadPayrollSettings));
+        document.getElementById('pay-save').addEventListener('click', async () => {
+          const muni = document.getElementById('pay-muni').value.trim();
+          const mm = /^(\d{1,2})[-/.](\d{1,2})$/.exec(muni);
+          if (muni && !mm) return formError('pay-msg', 'Feriado municipal: escreve dia-mês, ex.: 24-06.');
+          const next = { ...cfg,
+            calendar: { hours_week: numOrNull(document.getElementById('pay-hw').value) ?? 30, vacation_days: numOrNull(document.getElementById('pay-vac').value) ?? 22,
+              municipal_holiday: mm ? `${mm[2].padStart(2, '0')}-${mm[1].padStart(2, '0')}` : null },
+            at_insurance_year: numOrNull(document.getElementById('pay-at').value),
+            exclude_words: document.getElementById('pay-exclude').value.split(/[,;]/).map(s => s.trim()).filter(Boolean) };
+          if ([next.calendar.hours_week, next.calendar.vacation_days, next.at_insurance_year].some(n => Number.isNaN(n))) return formError('pay-msg', 'Há um número inválido.');
+          try { await savePayrollCfg(next); showToast('Guardado'); loadPayrollSettings(); }
+          catch (err) { formError('pay-msg', 'Não foi possível guardar: ' + err.message); }
+        });
+        document.getElementById('law-save').addEventListener('click', async () => {
+          try {
+            const n = id => { const v = numOrNull(document.getElementById(id).value); if (v == null || Number.isNaN(v)) throw new Error('Número inválido'); return v; };
+            const irs = {};
+            Object.entries(law.irs).forEach(([k, t]) => {
+              const dep = numOrNull(box.querySelector(`[data-dep="${k}"]`).value);
+              irs[k] = { ...t, dep: Number.isNaN(dep) || dep == null ? t.dep : dep, rows: parseTableText(box.querySelector(`[data-table="${k}"]`).value) };
+            });
+            const next = { ...cfg, law: { ...law, year: n('law-year'), min_wage: n('law-min'), meal_cash: n('law-cash'), meal_card: n('law-card'), irs } };
+            await savePayrollCfg(next); showToast('Valores legais guardados'); loadPayrollSettings();
+          } catch (err) { formError('law-msg', 'Não foi possível guardar: ' + err.message); }
+        });
+      } catch (err) {
+        box.innerHTML = `<div class="error-box">Não foi possível carregar: ${escapeHtml(err.message)}</div>`;
+      }
+    }
+    function openPersonModal(cfg, index, members, onSaved) {
+      const isEdit = index != null, p = isEdit ? JSON.parse(JSON.stringify(cfg.people[index])) : { regime: 'moe', meal_mode: 'card', irs_table: 'I', dependents: 0, hours_week: cfg.calendar.hours_week, extras: [], active: true, start: dateKey(new Date()) };
+      const law = cfg.law;
+      openQuickModal(isEdit ? p.name || 'Pessoa' : 'Nova pessoa', `
+        <label class="field-label" style="margin-top:0;">Pessoa da equipa</label>
+        <select id="pe-member" class="form-input"><option value="">Outra (escrever o nome)</option>${members.map(m => `<option value="${escapeHtml(m.id)}"${String(m.id) === String(p.member_id) ? ' selected' : ''}>${escapeHtml(m.name)}</option>`).join('')}</select>
+        <div id="pe-name-wrap"${p.member_id ? ' hidden' : ''}><label class="field-label">Nome</label><input type="text" id="pe-name" class="form-input" value="${escapeHtml(p.name || '')}"></div>
+        <label class="field-label">Regime</label>
+        <select id="pe-regime" class="form-input">${Object.entries(law.regimes).map(([k, r]) => `<option value="${k}"${k === p.regime ? ' selected' : ''}>${escapeHtml(r.label)} (empresa ${fmtNum(r.er)}% · pessoa ${fmtNum(r.ee)}%)</option>`).join('')}</select>
+        <div class="form-grid">
+          <div><label class="field-label">Salário bruto mensal (€)</label><input type="text" inputmode="decimal" id="pe-gross" class="form-input" value="${escapeHtml(p.gross ?? '')}"></div>
+          <div><label class="field-label">Horas por semana</label><input type="text" inputmode="decimal" id="pe-hw" class="form-input" value="${escapeHtml(p.hours_week ?? '')}"></div>
+          <div><label class="field-label">Subsídio de alimentação (€/dia)</label><input type="text" inputmode="decimal" id="pe-meal" class="form-input" value="${escapeHtml(p.meal_daily ?? '')}"></div>
+          <div><label class="field-label">Pago em</label><select id="pe-mealmode" class="form-input"><option value="card"${p.meal_mode !== 'cash' ? ' selected' : ''}>Cartão (isento até ${fmtEUR(law.meal_card)})</option><option value="cash"${p.meal_mode === 'cash' ? ' selected' : ''}>Dinheiro (isento até ${fmtEUR(law.meal_cash)})</option></select></div>
+        </div>
+        <label class="check-row"><input type="checkbox" id="pe-duo"${p.duodecimos ? ' checked' : ''}> Subsídios de férias e Natal em duodécimos (só muda o líquido de cada mês)</label>
+        <div class="section-label op-form-sec">IRS</div>
+        <div class="form-grid">
+          <div><label class="field-label" style="margin-top:0;">Situação</label><select id="pe-table" class="form-input">${Object.entries(law.irs).map(([k, t]) => `<option value="${k}"${k === p.irs_table ? ' selected' : ''}>${escapeHtml(t.label)}</option>`).join('')}</select></div>
+          <div><label class="field-label" style="margin-top:0;">Dependentes</label><input type="text" inputmode="numeric" id="pe-dep" class="form-input" value="${escapeHtml(p.dependents ?? 0)}"></div>
+        </div>
+        <div class="section-label op-form-sec">Outras remunerações</div>
+        <div class="field-hint" style="margin:0 0 6px;">Ex.: compensação de teletrabalho, ajudas de custo, seguro de saúde, prémios. Marca «tributada» se paga IRS e Segurança Social.</div>
+        <div id="pe-extras"></div>
+        <button type="button" class="text-btn" id="pe-extra-add">+ Acrescentar</button>
+        <div class="op-sum" id="pe-result"></div>
+        ${isEdit ? `<label class="check-row"><input type="checkbox" id="pe-active"${p.active !== false ? ' checked' : ''}> Ativa (conta para o custo/hora)</label>` : ''}
+        <button type="button" class="primary-btn" id="pe-save">${isEdit ? 'Guardar' : 'Acrescentar pessoa'}</button>
+        ${isEdit ? '<button type="button" class="text-btn danger-text" id="pe-delete" style="margin-top:12px;">Tirar do quadro</button>' : ''}
+        <div id="pe-msg" class="form-msg"></div>`);
+      const read = () => {
+        const g = id => document.getElementById(id);
+        const mid = g('pe-member').value;
+        p.member_id = mid || null;
+        p.name = mid ? members.find(m => String(m.id) === mid)?.name : g('pe-name').value.trim();
+        p.regime = g('pe-regime').value; p.gross = numOrNull(g('pe-gross').value); p.hours_week = numOrNull(g('pe-hw').value);
+        p.meal_daily = numOrNull(g('pe-meal').value); p.meal_mode = g('pe-mealmode').value; p.duodecimos = g('pe-duo').checked;
+        p.irs_table = g('pe-table').value; p.dependents = numOrNull(g('pe-dep').value) || 0;
+        if (g('pe-active')) p.active = g('pe-active').checked;
+      };
+      const drawExtras = () => {
+        const box = document.getElementById('pe-extras');
+        box.innerHTML = (p.extras || []).map((x, i) => `
+          <div class="pay-extra" data-i="${i}">
+            <input type="text" class="form-input" data-k="name" value="${escapeHtml(x.name || '')}" placeholder="Descrição" aria-label="Descrição">
+            <input type="text" inputmode="decimal" class="form-input" data-k="monthly" value="${escapeHtml(x.monthly ?? '')}" placeholder="€/mês" aria-label="Valor por mês">
+            <label class="pay-taxed"><input type="checkbox" data-k="taxable"${x.taxable ? ' checked' : ''}> tributada</label>
+            <button type="button" class="op-spec-del" data-del="${i}" aria-label="Tirar">×</button>
+          </div>`).join('');
+        box.querySelectorAll('.pay-extra').forEach(row => row.addEventListener('input', e => {
+          const x = p.extras[Number(row.dataset.i)], k = e.target.dataset.k;
+          x[k] = k === 'taxable' ? e.target.checked : k === 'monthly' ? numOrNull(e.target.value) : e.target.value;
+          result();
+        }));
+        box.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => { p.extras.splice(Number(b.dataset.del), 1); drawExtras(); result(); }));
+      };
+      const result = () => {
+        read();
+        const r = personPay(p, cfg);
+        const e = n => escapeHtml(fmtEUR(n));
+        const duoMonth = p.duodecimos ? r.netMonth + r.netSubsidy * 2 / 12 : null;
+        document.getElementById('pe-result').innerHTML = !p.gross ? '<div class="field-hint" style="margin:0;">Escreve o salário bruto para ver as contas.</div>' : `
+          <div><span>Líquido por mês (estimativa)</span><b>${e(duoMonth ?? r.netMonth)}</b></div>
+          <div><span>Desconta</span><b class="muted">SS ${e(r.ssMonth)} · IRS ${e(r.irsMonth)}</b></div>
+          ${r.limit < (Number(p.meal_daily) || 0) ? `<div><span>Alimentação acima do limite isento</span><b class="warn-text">${e((Number(p.meal_daily) - r.limit))}/dia paga IRS e SS</b></div>` : ''}
+          <div><span>Salários (14 × ${e(r.gross)})</span><b>${e(r.salaryYear)}</b></div>
+          <div><span>Segurança Social da empresa (${fmtNum(r.reg.er)}%)</span><b>${e(r.ssEmployer)}</b></div>
+          <div><span>Subsídio de alimentação (${r.wy.worked} dias)</span><b>${e(r.mealYear)}</b></div>
+          ${r.extrasTaxed + r.extrasFree ? `<div><span>Outras remunerações</span><b>${e(r.extrasTaxed + r.extrasFree)}</b></div>` : ''}
+          <div class="op-sum-total"><span>Custo anual para a empresa</span><b>${e(r.costYear)}</b></div>
+          <div><span>Horas úteis no ano</span><b>${escapeHtml(fmtNum(Math.round(r.wy.hours)))} h → ${r.perHour != null ? e(r.perHour) + '/h' : '—'}</b></div>`;
+      };
+      document.getElementById('pe-member').addEventListener('change', e => { document.getElementById('pe-name-wrap').hidden = !!e.target.value; result(); });
+      ['pe-regime', 'pe-gross', 'pe-hw', 'pe-meal', 'pe-mealmode', 'pe-duo', 'pe-table', 'pe-dep'].forEach(id => document.getElementById(id).addEventListener(/select|checkbox/.test(document.getElementById(id).type) || document.getElementById(id).tagName === 'SELECT' ? 'change' : 'input', result));
+      document.getElementById('pe-extra-add').addEventListener('click', () => { (p.extras = p.extras || []).push({ name: '', monthly: null, taxable: false }); drawExtras(); });
+      drawExtras(); result();
+      document.getElementById('pe-save').addEventListener('click', async () => {
+        read();
+        if (!p.name) return formError('pe-msg', 'Escolhe a pessoa ou escreve o nome.');
+        if ([p.gross, p.hours_week, p.meal_daily, p.dependents].some(n => Number.isNaN(n))) return formError('pe-msg', 'Há um número inválido.');
+        p.extras = (p.extras || []).filter(x => (x.name || '').trim() || Number(x.monthly));
+        const people = [...cfg.people];
+        if (isEdit) people[index] = p; else people.push({ ...p, id: 'pp-' + Date.now() });
+        try { await savePayrollCfg({ ...cfg, people }); closeQuickModal(); showToast(isEdit ? 'Guardado' : 'Pessoa acrescentada'); onSaved && onSaved(); }
+        catch (err) { formError('pe-msg', 'Não foi possível guardar: ' + err.message); }
+      });
+      if (isEdit) document.getElementById('pe-delete').addEventListener('click', async () => {
+        const people = cfg.people.filter((_, i) => i !== index), removed = cfg.people[index];
+        try {
+          await savePayrollCfg({ ...cfg, people }); closeQuickModal(); onSaved && onSaved();
+          showToast(`${removed.name || 'Pessoa'} saiu do quadro`, { ms: 8000, undo: async () => { const c = await loadPayrollCfg(); c.people.splice(index, 0, removed); await savePayrollCfg(c); onSaved && onSaved(); } });
+        } catch (err) { formError('pe-msg', 'Não foi possível guardar: ' + err.message); }
+      });
+    }
+
     // ================= OPORTUNIDADES: terrenos, investidores e propostas de honorários =================
     // Terrenos que nos chegam (de clientes ou da nossa network) → análise (PDM e viabilidade) → apresentação
     // aos investidores cujo perfil encaixa → proposta de honorários → projeto. Tabelas em oportunidades.sql.
@@ -13334,7 +13729,7 @@
         { name: 'Gás', mode: 'fixed', value: 0 }, { name: 'Segurança contra incêndio', mode: 'm2', value: 0 }
       ] }
     };
-    let mockProposalCfg = { ...PROPOSAL_DEFAULT, cost_per_hour: 45 };
+    let mockProposalCfg = { ...PROPOSAL_DEFAULT };
     let mockInvestors = [
       { id: 'inv-a', name: 'Carlos Mendes', company: 'CM Invest', email: 'carlos@example.com', phone: '912 000 000', client_id: null, project_type_ids: ['pt-1'], fractions_min: 6, fractions_max: 20, invest_min: 1000000, invest_max: 4000000, zones: ['Porto', 'Gaia'], approved_pref: 'any', notes: 'Prefere zonas com metro.', active: true },
       { id: 'inv-b', name: 'Ana Ribeiro', company: '', email: '', phone: '', client_id: null, project_type_ids: ['pt-2'], fractions_min: null, fractions_max: null, invest_min: 300000, invest_max: 900000, zones: ['Matosinhos', 'Maia'], approved_pref: 'approved', notes: '', active: true }
@@ -13927,7 +14322,8 @@
       document.getElementById('nav-title').textContent = proposalId ? 'Proposta de honorários' : 'Nova proposta';
       beginLoad(view, 'proposal:' + (proposalId || 'new'), '<div class="gantt-wrap">' + SKELETON(5) + '</div><div class="gantt-wrap">' + SKELETON(5) + '</div>');
       try {
-        const [d, cfg, modelData, hist] = await Promise.all([loadOppsData(), loadProposalCfg(), loadPhaseModelData(), loadHoursHistory().catch(() => [])]);
+        const [d, cfg, modelData, hist, hc] = await Promise.all([loadOppsData(), loadProposalCfg(), loadPhaseModelData(), loadHoursHistory().catch(() => []), computeHourCost().catch(() => null)]);
+        const autoCph = hc?.total ? Math.round(hc.total * 100) / 100 : null;
         oppsCache = d;
         let pp = proposalId ? d.proposals.find(x => String(x.id) === String(proposalId)) : null;
         if (proposalId && !pp) { view.innerHTML = '<div class="error-box">Proposta não encontrada.</div>'; return; }
@@ -13941,7 +14337,7 @@
             client_name: inv ? [inv.name, inv.company].filter(Boolean).join(' — ') : null,
             project_type_id: typeId, method: typeById[typeId]?.size_measure === 'fractions' ? 'fraction' : 'm2',
             area: c?.build ?? null, fractions: plot?.fractions_est ?? null, unit_value: null, total: null,
-            est_hours: null, cost_per_hour: cfg.cost_per_hour, target_rate: cfg.target_rate,
+            est_hours: null, cost_per_hour: cfg.cost_per_hour ?? autoCph, target_rate: cfg.target_rate,
             specialties: specialtyPreset(cfg, typeId), phases: [], status: 'draft',
             language: d.clients.find(x => x.id === (plot?.client_id || inv?.client_id))?.language === 'en' ? 'en' : 'pt', valid_days: 30, notes: null
           };
@@ -13995,7 +14391,7 @@
             <div class="op-est" id="pp-est"></div>
             <div class="form-grid">
               <div><label class="field-label">Horas previstas</label><input type="text" inputmode="decimal" id="pp-hours" class="form-input" value="${escapeHtml(pp.est_hours ?? '')}"></div>
-              <div><label class="field-label">Custo/hora da NOVA (€)</label><input type="text" inputmode="decimal" id="pp-cph" class="form-input" placeholder="definir em Definições" value="${escapeHtml(pp.cost_per_hour ?? '')}"></div>
+              <div><label class="field-label">Custo/hora da NOVA (€)</label><input type="text" inputmode="decimal" id="pp-cph" class="form-input" placeholder="preenche o quadro de pessoas" value="${escapeHtml(pp.cost_per_hour ?? '')}"></div>
             </div>
             <div class="section-label op-form-sec">Especialidades e outros custos de projeto</div>
             <div id="pp-specs"></div>
@@ -14347,7 +14743,7 @@
     async function loadProposalSettings() {
       const box = document.getElementById('settings-proposals-container');
       try {
-        const [cfg, types] = await Promise.all([loadProposalCfg(), devMode ? MOCK_PROJECT_TYPES : ((await supabase.from('project_types').select('id, name').order('name')).data || [])]);
+        const [cfg, types, hc] = await Promise.all([loadProposalCfg(), devMode ? MOCK_PROJECT_TYPES : ((await supabase.from('project_types').select('id, name').order('name')).data || []), computeHourCost().catch(() => null)]);
         let sel = box.dataset.type || 'default';
         const lines = () => cfg.specialties[sel] || null;
         const draw = () => {
@@ -14355,10 +14751,10 @@
           const list = own || cfg.specialties.default || [];
           box.innerHTML = `
             <div class="form-grid">
-              <div><label class="field-label" style="margin-top:0;">Custo/hora da NOVA (€)</label><input type="text" inputmode="decimal" id="ps-cph" class="form-input" value="${escapeHtml(cfg.cost_per_hour ?? '')}" placeholder="ex.: 35"></div>
+              <div><label class="field-label" style="margin-top:0;">Custo/hora da NOVA (€)</label><input type="text" inputmode="decimal" id="ps-cph" class="form-input" value="${escapeHtml(cfg.cost_per_hour ?? '')}" placeholder="${hc?.total ? 'calculado: ' + escapeHtml(fmtEUR(hc.total)) : 'calculado pelo quadro de pessoas'}"></div>
               <div><label class="field-label" style="margin-top:0;">Valor/hora objetivo (€)</label><input type="text" inputmode="decimal" id="ps-rate" class="form-input" value="${escapeHtml(cfg.target_rate ?? '')}"></div>
             </div>
-            <div class="field-hint">Custo/hora: salários, encargos e custos fixos do escritório a dividir pelas horas de trabalho. O valor/hora objetivo também fica nos Objetivos do Mission Control.</div>
+            <div class="field-hint">O custo/hora é calculado em <button type="button" class="text-btn" id="ps-go-payroll">Pessoas, salários e custo/hora</button>${hc?.total ? ` (agora ${escapeHtml(fmtEUR(hc.total))}/h)` : ''}. Escreve um valor só se quiseres substituí-lo. O valor/hora objetivo também fica nos Objetivos do Mission Control.</div>
             <div class="section-label op-form-sec">Especialidades e outros custos — modelo por tipologia</div>
             <select id="ps-type" class="form-input"><option value="default"${sel === 'default' ? ' selected' : ''}>Lista geral (tipologias sem lista própria)</option>${types.map(t => `<option value="${escapeHtml(t.id)}"${t.id === sel ? ' selected' : ''}>${escapeHtml(t.name)}${cfg.specialties[t.id] ? '' : ' — usa a lista geral'}</option>`).join('')}</select>
             ${sel !== 'default' && !own ? '<div class="field-hint">Esta tipologia usa a lista geral. <button type="button" class="text-btn" id="ps-copy">Criar uma lista própria</button></div>' : ''}
@@ -14374,6 +14770,7 @@
             <button type="button" class="primary-btn" id="ps-save">Guardar</button>
             <div id="ps-msg" class="form-msg"></div>`;
           document.getElementById('ps-type').addEventListener('change', e => { sel = box.dataset.type = e.target.value; draw(); });
+          document.getElementById('ps-go-payroll').addEventListener('click', () => showSettingsSection('payroll'));
           document.getElementById('ps-copy')?.addEventListener('click', () => { cfg.specialties[sel] = JSON.parse(JSON.stringify(cfg.specialties.default || [])); draw(); });
           document.getElementById('ps-useDefault')?.addEventListener('click', () => { delete cfg.specialties[sel]; draw(); });
           document.getElementById('ps-add')?.addEventListener('click', () => { (cfg.specialties[sel] = cfg.specialties[sel] || []).push({ name: '', mode: 'fixed', value: 0 }); draw(); });
