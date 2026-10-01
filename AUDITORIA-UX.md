@@ -226,7 +226,21 @@ Passos pequenos e independentes. Cada um acaba com uma explicação, como testar
 
 ---
 
-## 5. Decisões em aberto (dependem de ti)
+## 5. Decisões (respondidas a 1/10/2026)
+
+| # | Decisão | Efeito no plano |
+|---|---|---|
+| 1 | Manter **"Lead time"** | Passo 16 traduz o resto para PT-PT, sem tocar em "Lead time" |
+| 2 | Manter o separador **"Dados"** | F4 sai do plano; o menu "⋯" do passo 10 fica só com **Arquivar** |
+| 3 | **"Em dívida" na Hoje só quando é crítico** | Aviso na Hoje dos sócios apenas com faturas a mais de 60 dias |
+| 4 | Gráfico das despesas: **referência no Mission Control** | Recolhido nas Despesas, com ligação para o Mission Control → Financeiro |
+| 5 | **"Anular" em vez de confirmar**: sim | Passo 9 avança como proposto |
+| 6 | **MQT, CST e GPL**: não mexer por agora | Fora do âmbito |
+| 7 | Faturas continuam no **weoInvoice**, com "Copiar para fatura" | Passo 11 avança como proposto |
+
+**Nota do passo 0:** a escala final tem **4 pesos** (400, 500, 600, 700). Com só 3, o menu lateral e os separadores ficavam todos a negrito, contra a calma visual.
+
+### Decisões originais (para referência)
 
 1. **Língua da interface.** Recomendo **tudo em PT-PT**, mantendo os nomes próprios *Compass* e *Mission Control*:
    - *Lead time* → **Prazo previsto**;
