@@ -1884,6 +1884,15 @@
   .help-keys kbd { display: inline-block; min-width: 22px; text-align: center; padding: 1px 6px; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: var(--r-xs); background: var(--surface); font: var(--fw-semibold) var(--fs-xs)/1.5 inherit; color: var(--text); margin-right: 4px; }
   @media (pointer: coarse) { .help-keys { display: none; } }
   /* ---- Viabilidade de terrenos ---- */
+  .fz-mix { margin-top: var(--sp-4); padding-top: var(--sp-3); border-top: 1px solid var(--border); }
+  .fz-mix .field-label b { float: right; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .fz-mix input[type="range"] { width: 100%; accent-color: var(--accent); margin: var(--sp-2) 0 0; height: var(--tap, 44px); }
+  .fz-mix input[type="range"].fz-changed { box-shadow: none; outline: 2px solid var(--warning-soft); border-radius: var(--r-sm); }
+  .fz-mix-scale { display: flex; justify-content: space-between; font-size: var(--fs-xs); color: var(--text-3); margin-top: -6px; }
+  .fz-mix-res { margin-top: var(--sp-2); font-size: var(--fs-md); }
+  .fz-mix-list { display: flex; flex-wrap: wrap; gap: var(--sp-1-5); margin-top: var(--sp-1-5); }
+  .fz-mix-list span { background: var(--accent-soft); color: var(--text); border-radius: var(--r-full); padding: 3px var(--sp-2-5); font-size: var(--fs-sm); }
+  .fz-mix-list b { color: var(--accent); font-weight: var(--fw-semibold); }
   .fz-defaults { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-2) var(--sp-3); background: var(--warning-soft); color: var(--text); border-radius: var(--r-md); padding: var(--sp-2-5) var(--sp-3); margin: 0 0 var(--sp-3); font-size: var(--fs-sm); }
   .fz-defaults[hidden] { display: none; }
   .form-input.fz-changed { border-color: var(--warning); box-shadow: 0 0 0 2px var(--warning-soft); }
@@ -13903,8 +13912,32 @@
       typologies: [{ name: 'T0', units: null, area: 35, price: null, rent: null }, { name: 'T1', units: null, area: 55, price: null, rent: null },
         { name: 'T2', units: null, area: 75, price: null, rent: null }, { name: 'T3', units: null, area: 100, price: null, rent: null }],
       rent_on: false, rent_m2: null, occupancy: 90, rent_opex_pct: 20,
+      avg_unit_area: 75, typ_markup: 15,
       delta_pct: 10
     };
+    // Áreas brutas mínimas por tipologia (RGEU, art. 67.º); a média estimada = mínimo + uma margem (15% por referência)
+    const RGEU_MIN = [['T0', 35], ['T1', 52], ['T2', 72], ['T3', 91], ['T4', 105], ['T5', 122]];
+    // Frações e distribuição de tipologias a partir da área vendável e da área média escolhida.
+    // A mistura usa as duas tipologias à volta da área média, nas proporções que dão exatamente essa média.
+    function unitMix(sellable, avg, markupPct = 15) {
+      const typ = RGEU_MIN.map(([name, min]) => ({ name, min, area: Math.round(min * (1 + (Number(markupPct) || 0) / 100)) }));
+      avg = Math.max(35, Math.min(150, Number(avg) || 75));
+      const n = sellable > 0 ? Math.max(1, Math.floor(sellable / avg)) : 0;
+      let w;
+      if (avg <= typ[0].area) w = [[0, 1]];
+      else if (avg >= typ[typ.length - 1].area) w = [[typ.length - 1, 1]];
+      else {
+        const i = typ.findIndex((t, k) => k < typ.length - 1 && avg >= t.area && avg <= typ[k + 1].area);
+        const lo = typ[i], hi = typ[i + 1], wHi = (avg - lo.area) / (hi.area - lo.area);
+        w = [[i, 1 - wHi], [i + 1, wHi]];
+      }
+      // unidades por tipologia (arredondadas a somar n)
+      const raw = w.map(([i, x]) => ({ ...typ[i], exact: n * x }));
+      raw.forEach(r => { r.units = Math.floor(r.exact); });
+      let left = n - raw.reduce((t, r) => t + r.units, 0);
+      [...raw].sort((a, b) => (b.exact - b.units) - (a.exact - a.units)).forEach(r => { if (left > 0) { r.units++; left--; } });
+      return { n, avg, mix: raw.filter(r => r.units > 0).map(({ name, area, min, units }) => ({ name, area, min, units })), typ };
+    }
     const IMT_TYPES = [['urban', 'Terreno para construção / prédio urbano', 6.5], ['rustic', 'Prédio rústico', 5], ['custom', 'Outra taxa', null]];
     let feasCfgCache = null, mockFeasCfg = null;
     async function loadFeasCfg() {
@@ -13957,7 +13990,8 @@
       const costGlobal = acquisition + construction + indirect + reserves + vat;
       // Vendas: tipologias (unidades × preço médio) ou €/m² × área vendável; + comércio
       const typ = (f.typologies || []).filter(t => N(t.units) > 0);
-      const units = typ.length ? typ.reduce((t, x) => t + N(x.units), 0) : N(p.fractions_est);
+      const autoMix = unitMix(sellable, f.avg_unit_area, f.typ_markup);
+      const units = typ.length ? typ.reduce((t, x) => t + N(x.units), 0) : N(p.fractions_est) || autoMix.n;
       const housingSales = f.sale_mode === 'typology' ? typ.reduce((t, x) => t + N(x.units) * N(x.price), 0) : sellable * N(f.sale_m2);
       const salesGross = (housingSales + commerce * N(f.commerce_sale_m2)) * s.sales;
       const commission = salesGross * N(f.comm_pct) / 100 * (1 + N(f.comm_vat) / 100);
@@ -13973,7 +14007,7 @@
       return {
         price, imtRate, imt, stamp, acqOther, acquisition, housing, sellable, common, commerce, below, lines, construction,
         licences, projects, muni, indirect, contingency, management, reserves, vat, costGlobal, units, housingSales,
-        salesGross, commission, salesNet, profit, roi, roiNoRes, margin: salesGross ? profit / salesGross : null,
+        salesGross, commission, salesNet, profit, roi, roiNoRes, autoMix, margin: salesGross ? profit / salesGross : null,
         rentMonth, rentYear, rentNet, yieldGross: costGlobal && rentYear ? rentYear / costGlobal : null, yieldNet: costGlobal && rentNet ? rentNet / costGlobal : null,
         ratios: { abc: abc ? price / abc : null, revenue: salesNet ? price / salesNet : null, unit: units ? price / units : null, cost: costGlobal ? price / costGlobal : null },
         avgPrice: units ? salesGross / units : null, hasSales: salesGross > 0, hasCosts: construction > 0
@@ -14041,6 +14075,12 @@
                 <div><label class="field-label">Infraestruturas (m²)</label>${num('infra_area', f.infra_area)}</div>
               </div>
               <div class="field-hint" id="fz-area-hint"></div>
+              <div class="fz-mix">
+                <label class="field-label" for="fz-avg">Área média por fração <b id="fz-avg-v">${escapeHtml(fmtNum(f.avg_unit_area))} m²</b></label>
+                <input type="range" id="fz-avg" min="35" max="150" step="1" data-f="avg_unit_area" value="${escapeHtml(f.avg_unit_area)}">
+                <div class="fz-mix-scale"><span>35 m² · T0</span><span>150 m² · T5</span></div>
+                <div id="fz-mix-out"></div>
+              </div>
             </div>
 
             <div class="gantt-wrap">
@@ -14143,6 +14183,19 @@
       };
       const drawResult = () => {
         const c = feasCalc(p, f), sc = feasScenarios(p, f);
+        const mx = c.autoMix, mixBox = document.getElementById('fz-mix-out');
+        document.getElementById('fz-avg-v').textContent = fmtNum(f.avg_unit_area) + ' m²';
+        mixBox.innerHTML = mx.n ? `<div class="fz-mix-res"><b>≈ ${mx.n} ${mx.n === 1 ? 'fração' : 'frações'}</b> <span class="muted">(${escapeHtml(fmtNum(Math.round(c.sellable)))} m² vendáveis ÷ ${escapeHtml(fmtNum(mx.avg))} m²)</span></div>
+          <div class="fz-mix-list">${mx.mix.map(m => `<span><b>${m.units}× ${m.name}</b> ~${m.area} m²</span>`).join('')}</div>
+          <div class="field-hint" style="margin:4px 0 0;">Áreas médias = mínimo do RGEU (art. 67.º) + ${escapeHtml(fmtNum(f.typ_markup))}%: ${mx.typ.map(t => `${t.name} ${t.area}`).join(' · ')} m².</div>
+          <button type="button" class="text-btn" id="fz-mix-use">Usar esta distribuição nas tipologias</button>`
+          : '<div class="field-hint" style="margin:4px 0 0;">Indica a área de construção para estimar as frações.</div>';
+        document.getElementById('fz-mix-use')?.addEventListener('click', () => {
+          const prev = (f.typologies || []);
+          f.typologies = mx.mix.map(m => ({ name: m.name, units: m.units, area: m.area, price: prev.find(x => x.name === m.name)?.price ?? null, rent: prev.find(x => x.name === m.name)?.rent ?? null }));
+          S.dirty = true; drawTyp(); drawResult();
+          showToast(`Tipologias: ${mx.mix.map(m => `${m.units}× ${m.name}`).join(' + ')}${f.sale_mode === 'typology' ? ' — falta o preço médio de cada uma' : ''}`);
+        });
         const e = n => escapeHtml(fmtEUR(Math.round(n)));
         const typArea = (f.typologies || []).reduce((t, x) => t + (Number(x.units) || 0) * (Number(x.area) || 0), 0);
         document.getElementById('fz-area-hint').textContent = c.housing
@@ -14185,7 +14238,7 @@
           </div>`;
       };
       // Valores diferentes dos de referência (Definições → Viabilidade de terrenos): assinalados, com ↺ para repor
-      const DEF_PATHS = ['sellable_pct', 'cost.housing', 'cost.common', 'cost.parking', 'cost.commerce', 'cost.green', 'cost.infra', 'lic_pct', 'proj_pct', 'cont_pct', 'mgmt_pct', 'vat_pct', 'comm_pct', 'occupancy', 'rent_opex_pct', 'delta_pct'];
+      const DEF_PATHS = ['avg_unit_area', 'sellable_pct', 'cost.housing', 'cost.common', 'cost.parking', 'cost.commerce', 'cost.green', 'cost.infra', 'lic_pct', 'proj_pct', 'cont_pct', 'mgmt_pct', 'vat_pct', 'comm_pct', 'occupancy', 'rent_opex_pct', 'delta_pct'];
       const getPath = (o, path) => path.split('.').reduce((x, k) => x?.[k], o);
       const markDefaults = () => {
         let n = 0;
@@ -14226,8 +14279,9 @@
         if (bad) return formError('fz-msg', 'Há um número inválido (usa só algarismos e vírgula).');
         try {
           const val = diff();
-          await dbUpdate('land_plots', p.id, { feasibility: val, updated_at: new Date().toISOString() }, mockPlots);
-          p.feasibility = val; S.dirty = false;
+          const units = feasCalc({ ...p, feasibility: val }).units || null;
+          await dbUpdate('land_plots', p.id, { feasibility: val, fractions_est: units, updated_at: new Date().toISOString() }, mockPlots);
+          p.feasibility = val; p.fractions_est = units; S.dirty = false;
           if (p.status === 'registered') await dbUpdate('land_plots', p.id, { status: 'analysis' }, mockPlots);
           showToast('Viabilidade guardada');
         } catch (err) { formError('fz-msg', 'Não foi possível guardar: ' + err.message); }
@@ -14356,6 +14410,7 @@
             ${num('sellable_pct', 'Área vendável (%)', cfg.sellable_pct)}${num('lic_pct', 'Licenças (%)', cfg.lic_pct)}${num('proj_pct', 'Projetos (%)', cfg.proj_pct)}
             ${num('cont_pct', 'Contingência (%)', cfg.cont_pct)}${num('mgmt_pct', 'Gestão (%)', cfg.mgmt_pct)}${num('vat_pct', 'IVA da construção (%)', cfg.vat_pct)}
             ${num('comm_pct', 'Comissão imobiliária (%)', cfg.comm_pct)}${num('comm_vat', 'IVA da comissão (%)', cfg.comm_vat)}${num('stamp_pct', 'Imposto do Selo (%)', cfg.stamp_pct)}
+            ${num('avg_unit_area', 'Área média por fração (m²)', cfg.avg_unit_area)}${num('typ_markup', 'Margem sobre o mínimo RGEU (%)', cfg.typ_markup)}
             ${num('occupancy', 'Ocupação no arrendamento (%)', cfg.occupancy)}${num('rent_opex_pct', 'Despesas do arrendamento (%)', cfg.rent_opex_pct)}${num('delta_pct', 'Variação dos cenários (%)', cfg.delta_pct)}
           </div>
           <div class="field-hint">IMT: 6,5% em terrenos para construção e prédios urbanos, 5% em rústicos (2026). Escolhe-se em cada terreno.</div>
@@ -14898,7 +14953,7 @@
               ${kv('Índice de utilização', p.pdm_index != null ? escapeHtml(fmtNum(p.pdm_index)) : txt(null))}
               ${kv('Pisos máximos', p.max_floors != null ? escapeHtml(String(p.max_floors)) : txt(null))}
               ${kv('Área de construção', c.build != null ? escapeHtml(fmtNum(c.build)) + ' m²' + (c.buildAuto ? ' <small class="muted">(área × índice)</small>' : '') : txt(null))}
-              ${kv('Frações estimadas', p.fractions_est != null ? escapeHtml(String(p.fractions_est)) : txt(null))}
+              ${kv('Frações estimadas', p.fractions_est != null ? escapeHtml(String(p.fractions_est)) : c.feas.autoMix.n ? `${c.feas.autoMix.n} <small class="muted">(${c.feas.autoMix.mix.map(m => m.units + '× ' + m.name).join(' + ')})</small>` : txt(null))}
             </div>
             <div class="gantt-wrap">
               <div class="card-head"><h2>Viabilidade</h2><button type="button" class="text-btn" id="pl-feas">${c.feas.hasCosts ? 'Abrir' : 'Fazer'}</button></div>
