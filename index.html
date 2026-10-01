@@ -233,7 +233,10 @@
   }
   .nav-left { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; flex: 1; }
   .nav-bar h1 { font-size: var(--fs-base); font-weight: var(--fw-semibold); letter-spacing: -0.01em; }
-  #nav-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #nav-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: opacity .18s ease; }
+  /* Um só título: na ficha do projeto, o nome no topo só aparece depois de o título grande sair do ecrã */
+  #nav-title.dup { opacity: 0; }
+  .detail-more-btn { flex-shrink: 0; margin-top: var(--sp-0-5); }
   .nav-icon-btn {
     width: 30px; height: 30px; border-radius: var(--r-sm);
     background: none; border: none; color: var(--text-2);
@@ -1658,6 +1661,8 @@
   .bl-age { font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--text-2); white-space: nowrap; }
   .bl-age.warn { color: var(--warning); } .bl-age.late { color: var(--danger); }
   .bl-arch { flex-shrink: 0; font-size: var(--fs-sm); color: var(--text-3); margin-left: var(--sp-1); }
+  .bl-copy { flex-shrink: 0; font-size: var(--fs-sm); margin-left: var(--sp-1); }
+  @media (max-width: 600px) { .bl-copy-lg { display: none; } }
   .bl-arch:hover { color: var(--accent); }
   .bl-archived { opacity: .7; }
   .bl-archived-toggle { display: block; margin-top: var(--sp-3); font-size: var(--fs-sm); }
@@ -1820,6 +1825,15 @@
   .fin-detail > summary::after { content: ' ›'; }
   .fin-detail[open] > summary::after { content: ' ⌄'; }
   @media (max-width: 480px) { .fin-trio { grid-template-columns: 1fr 1fr !important; } .fin-trio .stat-tile:last-child { grid-column: 1 / -1; } }
+  /* Cliente: quanto deve */
+  .client-owed { cursor: pointer; display: flex; flex-direction: column; gap: var(--sp-1); }
+  .client-owed > div { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); }
+  .client-owed span { color: var(--text-2); font-size: var(--fs-sm); }
+  .client-owed b { font-size: var(--fs-2xl); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; }
+  .client-owed small { color: var(--text-3); font-size: var(--fs-xs); }
+  .client-owed.old b { color: var(--warning); }
+  .clients-table td.col-owed small { display: block; font-size: var(--fs-xs); }
+  @media (max-width: 600px) { .clients-table .col-owed small { display: none; } }
   /* ---- Alvos de toque (telemóvel e iPad): 44 px de área tocável ----
      Os botões de ícone crescem; os controlos pequenos (separadores, botões de texto, pastilhas, pegas)
      ganham uma margem invisível à volta, sem mudar o desenho. */
@@ -2570,7 +2584,7 @@
               <span id="detail-status-pill"></span>
             </div>
           </div>
-          <button type="button" class="secondary-btn" id="detail-archive-btn" style="display:none;">Arquivar</button>
+          <button type="button" class="nav-icon-btn detail-more-btn" id="detail-more-btn" aria-label="Mais ações do projeto" aria-haspopup="dialog" style="display:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
         </div>
         <div class="archived-banner" id="detail-archived" style="display:none;">
           <span>Este projeto está arquivado: não aparece nas listas, na agenda nem nas horas.</span>
@@ -3899,15 +3913,8 @@
     }
 
     async function deleteHorasEntry(id) {
-      if (!window.confirm('Eliminar esta imputação de horas? Esta ação não pode ser desfeita.')) return;
       try {
-        if (devMode) {
-          mockTimeLog = mockTimeLog.filter(e => e.id !== id);
-        } else {
-          const res = await supabase.from('time_entries').delete().eq('id', id);
-          if (res.error) throw res.error;
-        }
-        loadHorasHistory();
+        await deleteWithUndo('time_entries', id, mockTimeLog, 'Horas eliminadas', loadHorasHistory);
       } catch (err) {
         showError('eliminar', err);
       }
@@ -4443,6 +4450,9 @@
     const detailPanel = document.getElementById('detail-panel');
     const detailTabByProject = {};   // separador aberto em cada ficha (mantém-se ao gravar)
     const detailBody = document.getElementById('detail-body');
+    // Um só título: o nome no topo da página só aparece quando o título grande do projeto sai do ecrã
+    if ('IntersectionObserver' in window) new IntersectionObserver(([e]) => document.getElementById('nav-title').classList.toggle('dup', e.isIntersecting),
+      { rootMargin: '-52px 0px 0px 0px' }).observe(document.getElementById('detail-name'));
 
     // Escapa texto vindo da base de dados antes de ir para innerHTML.
     function escapeHtml(v) {
@@ -5322,10 +5332,24 @@
         detailBody.querySelectorAll('[data-open-client]').forEach(b => b.addEventListener('click', () => openClientDetail(b.dataset.openClient)));
         document.getElementById('edit-project-btn').addEventListener('click', () => openProjectEditModal(project, reopen));
         // Arquivar / desarquivar (onclick: os botões são fixos e a ficha é redesenhada a cada abertura)
-        const archBtn = document.getElementById('detail-archive-btn');
-        archBtn.style.display = project.archived_at ? 'none' : '';
+        // Ações menos usadas num menu "⋯" (o título fica sozinho no topo)
+        const moreBtn = document.getElementById('detail-more-btn');
+        moreBtn.style.display = project.archived_at ? 'none' : '';
         document.getElementById('detail-archived').style.display = project.archived_at ? 'flex' : 'none';
-        archBtn.onclick = () => setProjectArchived(project, true);
+        moreBtn.onclick = () => {
+          const el = mountCellPopover(moreBtn, 'Mais ações do projeto', `<b>${escapeHtml(project.name ?? 'Projeto')}</b><span>mais ações</span>`, `
+            <button type="button" class="assign-opt" data-more="edit"><span class="assign-opt-name">Editar dados do projeto</span></button>
+            <button type="button" class="assign-opt" data-more="archive"><span class="assign-opt-name">Arquivar projeto</span></button>`);
+          if (!el) return;
+          el.querySelector('.assign-opt')?.focus();
+          el.addEventListener('click', e => {
+            const b = e.target.closest('[data-more]');
+            if (!b) return;
+            closeAssignPopover();
+            if (b.dataset.more === 'edit') openProjectEditModal(project, reopen);
+            else setProjectArchived(project, true);
+          });
+        };
         document.getElementById('detail-unarchive-btn').onclick = () => setProjectArchived(project, false);
         attachRevisionFormHandlers(project.id ?? projectId, stages);
         detailBody.querySelectorAll('[data-assign-stage]').forEach(btn => btn.addEventListener('click', (ev) => {
@@ -6475,13 +6499,18 @@
     }
 
     async function archiveExpense(expenseId) {
-      if (!window.confirm('Arquivar esta despesa? Deixa de aparecer nas listas, mas não é eliminada.')) return;
       try {
         if (!devMode) {
           const res = await supabase.from('expenses').update({ archived_at: new Date().toISOString() }).eq('id', expenseId);
           if (res.error) throw res.error;
         }
         closeQuickModal();
+        showToast('Despesa arquivada', { ms: 8000, undo: async () => {
+          try {
+            if (!devMode) { const r = await supabase.from('expenses').update({ archived_at: null }).eq('id', expenseId); if (r.error) throw r.error; }
+            showToast('Despesa reposta'); loadDespesas();
+          } catch (e) { showError('repor', e); }
+        } });
         await loadDespesas();
       } catch (err) {
         showError('arquivar', err);
@@ -7586,16 +7615,16 @@
     // ---------- Juntar com o que já existe (sem duplicar) ----------
     async function loadBillingBase() {
       if (devMode) {
-        const projects = MOCK_PROJECTS.map(p => ({ ...p, client_id: MOCK_CLIENT_LINKS[p.id]?.[0] ?? null }));
+        const projects = MOCK_PROJECTS.map(p => ({ ...p, client_id: MOCK_CLIENT_LINKS[p.id]?.[0] ?? null, client_entity_id: MOCK_CLIENT_LINKS[p.id]?.[1] ?? null, clients: { name: MOCK_CLIENT_ROWS.find(c => c.id === MOCK_CLIENT_LINKS[p.id]?.[0])?.name } }));
         const stages = MOCK_PROJECTS.flatMap(p => MOCK_STAGES.map(s => ({ ...s, id: p.id + '-' + s.id, project_id: p.id, stage_order: MOCK_STAGES.indexOf(s) + 1 })));
         if (!window.__mockInv) window.__mockInv = MOCK_INVOICES.map((i, k) => ({ ...i, project_id: 'mock-1', stage_id: 'mock-1-stg-' + (k + 1), status: 'normal', source: 'manual' }));
         return { projects, stages, invoices: window.__mockInv, entities: MOCK_CLIENT_ENTITIES };
       }
       const [p, s, i, e] = await Promise.all([
-        supabase.from('projects').select('id, code, name, client_id, commission_value, archived_at, clients(name)'),
+        supabase.from('projects').select('id, code, name, client_id, client_entity_id, commission_value, archived_at, clients(name)'),
         supabase.from('project_stages').select('id, project_id, stage_order, status, percentage, fixed_value, excluded_from_invoicing, delivery_date, end_date, revision_label, billing_archived_at, billing_archive_note, stage_types(name)'),
         supabase.from('invoices').select('*').order('issue_date', { ascending: false }),
-        (await clientsTablesReady()) ? supabase.from('client_entities').select('client_id, nif') : Promise.resolve({ data: [] })
+        (await clientsTablesReady()) ? supabase.from('client_entities').select('id, client_id, kind, name, nif, address') : Promise.resolve({ data: [] })
       ]);
       for (const r of [p, s, i]) if (r.error) throw r.error;
       return { projects: p.data || [], stages: s.data || [], invoices: i.data || [], entities: e.data || [] };
@@ -10207,6 +10236,7 @@
           <div class="invoice-row click-row${archived ? ' bl-archived' : ''}" data-open-project-fin="${escapeHtml(x.p.id)}">
             <span><b class="bl-title">${escapeHtml(phaseName(x.s))}</b><br><small>${escapeHtml(projLabel(x.p))}${x.p.archived_at ? ' · projeto arquivado' : ''}${x.doneAt ? ' · concluída a ' + escapeHtml(fmtDayMonth(x.doneAt)) : ''}${x.invoiced > 0 ? ' · já faturado ' + escapeHtml(fmtEURShort(x.invoiced)) : ''}${archived ? archivedNote(x.s.billing_archived_at, x.s.billing_archive_note) : ''}</small></span>
             <span class="amount">${escapeHtml(fmtEURShort(x.remaining))}</span>
+            ${archived ? '' : `<button type="button" class="text-btn bl-copy" data-copy-stage="${escapeHtml(x.s.id)}" title="Copia cliente, NIF, descrição e valor para colar no weoInvoice">Copiar<span class="bl-copy-lg"> para fatura</span></button>`}
             <button type="button" class="text-btn bl-arch" ${archived ? 'data-unarch-stage' : 'data-arch-stage'}="${escapeHtml(x.s.id)}">${archived ? 'Repor' : 'Arquivar'}</button>
           </div>`;
       const invRow = (x, archived) => `
@@ -10286,6 +10316,25 @@
         e.stopPropagation();
         const x = d.toBill.find(y => String(y.s.id) === b.dataset.archStage);
         askArchive('stage', b.dataset.archStage, `${phaseName(x.s)} · ${projLabel(x.p)}`);
+      }));
+      // Copiar para fatura: o texto pronto a colar no programa de faturação
+      box.querySelectorAll('[data-copy-stage]').forEach(b => b.addEventListener('click', async e => {
+        e.stopPropagation();
+        const x = d.toBill.find(y => String(y.s.id) === b.dataset.copyStage);
+        if (!x) return;
+        const ents = billingCache.entities || [];
+        const ent = ents.find(en => String(en.id) === String(x.p.client_entity_id)) || ents.find(en => en.client_id === x.p.client_id && en.nif);
+        const who = ent?.kind === 'company' && ent.name ? ent.name : (x.p.clients?.name || '');
+        const parte = x.s.percentage != null && !x.s.fixed_value ? ` (${String(x.s.percentage).replace('.', ',')}% dos honorários)` : '';
+        const text = [
+          who ? 'Cliente: ' + who : null,
+          ent?.nif ? 'NIF: ' + ent.nif : null,
+          ent?.address ? 'Morada: ' + ent.address : null,
+          `Descrição: Projeto ${projLabel(x.p)} — ${phaseName(x.s)}${parte}${x.invoiced > 0 ? ' — valor em falta' : ''}`,
+          `Valor: ${fmtEUR(x.remaining)} + IVA`
+        ].filter(Boolean).join('\n');
+        try { await navigator.clipboard.writeText(text); showToast('Copiado — cola no weoInvoice'); }
+        catch { openQuickModal('Copiar para fatura', `<div class="field-hint" style="margin:0 0 8px;">Seleciona e copia:</div><textarea class="form-input" rows="6" readonly style="height:auto;">${escapeHtml(text)}</textarea>`); }
       }));
       box.querySelectorAll('[data-arch-inv]').forEach(b => b.addEventListener('click', e => {
         e.stopPropagation();
@@ -10706,17 +10755,20 @@
           from, clients: MOCK_CLIENT_ROWS, entities: MOCK_CLIENT_ENTITIES, projects,
           invoices: MOCK_INVOICES.map((i, k) => ({ ...i, project_id: ['mock-1', 'mock-1', 'mock-2'][k] })),
           hours: [{ project_id: 'mock-1', hours: 90 }, { project_id: 'mock-2', hours: 60 }, { project_id: 'mock-3', hours: 12 }],
+          open: MOCK_INVOICES.map((i, k) => ({ ...i, project_id: ['mock-1', 'mock-1', 'mock-2'][k] })),
           weights: await loadClientScoreWeights()
         };
       }
-      const [c, e, p, inv, ex, t, w] = await Promise.all([
+      const [c, e, p, inv, ex, t, w, op] = await Promise.all([
         supabase.from('clients').select('id, name, email, phone, address, notes, nif, language, nps_opt_out').order('name'),
         supabase.from('client_entities').select('*').order('created_at'),
         supabase.from('projects').select('id, name, code, status, awarding_date, client_id, client_entity_id, archived_at, commission_value'),
         supabase.from('invoices').select('project_id, stage_id, amount, issue_date').gte('issue_date', from),
         supabase.from('project_stages').select('id').eq('excluded_from_invoicing', true),
         supabase.from('time_entries').select('project_id, stage_id, hours').gte('date', from).not('project_id', 'is', null),
-        loadClientScoreWeights()
+        loadClientScoreWeights(),
+        // Em dívida: faturas (de qualquer ano) ainda não pagas por inteiro
+        supabase.from('invoices').select('project_id, amount, amount_paid, issue_date, status, archived_at').is('archived_at', null)
       ]);
       for (const r of [c, e, p, inv, t]) if (r.error) throw r.error;
       const excluded = new Set((ex.data || []).map(s => s.id));
@@ -10724,6 +10776,7 @@
         from, clients: c.data || [], entities: e.data || [], projects: p.data || [],
         invoices: (inv.data || []).filter(i => !excluded.has(i.stage_id)),
         hours: (t.data || []).filter(h => !excluded.has(h.stage_id)),
+        open: op.error ? [] : (op.data || []),
         weights: w
       };
     }
@@ -10741,6 +10794,16 @@
       });
       data.invoices.forEach(i => { const c = projClient[i.project_id]; if (c) byClient[c].invoiced += Number(i.amount || 0); });
       data.hours.forEach(h => { const c = projClient[h.project_id]; if (c) byClient[c].hours += Number(h.hours || 0); });
+      // Em dívida (faturado e ainda não recebido) e a parte com mais de 60 dias
+      const lim60 = addDaysKey(dateKey(new Date()), -60);
+      Object.values(byClient).forEach(r => { r.owed = 0; r.owedOld = 0; r.owedN = 0; });
+      (data.open || []).forEach(i => {
+        const c = projClient[i.project_id];
+        const left = Number(i.amount || 0) - Number(i.amount_paid || 0);
+        if (!c || i.status === 'cancelled' || i.archived_at || left <= 0.5) return;
+        byClient[c].owed += left; byClient[c].owedN++;
+        if (i.issue_date && i.issue_date < lim60) byClient[c].owedOld += left;
+      });
       const rows = Object.values(byClient).map(r => {
         const awards = [...r.awards].sort();
         let recurrence = null;   // meses entre adjudicações (menos = melhor)
@@ -10820,13 +10883,14 @@
       };
       box.innerHTML = `
         <div class="projects-table-wrap"><table class="projects-table clients-table">
-          <thead><tr><th>Cliente</th><th class="col-value">Projetos</th><th class="col-value col-inv">Faturado 3 anos</th><th class="col-value col-rate">€ / hora</th><th class="col-score">Score</th></tr></thead>
+          <thead><tr><th>Cliente</th><th class="col-value">Projetos</th><th class="col-value col-inv">Faturado 3 anos</th><th class="col-value col-owed">Em dívida</th><th class="col-value col-rate">€ / hora</th><th class="col-score">Score</th></tr></thead>
           <tbody>${list.map(c => {
             const r = scores[c.id];
             return `<tr class="project-row" data-client-id="${escapeHtml(c.id)}">
               <td class="col-name">${escapeHtml(c.name)}<small>${escapeHtml(sub(c))}</small></td>
               <td class="col-value">${r.projects.length}${r.projects3 ? `<small>${r.projects3} em 3 anos</small>` : ''}</td>
               <td class="col-value col-inv">${r.invoiced ? escapeHtml(fmtEURShort(r.invoiced)) : '—'}</td>
+              <td class="col-value col-owed${r.owedOld ? ' warn-text' : ''}">${r.owed ? escapeHtml(fmtEURShort(r.owed)) + (r.owedOld ? `<small>${escapeHtml(fmtEURShort(r.owedOld))} há +60 dias</small>` : '') : '—'}</td>
               <td class="col-value col-rate">${r.rate ? escapeHtml(fmtEURShort(r.rate)) : '—'}</td>
               <td class="col-score">${r.active ? `<span class="score-cell">${scoreBarHtml(r.score)}<b>${r.score}</b></span>` : '<small>sem atividade</small>'}</td>
             </tr>`;
@@ -10872,6 +10936,10 @@
               <div class="sub">${[c.email, c.phone].filter(Boolean).map(escapeHtml).join(' · ') || 'Sem contactos'}</div></div>
             <button type="button" class="secondary-btn" id="cl-edit">Editar</button>
           </div>
+          ${r.owed ? `<div class="gantt-wrap client-owed${r.owedOld ? ' old' : ''}" data-owed>
+            <div><span>Em dívida</span><b>${escapeHtml(fmtEUR(r.owed))}</b></div>
+            <small>${r.owedN} ${r.owedN === 1 ? 'fatura por receber' : 'faturas por receber'}${r.owedOld ? ` · ${escapeHtml(fmtEUR(r.owedOld))} há mais de 60 dias` : ''} · ver em Faturação →</small>
+          </div>` : ''}
           <div class="gantt-wrap client-score">
             <div class="cs-main">
               <div class="cs-num">${r.active ? r.score : '—'}</div>
@@ -10912,6 +10980,7 @@
         view.querySelectorAll('[data-entity-id]').forEach(row => row.addEventListener('click', () =>
           openEntityModal(c, ents.find(e => String(e.id) === row.dataset.entityId), reopen)));
         view.querySelectorAll('[data-open-project]').forEach(row => row.addEventListener('click', () => openDetail(row.dataset.openProject)));
+        view.querySelector('[data-owed]')?.addEventListener('click', () => openBillingModule('toreceive'));
       } catch (err) {
         view.innerHTML = `<div class="error-box">Não foi possível abrir o cliente: ${escapeHtml(err.message)}</div>`;
       }
@@ -11334,8 +11403,7 @@
       });
       const del = document.getElementById('fu-delete');
       if (del) del.addEventListener('click', async () => {
-        if (!window.confirm('Eliminar este ponto de situação?')) return;
-        try { await dbDelete('municipal_followups', fu.id, mockFollowups); closeQuickModal(); showToast('Eliminado'); onSaved && onSaved(); }
+        try { await deleteWithUndo('municipal_followups', fu.id, mockFollowups, 'Ponto de situação eliminado', () => onSaved && onSaved()); closeQuickModal(); }
         catch (err) { formError('fu-msg', 'Não foi possível eliminar: ' + err.message); }
       });
     }
@@ -12580,9 +12648,9 @@
       { id: 'arquivar', cat: 'proj', ctx: ['detail', 'projects'],
         q: 'arquivo um projeto que acabou',
         a: 'Na ficha do projeto, botão Arquivar (em cima à direita). Sai das listas, da agenda e das horas.',
-        steps: ['Primeiro muda o **estado do projeto** para **Concluído** (no topo da ficha). Isso também envia ao cliente o inquérito de fecho.', 'Toca em [[Arquivar]] (em cima, à direita).', 'Para o voltar a ver: [[Projetos]] → **Arquivados** → abre-o → [[Desarquivar]].'],
+        steps: ['Primeiro muda o **estado do projeto** para **Concluído** (no topo da ficha). Isso também envia ao cliente o inquérito de fecho.', 'Toca em **⋯** (em cima, à direita) → **Arquivar projeto**. Enganaste-te? Toca em **Anular** no aviso que aparece.', 'Para o voltar a ver: [[Projetos]] → **Arquivados** → abre-o → [[Desarquivar]].'],
         kw: 'arquivar fechar terminar projeto acabado concluido esconder desarquivar',
-        tour: [{ go: 'project:geral', sel: '#detail-status-pill > :first-child', text: 'Primeiro, o estado do projeto: Concluído.' }, { sel: '#detail-archive-btn', text: 'Depois, arquiva aqui.' }] },
+        tour: [{ go: 'project:geral', sel: '#detail-status-pill > :first-child', text: 'Primeiro, o estado do projeto: Concluído.' }, { sel: '#detail-more-btn', text: 'Depois, toca em ⋯ e escolhe Arquivar projeto.' }] },
 
       // ---------- Câmara e prazos ----------
       { id: 'camara', cat: 'camara', ctx: ['detail:camara'], first: 7,
@@ -13891,6 +13959,22 @@
       if (r.error) throw r.error;
       return r.data;
     }
+    // Apagar com "Anular" (em vez de pedir confirmação): apaga já e, durante 8 s, o Anular repõe
+    // exatamente o mesmo registo. Só para registos que nada mais referencia (horas, pausas, pontos de situação).
+    async function deleteWithUndo(table, id, mockArr, label, refresh) {
+      let snap = null;
+      if (devMode) snap = (mockArr || []).find(x => String(x.id) === String(id)) || null;
+      else { const r = await supabase.from(table).select('*').eq('id', id).maybeSingle(); if (r.error) throw r.error; snap = r.data; }
+      await dbDelete(table, id, mockArr);
+      showToast(label, { ms: 8000, undo: snap ? async () => {
+        try {
+          if (devMode) mockArr.push(snap);
+          else { const r = await supabase.from(table).insert(snap); if (r.error) throw r.error; }
+          showToast('Reposto'); refresh && refresh();
+        } catch (e) { showError('repor', e); }
+      } : null });
+      refresh && refresh();
+    }
     async function dbDelete(table, id, mockArr) {
       if (devMode) { const i = (mockArr || []).findIndex(x => String(x.id) === String(id)); if (i >= 0) mockArr.splice(i, 1); return; }
       const r = await supabase.from(table).delete().eq('id', id);
@@ -14286,12 +14370,11 @@
 
     // ---------- Projeto: arquivar / desarquivar (nada é apagado) ----------
     async function setProjectArchived(project, archive) {
-      if (archive && !window.confirm(`Arquivar o projeto "${project.name}"? Deixa de aparecer nas listas, na agenda e nas horas. Nada é apagado e podes desarquivar quando quiseres.`)) return;
       try {
         await dbUpdate('projects', project.id, { archived_at: archive ? new Date().toISOString() : null }, MOCK_PROJECTS);
         invalidateActivePhases();
         if (archive) {
-          showToast('Projeto arquivado', { undo: () => setProjectArchived(project, false) });
+          showToast('Projeto arquivado', { ms: 8000, undo: () => setProjectArchived(project, false) });
           navStack = [];
           openProjectsModule();
         } else {
@@ -14450,8 +14533,7 @@
         quickModalDirty = true;
       });
       if (isEdit) document.getElementById('bk-delete').addEventListener('click', async () => {
-        if (!window.confirm(`Eliminar a pausa "${b.name}"?`)) return;
-        try { await dbDelete('project_breaks', b.id, MOCK_BREAKS); closeQuickModal(); showToast('Pausa eliminada'); onSaved && onSaved(); }
+        try { await deleteWithUndo('project_breaks', b.id, MOCK_BREAKS, 'Pausa eliminada', () => onSaved && onSaved()); closeQuickModal(); }
         catch (err) { formError('bk-msg', 'Não foi possível eliminar: ' + err.message); }
       });
       document.getElementById('bk-save').addEventListener('click', async () => {
