@@ -1941,6 +1941,9 @@
   .fz-mix input[type="range"].fz-changed { box-shadow: none; outline: 2px solid var(--warning-soft); border-radius: var(--r-sm); }
   .fz-mix-scale { display: flex; justify-content: space-between; font-size: var(--fs-xs); color: var(--text-3); margin-top: -6px; }
   .fz-mix-res { margin-top: var(--sp-2); font-size: var(--fs-md); }
+  .fz-size-l { margin-top: var(--sp-3); }
+  .fz-sizes { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-3); font-size: var(--fs-xs); color: var(--text-2); margin-top: var(--sp-1); font-variant-numeric: tabular-nums; }
+  .fz-sizes b { color: var(--text); font-weight: var(--fw-semibold); }
   .fz-mix-list { display: flex; flex-wrap: wrap; gap: var(--sp-1-5); margin-top: var(--sp-1-5); }
   .fz-mix-list span { background: var(--accent-soft); color: var(--text); border-radius: var(--r-full); padding: 3px var(--sp-2-5); font-size: var(--fs-sm); }
   .fz-mix-list b { color: var(--accent); font-weight: var(--fw-semibold); }
@@ -1967,16 +1970,21 @@
   .fz-scen span { display: block; font-size: var(--fs-xs); color: var(--text-2); }
   .fz-scen b { font-size: var(--fs-lg); font-variant-numeric: tabular-nums; }
   .fz-scen small { display: block; font-size: var(--fs-xs); color: var(--text-3); }
-  .fz-typ-head, .fz-typ-row { display: grid; grid-template-columns: 70px 64px 72px repeat(var(--cols, 1), minmax(0, 1fr)) 32px; gap: var(--sp-2); align-items: center; }
-  .fz-typ-head:has(span:nth-child(4):last-child) { grid-template-columns: 70px 64px 72px 32px; }
-  @media (max-width: 560px) {
-    .fz-typ-head { display: none; }
-    .fz-typ-row { grid-template-columns: repeat(2, minmax(0, 1fr)) 32px; padding-bottom: var(--sp-2); border-bottom: 1px solid var(--border); }
-    .fz-typ-row [data-k="name"] { grid-column: 1 / 3; }
-  }
-  .fz-typ-head { font-size: var(--fs-xs); color: var(--text-3); margin: var(--sp-3) 0 var(--sp-1); }
-  .fz-typ-row { margin-bottom: var(--sp-2); }
-  .fz-typ-row .form-input { margin: 0; }
+  .fz-typ { margin-top: var(--sp-4); border-top: 1px solid var(--border); padding-top: var(--sp-3); }
+  .fz-typ-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--sp-1) var(--sp-3); }
+  .fz-typ-top b { font-size: var(--fs-md); }
+  .fz-typ-mode { font-size: var(--fs-xs); border-radius: var(--r-full); padding: 2px var(--sp-2); background: var(--accent-soft); color: var(--accent); font-weight: var(--fw-medium); margin-left: var(--sp-1); }
+  .fz-typ-mode.manual { background: var(--warning-soft); color: var(--text); }
+  .fz-typ-head, .fz-typ-row, .fz-typ-tot { display: grid; gap: var(--sp-2); align-items: center; }
+  .fz-typ-head { font-size: var(--fs-xs); color: var(--text-3); margin: var(--sp-2) 0 var(--sp-1); }
+  .fz-typ-row { margin-bottom: var(--sp-1-5); }
+  .fz-typ-row .form-input { margin: 0; min-width: 0; padding-left: var(--sp-2); padding-right: var(--sp-2); }
+  .fz-typ-name { font-weight: var(--fw-semibold); }
+  .fz-typ-tot { border-top: 1px solid var(--border); padding-top: var(--sp-2); font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
+  .fz-typ-tot .late { color: var(--danger); }
+  .fz-typ-cmp { grid-column: 1 / -1; font-size: var(--fs-xs); }
+  .fz-typ-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--sp-2); margin-top: var(--sp-1); }
+  @media (max-width: 560px) { .fz-typ-head, .fz-typ-row, .fz-typ-tot { gap: var(--sp-1-5); } }
   /* Matchmaker */
   .mm-row { display: flex; gap: var(--sp-3); align-items: flex-start; padding: var(--sp-3) 0; border-top: 1px solid var(--border); }
   .mm-row:first-of-type { border-top: none; }
@@ -14045,9 +14053,12 @@
       const vat = construction * N(f.vat_pct) / 100;
       const costGlobal = acquisition + construction + indirect + reserves + vat;
       // Vendas: tipologias (unidades × preço médio) ou €/m² × área vendável; + comércio
-      const typ = (f.typologies || []).filter(t => N(t.units) > 0);
+      const manual = (f.typologies || []).filter(t => N(t.units) > 0);
       const autoMix = unitMix(sellable, f.avg_unit_area, f.typ_markup);
-      const units = typ.length ? typ.reduce((t, x) => t + N(x.units), 0) : N(p.fractions_est) || autoMix.n;
+      const byName = Object.fromEntries((f.typologies || []).map(t => [t.name, t]));
+      // tabela ajustada à mão, ou o mix automático dos sliders (com os preços/rendas escritos por tipologia)
+      const typ = manual.length ? manual : autoMix.mix.map(m => ({ name: m.name, units: m.units, area: m.area, price: byName[m.name]?.price ?? null, rent: byName[m.name]?.rent ?? null }));
+      const units = typ.length ? typ.reduce((t, x) => t + N(x.units), 0) : N(p.fractions_est);
       const housingSales = f.sale_mode === 'typology' ? typ.reduce((t, x) => t + N(x.units) * N(x.price), 0) : sellable * N(f.sale_m2);
       const salesGross = (housingSales + commerce * N(f.commerce_sale_m2)) * s.sales;
       const commission = salesGross * N(f.comm_pct) / 100 * (1 + N(f.comm_vat) / 100);
@@ -14063,7 +14074,7 @@
       return {
         price, imtRate, imt, stamp, acqOther, acquisition, housing, sellable, common, commerce, below, lines, construction,
         licences, projects, muni, indirect, contingency, management, reserves, vat, costGlobal, units, housingSales,
-        salesGross, commission, salesNet, profit, roi, roiNoRes, autoMix, margin: salesGross ? profit / salesGross : null,
+        salesGross, commission, salesNet, profit, roi, roiNoRes, autoMix, typs: typ, typManual: manual.length > 0, margin: salesGross ? profit / salesGross : null,
         rentMonth, rentYear, rentNet, yieldGross: costGlobal && rentYear ? rentYear / costGlobal : null, yieldNet: costGlobal && rentNet ? rentNet / costGlobal : null,
         ratios: { abc: abc ? price / abc : null, revenue: salesNet ? price / salesNet : null, unit: units ? price / units : null, cost: costGlobal ? price / costGlobal : null },
         avgPrice: units ? salesGross / units : null, hasSales: salesGross > 0, hasCosts: construction > 0
@@ -14082,7 +14093,7 @@
       const nf = n => Number(n || 0).toLocaleString(loc, { maximumFractionDigits: 1 });
       const pc = v => v == null || !Number.isFinite(v) ? '—' : (v * 100).toLocaleString(loc, { maximumFractionDigits: 1 }) + '%';
       const c = feasCalc(p, f), sc = feasScenarios(p, f), e = escapeHtml;
-      const typ = (f.typologies || []).filter(t => Number(t.units) > 0);
+      const typ = c.typs || [];
       const logo = new URL('assets/nova-logo-plum-cropped.png', location.href).href;
       const tr = (a, b, cls = '') => `<tr class="${cls}"><td>${a}</td><td class="r">${b}</td></tr>`;
       const html = `<!doctype html><html lang="${en ? 'en' : 'pt'}"><head><meta charset="utf-8"><title>${e(p.name)} — ${e(T('Estudo de viabilidade', 'Feasibility study'))}</title>
@@ -14685,13 +14696,17 @@
               <label><span>Área vendável (%)</span>${num('sellable_pct', f.sellable_pct)}</label>
               <label><span>Construção (€/m²)</span>${num('cost.housing', f.cost.housing)}</label>
               <label class="ps-sale"><span>Venda <button type="button" class="ps-mode" id="ps-sale-mode">${f.sale_mode === 'typology' ? 'por tipologia' : '€/m² na zona'} ⇄</button></span>
-                ${f.sale_mode === 'typology' ? '<em class="ps-typ-note">preços em Tipologias, mais abaixo</em>' : num('sale_m2', f.sale_m2, 'ex.: 4500')}</label>
+                ${f.sale_mode === 'typology' ? '<em class="ps-typ-note">preço de cada tipologia na tabela abaixo</em>' : num('sale_m2', f.sale_m2, 'ex.: 4500')}</label>
             </div>
             <div class="fz-mix">
               <label class="field-label" for="fz-avg">Área média por fração <b id="fz-avg-v">${escapeHtml(fmtNum(f.avg_unit_area))} m²</b></label>
               <input type="range" id="fz-avg" min="35" max="150" step="1" data-f="avg_unit_area" value="${escapeHtml(f.avg_unit_area)}">
               <div class="fz-mix-scale"><span>35 m² · T0</span><span>150 m² · T5</span></div>
-              <div id="fz-mix-out"></div>
+              <label class="field-label fz-size-l" for="fz-size">Tamanho dentro de cada tipologia <b id="fz-size-v"></b></label>
+              <input type="range" id="fz-size" min="0" max="35" step="1" data-f="typ_markup" value="${escapeHtml(f.typ_markup)}">
+              <div class="fz-mix-scale"><span>Compacto · mínimo RGEU</span><span>Generoso · +35%</span></div>
+              <div class="fz-sizes" id="fz-sizes"></div>
+              <div class="fz-typ" id="fz-typ"></div>
             </div>
           </div>
           <div class="gantt-wrap ps-result" id="fz-result"></div>
@@ -14700,7 +14715,7 @@
         <div class="gantt-wrap" id="ps-investors"></div>
 
         <details class="gantt-wrap ps-detail" id="ps-detail"${opts.detail ? ' open' : ''}>
-          <summary><b>Mais detalhe</b> <small class="muted">custos, áreas, tipologias, IMT, arrendamento, dados e notas</small></summary>
+          <summary><b>Mais detalhe</b> <small class="muted">custos, áreas, IMT, arrendamento, dados e notas</small></summary>
           <div class="fz-defaults" id="fz-defaults" hidden></div>
           <div class="ps-dgrid">
             <section>
@@ -14737,10 +14752,6 @@
                 <div><label class="field-label">Infraestruturas</label>${num('infra_area', f.infra_area)}</div>
                 <div><label class="field-label">Comércio — venda (€/m²)</label>${num('commerce_sale_m2', f.commerce_sale_m2)}</div>
               </div>
-            </section>
-            <section class="ps-wide">
-              <div class="section-label">Tipologias</div>
-              <div id="fz-typ"></div>
             </section>
             <section>
               <div class="section-label">Arrendamento e cenários</div>
@@ -14829,7 +14840,7 @@
           const b = view.querySelector('[data-p="buildable_area"]'); if (b && col !== 'buildable_area') b.placeholder = areaHint();
           if (!(p.feasibility || {}).housing_area && !S.housingTyped) f.housing_area = plotAreas(p).build;
         }
-        savePlot(); drawResult(); drawInvestors();
+        savePlot(); drawResult(); drawInvestors(); if (!typManual()) drawTyp();
       }));
       document.getElementById('ps-types').addEventListener('change', () => {
         const ids = [...document.querySelectorAll('#ps-types input:checked')].map(cb => cb.value);
@@ -14845,56 +14856,87 @@
         if (k === 'housing_area') { S.housingTyped = val != null; if (val == null) val = plotAreas(p).build; }
         setPath(k, val);
         if (k === 'acq_type') document.getElementById('fz-imt-custom').hidden = val !== 'custom';
-        if (k === 'rent_on') drawTyp();
-        saveFeas(); drawResult(); drawInvestors(); markDefaults();
+        saveFeas(); drawResult(); if (k === 'rent_on' || !typManual()) drawTyp(); drawInvestors(); markDefaults();
       }));
       document.getElementById('ps-sale-mode').addEventListener('click', () => {
         f.sale_mode = f.sale_mode === 'typology' ? 'm2' : 'typology';
-        saveFeas(); renderPlotSheet(view, p, d, cfg, { detail: document.getElementById('ps-detail').open || f.sale_mode === 'typology', keepSaved: true });
+        saveFeas(); renderPlotSheet(view, p, d, cfg, { detail: document.getElementById('ps-detail').open, keepSaved: true });
         if (f.sale_mode === 'typology') setTimeout(() => document.getElementById('fz-typ')?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 50);
       });
-      // ---- Tipologias (tabela) ----
-      const drawTyp = () => {
-        const box = document.getElementById('fz-typ');
-        const cols = (f.sale_mode === 'typology') + !!f.rent_on;
+      // ---- Tipologias: o mix automático dos sliders, ou ajustado à mão ----
+      const typManual = () => (f.typologies || []).some(t => Number(t.units) > 0);
+      const typTpl = () => `52px 60px 72px${' minmax(0, 1fr)'.repeat((f.sale_mode === 'typology') + !!f.rent_on)}${typManual() ? ' 32px' : ''}`;
+      const typTotal = () => {
+        const c = feasCalc(p, f), n = c.typs.reduce((t, x) => t + (Number(x.units) || 0), 0);
+        const m2 = c.typs.reduce((t, x) => t + (Number(x.units) || 0) * (Number(x.area) || 0), 0), over = c.sellable > 0 && m2 > c.sellable * 1.02;
+        return `<span>Total</span><b>${n}</b><b class="${over ? 'late' : ''}">${escapeHtml(fmtNum(Math.round(m2)))} m²</b>
+          <span class="muted fz-typ-cmp">de ${escapeHtml(fmtNum(Math.round(c.sellable)))} m² vendáveis${over ? ' — <b class="late">passa da área vendável</b>' : ''}</span>`;
+      };
+      const drawTyp = (focus) => {
+        const box = document.getElementById('fz-typ'), c = feasCalc(p, f), manual = typManual(), tpl = typTpl();
+        const sale = f.sale_mode === 'typology', rent = !!f.rent_on;
+        if (!c.typs.length) { box.innerHTML = '<div class="field-hint" style="margin:0;">Indica a área de construção (ou a área do terreno e o índice) para ver as frações.</div>'; return; }
+        const inp = (k, v, ph, lbl) => `<input type="text" inputmode="${k === 'units' ? 'numeric' : 'decimal'}" class="form-input" data-k="${k}" value="${escapeHtml(v ?? '')}" placeholder="${ph}" aria-label="${escapeHtml(lbl)}">`;
         box.innerHTML = `
-          <div class="fz-typ-head" style="--cols:${cols}"><span>Tipologia</span><span>Unid.</span><span>Área (m²)</span>${f.sale_mode === 'typology' ? '<span>Preço médio (€)</span>' : ''}${f.rent_on ? '<span>Renda (€/mês)</span>' : ''}<span></span></div>
-          ${(f.typologies || []).map((t, i) => `<div class="fz-typ-row" data-i="${i}" style="--cols:${cols}">
-            <input type="text" class="form-input" data-k="name" value="${escapeHtml(t.name || '')}" aria-label="Tipologia" placeholder="Tipologia">
-            <input type="text" inputmode="numeric" class="form-input" data-k="units" value="${escapeHtml(t.units ?? '')}" aria-label="Unidades de ${escapeHtml(t.name || '')}" placeholder="unid.">
-            <input type="text" inputmode="decimal" class="form-input" data-k="area" value="${escapeHtml(t.area ?? '')}" aria-label="Área de ${escapeHtml(t.name || '')}" placeholder="m²">
-            ${f.sale_mode === 'typology' ? `<input type="text" inputmode="decimal" class="form-input" data-k="price" value="${escapeHtml(t.price ?? '')}" aria-label="Preço de ${escapeHtml(t.name || '')}" placeholder="preço €">` : ''}
-            ${f.rent_on ? `<input type="text" inputmode="decimal" class="form-input" data-k="rent" value="${escapeHtml(t.rent ?? '')}" aria-label="Renda de ${escapeHtml(t.name || '')}" placeholder="renda €/mês">` : ''}
-            <button type="button" class="op-spec-del" data-del="${i}" aria-label="Tirar ${escapeHtml(t.name || '')}">×</button>
+          <div class="fz-typ-top"><div><b>Frações</b><span class="fz-typ-mode${manual ? ' manual' : ''}">${manual ? 'ajustado à mão' : 'automático'}</span></div>
+            ${manual ? '<button type="button" class="text-btn" id="fz-typ-auto">↺ Voltar ao automático</button>' : ''}</div>
+          <div class="field-hint" style="margin:2px 0 0;">${manual ? 'Os sliders acima já não mudam esta tabela.' : 'Segue os sliders acima. Se mudares unidades ou áreas, passa a ser tua.'}</div>
+          <div class="fz-typ-head" style="grid-template-columns:${tpl}"><span>Tipo</span><span>Unid.</span><span>m² cada</span>${sale ? '<span>Preço (€)</span>' : ''}${rent ? '<span>Renda €/mês</span>' : ''}${manual ? '<span></span>' : ''}</div>
+          ${c.typs.map((t, i) => `<div class="fz-typ-row" data-i="${i}" style="grid-template-columns:${tpl}">
+            ${manual ? inp('name', t.name, 'T?', 'Tipologia') : `<span class="fz-typ-name">${escapeHtml(t.name)}</span>`}
+            ${inp('units', t.units, '0', 'Unidades de ' + t.name)}
+            ${inp('area', t.area, 'm²', 'Área de ' + t.name)}
+            ${sale ? inp('price', t.price, 'preço', 'Preço de ' + t.name) : ''}
+            ${rent ? inp('rent', t.rent, 'renda', 'Renda de ' + t.name) : ''}
+            ${manual ? `<button type="button" class="op-spec-del" data-del="${i}" aria-label="Tirar ${escapeHtml(t.name || '')}">×</button>` : ''}
           </div>`).join('')}
-          <button type="button" class="text-btn" id="fz-typ-add">+ Tipologia</button>
-          <div class="field-hint" style="margin:4px 0 0;">${f.typologies?.some(t => Number(t.units) > 0) ? 'As frações e o mix vêm desta tabela.' : 'Sem unidades aqui, as frações vêm da área média por fração (lá em cima).'}</div>`;
+          <div class="fz-typ-tot" id="fz-typ-tot" style="grid-template-columns:${tpl}">${typTotal()}</div>
+          ${manual ? '<div class="fz-typ-foot"><button type="button" class="text-btn" id="fz-typ-add">+ Tipologia</button></div>' : ''}`;
+        if (focus) { const el = box.querySelector(`.fz-typ-row[data-i="${focus.i}"] [data-k="${focus.k}"]`); if (el) { el.focus(); el.setSelectionRange?.(el.value.length, el.value.length); } }
         box.querySelectorAll('.fz-typ-row').forEach(row => row.addEventListener('input', e => {
-          const i = Number(row.dataset.i), k = e.target.dataset.k;
-          f.typologies = f.typologies.map((x, j) => j === i ? { ...x, [k]: k === 'name' ? e.target.value : numOrNull(e.target.value) } : x);
+          const i = Number(row.dataset.i), k = e.target.dataset.k, v = k === 'name' ? e.target.value : numOrNull(e.target.value);
+          if (typeof v === 'number' && Number.isNaN(v)) { e.target.classList.add('fz-bad'); return; }
+          e.target.classList.remove('fz-bad');
+          const rows = feasCalc(p, f).typs;
+          if (typManual()) f.typologies = (f.typologies || []).filter(t => Number(t.units) > 0).map((x, j) => j === i ? { ...x, [k]: v } : x);
+          else if (k === 'price' || k === 'rent') {
+            // preço/renda no automático: guarda por tipologia, o mix continua a seguir os sliders
+            const name = rows[i].name, list = [...(f.typologies || [])], j = list.findIndex(t => t.name === name);
+            if (j >= 0) list[j] = { ...list[j], [k]: v }; else list.push({ name, units: null, area: null, price: null, rent: null, [k]: v });
+            f.typologies = list;
+          } else {
+            // mexer em unidades ou áreas: a tabela passa a ser tua (os preços ficam)
+            const keep = (f.typologies || []).filter(t => !rows.some(r => r.name === t.name));
+            f.typologies = [...rows.map((x, j) => ({ ...x, [k]: j === i ? v : x[k] })), ...keep.map(t => ({ ...t, units: null }))];
+            saveFeas(); drawResult(); drawInvestors(); drawTyp({ i, k }); return;
+          }
           saveFeas(); drawResult(); drawInvestors();
+          document.getElementById('fz-typ-tot').innerHTML = typTotal();
         }));
-        box.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => { f.typologies = f.typologies.filter((_, i) => i !== Number(b.dataset.del)); saveFeas(); drawTyp(); drawResult(); drawInvestors(); }));
-        document.getElementById('fz-typ-add').addEventListener('click', () => { f.typologies = [...(f.typologies || []), { name: 'T' + (f.typologies || []).length, units: null, area: null, price: null, rent: null }]; saveFeas(); drawTyp(); });
+        box.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
+          f.typologies = (f.typologies || []).filter(t => Number(t.units) > 0).filter((_, i) => i !== Number(b.dataset.del));
+          saveFeas(); drawTyp(); drawResult(); drawInvestors();
+        }));
+        document.getElementById('fz-typ-add')?.addEventListener('click', () => {
+          const used = new Set((f.typologies || []).map(t => t.name)), name = ['T0', 'T1', 'T2', 'T3', 'T4', 'T5'].find(n => !used.has(n)) || 'T?';
+          f.typologies = [...(f.typologies || []).filter(t => Number(t.units) > 0), { name, units: 1, area: RGEU_MIN.find(([n]) => n === name)?.[1] ?? null, price: null, rent: null }];
+          saveFeas(); drawTyp({ i: f.typologies.length - 1, k: 'units' }); drawResult(); drawInvestors();
+        });
+        document.getElementById('fz-typ-auto')?.addEventListener('click', () => {
+          const prev = JSON.parse(JSON.stringify(f.typologies || []));
+          f.typologies = prev.map(t => ({ ...t, units: null }));
+          saveFeas(); drawTyp(); drawResult(); drawInvestors();
+          showToast('Frações de novo em automático', { ms: 8000, undo: () => { f.typologies = prev; saveFeas(); drawTyp(); drawResult(); drawInvestors(); } });
+        });
       };
       // ---- Resultados ao vivo ----
       const drawResult = () => {
         const c = feasCalc(p, f), sc = feasScenarios(p, f), mx = c.autoMix;
         const e = n => escapeHtml(fmtEUR(Math.round(n)));
         document.getElementById('fz-avg-v').textContent = fmtNum(f.avg_unit_area) + ' m²';
-        const fromTable = (f.typologies || []).some(t => Number(t.units) > 0);
-        document.getElementById('fz-mix-out').innerHTML = mx.n ? `
-          <div class="fz-mix-res"><b>≈ ${fromTable ? c.units : mx.n} ${(fromTable ? c.units : mx.n) === 1 ? 'fração' : 'frações'}</b> <span class="muted">${fromTable ? '(da tabela de tipologias)' : `(${escapeHtml(fmtNum(Math.round(c.sellable)))} m² vendáveis ÷ ${escapeHtml(fmtNum(mx.avg))} m²)`}</span></div>
-          ${fromTable ? '' : `<div class="fz-mix-list">${mx.mix.map(m => `<span><b>${m.units}× ${m.name}</b> ~${m.area} m²</span>`).join('')}</div>
-          <button type="button" class="text-btn" id="fz-mix-use">Passar para a tabela de tipologias</button>`}`
-          : '<div class="field-hint" style="margin:4px 0 0;">Indica a área de construção (ou a área do terreno e o índice) para estimar as frações.</div>';
-        document.getElementById('fz-mix-use')?.addEventListener('click', () => {
-          const prev = (f.typologies || []);
-          f.typologies = mx.mix.map(m => ({ name: m.name, units: m.units, area: m.area, price: prev.find(x => x.name === m.name)?.price ?? null, rent: prev.find(x => x.name === m.name)?.rent ?? null }));
-          saveFeas(); drawTyp(); drawResult();
-          document.getElementById('ps-detail').open = true;
-          showToast(`Tipologias: ${mx.mix.map(m => `${m.units}× ${m.name}`).join(' + ')}`);
-        });
+        const mk = Number(f.typ_markup) || 0;
+        document.getElementById('fz-size-v').textContent = (mk <= 5 ? 'compacto' : mk <= 22 ? 'médio' : 'generoso') + ` · +${fmtNum(mk)}%`;
+        document.getElementById('fz-sizes').innerHTML = mx.typ.map(t => `<span><b>${t.name}</b> ${t.area} m²</span>`).join('');
         const ok = c.hasSales && c.hasCosts;
         const row = (l, val, cls = '') => `<div class="${cls}"><span>${l}</span><b>${val}</b></div>`;
         document.getElementById('fz-result').innerHTML = `
@@ -14960,7 +15002,7 @@
         });
       };
       // ---- Valores diferentes dos de referência ----
-      const DEF_PATHS = ['avg_unit_area', 'sellable_pct', 'cost.housing', 'cost.common', 'cost.parking', 'cost.commerce', 'cost.green', 'cost.infra', 'lic_pct', 'proj_pct', 'cont_pct', 'mgmt_pct', 'vat_pct', 'comm_pct', 'occupancy', 'rent_opex_pct', 'delta_pct'];
+      const DEF_PATHS = ['avg_unit_area', 'typ_markup', 'sellable_pct', 'cost.housing', 'cost.common', 'cost.parking', 'cost.commerce', 'cost.green', 'cost.infra', 'lic_pct', 'proj_pct', 'cont_pct', 'mgmt_pct', 'vat_pct', 'comm_pct', 'occupancy', 'rent_opex_pct', 'delta_pct'];
       const markDefaults = () => {
         let n = 0;
         DEF_PATHS.forEach(path => {
