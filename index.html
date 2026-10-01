@@ -14396,6 +14396,9 @@
       const t = ' ' + normTxt(text || '').replace(/[^a-z0-9]+/g, ' ') + ' ';
       return PT_REGIONS.find(r => r.places.some(pl => t.includes(' ' + pl + ' ')))?.name || null;
     };
+    // Um terreno pode ter várias tipologias de uso (ex.: habitação multifamiliar + comércio)
+    const plotTypes = p => p?.project_type_ids?.length ? p.project_type_ids : (p?.project_type_id ? [p.project_type_id] : []);
+    const plotTypeNames = (p, typeById) => plotTypes(p).map(t => typeById[t]?.name).filter(Boolean).join(' + ');
     const SEGMENTS = [['economico', 'Económico'], ['medio', 'Médio'], ['premium', 'Premium']];
     const STRATEGIES = [['sale', 'Construir e vender'], ['rent', 'Construir e arrendar'], ['both', 'Venda ou arrendamento']];
     // Segmento do produto pelo preço de venda (€/m² ou preço médio por fração)
@@ -14417,9 +14420,13 @@
       const add = (w, s, text, tip) => parts.push({ w, s: Math.max(0, Math.min(1, s)), text, tip });
       let capInv = 100;
       // Tipologia
-      if (inv.project_type_ids?.length && p.project_type_id) {
-        const ok = inv.project_type_ids.includes(p.project_type_id);
-        add(20, ok ? 1 : 0, ok ? 'tipologia que procura' : `procura ${inv.project_type_ids.map(t => typeById[t]?.name).filter(Boolean).join(', ') || 'outra tipologia'}`);
+      const pts = plotTypes(p);
+      if (inv.project_type_ids?.length && pts.length) {
+        const hit = pts.filter(t => inv.project_type_ids.includes(t));
+        // todas as tipologias do terreno são das que procura = 1; só algumas = parcial
+        const sc = hit.length === pts.length ? 1 : hit.length ? 0.6 : 0;
+        add(20, sc, sc === 1 ? 'tipologia que procura' : sc ? `procura ${hit.map(t => typeById[t]?.name).filter(Boolean).join(', ')}, não ${pts.filter(t => !hit.includes(t)).map(t => typeById[t]?.name).filter(Boolean).join(', ')}` : `procura ${inv.project_type_ids.map(t => typeById[t]?.name).filter(Boolean).join(', ') || 'outra tipologia'}`);
+        if (sc && sc < 1) pitch.push(`separar a parte de ${hit.map(t => typeById[t]?.name).filter(Boolean).join(', ')} para ele, ou juntar-lhe um parceiro para o resto`);
       }
       // Investimento (com tolerância: 50% fora do intervalo → 0)
       if (ticket && (inv.invest_min != null || inv.invest_max != null)) {
@@ -14481,7 +14488,7 @@
       }
       // Características (palavras do perfil encontradas no terreno)
       if (inv.tags?.length) {
-        const txt = normTxt([typeById[p.project_type_id]?.name, p.pdm_class, p.notes, p.name, c.commerce ? 'comercio' : '', p.has_approved_project ? 'aprovado' : ''].join(' '));
+        const txt = normTxt([plotTypeNames(p, typeById), p.pdm_class, p.notes, p.name, c.commerce ? 'comercio' : '', p.has_approved_project ? 'aprovado' : ''].join(' '));
         const hit = inv.tags.filter(t => t && txt.includes(normTxt(t)));
         if (hit.length) add(5, 1, 'procura ' + hit.join(', '));
       }
@@ -14497,7 +14504,7 @@
       mine.forEach(x => {
         const q = (ctx.plots || []).find(y => y.id === x.plot_id); if (!q) return;
         const qc = feasCalc(q), qt = qc.hasCosts ? qc.costGlobal : Number(q.asking_price) || null;
-        const sim = (q.project_type_id && q.project_type_id === p.project_type_id ? 1 : 0) + (regionOf(q.municipality) && regionOf(q.municipality) === regionOf(p.municipality) ? 1 : 0)
+        const sim = (plotTypes(q).some(t => plotTypes(p).includes(t)) ? 1 : 0) + (regionOf(q.municipality) && regionOf(q.municipality) === regionOf(p.municipality) ? 1 : 0)
           + (qt && ticket && Math.abs(qt - ticket) / Math.max(qt, ticket) < 0.35 ? 1 : 0);
         if (sim < 2) return;
         if (['interested', 'proposal'].includes(x.status)) { hist += 6; histText.push(`interessou-se por «${q.name}», parecido`); }
@@ -14555,9 +14562,9 @@
       { id: 'inv-b', name: 'Ana Ribeiro', company: '', email: '', phone: '', client_id: null, project_type_ids: ['pt-2'], fractions_min: null, fractions_max: null, invest_min: 300000, invest_max: 900000, zones: ['Matosinhos', 'Maia'], approved_pref: 'approved', notes: '', active: true, strategy: 'both', min_roi: 15, min_yield: 5, segment: 'premium', tags: [] }
     ];
     let mockPlots = [
-      { id: 'lp-1', name: 'Terreno da Rua do Campo', status: 'analysis', origin: 'network', client_id: null, source_name: 'João (mediador)', scout_id: 'mock-member-1', address: 'Rua do Campo, 120', municipality: 'Vila Nova de Gaia', parish: 'Canidelo', maps_url: '', docs_url: '', land_area: 1200, asking_price: 450000, project_type_id: 'pt-1', has_approved_project: false, pdm_class: 'Espaço residencial — tipo II', pdm_index: 1.2, max_floors: 4, buildable_area: null, fractions_est: 12, build_cost_m2: 1100, other_costs_pct: 15, sale_price_m2: 3200, sellable_ratio: 80, notes: 'Frente de rua com 30 m.', risks: 'Confirmar servidão de passagem a nascente.', created_at: '2026-09-20T10:00:00Z',
+      { id: 'lp-1', name: 'Terreno da Rua do Campo', status: 'analysis', origin: 'network', client_id: null, source_name: 'João (mediador)', scout_id: 'mock-member-1', address: 'Rua do Campo, 120', municipality: 'Vila Nova de Gaia', parish: 'Canidelo', maps_url: '', docs_url: '', land_area: 1200, asking_price: 450000, project_type_id: 'pt-1', project_type_ids: ['pt-1'], has_approved_project: false, pdm_class: 'Espaço residencial — tipo II', pdm_index: 1.2, max_floors: 4, buildable_area: null, fractions_est: 12, build_cost_m2: 1100, other_costs_pct: 15, sale_price_m2: 3200, sellable_ratio: 80, notes: 'Frente de rua com 30 m.', risks: 'Confirmar servidão de passagem a nascente.', created_at: '2026-09-20T10:00:00Z',
         feasibility: { housing_area: 1440, below_area: 300, sale_mode: 'typology', typologies: [{ name: 'T1', units: 6, area: 55, price: 260000, rent: 1100 }, { name: 'T2', units: 6, area: 80, price: 340000, rent: 1350 }], cost: { housing: 1500, common: 1000, parking: 700 }, rent_on: true } },
-      { id: 'lp-2', name: 'Lote em Matosinhos Sul', status: 'registered', origin: 'client', client_id: 'cl-2', source_name: '', scout_id: null, address: '', municipality: 'Matosinhos', parish: '', maps_url: '', docs_url: '', land_area: 450, asking_price: 280000, project_type_id: 'pt-2', has_approved_project: true, pdm_class: '', pdm_index: null, max_floors: 2, buildable_area: 260, fractions_est: 1, build_cost_m2: null, other_costs_pct: null, sale_price_m2: null, sellable_ratio: null, notes: '', risks: '', created_at: '2026-09-28T10:00:00Z' }
+      { id: 'lp-2', name: 'Lote em Matosinhos Sul', status: 'registered', origin: 'client', client_id: 'cl-2', source_name: '', scout_id: null, address: '', municipality: 'Matosinhos', parish: '', maps_url: '', docs_url: '', land_area: 450, asking_price: 280000, project_type_id: 'pt-2', project_type_ids: ['pt-2'], has_approved_project: true, pdm_class: '', pdm_index: null, max_floors: 2, buildable_area: 260, fractions_est: 1, build_cost_m2: null, other_costs_pct: null, sale_price_m2: null, sellable_ratio: null, notes: '', risks: '', created_at: '2026-09-28T10:00:00Z' }
     ];
     let mockPresentations = [];
     let mockProposals = [];
@@ -14654,7 +14661,7 @@
         const list = d.plots.filter(match).filter(p => oppsPlotFilter === 'open' ? PLOT_OPEN.includes(p.status) : oppsPlotFilter === 'won' ? p.status === 'won' : ['lost', 'discarded'].includes(p.status));
         const row = p => {
           const c = plotCalc(p), nFit = fitsFor(p).length, nPres = (presByPlot[p.id] || []).length;
-          const sub = [p.municipality, p.land_area ? fmtNum(p.land_area) + ' m²' : null, typeById[p.project_type_id]?.name,
+          const sub = [p.municipality, p.land_area ? fmtNum(p.land_area) + ' m²' : null, plotTypeNames(p, typeById),
             p.origin === 'client' ? 'cliente' + (clientById[p.client_id] ? ' ' + clientById[p.client_id].name : '') : p.source_name ? 'network · ' + p.source_name : 'network',
             p.scout_id && memberById[p.scout_id] ? 'acompanha ' + memberById[p.scout_id].name.split(' ')[0] : null].filter(Boolean).join(' · ');
           return `<div class="invoice-row click-row op-row" data-plot="${escapeHtml(p.id)}">
@@ -14754,8 +14761,9 @@
           <div><label class="field-label">Área do terreno (m²)</label><input type="text" inputmode="decimal" id="pl-area" class="form-input" value="${v('land_area')}"></div>
           <div><label class="field-label">Preço pedido (€)</label><input type="text" inputmode="decimal" id="pl-price" class="form-input" value="${v('asking_price')}"></div>
         </div>
-        <label class="field-label">Tipologia</label>
-        <select id="pl-type" class="form-input"><option value="">Por definir</option>${d.types.map(t => `<option value="${escapeHtml(t.id)}"${t.id === p.project_type_id ? ' selected' : ''}>${escapeHtml(t.name)}</option>`).join('')}</select>
+        <label class="field-label">Tipologias de uso</label>
+        <div class="op-chips" id="pl-types">${d.types.map(t => `<label class="op-chip"><input type="checkbox" value="${escapeHtml(t.id)}"${plotTypes(p).includes(t.id) ? ' checked' : ''}><span>${escapeHtml(t.name)}</span></label>`).join('')}</div>
+        <div class="field-hint">Podes escolher mais do que uma (ex.: habitação multifamiliar e comércio).</div>
         <label class="check-row"><input type="checkbox" id="pl-approved"${p.has_approved_project ? ' checked' : ''}> Já tem projeto aprovado</label>
 
         <div class="section-label op-form-sec">Urbanismo (PDM)</div>
@@ -14799,7 +14807,7 @@
           name, origin, client_id: origin === 'client' ? picker.get().clientId : null, source_name: origin === 'client' ? null : valOrNull(g('pl-source')),
           scout_id: g('pl-scout') || null, address: valOrNull(g('pl-address')), municipality: valOrNull(g('pl-muni')), parish: valOrNull(g('pl-parish')),
           maps_url: valOrNull(g('pl-maps')), docs_url: valOrNull(g('pl-docs')), land_area: numOrNull(g('pl-area')), asking_price: numOrNull(g('pl-price')),
-          project_type_id: g('pl-type') || null, has_approved_project: document.getElementById('pl-approved').checked,
+          ...(() => { const ids = [...document.querySelectorAll('#pl-types input:checked')].map(cb => cb.value); return { project_type_ids: ids, project_type_id: ids[0] || null }; })(), has_approved_project: document.getElementById('pl-approved').checked,
           pdm_class: valOrNull(g('pl-pdm')), pdm_index: numOrNull(g('pl-index')), max_floors: numOrNull(g('pl-floors')),
           buildable_area: numOrNull(g('pl-build')), fractions_est: numOrNull(g('pl-fractions')),
           notes: valOrNull(g('pl-notes')), risks: valOrNull(g('pl-risks'))
@@ -14878,7 +14886,7 @@
               <div class="card-head"><h2>Terreno</h2></div>
               ${kv('Área do terreno', p.land_area ? escapeHtml(fmtNum(p.land_area)) + ' m²' : txt(null))}
               ${kv('Preço pedido', eur(p.asking_price))}
-              ${kv('Tipologia', txt(typeById[p.project_type_id]?.name))}
+              ${kv(plotTypes(p).length > 1 ? 'Tipologias' : 'Tipologia', txt(plotTypeNames(p, typeById)))}
               ${kv('Projeto aprovado', p.has_approved_project ? 'Sim' : 'Não')}
               ${kv('Morada', txt([p.address, p.parish].filter(Boolean).join(', ')))}
               ${kv('Mapa', link(p.maps_url, 'Abrir mapa'))}
