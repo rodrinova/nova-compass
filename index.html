@@ -1786,6 +1786,24 @@
   .mc-seg.c-cam, .mc-legend i.c-cam, .mc-chip.c-cam { background: var(--warning); }
   .mc-seg.c-x, .mc-legend i.c-x { background: var(--track); }
   .mc-legend { display: flex; flex-wrap: wrap; gap: var(--sp-1-5) var(--sp-4); font-size: var(--fs-sm); color: var(--text-2); }
+  /* ---- Alvos de toque (telemóvel e iPad): 44 px de área tocável ----
+     Os botões de ícone crescem; os controlos pequenos (separadores, botões de texto, pastilhas, pegas)
+     ganham uma margem invisível à volta, sem mudar o desenho. */
+  @media (pointer: coarse) {
+    .nav-icon-btn, #quick-modal-close, #cal-prev, #cal-next { width: var(--tap); height: var(--tap); }
+    .segmented button, .detail-tabs button, .text-btn, .nps-pill, .drag-handle, .ts-bill, .ts-x, .color-btn, .assign-cell, .status-cell, .settings-back { position: relative; }
+    .segmented button::after, .detail-tabs button::after, .text-btn::after, .settings-back::after,
+    .assign-cell::after, .status-cell::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: var(--tap); transform: translateY(-50%); }
+    .nps-pill::after, .drag-handle::after, .ts-bill::after, .ts-x::after, .color-btn::after { content: ''; position: absolute; left: 50%; top: 50%; width: var(--tap); height: var(--tap); transform: translate(-50%, -50%); }
+    /* seletores de estado e responsável (projetos e ficha): a área tocável vai a 44 px sem empurrar a linha */
+    .status-picker select { height: var(--tap); margin: -12px 0; }
+    details > summary { min-height: var(--tap); display: flex; align-items: center; }
+  }
+  /* O botão + esconde-se ao descer a página (para não tapar conteúdo) e volta ao subir */
+  @media (max-width: 899px) {
+    .fab-btn { transition: transform .18s ease, opacity .18s ease; }
+    .fab-btn.fab-away { transform: translateY(calc(100% + 24px)); opacity: 0; pointer-events: none; }
+  }
   /* ---- Ponto e placar (página Hoje) ---- */
   #today-punch:not([hidden]) { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 0; padding: 0; overflow: hidden; }
   #today-punch > .punch, #today-punch > .board { padding: var(--sp-4) var(--sp-5); min-width: 0; }
@@ -3876,7 +3894,7 @@
               <label>Aviso (dias antes)<input type="text" inputmode="numeric" class="form-input" data-f="alert" value="${escapeHtml(String(r.alert ?? ''))}"></label></div>
           </div>`;
         const groups = [['Regime novo (submissões a partir da data abaixo)', ['pip_simples', 'pip_qualificado', 'lic_arquitetura', 'deliberacao']],
-          ['Prazos da NOVA (com aviso na página Hoje)', ['aviso_local', 'especialidades', 'oficio', 'alvara', 'obra']],
+          ['Prazos da NOVA (com aviso na página Hoje)', ['aviso_local', 'especialidades', 'oficio', 'alvara', 'aviso_obra', 'obra']],
           ['Regime anterior (DL 10/2024)', ['old_pip_simples', 'old_pip_qualificado', 'old_lic_300', 'old_lic_2200', 'old_lic_big']]];
         box.innerHTML = `
           <div class="field-hint" style="margin:0 0 12px;">Os prazos contam a partir da <b>entrega da fase</b> (a submissão na Câmara); as especialidades a partir da <b>aprovação da arquitetura</b>. Só os prazos da NOVA avisam na página Hoje; os da Câmara ficam no separador Câmara de cada projeto. Dias úteis descontam fins de semana e feriados nacionais (não os municipais). Quando um prazo da Câmara passa, a app diz <i>possível deferimento tácito — confirmar</i>, nunca que está deferido.</div>
@@ -4166,6 +4184,25 @@
     }));
 
     document.getElementById('nav-back-btn').addEventListener('click', goBack);
+    // Botão + (telemóvel): esconde-se ao descer, volta ao subir ou no topo
+    (() => {
+      const fab = document.getElementById('home-fab');
+      if (!fab) return;
+      let lastY = window.scrollY, ticking = false;
+      window.addEventListener('scroll', () => {
+        if (ticking) return; ticking = true;
+        requestAnimationFrame(() => {
+          const y = window.scrollY, dy = y - lastY;
+          if (Math.abs(dy) > 6) {
+            const away = dy > 0 && y > 80 && !fab.classList.contains('open');
+            fab.classList.toggle('fab-away', away);
+            lastY = y;
+          }
+          if (y < 40) fab.classList.remove('fab-away');
+          ticking = false;
+        });
+      }, { passive: true });
+    })();
 
     // Navegação principal (barra lateral, separadores e folha "Mais")
     const NAV_ACTIONS = {
@@ -11593,6 +11630,7 @@
         oficio:       { label: 'Resposta a ofício (prazo NOVA)', alert: 5, who: 'nova', hint: 'o prazo vem do ofício' },
         aviso_local:  { label: 'Enviar ao dono de obra o aviso a afixar no local', days: 10, unit: 'uteis', alert: 10, who: 'nova', hint: 'após a submissão do licenciamento' },
         alvara:       { label: 'Validade da licença — levantar o alvará / pagar as taxas', months: 12, alert: 60, who: 'nova', hint: 'após a licença deferida' },
+        aviso_obra:   { label: 'Atualizar o aviso afixado em obra e comunicar o início dos trabalhos à Câmara', days: 5, unit: 'corridos', alert: 10, who: 'nova', hint: 'até 5 dias antes do início da obra (RJUE art. 78.º e 80.º-A): o aviso do pedido passa a aviso de execução da obra, com a licença' },
         pip_validade: { label: 'Validade do PIP favorável', months: 24, alert: 90, who: 'nova', hint: '2 anos após a decisão; prorrogável por 1' },
         obra:         { label: 'Fim do prazo da obra — pedir licença de utilização ou prorrogação', alert: 90, who: 'nova', hint: 'prazo indicado no alvará' }
       }
@@ -11619,6 +11657,7 @@
       lic_arquitetura: 'Câmara decide a arquitetura', old_lic_300: 'Câmara decide o licenciamento', old_lic_2200: 'Câmara decide o licenciamento', old_lic_big: 'Câmara decide o licenciamento',
       deliberacao: 'Câmara delibera o licenciamento', especialidades: 'Entregar as especialidades', oficio: 'Responder ao ofício da Câmara',
       aviso_local: 'Enviar ao dono de obra o aviso para o local', alvara: 'Levantar o alvará / pagar as taxas',
+      aviso_obra: 'Atualizar o aviso em obra e comunicar o início à Câmara',
       obra: 'Pedir a licença de utilização (fim do prazo da obra)', pip_validade: 'Submeter o licenciamento antes de o PIP caducar'
     };
     const normTxt2 = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
@@ -11690,6 +11729,14 @@
           push(s, 'deliberacao', s.delivery_date, { done: !!s.approval_date });
         // Licença deferida → levantar o alvará; alvará com prazo → fim da obra / licença de utilização
         if (k === 'esp' && s.approval_date) push(s, 'alvara', s.approval_date, { done: !!s.alvara_date });
+        // Antes de a obra começar: o aviso do pedido passa a aviso de execução da obra (com a licença) e a Câmara
+        // é informada do início dos trabalhos — até 5 dias antes (RJUE art. 78.º e 80.º-A)
+        if (k === 'esp' && s.approval_date) {
+          const R5 = Number(R.aviso_obra?.days ?? 5);
+          if (s.works_start) push(s, 'aviso_obra', s.alvara_date || s.approval_date, { due: addDaysKey(s.works_start, -R5), done: !!s.aviso_obra_sent });
+          else if (s.alvara_date) push(s, 'aviso_obra', s.alvara_date, { due: addDaysKey(s.alvara_date, 10), done: !!s.aviso_obra_sent, warn: 'Sem data de início da obra: indica-a na fase para o prazo ficar certo' });
+          else push(s, 'aviso_obra', s.approval_date, { due: null, done: !!s.aviso_obra_sent, warn: 'Indica na fase a data prevista de início da obra' });
+        }
         if ((k === 'esp' || k === 'lic') && s.works_deadline) {
           const util = sorted.find(x => kindOf(x) === 'util' && x.delivery_date);
           push(s, 'obra', s.alvara_date || s.approval_date || null, { due: s.works_deadline, done: !!util });
@@ -13935,12 +13982,16 @@
             <div><label class="field-label" for="ph-approval">Decisão da Câmara a</label><input type="date" id="ph-approval" class="form-input" value="${escapeHtml(appr)}"></div></div>
             <div class="field-hint">Com a decisão favorável conta a validade do PIP (2 anos) até ser submetido o licenciamento.</div>`;
         const avs = keep('ph-aviso', stage.aviso_local_sent || ''), alv = keep('ph-alvara', stage.alvara_date || ''), wd = keep('ph-works', stage.works_deadline || '');
+        const ws = keep('ph-wstart', stage.works_start || ''), avo = keep('ph-avobra', stage.aviso_obra_sent || '');
         if (k === 'lic' && !isRev) html += `<div class="form-grid"><div><label class="field-label" for="ph-approval">Arquitetura aprovada a</label><input type="date" id="ph-approval" class="form-input" value="${escapeHtml(appr)}"></div>
             <div><label class="field-label" for="ph-aviso">Aviso para o local enviado a</label><input type="date" id="ph-aviso" class="form-input" value="${escapeHtml(avs)}"></div></div>
             <div class="field-hint">A data de entrega é a submissão. A app lembra de enviar ao dono de obra o aviso a afixar no local; a aprovação faz contar os 6 meses das especialidades.</div>`;
         if (k === 'esp') html += `<div class="form-grid"><div><label class="field-label" for="ph-approval">Licença deferida a</label><input type="date" id="ph-approval" class="form-input" value="${escapeHtml(appr)}"></div>
             <div><label class="field-label" for="ph-alvara">Alvará levantado a</label><input type="date" id="ph-alvara" class="form-input" value="${escapeHtml(alv)}"></div>
-            <div class="span2"><label class="field-label" for="ph-works">Obra tem de terminar até (prazo do alvará)</label><input type="date" id="ph-works" class="form-input" value="${escapeHtml(wd)}"></div></div>`;
+            <div><label class="field-label" for="ph-wstart">Início da obra (previsto)</label><input type="date" id="ph-wstart" class="form-input" value="${escapeHtml(ws)}"></div>
+            <div><label class="field-label" for="ph-avobra">Aviso em obra atualizado e início comunicado a</label><input type="date" id="ph-avobra" class="form-input" value="${escapeHtml(avo)}"></div>
+            <div class="span2"><label class="field-label" for="ph-works">Obra tem de terminar até (prazo do alvará)</label><input type="date" id="ph-works" class="form-input" value="${escapeHtml(wd)}"></div></div>
+            <div class="field-hint">Até 5 dias antes do início da obra, o dono de obra substitui o aviso do pedido pelo aviso de execução da obra (com a licença) e a Câmara é informada do início dos trabalhos. A app lembra-te.</div>`;
         if ((k === 'lic' && isRev) || k === 'oficio') {
           html += `<label class="field-label" for="ph-revkind">Esta revisão é…</label>
             <select id="ph-revkind" class="form-input"><option value="">Escolher…</option><option value="oficio"${rk === 'oficio' || (k === 'oficio' && !rk) ? ' selected' : ''}>Resposta a ofício da Câmara</option><option value="aditamento"${rk === 'aditamento' ? ' selected' : ''}>Aditamento por alterações de projeto</option></select>`;
@@ -14050,6 +14101,8 @@
         if (g('ph-aviso')) patch.aviso_local_sent = valOrNull(g('ph-aviso').value);
         if (g('ph-alvara')) patch.alvara_date = valOrNull(g('ph-alvara').value);
         if (g('ph-works')) patch.works_deadline = valOrNull(g('ph-works').value);
+        if (g('ph-wstart')) patch.works_start = valOrNull(g('ph-wstart').value);
+        if (g('ph-avobra')) patch.aviso_obra_sent = valOrNull(g('ph-avobra').value);
         if (g('ph-revkind')) {
           patch.revision_kind = valOrNull(g('ph-revkind').value);
           if (patch.revision_kind === 'oficio' || (!patch.revision_kind && g('ph-ofdate'))) {
