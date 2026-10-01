@@ -1931,6 +1931,11 @@
   .vt-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--sp-3); align-items: start; }
   @media (max-width: 1000px) { .vt-layout { grid-template-columns: 1fr; } .vt-side { order: -1; } }
   .vt-side { position: sticky; top: 64px; }
+  .perf-good { color: var(--success) !important; } .perf-low { color: var(--warning) !important; } .perf-bad { color: var(--danger) !important; }
+  .perf-pill { display: inline-block; border-radius: var(--r-full); padding: 1px var(--sp-2); font-weight: var(--fw-semibold); }
+  .perf-pill.perf-good { background: var(--success-soft); } .perf-pill.perf-low { background: var(--warning-soft); } .perf-pill.perf-bad { background: color-mix(in srgb, var(--danger) 12%, transparent); }
+  .perf-chip { display: inline-block; font-style: normal; font-size: var(--fs-xs); font-weight: var(--fw-semibold); border-radius: var(--r-full); padding: 2px var(--sp-2); margin: 0 0 var(--sp-1); }
+  .perf-chip.perf-good { background: var(--success-soft); } .perf-chip.perf-low { background: var(--warning-soft); } .perf-chip.perf-bad { background: color-mix(in srgb, var(--danger) 12%, transparent); }
   .rs-block + .rs-block { margin-top: var(--sp-4); padding-top: var(--sp-3); border-top: 1px solid var(--border); }
   .rs-tag { display: inline-block; font-size: var(--fs-xs); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: .06em; color: var(--accent); background: var(--accent-soft); border-radius: var(--r-full); padding: 2px var(--sp-2); margin-bottom: var(--sp-2); }
   .op-sum.rs-inv { margin-top: 0; border-top: none; padding-top: 0; }
@@ -14159,6 +14164,9 @@
       const d = (Number(f.delta_pct) || 0) / 100;
       return [['Conservador', feasCalc(p, f, { sales: 1 - d, build: 1 + d })], ['Base', feasCalc(p, f)], ['Otimista', feasCalc(p, f, { sales: 1 + d, build: 1 - d })]];
     }
+    // Metas: ROI de 30% na venda e yield de 6% no arrendamento — verde acima, amarelo abaixo (vermelho se negativo)
+    const ROI_GOAL = 0.30, YIELD_GOAL = 0.06;
+    const perf = (v, goal) => v == null || !Number.isFinite(v) ? '' : v < 0 ? 'perf-bad' : v >= goal ? 'perf-good' : 'perf-low';
     const pct = (v, dec = 1) => v == null || !Number.isFinite(v) ? '—' : (v * 100).toLocaleString('pt-PT', { maximumFractionDigits: dec }) + '%';
 
     // Resumo da viabilidade para o investidor (janela para imprimir / guardar em PDF)
@@ -14181,7 +14189,7 @@
         'Estacionamento (abaixo do solo)': T('Estacionamento (abaixo do solo)', 'Parking (below ground)'), 'Áreas verdes': T('Áreas verdes', 'Landscaping'), 'Infraestruturas': T('Infraestruturas', 'Infrastructure') };
       const neg = n => n ? '− ' + e(eur(n)) : e(eur(0));
       const priceTxt = t => { const lo = N(t.price) || N(t.price_max), hi = N(t.price_max) || lo; return lo === hi ? eur(lo) : `${eur(Math.min(lo, hi))} – ${eur(Math.max(lo, hi))}`; };
-      const kpi = (tag, label, big, sub, bad = false) => `<div class="kpi"><span class="tag">${e(tag)}</span><span class="l">${e(label)}</span><b class="${bad ? 'bad' : ''}">${big}</b><small>${sub}</small></div>`;
+      const kpi = (tag, label, big, sub, cls = '') => `<div class="kpi ${cls}"><span class="tag">${e(tag)}</span><span class="l">${e(label)}</span><b>${big}</b><small>${sub}</small></div>`;
       const html = `<!doctype html><html lang="${en ? 'en' : 'pt'}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${e(p.name)} — ${e(T('Estudo de viabilidade', 'Feasibility study'))}</title>
         <style>
           @page { size: A4; margin: 14mm 14mm 16mm; }
@@ -14226,8 +14234,8 @@
           <div class="loc">${e([p.address, p.parish, p.municipality].filter(Boolean).join(', '))}${p.maps_url && /^https?:/i.test(p.maps_url) ? ` · <a href="${e(p.maps_url)}">${e(T('ver no mapa', 'view map'))}</a>` : ''}</div></div>
         <div class="kpis">
           ${kpi(T('Custo', 'Cost'), T('Custo global', 'Total cost'), e(eur(c.costGlobal)), `${e(T('terreno', 'land'))} ${e(eur(c.acquisition))} · ${e(T('construção e outros', 'construction & other'))} ${e(eur(c.costGlobal - c.acquisition))}`)}
-          ${kpi(T('Venda', 'Sale'), T('Lucro', 'Profit'), e(eur(c.profit)), `ROI <b style="display:inline;font-size:inherit;margin:0">${e(pc(c.roi))}</b>${R ? ` · ${e(T('intervalo', 'range'))} ${e(pc(R[0].roi))} – ${e(pc(R[1].roi))}` : ''}`, c.profit < 0)}
-          ${rentOk ? kpi(T('Arrendamento', 'Rental'), T('Renda anual', 'Annual rent'), e(eur(c.rentYear)), `yield ${e(pc(c.yieldGross))}`) : ''}
+          ${kpi(T('Venda', 'Sale'), 'ROI', e(pc(c.roi)), `${e(T('Lucro', 'Profit'))} ${e(eur(c.profit))}${R ? ` · ${e(T('intervalo', 'range'))} ${e(pc(R[0].roi))} – ${e(pc(R[1].roi))}` : ''}`)}
+          ${rentOk ? kpi(T('Arrendamento', 'Rental'), T('Yield bruto', 'Gross rental yield'), e(pc(c.yieldGross)), `${e(T('Renda anual', 'Annual rent'))} ${e(eur(c.rentYear))}`) : ''}
         </div>
         <div class="two">
           <section><h2>${e(T('Áreas', 'Areas'))}</h2><table>
@@ -14282,7 +14290,7 @@
           ${f.sale_mode === 'typology' && typ.some(t => N(t.rent)) ? typ.map(t => row(e(t.name), e(eur(t.rent)) + e(T('/mês', '/month')), e(String(t.units)), e(eur(N(t.units) * N(t.rent))) + e(T('/mês', '/month')))).join('')
             : row(e(T('Renda mensal', 'Monthly rent')), e(eur(f.rent_m2)) + e(T('/m²/mês', '/m²/month')), e(m2(c.sellable)), e(eur(c.rentMonth)) + e(T('/mês', '/month')))}
           ${row(e(T('Renda anual', 'Annual rent')) + `<small>${e(T('12 meses × ocupação', '12 months × occupancy'))}</small>`, e(nf(f.occupancy)) + '%', e(eur(c.rentMonth * 12)), e(eur(c.rentYear)), 'sub')}
-          ${row(e(T('Yield', 'Yield')) + `<small>${e(T('renda anual ÷ custo global', 'annual rent ÷ total cost'))}</small>`, '', '', e(pc(c.yieldGross)), 'sub big')}`) : ''}
+          ${row(e(T('Yield bruto', 'Gross rental yield')) + `<small>${e(T('renda anual ÷ custo global', 'annual rent ÷ total cost'))}</small>`, '', '', e(pc(c.yieldGross)), 'sub big')}`) : ''}
         <section><h2>${e(T('Rácios do terreno', 'Land ratios'))}</h2><table>
           ${row(e(T('Terreno por m² de construção', 'Land per m² of floor area')), '', '', c.ratios.abc ? e(eur(c.ratios.abc)) + '/m²' : '—')}
           ${row(e(T('Terreno / receita', 'Land / revenue')), '', '', e(pc(c.ratios.revenue)))}
@@ -14428,9 +14436,9 @@
           else pitch.push(`nem com o terreno a custo zero chega aos ${pct(want, 0)}: rever o preço de venda, os custos ou a densidade`);
         }
       } else if (c.rentYear && (strat === 'rent' || strat === 'both') && inv.min_yield != null) {
-        const want = Number(inv.min_yield) / 100, got = c.yieldNet;
+        const want = Number(inv.min_yield) / 100, got = c.yieldGross;
         if (got < want) cap = Math.min(cap, got < want * 0.75 ? 55 : 64);
-        add(15, got >= want ? 1 : got / want, got >= want ? `yield líquido ${pct(got, 2)} ≥ ${pct(want, 1)}` : `yield líquido ${pct(got, 2)} abaixo de ${pct(want, 1)}`);
+        add(15, got >= want ? 1 : got / want, got >= want ? `yield bruto ${pct(got, 1)} ≥ ${pct(want, 1)}` : `yield bruto ${pct(got, 1)} abaixo de ${pct(want, 1)}`);
       } else if ((inv.min_roi != null || inv.min_yield != null) && !hasFeas) pitch.push('faz a viabilidade para confirmar se dá a rentabilidade que ele pede');
       // Projeto aprovado
       if (inv.approved_pref && inv.approved_pref !== 'any') {
@@ -14453,7 +14461,7 @@
       }
       // Estratégia → como apresentar
       if (strat === 'rent' || strat === 'both') {
-        if (c.rentYear) pitch.unshift(`apresentar como arrendamento: yield líquido ${pct(c.yieldNet, 2)}`);
+        if (c.rentYear) pitch.unshift(`apresentar como arrendamento: yield bruto ${pct(c.yieldGross, 1)}`);
         else if (strat === 'rent') pitch.unshift('ele arrenda: liga o cenário de arrendamento na viabilidade');
       }
       if ((strat === 'sale' || strat === 'both') && c.hasSales && c.hasCosts) pitch.unshift(`apresentar como venda: lucro ${fmtEURShort(c.profit)} (ROI ${pct(c.roi)})`);
@@ -14633,7 +14641,7 @@
           return `<div class="invoice-row click-row op-row${p.variant_of ? ' op-variant' : ''}" data-plot="${escapeHtml(p.id)}">
             <span><b class="bl-title">${escapeHtml(p.name)}</b><br><small>${escapeHtml(sub)}</small></span>
             <span class="op-fit">${nPres ? `<em>apresentado a ${nPres}</em>` : best && best.m.score >= 50 ? `<em class="hi">${escapeHtml(best.i.name)} · ${best.m.score}</em>` : ''}</span>
-            <span class="op-roi">${ok ? `<b class="${v.roi < 0 ? 'late' : ''}">${escapeHtml(pct(v.roi, 0))}</b><small>${escapeHtml(fmtEURShort(v.costGlobal))}</small>` : '<small class="muted">sem estudo</small>'}</span>
+            <span class="op-roi">${ok ? `<b class="perf-pill ${perf(v.roi, ROI_GOAL)}">${escapeHtml(pct(v.roi, 0))}</b><small>${escapeHtml(fmtEURShort(v.costGlobal))}</small>` : '<small class="muted">sem estudo</small>'}</span>
           </div>`;
         };
         const filters = [['open', 'Em curso'], ['won', 'Ganhos'], ['closed', 'Perdidos e descartados']];
@@ -14881,7 +14889,7 @@
               ${vrow('Renda mensal', fIn('rent_m2', f.rent_m2, '€/m²/mês'), o('sellable'), o('rentM2Month'), '', ' data-mode="m2"')}
               <div id="vt-rent-typ" class="vt-typ" data-mode="typology"></div>
               ${vrow('Renda anual<small>× 12 meses × ocupação</small>', fIn('occupancy', f.occupancy, '%'), o('rentMonth12'), o('rentYear'), 'vt-sub')}
-              ${vrow('Yield<small>renda anual ÷ custo global</small>', '', '', o('yield'), 'vt-sub')}</div>`)}
+              ${vrow('Yield bruto<small>renda anual ÷ custo global</small>', '', '', o('yield'), 'vt-sub')}</div>`)}
             <div class="vt-foot"><button type="button" class="text-btn" id="fz-reset">Repor os valores de referência</button></div>
           </div>
           <aside class="vt-side"><div class="gantt-wrap ps-result" id="fz-result"></div></aside>
@@ -15074,10 +15082,10 @@
           housingSales: E(c.housingSales), commerceQ: M(c.commerce), commerceSales: E(c.commerce * Nn(f.commerce_sale_m2)),
           salesGross: E(c.salesGross) + rng('salesGross'), salesQ: E(c.salesGross), commission: c.commission ? '− ' + E(c.commission) : E(0), salesNet: E(c.salesNet) + rng('salesNet'),
           profit: ok ? `<b class="${c.profit < 0 ? 'late' : ''}">${E(c.profit)}</b>${rng('profit')}` : '—',
-          roi: ok ? pct(c.roi) + rng('roi', x => pct(x)) : '—',
-          scen: ok ? sc.map(([l, x]) => `<span class="vt-sc"><small>${l}</small> <b class="${x.profit < 0 ? 'late' : ''}">${pct(x.roi)}</b></span>`).join('') : '—',
+          roi: ok ? `<b class="perf-pill ${perf(c.roi, ROI_GOAL)}">${pct(c.roi)}</b>` + rng('roi', x => pct(x)) : '—',
+          scen: ok ? sc.map(([l, x]) => `<span class="vt-sc"><small>${l}</small> <b class="${perf(x.roi, ROI_GOAL)}">${pct(x.roi)}</b></span>`).join('') : '—',
           rentM2Month: E(c.sellable * Nn(f.rent_m2)) + '<small class="vt-rng">por mês</small>', rentMonth12: E(c.rentMonth * 12), rentYear: E(c.rentYear),
-          yield: pct(c.yieldGross, 1),
+          yield: c.yieldGross ? `<b class="perf-pill ${perf(c.yieldGross, YIELD_GOAL)}">${pct(c.yieldGross, 1)}</b>` : '—',
           fracN: `${fracN} ${fracN === 1 ? 'fração' : 'frações'}`, fracM2: `<b class="${over ? 'late' : ''}">${M(fracM2)}</b>`,
           fracCmp: `de ${M(c.sellable)} vendáveis${over ? ' — <b class="late">passa da área vendável</b>' : ''}`
         };
@@ -15099,8 +15107,9 @@
         document.getElementById('fz-result').innerHTML = `
           <div class="rs-block">
             <div class="rs-tag">Venda</div>
-            <div class="fz-big"><span>Lucro</span><b class="${ok && c.profit < 0 ? 'late' : ''}">${ok ? E(c.profit) : '—'}</b>
-              <small>${ok ? `ROI <b>${pct(c.roi)}</b>${R ? ` · intervalo ${pct(R[0].roi)} a ${pct(R[1].roi)}` : ''}` : !c.hasCosts ? 'Falta a área de construção.' : 'Falta o preço de venda.'}</small></div>
+            <div class="fz-big"><span>ROI</span><b class="${ok ? perf(c.roi, ROI_GOAL) : ''}">${ok ? pct(c.roi) : '—'}</b>
+              ${ok ? `<em class="perf-chip ${perf(c.roi, ROI_GOAL)}">${c.roi >= ROI_GOAL ? 'acima' : 'abaixo'} dos ${pct(ROI_GOAL, 0)}</em>` : ''}
+              <small>${ok ? `Lucro <b class="${c.profit < 0 ? 'late' : ''}">${E(c.profit)}</b>${R ? `<br>intervalo: ROI ${pct(R[0].roi)} a ${pct(R[1].roi)}` : ''}` : !c.hasCosts ? 'Falta a área de construção.' : 'Falta o preço de venda.'}</small></div>
             <div class="op-sum">
               ${row('Custo global', c.hasCosts ? E(c.costGlobal) : '—')}
               ${row('Receita líquida', ok ? E(c.salesNet) : '—')}
@@ -15108,8 +15117,9 @@
           </div>
           ${f.rent_on ? `<div class="rs-block">
             <div class="rs-tag">Arrendamento</div>
-            <div class="fz-big"><span>Renda anual</span><b>${rentOk ? E(c.rentYear) : '—'}</b>
-              <small>${rentOk ? `Yield <b>${pct(c.yieldGross, 1)}</b> · ${E(c.rentMonth)}/mês × 12 × ${escapeHtml(fmtNum(f.occupancy))}%` : 'Falta a renda (no grupo Arrendamento).'}</small></div>
+            <div class="fz-big"><span>Yield bruto</span><b class="${rentOk ? perf(c.yieldGross, YIELD_GOAL) : ''}">${rentOk ? pct(c.yieldGross, 1) : '—'}</b>
+              ${rentOk ? `<em class="perf-chip ${perf(c.yieldGross, YIELD_GOAL)}">${c.yieldGross >= YIELD_GOAL ? 'acima' : 'abaixo'} dos ${pct(YIELD_GOAL, 0)}</em>` : ''}
+              <small>${rentOk ? `Renda anual <b>${E(c.rentYear)}</b> · ${E(c.rentMonth)}/mês × 12 × ${escapeHtml(fmtNum(f.occupancy))}%` : 'Falta a renda (no grupo Arrendamento).'}</small></div>
           </div>` : ''}
           <div class="rs-block">
             <div class="rs-tag">Rácios do terreno</div>
@@ -15235,7 +15245,7 @@
         openQuickModal('Resumo para o investidor', `
           <label class="field-label" style="margin-top:0;">Língua</label>
           <div class="segmented" id="fz-lang"><button type="button" data-l="pt" class="active">Português</button><button type="button" data-l="en">English</button></div>
-          <label class="check-row"><input type="checkbox" id="fz-p-scen" checked> Incluir os cenários</label>
+          <label class="check-row"><input type="checkbox" id="fz-p-scen"> Incluir os cenários</label>
           <label class="check-row"><input type="checkbox" id="fz-p-rent"${f.rent_on ? ' checked' : ''}> Incluir o arrendamento</label>
           <button type="button" class="primary-btn" id="fz-p-go">Abrir o resumo</button>`);
         let lang = 'pt';
@@ -15294,7 +15304,7 @@
           <div><label class="field-label">Estratégia</label><select id="iv-strategy" class="form-input">${STRATEGIES.map(([k, l]) => `<option value="${k}"${k === (x.strategy || 'sale') ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
           <div><label class="field-label">Segmento</label><select id="iv-segment" class="form-input"><option value="">Indiferente</option>${SEGMENTS.map(([k, l]) => `<option value="${k}"${k === x.segment ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
           <div><label class="field-label">ROI mínimo que pede (%)</label><input type="text" inputmode="decimal" id="iv-roi" class="form-input" placeholder="ex.: 20" value="${v('min_roi')}"></div>
-          <div><label class="field-label">Yield mínimo no arrendamento (%)</label><input type="text" inputmode="decimal" id="iv-yield" class="form-input" placeholder="ex.: 5" value="${v('min_yield')}"></div>
+          <div><label class="field-label">Yield bruto mínimo no arrendamento (%)</label><input type="text" inputmode="decimal" id="iv-yield" class="form-input" placeholder="ex.: 5" value="${v('min_yield')}"></div>
         </div>
         <label class="field-label">Projeto aprovado</label>
         <select id="iv-approved" class="form-input">${APPROVED_PREFS.map(([k, l]) => `<option value="${k}"${k === (x.approved_pref || 'any') ? ' selected' : ''}>${l}</option>`).join('')}</select>
