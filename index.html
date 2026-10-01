@@ -1786,6 +1786,23 @@
   .mc-seg.c-cam, .mc-legend i.c-cam, .mc-chip.c-cam { background: var(--warning); }
   .mc-seg.c-x, .mc-legend i.c-x { background: var(--track); }
   .mc-legend { display: flex; flex-wrap: wrap; gap: var(--sp-1-5) var(--sp-4); font-size: var(--fs-sm); color: var(--text-2); }
+  /* ---- Score de projetos ---- */
+  .col-score { width: 92px; }
+  .ps-cell { display: inline-flex; align-items: center; gap: var(--sp-2); cursor: help; }
+  .ps-cell b { min-width: 22px; text-align: right; font-weight: var(--fw-semibold); }
+  .ps-cell i { width: 44px; height: 6px; border-radius: var(--r-xs); background: var(--track); overflow: hidden; display: inline-block; }
+  .ps-cell i span { display: block; height: 100%; border-radius: var(--r-xs); }
+  .ps-good b { color: var(--success); } .ps-good i span { background: var(--success); }
+  .ps-mid b { color: var(--warning); } .ps-mid i span { background: var(--warning); }
+  .ps-bad b { color: var(--danger); } .ps-bad i span { background: var(--danger); }
+  .ps-none, .ps-wait { color: var(--text-3); }
+  .m-score { display: none; }
+  #projects-sort { margin: 0; }
+  @media (max-width: 560px) {
+    .projects-table .col-score { display: none; }
+    .m-score { display: inline-block; margin-left: var(--sp-2); padding: 0 var(--sp-1-5); border-radius: var(--r-full); font-size: var(--fs-xs); font-weight: var(--fw-semibold); line-height: 18px; background: var(--surface-2); vertical-align: 1px; }
+    .m-score.ps-good { color: var(--success); background: var(--success-soft); } .m-score.ps-mid { color: var(--warning); background: var(--warning-soft); } .m-score.ps-bad { color: var(--danger); background: var(--danger-soft); }
+  }
   /* ---- Ponto e placar (página Hoje) ---- */
   #today-punch:not([hidden]) { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 0; padding: 0; overflow: hidden; }
   #today-punch > .punch, #today-punch > .board { padding: var(--sp-4) var(--sp-5); min-width: 0; }
@@ -2322,6 +2339,10 @@
       <div id="projects-view" style="display:none;">
         <div class="list-toolbar">
           <input type="text" id="projects-search" class="search-input" placeholder="Pesquisar por nome ou código..." autocomplete="off">
+          <div class="segmented" id="projects-sort" aria-label="Ordenar">
+            <button type="button" data-sort="code">Código</button>
+            <button type="button" data-sort="score">Score</button>
+          </div>
           <div class="segmented" id="projects-scope">
             <button type="button" data-scope="active" class="active">Ativos</button>
             <button type="button" data-scope="all">Todos</button>
@@ -2462,7 +2483,7 @@
             <button type="button" class="settings-link" data-sec="finance"><span>Impostos e categorias de despesa</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <div class="settings-group">Clientes</div>
             <button type="button" class="settings-link" data-sec="nps"><span>Satisfação (NPS)</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
-            <button type="button" class="settings-link" data-sec="clientscore"><span>Score de clientes</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+            <button type="button" class="settings-link" data-sec="clientscore"><span>Score de clientes e projetos</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
           </nav>
           <div class="settings-panel">
             <button type="button" class="text-btn settings-back" id="settings-back">‹ Definições</button>
@@ -2501,8 +2522,9 @@
             <div class="gantt-wrap" id="settings-nps-container"><div class="detail-loading">A carregar...</div></div>
           </section>
           <section class="settings-sec" data-sec-panel="clientscore" hidden>
-            <h2 class="settings-title">Score de clientes</h2>
+            <h2 class="settings-title">Score de clientes e projetos</h2>
             <div class="gantt-wrap" id="settings-clientscore-container"><div class="detail-loading">A carregar...</div></div>
+            <div class="gantt-wrap" id="settings-pscore-container"><div class="detail-loading">A carregar...</div></div>
           </section>
           </div>
         </div>
@@ -3483,7 +3505,7 @@
     const SETTINGS_LOADERS = {
       models: () => loadPhaseModelSettings(), statuses: () => loadProjectStatusSettings(),
       checklists: () => loadChecklistTemplateSettings(), categories: () => loadCategories(),
-      mtypes: () => loadMilestoneTypeSettings(), clientscore: () => loadClientScoreSettings(),
+      mtypes: () => loadMilestoneTypeSettings(), clientscore: () => { loadClientScoreSettings(); loadProjectScoreSettings(); },
       finance: () => loadFinanceSettingsPanel(), camara: () => loadCamaraSettings(),
       nps: () => loadNpsSettings()
     };
@@ -4224,11 +4246,12 @@
         return `
           <tr class="project-row" data-id="${escapeHtml(p.id)}">
             <td class="col-code">${escapeHtml(p.code ?? '—')}</td>
-            <td class="col-name">${escapeHtml(p.name ?? 'Sem nome')}${p.code ? `<small class="m-code">${escapeHtml(p.code)}</small>` : ''}</td>
+            <td class="col-name">${escapeHtml(p.name ?? 'Sem nome')}${p.code ? `<small class="m-code">${escapeHtml(p.code)}</small>` : ''}${projectScores && projectScores[p.id]?.score != null ? `<span class="m-score ps-${pscoreTone(projectScores[p.id].score)}">${projectScores[p.id].score}</span>` : ''}</td>
             <td class="col-area">${escapeHtml(p.area != null ? p.area + ' m²' : '—')}</td>
             <td class="col-type">${escapeHtml(noBreakHyphens(p.project_types?.name ?? '—'))}</td>
             <td class="col-owner">${ownerPickerHtml(p.owner_id, p.id)}</td>
             <td class="col-status">${statusPickerHtml(p.status, p.id)}</td>
+            <td class="col-score">${projectScoreCell(p)}</td>
             <td class="col-value">${valor}</td>
           </tr>
         `;
@@ -4245,6 +4268,7 @@
               <th class="col-type">Tipo</th>
               <th class="col-owner">Responsável</th>
               <th class="col-status">Estado</th>
+              <th class="col-score" title="Saúde do projeto: rentabilidade, prazos, satisfação, cobrança e retrabalho">Score</th>
               <th class="col-value">Valor</th>
             </tr>
           </thead>
@@ -4266,6 +4290,14 @@
     }
 
     let projectsScope = 'active';
+    let projectScores = null;
+    let projectsSort = (() => { try { return localStorage.getItem('nova.projectsSort') || 'code'; } catch { return 'code'; } })();
+    function projectScoreCell(p) {
+      if (!projectScores) return '<span class="ps-wait">…</span>';
+      const sc = projectScores[p.id];
+      if (!sc || sc.score == null) return `<span class="ps-none" title="${escapeHtml(pscoreTitle(sc || { score: null }))}">—</span>`;
+      return `<span class="ps-cell ps-${pscoreTone(sc.score)}" title="${escapeHtml(pscoreTitle(sc))}"><b class="num">${sc.score}</b><i><span style="width:${sc.score}%"></span></i></span>`;
+    }
     function applyProjectFilters() {
       const term = document.getElementById('projects-search').value.trim().toLowerCase();
       const filtered = allProjectsData.filter(p =>
@@ -4273,11 +4305,23 @@
           : !p.archived_at && (projectsScope === 'all' || !statusByCode(p.status)?.is_closed)) &&
         (!term || (p.name ?? '').toLowerCase().includes(term) || (p.code ?? '').toLowerCase().includes(term))
       );
-      // Por código (24001, 24002…); sem código no fim
-      filtered.sort((a, b) => (!a.code) - (!b.code) || String(a.code ?? '').localeCompare(String(b.code ?? ''), 'pt', { numeric: true }) || String(a.name ?? '').localeCompare(String(b.name ?? ''), 'pt'));
+      // Por código (24001, 24002…; sem código no fim) ou por score (pior primeiro, sem score no fim)
+      const byCode = (a, b) => (!a.code) - (!b.code) || String(a.code ?? '').localeCompare(String(b.code ?? ''), 'pt', { numeric: true }) || String(a.name ?? '').localeCompare(String(b.name ?? ''), 'pt');
+      const sc = p => projectScores?.[p.id]?.score;
+      filtered.sort(projectsSort === 'score' && projectScores
+        ? (a, b) => (sc(a) == null) - (sc(b) == null) || (sc(a) ?? 0) - (sc(b) ?? 0) || byCode(a, b)
+        : byCode);
       renderProjectsTable(filtered);
     }
     document.getElementById('projects-search').addEventListener('input', applyProjectFilters);
+    const markProjectsSort = () => document.querySelectorAll('#projects-sort button').forEach(x => x.classList.toggle('active', x.dataset.sort === projectsSort));
+    markProjectsSort();
+    document.getElementById('projects-sort').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-sort]'); if (!b) return;
+      projectsSort = b.dataset.sort; markProjectsSort();
+      try { localStorage.setItem('nova.projectsSort', projectsSort); } catch {}
+      applyProjectFilters();
+    });
     document.getElementById('projects-scope').addEventListener('click', (e) => {
       const b = e.target.closest('[data-scope]');
       if (!b) return;
@@ -4302,7 +4346,7 @@
           const [res, exRes] = await Promise.all([
             supabase
               .from('projects')
-              .select('id, name, code, area, status, owner_id, commission_value, archived_at, project_types(name)')
+              .select('id, name, code, area, status, owner_id, commission_value, archived_at, awarding_date, project_types(name)')
               .order('created_at', { ascending: false }),
             supabase
               .from('project_stages')
@@ -4312,6 +4356,7 @@
           if (res.error) throw res.error;
           if (exRes.error) throw exRes.error;
           data = res.data || [];
+          data.forEach(p => { p.commission_value_full = p.commission_value; });
           // Valor apresentado = honorários da NOVA (sem as fases excluídas das contas)
           const excludedByProject = {};
           (exRes.data || []).forEach(s => (excludedByProject[s.project_id] = excludedByProject[s.project_id] || []).push(s));
@@ -4327,12 +4372,139 @@
 
         await Promise.all([loadProjectStatuses(), loadOwnerMembers()]);
         allProjectsData = data || [];
+        if (devMode) allProjectsData.forEach(p => { p.commission_value_full = p.commission_value; });
         applyProjectFilters();
+        // Score: calculado a seguir, sem atrasar a lista
+        loadProjectScores(allProjectsData).then(sc => { projectScores = sc; applyProjectFilters(); })
+          .catch(err => { console.error('Score de projetos:', err); projectScores = {}; applyProjectFilters(); });
       } catch (err) {
         projectsContainer.className = 'error-box';
         projectsContainer.textContent = 'Erro ao carregar projetos: ' + err.message;
         console.error(err);
       }
+    }
+
+
+    // ================= SCORE DE PROJETOS (saúde, 0–100) =================
+    // Média pesada dos componentes com dados: rentabilidade (€/h vs. alvo), prazos, satisfação (NPS),
+    // cobrança (dívida a +60 dias) e retrabalho (revisões nossas e ofícios). Pesos e alvo em app_settings 'project_score'.
+    const PSCORE_DEFAULT = { target_rate: 60, weights: { rent: 30, prazo: 25, nps: 20, cobranca: 15, retrabalho: 10 } };
+    const PSCORE_PARTS = [
+      ['rent', 'Rentabilidade', '€/h do projeto face ao alvo'],
+      ['prazo', 'Prazos', 'entregas no prazo e fases atrasadas'],
+      ['nps', 'Satisfação', 'média do NPS do cliente'],
+      ['cobranca', 'Cobrança', 'faturação em dívida há +60 dias'],
+      ['retrabalho', 'Retrabalho', 'revisões por culpa nossa e ofícios']
+    ];
+    async function loadPScoreCfg() {
+      if (devMode) return { ...PSCORE_DEFAULT, ...(window.__mockPScore || {}) };
+      const r = await supabase.from('app_settings').select('value').eq('key', 'project_score').maybeSingle();
+      const v = r.data?.value || {};
+      return { target_rate: v.target_rate ?? PSCORE_DEFAULT.target_rate, weights: { ...PSCORE_DEFAULT.weights, ...(v.weights || {}) } };
+    }
+    function computeProjectScore(p, stages, hours, invoices, nps, cfg) {
+      const today = dateKey(new Date());
+      const parts = {};
+      const budget = s => s.fixed_value != null ? Number(s.fixed_value) : (s.percentage != null && p.commission_value_full != null ? Number(p.commission_value_full) * Number(s.percentage) / 100 : 0);
+      const live = stages.filter(s => !s.excluded_from_invoicing);
+      // Rentabilidade
+      const invs = invoices.filter(i => i.status !== 'cancelled');
+      const invoiced = invs.reduce((t, i) => t + Number(i.amount || 0), 0);
+      const earned = Math.max(invoiced, live.filter(isStageDone).reduce((t, s) => t + budget(s), 0));
+      if (hours >= 5 && cfg.target_rate > 0) {
+        const rate = earned / hours, r = rate / cfg.target_rate;
+        parts.rent = { v: Math.round(Math.max(0, Math.min(100, r >= 1 ? 70 + 30 * (r - 1) : 70 * r))), d: `${Math.round(rate)} €/h (alvo ${cfg.target_rate} €/h)` };
+      }
+      // Prazos
+      const delivered = stages.filter(s => s.delivery_date && !isAwardStage(s) && !isOffPlanStage(s));
+      const withPlan = delivered.map(s => ({ s, planned: s.plan_auto_end || s.plan_end || s.deadline_override || null })).filter(x => x.planned);
+      const onTime = withPlan.filter(x => x.s.delivery_date <= x.planned).length;
+      const lateNow = stages.filter(s => !isStageDone(s) && isStageLate(s, today)).length;
+      if (withPlan.length || lateNow) {
+        const base = withPlan.length ? onTime / withPlan.length * 100 : 100;
+        parts.prazo = { v: Math.round(Math.max(0, base - 15 * lateNow)), d: [withPlan.length ? `${onTime} de ${withPlan.length} entregas no prazo` : null, lateNow ? `${lateNow} ${lateNow === 1 ? 'fase atrasada' : 'fases atrasadas'}` : null].filter(Boolean).join(' · ') };
+      }
+      // Satisfação
+      const ans = nps.filter(q => q.status === 'answered' && q.score != null);
+      if (ans.length) {
+        const avg = ans.reduce((t, q) => t + q.score, 0) / ans.length;
+        parts.nps = { v: Math.round(avg * 10), d: `média ${avg.toLocaleString('pt-PT', { maximumFractionDigits: 1 })} em ${ans.length} ${ans.length === 1 ? 'resposta' : 'respostas'}` };
+      }
+      // Cobrança
+      if (invs.length && invoiced > 0) {
+        const lim = addDaysKey(today, -60);
+        const overdue = invs.filter(i => !i.archived_at && i.issue_date && i.issue_date < lim)
+          .reduce((t, i) => t + Math.max(0, Number(i.amount || 0) - Number(i.amount_paid || 0)), 0);
+        const share = overdue / invoiced;
+        parts.cobranca = { v: Math.round(Math.max(0, 100 - 200 * share)), d: overdue > 0.5 ? `${fmtEURShort(overdue)} em dívida há +60 dias` : 'sem dívida antiga' };
+      }
+      // Retrabalho
+      if (stages.length) {
+        const nova = stages.filter(s => s.revision_cause === 'nova').length;
+        const ofic = stages.filter(s => s.revision_kind === 'oficio' || camaraKind(s.stage_types?.name) === 'oficio').length;
+        parts.retrabalho = { v: Math.max(0, 100 - 25 * nova - 10 * ofic), d: nova || ofic ? [nova && `${nova} ${nova === 1 ? 'revisão nossa' : 'revisões nossas'}`, ofic && `${ofic} ${ofic === 1 ? 'ofício' : 'ofícios'}`].filter(Boolean).join(' · ') : 'sem retrabalho' };
+      }
+      let tw = 0, tv = 0;
+      PSCORE_PARTS.forEach(([k]) => { const w = Number(cfg.weights[k]) || 0; if (parts[k] && w) { tw += w; tv += w * parts[k].v; } });
+      return { score: tw ? Math.round(tv / tw) : null, parts };
+    }
+    const pscoreTone = v => v == null ? '' : v >= 75 ? 'good' : v >= 50 ? 'mid' : 'bad';
+    const pscoreTitle = sc => sc.score == null ? 'Ainda sem dados para o score'
+      : `Score ${sc.score}/100\n` + PSCORE_PARTS.filter(([k]) => sc.parts[k]).map(([k, l]) => `${l}: ${sc.parts[k].v} — ${sc.parts[k].d}`).join('\n');
+    // Dados para o score de todos os projetos (numa só ida à base de dados)
+    async function loadProjectScores(projects) {
+      const cfg = await loadPScoreCfg();
+      let stages, breaks, hours, invoices, nps;
+      if (devMode) {
+        stages = MOCK_STAGES.map(s => ({ ...s, project_id: s.project_id || 'mock-1' })); breaks = MOCK_BREAKS;
+        hours = MOCK_TIME.map(t => ({ ...t, project_id: 'mock-1' })); invoices = MOCK_INVOICES.map(i => ({ ...i, project_id: 'mock-1' })); nps = await loadNpsRequests();
+      } else {
+        const [st, br, tm, iv, np] = await Promise.all([
+          supabase.from('project_stages').select('*, stage_types(name, break_immune)'),
+          supabase.from('project_breaks').select('project_id, start_date, end_date, after_stage_id, type'),
+          supabase.from('time_entries').select('project_id, hours').not('project_id', 'is', null),
+          supabase.from('invoices').select('project_id, amount, amount_paid, issue_date, status, archived_at'),
+          supabase.from('nps_requests').select('project_id, status, score')
+        ]);
+        for (const r of [st, br, tm, iv]) if (r.error) throw r.error;
+        stages = st.data || []; breaks = br.data || []; hours = tm.data || []; invoices = iv.data || []; nps = np.error ? [] : (np.data || []);
+      }
+      const group = (list) => { const g = {}; list.forEach(x => (g[x.project_id] = g[x.project_id] || []).push(x)); return g; };
+      const sBy = group(stages), bBy = group(breaks), hBy = group(hours), iBy = group(invoices), nBy = group(nps);
+      const out = {};
+      projects.forEach(p => {
+        const st = (sBy[p.id] || []).sort((a, b) => (a.stage_order ?? 0) - (b.stage_order ?? 0));
+        try { if (st.length) computeProjectPlan(p, st, bBy[p.id] || []); } catch {}
+        const h = (hBy[p.id] || []).reduce((t, x) => t + Number(x.hours || 0), 0);
+        out[p.id] = computeProjectScore(p, st, h, iBy[p.id] || [], nBy[p.id] || [], cfg);
+      });
+      return out;
+    }
+
+    async function loadProjectScoreSettings() {
+      const box = document.getElementById('settings-pscore-container');
+      if (!box) return;
+      const cfg = await loadPScoreCfg();
+      box.innerHTML = `
+        <div class="card-head"><h2>Score de projetos</h2><span>saúde de cada projeto, de 0 a 100</span></div>
+        <div class="field-hint" style="margin:0 0 10px;">Quanto pesa cada componente (0 = não conta). Componentes sem dados num projeto ficam de fora da média.</div>
+        <div class="weights-grid">${PSCORE_PARTS.map(([k, label, hint]) => `
+          <label><span><b>${escapeHtml(label)}</b><small>${escapeHtml(hint)}</small></span>
+            <input type="number" class="form-input" min="0" max="100" step="5" data-pweight="${k}" value="${Number(cfg.weights[k]) || 0}"></label>`).join('')}
+          <label><span><b>Alvo de €/h</b><small>rentabilidade 70 no alvo, 100 com +100%</small></span>
+            <input type="number" class="form-input" min="1" step="5" id="ps-target" value="${Number(cfg.target_rate) || 60}"></label></div>
+        <button type="button" class="secondary-btn" id="pscore-save" style="width:auto;padding:0 16px;">Guardar</button>`;
+      document.getElementById('pscore-save').addEventListener('click', async () => {
+        const weights = {};
+        box.querySelectorAll('[data-pweight]').forEach(i => { weights[i.dataset.pweight] = Math.max(0, Math.min(100, Math.round(Number(i.value) || 0))); });
+        const target_rate = Math.max(1, Math.round(Number(document.getElementById('ps-target').value) || 60));
+        if (!Object.values(weights).some(v => v > 0)) { showToast('Pelo menos um componente tem de ter peso.', { type: 'error' }); return; }
+        try {
+          if (devMode) window.__mockPScore = { weights, target_rate };
+          else { const r = await supabase.from('app_settings').upsert({ key: 'project_score', value: { weights, target_rate }, updated_at: new Date().toISOString() }); if (r.error) throw r.error; }
+          showToast('Score de projetos guardado');
+        } catch (err) { showToast('Não foi possível guardar: ' + err.message, { type: 'error' }); }
+      });
     }
 
     // ---------- Página de detalhe de projeto ----------
