@@ -1834,6 +1834,12 @@
   .client-owed.old b { color: var(--warning); }
   .clients-table td.col-owed small { display: block; font-size: var(--fs-xs); }
   @media (max-width: 600px) { .clients-table .col-owed small { display: none; } }
+  /* Saída: horas registadas vs. tempo presente */
+  .hours-check { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+  .hours-check > div { background: var(--surface-2); border-radius: var(--r-md); padding: var(--sp-3); }
+  .hours-check span { display: block; font-size: var(--fs-sm); color: var(--text-2); }
+  .hours-check b { display: block; font-size: var(--fs-2xl); font-variant-numeric: tabular-nums; margin: 2px 0; }
+  .hours-check small { color: var(--text-3); font-size: var(--fs-xs); }
   /* ---- Pessoas, salários e custo/hora ---- */
   .pay-hero { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--sp-5); flex-wrap: wrap; }
   .pay-hero-main span, .pay-hero-parts span { display: block; color: var(--text-2); font-size: var(--fs-sm); }
@@ -8741,7 +8747,7 @@
       }
     }
     // ================= PONTUALIDADE: entradas, saídas e reuniões =================
-    // Um toque em "Cheguei" / "Vou embora" (página Hoje). Dias fora (obra, Câmara, cliente) contam como a horas;
+    // Um toque em "Cheguei" / "Arrumar o estirador" (página Hoje). Dias fora (obra, Câmara, cliente) contam como a horas;
     // folgas não contam. Minutos de atraso (e saídas antes da hora, e chegadas tarde às reuniões) vão para a
     // jarra: à sexta, quem tem mais minutos na semana paga os copos; no fim do mês, quem tem mais minutos no mês
     // (a partir de dinner_minutes) paga o jantar de deboche. Regras em app_settings 'attendance'.
@@ -8866,7 +8872,7 @@
         const today = dateKey(new Date()), mon = mondayOf(today), fri = addDaysKey(mon, 4);
         if (today < cfg.from && fri < cfg.from) {
           box.hidden = false;
-          box.innerHTML = `<div class="punch-soon"><b>Pontualidade a partir de ${escapeHtml(fmtDayMonth(cfg.from))}</b><span>Horário ${escapeHtml(cfg.start)}–${escapeHtml(cfg.end)}, com ${cfg.tolerance} min de tolerância. Um toque em "Cheguei" ao chegar e em "Vou embora" ao sair.</span></div>`;
+          box.innerHTML = `<div class="punch-soon"><b>Pontualidade a partir de ${escapeHtml(fmtDayMonth(cfg.from))}</b><span>Horário ${escapeHtml(cfg.start)}–${escapeHtml(cfg.end)}, com ${cfg.tolerance} min de tolerância. Um toque em "Cheguei" ao chegar e em "Arrumar o estirador" ao sair.</span></div>`;
           return;
         }
         const monthStart = today.slice(0, 8) + '01', monthEnd = addDaysKey(addMonthsKey(monthStart, 1), -1);
@@ -8897,7 +8903,7 @@
           main = `<div class="punch-state ${st.late || st.early ? 'late' : 'ok'}"><b>${row.check_out ? `Hoje: ${hhmm(row.check_in)} → ${hhmm(row.check_out)}` : `Entraste às ${hhmm(row.check_in)}`}${row.edited ? ' <i title="Hora corrigida à mão">✎</i>' : ''}</b>
               <span>${st.late ? `${fmtMin(st.late)} de atraso` : 'entrada a horas'}${st.early ? ` · saíste ${fmtMin(st.early)} mais cedo` : st.late ? '' : ' ✓'}</span></div>
             <div class="punch-day"><div class="punch-bar"><span style="width:${pct}%"></span></div><small>${fmtHours(done / 60)} de ${fmtHours(total / 60, 0)}${row.check_out ? '' : ` · saída às ${escapeHtml(s.end)}`}</small></div>
-            ${row.check_out ? '<button type="button" class="text-btn" data-punch="fix">Corrigir</button>' : `<button type="button" class="secondary-btn punch-leave" data-punch="leave">Vou embora</button><button type="button" class="text-btn" data-punch="fix">Corrigir</button>`}`;
+            ${row.check_out ? '<button type="button" class="text-btn" data-punch="fix">Corrigir</button>' : `<button type="button" class="secondary-btn punch-leave" data-punch="leave">Arrumar o estirador</button><button type="button" class="text-btn" data-punch="fix">Corrigir</button>`}`;
         }
         // Ontem sem saída
         const yRow = rows.filter(r => r.member_id === me && r.day < today && r.kind === 'office' && r.check_in && !r.check_out).sort((a, b) => b.day.localeCompare(a.day))[0];
@@ -8966,12 +8972,47 @@
           showToast(late > cfg.tolerance ? `Registado: ${fmtMin(late)} de atraso. Amanhã é que é!` : 'Bom dia! Entrada a horas ✓');
         } else if (kind === 'leave') {
           await saveAttendance({ member_id: me, day, kind: 'office', check_in: row.check_in, check_out: nowIso, edited: row.edited || false });
-          showToast('Saída registada. Até amanhã!');
+          showToast('Estirador arrumado. Até amanhã!');
+          renderAttendance(me);
+          checkDayHours(me, day, row.check_in, nowIso);
+          return;
         } else if (kind === 'out' || kind === 'off' || kind === 'fix') {
           return openAttFix(kind, me, cfg, day, row);
         }
         renderAttendance(me);
       } catch (err) { showToast('Não foi possível registar: ' + err.message, { type: 'error' }); }
+    }
+    // Ao sair: as horas registadas no dia batem com o tempo entre a entrada e a saída? Se não, pede para completar
+    async function checkDayHours(me, day, checkIn, checkOut) {
+      if (!checkIn || !checkOut) return;
+      const present = (new Date(checkOut) - new Date(checkIn)) / 3600000;
+      if (!(present >= 1)) return;
+      let entries;
+      try {
+        if (devMode) entries = mockTimeLog.filter(e => e.date === day && (!e.user_id || e.user_id === me));
+        else {
+          const r = await supabase.from('time_entries').select('hours').eq('user_id', me).eq('date', day);
+          if (r.error) throw r.error;
+          entries = r.data || [];
+        }
+      } catch (e) { return; }
+      const logged = entries.reduce((t, e) => t + Number(e.hours || 0), 0);
+      const gap = present - logged, slack = Math.max(0.5, present * 0.1);
+      if (Math.abs(gap) <= slack) return;
+      const h = n => fmtHours(Math.round(n * 4) / 4, 2);
+      const short = gap > 0;
+      openQuickModal(short ? 'Antes de arrumar o estirador…' : 'Horas a mais?', `
+        <div class="hours-check">
+          <div><span>Estiveste cá</span><b>${escapeHtml(h(present))}</b><small>${escapeHtml(hhmm(checkIn))} → ${escapeHtml(hhmm(checkOut))}</small></div>
+          <div><span>Registaste</span><b class="${short ? 'warn-text' : ''}">${escapeHtml(h(logged))}</b><small>em ${escapeHtml(fmtDayMonth(day))}</small></div>
+        </div>
+        <p class="field-hint" style="margin:12px 0 0;">${short
+          ? `Faltam cerca de <b>${escapeHtml(h(gap))}</b>. Regista-as agora, enquanto ainda te lembras em que projetos estiveste.`
+          : `Registaste mais <b>${escapeHtml(h(-gap))}</b> do que o tempo entre a entrada e a saída. Revê se alguma hora ficou no dia errado (ou corrige a entrada).`}</p>
+        <button type="button" class="primary-btn" id="hc-go">${short ? 'Completar as horas' : 'Rever as horas'}</button>
+        <button type="button" class="text-btn" id="hc-later" style="margin-top:10px;">${short ? 'Fica para amanhã' : 'Está certo assim'}</button>`);
+      document.getElementById('hc-go').addEventListener('click', () => { closeQuickModal(); navStack = []; openHorasModule(); });
+      document.getElementById('hc-later').addEventListener('click', () => closeQuickModal());
     }
     // Corrigir um dia / marcar fora ou folga (horas postas à mão ficam assinaladas ✎)
     function openAttFix(kind, me, cfg, day, row) {
@@ -12871,10 +12912,10 @@
         tour: [{ go: 'nav:horas', sel: '#ts-box .ts-cell', text: 'Escreve aqui as horas do dia. Grava sozinho.' }, { sel: '[data-ts-add]', text: 'Falta um projeto ou categoria? Acrescenta aqui.' }] },
       { id: 'ponto', cat: 'horas', ctx: ['home'],
         q: 'marco a entrada e a saída (ponto)',
-        a: 'Na página Hoje, cartão Ponto: «Cheguei» ao chegar e «Vou embora» ao sair. Dias fora e folgas também se marcam lá.',
-        steps: ['Ao chegar, abre [[Hoje]] e toca em [[Cheguei]]. O horário é das 8h às 14h, com 5 minutos de tolerância.', 'Ao sair, toca em [[Vou embora]].', 'Dia em obra, na Câmara ou no cliente? Toca em **Hoje estou fora** e escreve onde: conta como a horas.', 'Folga ou férias? Toca em **Folga / férias**: esse dia não conta.', 'Esqueceste-te de marcar? Toca em [[Corrigir]] e põe a hora certa. Fica assinalado com ✎.', 'Nas reuniões e visitas em que estás, aparece **Estou cá** 10 minutos antes; no fim, toca em **Acabou**.'],
+        a: 'Na página Hoje, cartão Ponto: «Cheguei» ao chegar e «Arrumar o estirador» ao sair. Dias fora e folgas também se marcam lá.',
+        steps: ['Ao chegar, abre [[Hoje]] e toca em [[Cheguei]]. O horário é das 8h às 14h, com 5 minutos de tolerância.', 'Ao sair, toca em [[Arrumar o estirador]].', 'Dia em obra, na Câmara ou no cliente? Toca em **Hoje estou fora** e escreve onde: conta como a horas.', 'Folga ou férias? Toca em **Folga / férias**: esse dia não conta.', 'Esqueceste-te de marcar? Toca em [[Corrigir]] e põe a hora certa. Fica assinalado com ✎.', 'Nas reuniões e visitas em que estás, aparece **Estou cá** 10 minutos antes; no fim, toca em **Acabou**.'],
         kw: 'ponto entrada saida chegar cheguei sair picar pontualidade horario presenca atraso reuniao',
-        tour: [{ go: 'nav:home', sel: '#today-punch .punch, #today-punch', text: 'Toca em «Cheguei» ao chegar e em «Vou embora» ao sair.' }] },
+        tour: [{ go: 'nav:home', sel: '#today-punch .punch, #today-punch', text: 'Toca em «Cheguei» ao chegar e em «Arrumar o estirador» ao sair.' }] },
       { id: 'jarra', cat: 'horas', ctx: ['home', 'finance:time'],
         q: 'funciona o placar, os copos e o jantar de deboche',
         a: 'Cada minuto de atraso vai para a jarra de quem se atrasou. À sexta, quem tem mais minutos paga os copos; no fim do mês, o pior paga o jantar de deboche.',
