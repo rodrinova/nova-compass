@@ -423,16 +423,19 @@
   .projects-table tr.project-row { cursor: pointer; }
   .projects-table tr.project-row:hover td { background: var(--surface-2); }
   .projects-table td.col-name { white-space: normal; font-weight: var(--fw-semibold); overflow-wrap: break-word; min-width: 150px; }
-  .projects-table td.col-type { white-space: normal; min-width: 120px; max-width: 240px; }
+  .projects-table td.col-phase { white-space: normal; min-width: 120px; max-width: 220px; color: var(--text-2); }
+  .projects-table td.col-due { color: var(--text-2); font-variant-numeric: tabular-nums; }
+  .projects-table td.col-due.late { color: var(--danger, #B3261E); font-weight: var(--fw-medium); }
+  .projects-table td .muted { color: var(--text-3); }
   /* Ecrãs médios (iPad com barra lateral): menos colunas para o nome ter espaço */
-  @media (max-width: 1180px) { .projects-table .col-area { display: none; } }
+  @media (max-width: 1180px) { .projects-table .col-due { display: none; } }
   .projects-table td.col-code { color: var(--text-2); font-variant-numeric: tabular-nums; }
-  .projects-table .col-value { font-weight: var(--fw-semibold); }
+  .projects-table td.col-value { font-weight: var(--fw-regular); color: var(--text-2); }
   @media (max-width: 600px) {
-    .projects-table .col-type { display: none; }
+    .projects-table .col-phase { display: none; }
     .projects-table th, .projects-table td { padding-left: var(--sp-3); padding-right: var(--sp-3); }
   }
-  @media (max-width: 480px) { .projects-table .col-area, .projects-table .col-value { display: none; } .projects-table th, .projects-table td { padding-left: var(--sp-3); padding-right: var(--sp-3); } }
+  @media (max-width: 480px) { .projects-table .col-value { display: none; } .projects-table th, .projects-table td { padding-left: var(--sp-3); padding-right: var(--sp-3); } }
   @media (max-width: 400px) { .projects-table .col-code { display: none; } }
 
   /* Despesas: cartões no telemóvel */
@@ -1791,6 +1794,32 @@
   .mc-seg.c-cam, .mc-legend i.c-cam, .mc-chip.c-cam { background: var(--warning); }
   .mc-seg.c-x, .mc-legend i.c-x { background: var(--track); }
   .mc-legend { display: flex; flex-wrap: wrap; gap: var(--sp-1-5) var(--sp-4); font-size: var(--fs-sm); color: var(--text-2); }
+  .exp-chart-d > summary { cursor: pointer; font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--accent); list-style: none; }
+  .exp-chart-d > summary::-webkit-details-marker { display: none; }
+  .exp-chart-d > summary span { font-weight: var(--fw-regular); color: var(--text-2); }
+  .exp-chart-d[open] > summary { margin-bottom: var(--sp-3); }
+  .stack-table tr.click-row { cursor: pointer; }
+  select.form-input.suggested { border-color: var(--accent-muted); background-color: var(--accent-soft); }
+  /* Janelas no telemóvel: o botão principal fica sempre à vista, em baixo */
+  @media (max-width: 560px) {
+    .quick-modal-body > .primary-btn { position: sticky; bottom: 0; z-index: 2; box-shadow: 0 -14px 14px -2px var(--surface), 0 10px 0 6px var(--surface); }
+  }
+  /* ---- Finanças do projeto: um número protagonista ---- */
+  .fin-hero { display: flex; flex-direction: column; gap: var(--sp-1); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--sp-5); }
+  .fin-hero-label { font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--text-2); }
+  .fin-hero-value { font-size: var(--fs-num); font-weight: var(--fw-bold); letter-spacing: -.02em; line-height: 1.1; }
+  .fin-hero-value.warn { color: var(--warning); } .fin-hero-value.good { color: var(--success); }
+  .fin-hero-sub { font-size: var(--fs-sm); color: var(--text-2); }
+  .fin-hero-bar { height: 6px; border-radius: var(--r-xs); background: var(--track); overflow: hidden; margin-top: var(--sp-2); max-width: 420px; }
+  .fin-hero-bar span { display: block; height: 100%; background: var(--accent); border-radius: var(--r-xs); }
+  .fin-hero-note { font-size: var(--fs-xs); color: var(--text-3); margin-top: var(--sp-1); }
+  .fin-trio { margin-top: var(--sp-3); grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  .fin-detail { margin-top: var(--sp-3); }
+  .fin-detail > summary { cursor: pointer; font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--accent); padding: var(--sp-2) 0; list-style: none; }
+  .fin-detail > summary::-webkit-details-marker { display: none; }
+  .fin-detail > summary::after { content: ' ›'; }
+  .fin-detail[open] > summary::after { content: ' ⌄'; }
+  @media (max-width: 480px) { .fin-trio { grid-template-columns: 1fr 1fr !important; } .fin-trio .stat-tile:last-child { grid-column: 1 / -1; } }
   /* ---- Alvos de toque (telemóvel e iPad): 44 px de área tocável ----
      Os botões de ícone crescem; os controlos pequenos (separadores, botões de texto, pastilhas, pegas)
      ganham uma margem invisível à volta, sem mudar o desenho. */
@@ -2302,16 +2331,16 @@
         <div class="today-grid">
           <section class="gantt-wrap">
             <div class="card-head"><h2>Próximos 7 dias</h2><span>os meus marcos e fins de fase</span></div>
-            <div id="today-week-list"><div class="gantt-empty">A carregar…</div></div>
+            <div id="today-week-list"><div class="skel" aria-label="A carregar"><div class="skel-row"><span class="skel-line" style="width:62%"></span><span class="skel-line short"></span></div><div class="skel-row"><span class="skel-line" style="width:84%"></span><span class="skel-line short"></span></div><div class="skel-row"><span class="skel-line" style="width:48%"></span><span class="skel-line short"></span></div></div></div>
           </section>
           <section class="gantt-wrap">
             <div class="card-head"><h2>Horas</h2><span>esta semana</span></div>
-            <div id="today-hours"><div class="gantt-empty">A carregar…</div></div>
+            <div id="today-hours"><div class="skel" aria-label="A carregar"><div class="skel-row"><span class="skel-line" style="width:62%"></span><span class="skel-line short"></span></div><div class="skel-row"><span class="skel-line" style="width:84%"></span><span class="skel-line short"></span></div><div class="skel-row"><span class="skel-line" style="width:48%"></span><span class="skel-line short"></span></div></div></div>
             <button type="button" class="secondary-btn" id="today-log-hours">Registar horas</button>
           </section>
         </div>
         <div class="section-label">As minhas fases</div>
-        <div class="gantt-wrap" id="today-phases"><div class="gantt-empty">A carregar…</div></div>
+        <div class="gantt-wrap" id="today-phases"><div class="skel" aria-label="A carregar"><div class="skel-row"><span class="skel-line" style="width:62%"></span><span class="skel-line short"></span></div><div class="skel-row"><span class="skel-line" style="width:84%"></span><span class="skel-line short"></span></div><div class="skel-row"><span class="skel-line" style="width:48%"></span><span class="skel-line short"></span></div></div></div>
 
       </div>
       <div id="clients-view" style="display:none;">
@@ -3742,7 +3771,7 @@
 
     async function loadHorasHistory() {
       const container = document.getElementById('horas-history-container');
-      beginLoad(container, 'horas-history', '<div class="detail-loading">A carregar...</div>');
+      beginLoad(container, 'horas-history', '<div class="gantt-wrap">' + SKELETON(6) + '</div>');
 
       try {
         const member = await getCurrentMember();
@@ -4266,9 +4295,9 @@
         return `
           <tr class="project-row" data-id="${escapeHtml(p.id)}">
             <td class="col-code">${escapeHtml(p.code ?? '—')}</td>
-            <td class="col-name">${escapeHtml(p.name ?? 'Sem nome')}${p.code ? `<small class="m-code">${escapeHtml(p.code)}</small>` : ''}</td>
-            <td class="col-area">${escapeHtml(p.area != null ? p.area + ' m²' : '—')}</td>
-            <td class="col-type">${escapeHtml(noBreakHyphens(p.project_types?.name ?? '—'))}</td>
+            <td class="col-name">${escapeHtml(p.name ?? 'Sem nome')}${p.code || p._phase ? `<small class="m-code">${escapeHtml([p.code, p._phase].filter(Boolean).join(' · '))}</small>` : ''}</td>
+            <td class="col-phase">${p._phase ? escapeHtml(p._phase) : '<span class="muted">—</span>'}</td>
+            <td class="col-due${p._dueLate ? ' late' : ''}">${p._due ? escapeHtml(p._due) : '<span class="muted">—</span>'}</td>
             <td class="col-owner">${ownerPickerHtml(p.owner_id, p.id)}</td>
             <td class="col-status">${statusPickerHtml(p.status, p.id)}</td>
             <td class="col-value">${valor}</td>
@@ -4283,8 +4312,8 @@
             <tr>
               <th class="col-code">Código</th>
               <th class="col-name">Nome</th>
-              <th class="col-area">Área</th>
-              <th class="col-type">Tipo</th>
+              <th class="col-phase">Fase atual</th>
+              <th class="col-due">Próximo prazo</th>
               <th class="col-owner">Responsável</th>
               <th class="col-status">Estado</th>
               <th class="col-value">Valor</th>
@@ -4304,6 +4333,30 @@
       bindOwnerPickers(projectsContainer, (id, v) => {
         const p = allProjectsData.find(x => String(x.id) === String(id));
         if (p) p.owner_id = v;
+      });
+    }
+
+    // Lista de projetos: a fase em curso (ou a próxima por fazer) e o prazo mais próximo por cumprir
+    function attachProjectPhases(projects, stages, breaks) {
+      const today = dateKey(new Date());
+      const byP = {};
+      stages.forEach(st => (byP[st.project_id] = byP[st.project_id] || []).push(st));
+      projects.forEach(p => {
+        p._phase = ''; p._due = ''; p._dueLate = false; p._dueKey = '';
+        const list = byP[p.id];
+        if (!list?.length) return;
+        try { computeProjectPlan(p, list, breaks.filter(b => b.project_id === p.id)); } catch (e) { /* sem plano */ }
+        const ordered = [...list].sort((a, b) => (a.stage_order ?? 0) - (b.stage_order ?? 0));
+        const open = ordered.filter(st => !isStageDone(st) && !isAwardStage(st));
+        const cur = open.find(st => ['wip', 'in_progress', 'active', 'review', 'interrupted'].includes(st.status)) || open[0];
+        if (cur) p._phase = (cur.stage_types?.name || 'Fase') + (cur.revision_label ? ' · ' + cur.revision_label : '');
+        const next = open.filter(st => !st.delivery_date && stageDeadline(st))
+          .sort((a, b) => stageDeadline(a).localeCompare(stageDeadline(b)))[0];
+        if (next) {
+          p._dueKey = stageDeadline(next);
+          p._dueLate = p._dueKey < today;
+          p._due = p._dueLate ? `Atrasado ${diffDays(p._dueKey, today)} d` : fmtDayMonthYear(p._dueKey);
+        }
       });
     }
 
@@ -4340,17 +4393,26 @@
         let data;
         if (devMode) {
           data = MOCK_PROJECTS;
+          attachProjectPhases(data, MOCK_STAGES.map(s => ({ ...s, project_id: s.project_id || 'mock-1' })), MOCK_BREAKS);
         } else {
           const [res, exRes] = await Promise.all([
             supabase
               .from('projects')
-              .select('id, name, code, area, status, owner_id, commission_value, archived_at, project_types(name)')
+              .select('id, name, code, area, status, owner_id, commission_value, archived_at, awarding_date, project_types(name)')
               .order('created_at', { ascending: false }),
             supabase
               .from('project_stages')
               .select('project_id, fixed_value, percentage')
               .eq('excluded_from_invoicing', true)
           ]);
+          // Fase atual e próximo prazo (falha aqui não impede a lista)
+          try {
+            const [st, br] = await Promise.all([
+              supabase.from('project_stages').select('id, project_id, stage_order, status, start_date, end_date, delivery_date, deadline_override, is_deadline_fixed, expected_lead_time_days, ignores_breaks, revision_label, stage_types(name, break_immune)'),
+              supabase.from('project_breaks').select('project_id, start_date, end_date, after_stage_id')
+            ]);
+            if (!st.error && !br.error) attachProjectPhases(res.data || [], st.data || [], br.data || []);
+          } catch (e) { console.error('Fases na lista:', e); }
           if (res.error) throw res.error;
           if (exRes.error) throw exRes.error;
           data = res.data || [];
@@ -4508,7 +4570,7 @@
       document.getElementById('nav-title').textContent = 'Projeto';
       if (!sameProject) { hideAllViews(); detailPanel.style.display = 'block'; window.scrollTo(0, 0); }
       // mesma ficha (depois de gravar): atualiza por baixo, sem apagar nem saltar
-      if (!beginLoad(detailBody, 'detail:' + projectId, '<div class="detail-loading">A carregar...</div>')) {
+      if (!beginLoad(detailBody, 'detail:' + projectId, '<div class="gantt-wrap">' + SKELETON(3) + '</div><div class="gantt-wrap">' + SKELETON(5) + '</div>')) {
         document.getElementById('detail-name').textContent = '—';
         document.getElementById('detail-code').textContent = '—';
         document.getElementById('detail-client').textContent = '—';
@@ -5052,54 +5114,35 @@
           </section>
 
           <section data-dpanel="financas" hidden>
-          <div class="ring-row">
-            <svg width="64" height="64" viewBox="0 0 64 64">
-              <circle cx="32" cy="32" r="27" fill="none" stroke="var(--track)" stroke-width="6"/>
-              <circle cx="32" cy="32" r="27" fill="none" stroke="var(--accent)" stroke-width="6"
-                stroke-linecap="round"
-                stroke-dasharray="${2 * Math.PI * 27}"
-                stroke-dashoffset="${2 * Math.PI * 27 * (1 - pctFaturado / 100)}"
-                transform="rotate(-90 32 32)"/>
-              <text x="32" y="37" text-anchor="middle" font-size="14" font-weight="700" fill="currentColor">${pctFaturado}%</text>
-            </svg>
-            <div class="ring-text">
-              <div class="ring-title">Faturado do total</div>
-              <div class="ring-sub">${fmtEUR(totalFaturado)} de ${fmtEUR(totalHonorarios)}</div>
-              ${valorExcluido > 0 ? `<div class="ring-sub">Exclui ${excludedStages.length} fase${excludedStages.length > 1 ? 's' : ''} fora das contas (${fmtEUR(valorExcluido)})</div>` : ''}
-            </div>
+          ${(() => {
+            // Número protagonista: o que se deve à NOVA; se nada, o que falta faturar; senão, tudo em dia
+            const porFaturar = round2(Math.max(0, totalHonorarios - totalFaturado));
+            const hero = porReceber > 0.5 ? { label: 'Por receber', value: porReceber, cls: 'warn', sub: `${fmtEUR(totalFaturado)} faturado · ${fmtEUR(totalRecebido)} recebido` }
+              : porFaturar > 0.5 ? { label: 'Por faturar', value: porFaturar, cls: '', sub: `faltam faturar ${fmtEUR(porFaturar)} dos ${fmtEUR(totalHonorarios)} de honorários` }
+              : { label: 'Tudo faturado e recebido', value: totalRecebido, cls: 'good', sub: totalHonorarios > 0 ? `${fmtEUR(totalHonorarios)} de honorários` : 'sem honorários definidos' };
+            const pct = totalHonorarios > 0 ? Math.min(100, Math.round(totalFaturado / totalHonorarios * 100)) : null;
+            return `<div class="fin-hero">
+              <span class="fin-hero-label">${hero.label}</span>
+              <b class="fin-hero-value num ${hero.cls}">${fmtEUR(hero.value)}</b>
+              <span class="fin-hero-sub">${escapeHtml(hero.sub)}</span>
+              ${pct != null ? `<div class="fin-hero-bar" title="${pct}% dos honorários faturados"><span style="width:${pct}%"></span></div><span class="fin-hero-sub">${pct}% dos honorários faturados</span>` : ''}
+              ${valorExcluido > 0 ? `<span class="fin-hero-note">Sem ${excludedStages.length} fase${excludedStages.length > 1 ? 's' : ''} fora das contas (${fmtEUR(valorExcluido)})</span>` : ''}
+            </div>`;
+          })()}
+          <div class="stat-grid fin-trio">
+            <div class="stat-tile"><div class="stat-value">${fmtEUR(totalFaturado)}</div><div class="stat-label">Faturado</div></div>
+            <div class="stat-tile"><div class="stat-value">${fmtEUR(totalRecebido)}</div><div class="stat-label">Recebido</div></div>
+            <div class="stat-tile"><div class="stat-value">${taxaEfetiva != null ? fmtEUR(taxaEfetiva) + '/h' : '—'}</div><div class="stat-label">Por hora <span style="color:var(--text-3)">· faturado ÷ horas</span></div></div>
           </div>
-          <div class="stat-grid" style="margin-top:10px;">
-            <div class="stat-tile">
-              <div class="stat-value">${fmtEUR(totalHonorarios)}</div>
-              <div class="stat-label">Honorários${valorExcluido > 0 ? ' NOVA' : ''}</div>
+          <details class="fin-detail">
+            <summary>Detalhe: honorários, despesas, margem e horas</summary>
+            <div class="stat-grid">
+              <div class="stat-tile"><div class="stat-value">${fmtEUR(totalHonorarios)}</div><div class="stat-label">Honorários${valorExcluido > 0 ? ' NOVA' : ''}</div></div>
+              <div class="stat-tile"><div class="stat-value">${fmtEUR(totalDespesas)}</div><div class="stat-label">Despesas</div></div>
+              <div class="stat-tile"><div class="stat-value">${fmtEUR(margem)}</div><div class="stat-label">Margem <span style="color:var(--text-3)">· faturado − despesas</span></div></div>
+              <div class="stat-tile"><div class="stat-value">${fmtHours(totalHoras)}</div><div class="stat-label">Horas totais</div></div>
             </div>
-            <div class="stat-tile">
-              <div class="stat-value">${fmtEUR(totalRecebido)}</div>
-              <div class="stat-label">Recebido</div>
-            </div>
-            <div class="stat-tile">
-              <div class="stat-value${porReceber > 0 ? ' warn' : ''}">${fmtEUR(porReceber)}</div>
-              <div class="stat-label">Por receber</div>
-            </div>
-            <div class="stat-tile">
-              <div class="stat-value">${fmtEUR(totalDespesas)}</div>
-              <div class="stat-label">Despesas</div>
-            </div>
-            <div class="stat-tile">
-              <div class="stat-value">${fmtEUR(margem)}</div>
-              <div class="stat-label">Margem <span style="color:var(--text-3)">· faturado − despesas</span></div>
-            </div>
-            <div class="stat-tile">
-              <div class="stat-value">${taxaEfetiva != null ? fmtEUR(taxaEfetiva) + '/h' : '—'}</div>
-              <div class="stat-label">Taxa efetiva <span style="color:var(--text-3)">· faturado ÷ horas</span></div>
-            </div>
-            <div class="stat-tile">
-              <div class="stat-value">${fmtHours(totalHoras)}</div>
-              <div class="stat-label">Horas totais</div>
-            </div>
-          </div>
-          <div class="gantt-wrap" style="margin-top:10px;">
-            <div class="time-bar-track">
+            <div class="time-bar-track" style="margin-top:12px;">
               <div class="time-bar-seg billable" style="width:${pctFaturavel}%;"></div>
               <div class="time-bar-seg nonbillable" style="width:${100 - pctFaturavel}%;"></div>
             </div>
@@ -5107,7 +5150,7 @@
               <span><span class="dot billable"></span>Faturáveis: ${fmtHours(horasFaturaveis)}</span>
               <span><span class="dot nonbillable"></span>Não faturáveis: ${fmtHours(horasNaoFaturaveis)}</span>
             </div>
-          </div>
+          </details>
             <div class="gantt-wrap">
               <div class="card-head"><h2>Faturas</h2><button type="button" id="add-invoice-btn" class="text-btn">+ Nova fatura</button></div>
               ${invoices.length ? invoices.map(i => {
@@ -6092,6 +6135,29 @@
       else if (isEdit && existingExpense.project_id) projSelect.value = existingExpense.project_id;
       document.getElementById('exp-category').innerHTML = '<option value="">Sem categoria</option>' + categories.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
       if (isEdit && existingExpense.category_id) document.getElementById('exp-category').value = existingExpense.category_id;
+      // Categoria sugerida pela descrição (a partir das despesas já registadas)
+      if (!isEdit) {
+        const catSel = document.getElementById('exp-category'), descEl = document.getElementById('exp-description');
+        let auto = false, past = [];
+        (async () => {
+          try {
+            if (devMode) past = MOCK_EXPENSES.map(e => ({ description: e.description, category_id: e.category_id || (categories.find(c => c.name === e.expense_categories?.name)?.id) }));
+            else { const r = await supabase.from('expenses').select('description, category_id').not('category_id', 'is', null).order('date', { ascending: false }).limit(300); past = r.data || []; }
+          } catch { past = []; }
+        })();
+        const words = t => normText(t).split(/[^a-z0-9]+/).filter(w => w.length >= 4);
+        descEl.addEventListener('input', () => {
+          if (catSel.value && !auto) return;
+          const w = words(descEl.value);
+          if (!w.length) { if (auto) { catSel.value = ''; auto = false; } return; }
+          const counts = {};
+          past.forEach(e => { if (e.category_id && words(e.description).some(x => w.some(y => x.startsWith(y) || y.startsWith(x)))) counts[e.category_id] = (counts[e.category_id] || 0) + 1; });
+          const best = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+          if (best) { catSel.value = best[0]; auto = true; catSel.classList.add('suggested'); }
+          else if (auto) { catSel.value = ''; auto = false; catSel.classList.remove('suggested'); }
+        });
+        catSel.addEventListener('change', () => { auto = false; catSel.classList.remove('suggested'); });
+      }
       // Fase: as do projeto escolhido
       const stageSel = document.getElementById('exp-stage');
       const fillExpStages = async (keep) => {
@@ -6504,17 +6570,16 @@
         const statusCell = e.needs_review
           ? '<span class="invoice-status pending">Por classificar</span>'
           : isCompanyPaid(e)
-          ? '—'
+          ? ''
           : `<span class="invoice-status ${e.reimbursed ? 'paid' : 'pending'}">${e.reimbursed ? 'Reembolsada' : 'Por reembolsar'}</span>`;
         return `
-        <tr${e.needs_review ? ' class="exp-review"' : ''}>
+        <tr class="click-row${e.needs_review ? ' exp-review' : ''}" data-edit-expense="${escapeHtml(e.id)}" title="${e.needs_review ? 'Classificar' : 'Editar'}">
           <td class="c-date">${fmtDateShort(new Date(e.date + 'T00:00:00'))}</td>
           <td class="c-desc">${escapeHtml(e.description ?? e.expense_categories?.name ?? 'Despesa')}${e.expense_categories?.name && e.description ? `<br><small class="c-cat">${escapeHtml(e.expense_categories.name)}</small>` : ''}</td>
           <td class="c-proj">${escapeHtml(e.project_id ? (projectMap[e.project_id] ?? 'Projeto') : '—')}</td>
           <td class="c-payer">${escapeHtml(payerName(e, memberMap))}</td>
           <td class="col-value c-value">${fmtEUR(Number(e.amount))}</td>
           <td class="c-status">${statusCell}</td>
-          <td class="c-edit"><button type="button" class="text-btn" data-edit-expense="${escapeHtml(e.id)}">${e.needs_review ? 'Classificar' : 'Editar'}</button></td>
         </tr>`;
       }).join('');
 
@@ -6525,21 +6590,21 @@
           <div class="stat-tile"><div class="stat-value">${fmtEUR(totalPorReembolsar)}</div><div class="stat-label">Por reembolsar</div></div>
         </div>
 
-        <div class="section-label">Despesas ao longo do tempo</div>
-        <div class="gantt-wrap">
+        <details class="gantt-wrap exp-chart-d">
+          <summary>Ver a evolução das despesas <span>· o resumo financeiro está no Mission Control → Financeiro</span></summary>
           <div class="segmented" id="despesas-chart-scale">
             <button type="button" data-scale="week">Semanas</button>
             <button type="button" data-scale="month" class="active">Meses</button>
           </div>
           <div id="despesas-chart-inner">${renderExpenseLineChart(initialBuckets, 'month')}</div>
-        </div>
+        </details>
 
         ${toReview.length ? `<div class="exp-review-banner"><span><b>${toReview.length}</b> despesa${toReview.length === 1 ? '' : 's'} vinda${toReview.length === 1 ? '' : 's'} do extrato bancário por classificar — escolhe a categoria e, se for de um projeto, o projeto e a fase.</span>
           <button type="button" class="secondary-btn" id="exp-review-toggle">${despesasOnlyReview ? 'Ver todas' : 'Ver só estas'}</button></div>` : ''}
         <div class="section-label">${despesasOnlyReview ? 'Por classificar' : 'Todas as despesas'}</div>
         <div class="gantt-wrap"><div class="table-scroll">
           <table class="mini-table stack-table">
-            <thead><tr><th>Data</th><th>Descrição</th><th>Projeto</th><th>Pago por</th><th class="col-value">Valor</th><th>Estado</th><th></th></tr></thead>
+            <thead><tr><th>Data</th><th>Descrição</th><th>Projeto</th><th>Pago por</th><th class="col-value">Valor</th><th>Estado</th></tr></thead>
             <tbody>${rows}</tbody>
           </table>
         </div></div>
@@ -8470,7 +8535,7 @@
     const inRange = (d, r) => !!d && d >= r.from && d <= r.to;
     async function loadMc() {
       const box = document.getElementById(mcTab === 'time' ? 'mc-time' : 'mc-quality');
-      beginLoad(box, 'mc:' + mcTab + ':' + mcPeriod, '<div class="detail-loading">A carregar…</div>');
+      beginLoad(box, 'mc:' + mcTab + ':' + mcPeriod, '<div class="gantt-wrap">' + SKELETON(3) + '</div><div class="gantt-wrap">' + SKELETON(5) + '</div>');
       try {
         const d = await loadMcData();
         box.innerHTML = mcTab === 'time' ? mcTimeHtml(d) : mcQualityHtml(d);
@@ -9285,7 +9350,7 @@
 
     async function loadFinance() {
       const box = document.getElementById('finance-container');
-      beginLoad(box, 'finance:' + finYear, '<div class="detail-loading">A carregar…</div>');
+      beginLoad(box, 'finance:' + finYear, '<div class="gantt-wrap">' + SKELETON(3) + '</div><div class="gantt-wrap">' + SKELETON(5) + '</div>');
       try {
         const bank = await loadBankBase();
         let projects, types, stages, hours, goals;
@@ -10098,7 +10163,7 @@
     }
     async function loadBilling() {
       const box = document.getElementById('billing-container');
-      beginLoad(box, 'billing', '<div class="gantt-wrap"><div class="detail-loading">A carregar…</div></div>');
+      beginLoad(box, 'billing', '<div class="gantt-wrap">' + SKELETON(2) + '</div><div class="gantt-wrap">' + SKELETON(6) + '</div>');
       try { billingCache = await loadBillingBase(); renderBilling(); }
       catch (err) { box.innerHTML = `<div class="error-box">Não foi possível carregar a faturação: ${escapeHtml(err.message)}</div>`; }
     }
@@ -10723,7 +10788,7 @@
     }
     async function loadClients() {
       const box = document.getElementById('clients-container');
-      beginLoad(box, 'clients', '<div class="gantt-wrap"><div class="detail-loading">A carregar…</div></div>');
+      beginLoad(box, 'clients', '<div class="gantt-wrap">' + SKELETON(6) + '</div>');
       if (!(await clientsTablesReady())) { box.innerHTML = '<div class="error-box">Para usar o repositório de clientes, corre clientes.sql no Supabase.</div>'; return; }
       try {
         const data = await loadClientsData();
@@ -10786,7 +10851,7 @@
       hideAllViews();
       const view = document.getElementById('client-view');
       view.style.display = 'block';
-      beginLoad(view, 'client:' + clientId, '<div class="gantt-wrap"><div class="detail-loading">A carregar…</div></div>');
+      beginLoad(view, 'client:' + clientId, '<div class="gantt-wrap">' + SKELETON(4) + '</div>');
       try {
         const data = await loadClientsData();
         const scores = computeClientScores(data);
@@ -13230,7 +13295,7 @@
       if (!tsDay || tsDay < tsWeekStart || tsDay > weekEnd) {
         tsDay = todayKey >= tsWeekStart && todayKey <= weekEnd ? todayKey : tsWeekStart;
       }
-      beginLoad(box, 'ts:' + tsWeekStart, '<div class="detail-loading">A carregar…</div>');
+      beginLoad(box, 'ts:' + tsWeekStart, '<div class="gantt-wrap">' + SKELETON(5) + '</div>');
 
       try {
         const member = await getCurrentMember();
