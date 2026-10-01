@@ -1728,7 +1728,7 @@
   @keyframes pressIn { 0% { transform: scale(1); } 40% { transform: scale(.94); } 100% { transform: scale(1); } }
 
   /* Páginas: cada vez que uma página aparece, entra suavemente */
-  #home-view, #projects-view, #clients-view, #client-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view,
+  #home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view,
   .settings-sec:not([hidden]) { animation: fadeUp var(--t-slow) var(--ease); }
   [data-dpanel].tab-in { animation: fadeUp var(--t) var(--ease); }
 
@@ -1834,6 +1834,78 @@
   .client-owed.old b { color: var(--warning); }
   .clients-table td.col-owed small { display: block; font-size: var(--fs-xs); }
   @media (max-width: 600px) { .clients-table .col-owed small { display: none; } }
+  /* ---- Oportunidades: terrenos, investidores, propostas ---- */
+  .op-search { margin: 0 0 var(--sp-3); }
+  .op-filter { margin: 0 0 var(--sp-3); }
+  .op-row .op-fit { flex-shrink: 0; font-size: var(--fs-xs); color: var(--text-3); text-align: right; }
+  .op-row .op-fit em { font-style: normal; }
+  .op-row > span:first-child { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  @media (max-width: 560px) { .op-row .op-fit { max-width: 34%; white-space: normal; } }
+  .op-row .op-fit em.hi { color: var(--accent); font-weight: var(--fw-semibold); }
+  .op-form-sec { margin-top: var(--sp-6); }
+  .op-stage { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; margin: var(--sp-3) 0 var(--sp-4); }
+  .op-stage select { width: auto; min-width: 190px; margin: 0; }
+  .op-stage small { color: var(--text-3); }
+  .op-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 var(--sp-4); }
+  @media (max-width: 1100px) { .op-grid { grid-template-columns: 1fr; } }
+  .op-kv span:last-child { text-align: right; }
+  .op-kv span:last-child small { display: block; }
+  .op-kv small, #plot-view .muted, #proposal-view .muted, #opps-view .muted, #quick-modal .muted { color: var(--text-3); }
+  #plot-view .late, #proposal-view .late { color: var(--danger); }
+  .op-check { display: inline-block; font-size: var(--fs-xs); margin: 2px var(--sp-2) 0 0; color: var(--success); }
+  .op-check.no { color: var(--text-3); }
+  .op-present { width: auto; height: 34px; padding: 0 var(--sp-3); margin: 0; flex-shrink: 0; }
+  .op-pres-status { width: auto; max-width: 200px; flex-shrink: 0; margin: 0; }
+  .op-present-other { margin-top: var(--sp-3); }
+  .op-note { margin: 0 0 var(--sp-2); white-space: pre-wrap; color: var(--text-2); }
+  .op-risk b { color: var(--warning); }
+  .op-chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+  .op-chip { position: relative; }
+  .op-chip input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .op-chip span { display: inline-block; padding: 6px var(--sp-3); border: 1px solid var(--border); border-radius: var(--r-full); font-size: var(--fs-sm); color: var(--text-2); }
+  .op-chip input:checked + span { background: var(--accent-soft); border-color: var(--accent); color: var(--text); font-weight: var(--fw-medium); }
+  .op-chip input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .op-spec { display: grid; grid-template-columns: minmax(0, 1fr) 110px 90px 96px 32px; gap: var(--sp-2); align-items: center; margin-bottom: var(--sp-2); }
+  #ps-lines .op-spec { grid-template-columns: minmax(0, 1fr) 110px 90px 32px; }
+  .op-spec .form-input { margin: 0; }
+  .op-spec-total { text-align: right; font-weight: var(--fw-medium); font-variant-numeric: tabular-nums; font-size: var(--fs-sm); }
+  .op-spec-del { width: 32px; height: 32px; border: none; background: none; color: var(--text-3); font-size: 20px; line-height: 1; cursor: pointer; border-radius: var(--r-sm); }
+  .op-spec-del:hover { background: var(--surface-2); color: var(--danger); }
+  @media (max-width: 560px) {
+    .op-spec, #ps-lines .op-spec { grid-template-columns: minmax(0, 1fr) 96px 32px; }
+    .op-spec [data-k="name"] { grid-column: 1 / -1; }
+    .op-spec-total { display: none; }
+  }
+  .op-sum { margin-top: var(--sp-3); border-top: 1px solid var(--border); padding-top: var(--sp-2); }
+  .op-sum > div { display: flex; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-1) 0; font-size: var(--fs-md); }
+  .op-sum > div > span { color: var(--text-2); }
+  .op-sum b { font-variant-numeric: tabular-nums; text-align: right; }
+  .op-sum b small { font-weight: var(--fw-regular); color: var(--text-3); }
+  .op-sum-total b { font-size: var(--fs-lg); }
+  .op-est-main { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+  .op-est-main span { display: block; color: var(--text-2); font-size: var(--fs-sm); }
+  .op-est-main b { font-size: var(--fs-xl); font-variant-numeric: tabular-nums; }
+  .op-est-why { margin: var(--sp-1) 0 var(--sp-2); font-size: var(--fs-sm); color: var(--text-2); }
+  .op-est-why summary { cursor: pointer; padding: var(--sp-1) 0; }
+  .op-ref { padding: var(--sp-1) 0; border-bottom: 1px solid var(--border); }
+  .op-ref small { display: block; color: var(--text-3); }
+  .op-target { margin-top: var(--sp-3); display: flex; align-items: flex-end; justify-content: space-between; gap: var(--sp-3); background: var(--surface-2); border-radius: var(--r-md); padding: var(--sp-3); }
+  .op-target:empty { display: none; }
+  .op-target span { display: block; color: var(--text-2); font-size: var(--fs-sm); }
+  .op-target b { font-size: var(--fs-lg); font-variant-numeric: tabular-nums; }
+  .op-target small { display: block; color: var(--text-3); font-size: var(--fs-xs); }
+  .op-target .text-btn { flex-shrink: 0; }
+  .op-phase { display: grid; grid-template-columns: minmax(0, 1fr) 70px 14px 110px 32px; gap: var(--sp-2); align-items: center; padding: 2px 0; }
+  .op-phase .form-input { margin: 0; text-align: right; }
+  .op-phase b { text-align: right; font-variant-numeric: tabular-nums; font-weight: var(--fw-medium); }
+  .op-phase em { font-style: normal; color: var(--text-3); }
+  .op-phase-sum { grid-template-columns: minmax(0, 1fr) auto; border-top: 1px solid var(--border); margin-top: var(--sp-1); padding-top: var(--sp-2); }
+  .op-phase-add { margin-top: var(--sp-3); }
+  @media (max-width: 560px) { .op-phase { grid-template-columns: minmax(0, 1fr) 64px 12px 32px; } .op-phase b[data-pv] { display: none; } }
+  .op-prop .segmented { margin: 0 0 var(--sp-1); }
+  .op-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); margin: var(--sp-4) 0 var(--sp-8); }
+  .op-actions .primary-btn, .op-actions .secondary-btn { width: auto; margin: 0; padding: 0 var(--sp-5); }
+  .op-actions .form-msg { flex-basis: 100%; margin: 0; }
   /* ---- Alvos de toque (telemóvel e iPad): 44 px de área tocável ----
      Os botões de ícone crescem; os controlos pequenos (separadores, botões de texto, pastilhas, pegas)
      ganham uma margem invisível à volta, sem mudar o desenho. */
@@ -2284,6 +2356,7 @@
         <button type="button" class="nav-item" data-nav="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/></svg><span>Hoje</span></button>
         <button type="button" class="nav-item" data-nav="projects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg><span>Projetos</span></button>
         <button type="button" class="nav-item" data-nav="clients"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 19.5c.8-3.3 3.4-5 6.5-5s5.7 1.7 6.5 5"/><path d="M15.5 5.2a3.5 3.5 0 010 6.6M17.8 14.8c1.9.7 3.2 2.3 3.7 4.7"/></svg><span>Clientes</span></button>
+        <button type="button" class="nav-item" data-nav="opps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0113 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg><span>Oportunidades</span></button>
         <button type="button" class="nav-item" data-nav="billing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 6.5A7 7 0 1 0 17.5 17.5"/><path d="M4.5 10.5h9M4.5 13.5h9"/></svg><span>Faturação</span></button>
         <button type="button" class="nav-item" data-nav="finance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5h16"/><path d="M6.5 16v-4M11 16V8M15.5 16v-6M20 16V5"/></svg><span>Mission Control</span></button>
         <button type="button" class="nav-item" data-nav="horas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span>Horas</span></button>
@@ -2308,6 +2381,7 @@
     </nav>
     <div class="more-sheet" id="more-sheet">
       <button type="button" class="nav-item" data-nav="clients"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 19.5c.8-3.3 3.4-5 6.5-5s5.7 1.7 6.5 5"/><path d="M15.5 5.2a3.5 3.5 0 010 6.6M17.8 14.8c1.9.7 3.2 2.3 3.7 4.7"/></svg><span>Clientes</span></button>
+      <button type="button" class="nav-item" data-nav="opps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0113 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg><span>Oportunidades</span></button>
       <button type="button" class="nav-item" data-nav="billing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 6.5A7 7 0 1 0 17.5 17.5"/><path d="M4.5 10.5h9M4.5 13.5h9"/></svg><span>Faturação</span></button>
         <button type="button" class="nav-item" data-nav="finance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5h16"/><path d="M6.5 16v-4M11 16V8M15.5 16v-6M20 16V5"/></svg><span>Mission Control</span></button>
       <button type="button" class="nav-item" data-nav="atas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h7l4 4v12a1 1 0 01-1 1H7a1 1 0 01-1-1v-15a1 1 0 011-1z"/><path d="M9 11h6M9 14.5h6M9 18h3.5"/></svg><span>Atas</span></button>
@@ -2324,6 +2398,7 @@
       <button type="button" data-fab-action="ata">Nova ata de reunião</button>
       <button type="button" data-fab-action="despesa">Registar despesa</button>
       <button type="button" data-fab-action="projeto">Novo projeto</button>
+      <button type="button" data-fab-action="terreno">Novo terreno</button>
     </div>
 
     <div class="main">
@@ -2370,6 +2445,9 @@
         <div id="clients-container"></div>
       </div>
       <div id="client-view" style="display:none;"></div>
+      <div id="opps-view" style="display:none;"><div id="opps-container"></div></div>
+      <div id="plot-view" style="display:none;"></div>
+      <div id="proposal-view" style="display:none;"></div>
       <div id="help-view" style="display:none;"></div>
       <div id="billing-view" style="display:none;"><div id="billing-container"></div></div>
       <div id="finance-view" style="display:none;">
@@ -2528,6 +2606,7 @@
             <button type="button" class="settings-link" data-sec="finance"><span>Impostos e categorias de despesa</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <div class="settings-group">Clientes</div>
             <button type="button" class="settings-link" data-sec="nps"><span>Satisfação (NPS)</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+            <button type="button" class="settings-link" data-sec="proposals"><span>Propostas de honorários</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button type="button" class="settings-link" data-sec="clientscore"><span>Score de clientes</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
           </nav>
           <div class="settings-panel">
@@ -2565,6 +2644,10 @@
           <section class="settings-sec" data-sec-panel="nps" hidden>
             <h2 class="settings-title">Satisfação dos clientes (NPS)</h2>
             <div class="gantt-wrap" id="settings-nps-container"><div class="detail-loading">A carregar...</div></div>
+          </section>
+          <section class="settings-sec" data-sec-panel="proposals" hidden>
+            <h2 class="settings-title">Propostas de honorários</h2>
+            <div class="gantt-wrap" id="settings-proposals-container"><div class="detail-loading">A carregar...</div></div>
           </section>
           <section class="settings-sec" data-sec-panel="clientscore" hidden>
             <h2 class="settings-title">Score de clientes</h2>
@@ -3042,11 +3125,11 @@
       currentViewState = newState;
       // Voltar só faz sentido dentro de uma ficha (os módulos estão sempre na barra lateral)
       const backBtn = document.getElementById('nav-back-btn');
-      if (backBtn) backBtn.style.display = ((newState.name === 'detail' || newState.name === 'client') && navStack.length > 0) ? '' : 'none';
-      const navKey = newState.name === 'detail' ? 'projects' : newState.name === 'client' ? 'clients' : newState.name;
+      if (backBtn) backBtn.style.display = (['detail', 'client', 'plot', 'proposal'].includes(newState.name) && navStack.length > 0) ? '' : 'none';
+      const navKey = newState.name === 'detail' ? 'projects' : newState.name === 'client' ? 'clients' : ['plot', 'proposal'].includes(newState.name) ? 'opps' : newState.name;
       document.querySelectorAll('[data-nav]').forEach(el => el.classList.toggle('active', el.dataset.nav === navKey));
       document.getElementById('more-sheet').classList.remove('open');
-      document.getElementById('tab-more').classList.toggle('active', ['clients', 'billing', 'finance', 'atas', 'despesas', 'settings', 'help'].includes(navKey));
+      document.getElementById('tab-more').classList.toggle('active', ['clients', 'opps', 'billing', 'finance', 'atas', 'despesas', 'settings', 'help'].includes(navKey));
       if (!sameView) window.scrollTo(0, 0);   // voltar a carregar a mesma página não salta para o topo
     }
 
@@ -3065,6 +3148,9 @@
       else if (prev.name === 'finance') openFinanceModule();
       else if (prev.name === 'help') openHelpModule();
       else if (prev.name === 'client') openClientDetail(prev.clientId);
+      else if (prev.name === 'opps') openOppsModule();
+      else if (prev.name === 'plot') openPlotView(prev.plotId);
+      else if (prev.name === 'proposal') prev.proposalId ? openProposalView(prev.proposalId) : openOppsModule();
       else if (prev.name === 'agenda') openAgendaModule(prev.mode);
       else if (prev.name === 'detail') openDetail(prev.projectId);
       else showHome();
@@ -3175,7 +3261,7 @@
     }
 
     function hideAllViews() {
-      ['home-view', 'projects-view', 'clients-view', 'client-view', 'billing-view', 'finance-view', 'agenda-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view', 'despesas-view', 'help-view'].forEach(id => {
+      ['home-view', 'projects-view', 'clients-view', 'client-view', 'opps-view', 'plot-view', 'proposal-view', 'billing-view', 'finance-view', 'agenda-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view', 'despesas-view', 'help-view'].forEach(id => {
         document.getElementById(id).style.display = 'none';
       });
     }
@@ -3551,7 +3637,7 @@
       checklists: () => loadChecklistTemplateSettings(), categories: () => loadCategories(),
       mtypes: () => loadMilestoneTypeSettings(), clientscore: () => loadClientScoreSettings(),
       finance: () => loadFinanceSettingsPanel(), camara: () => loadCamaraSettings(),
-      nps: () => loadNpsSettings()
+      nps: () => loadNpsSettings(), proposals: () => loadProposalSettings()
     };
     let settingsSection = 'models';
     const settingsNarrow = window.matchMedia('(max-width: 759px)');
@@ -4257,7 +4343,8 @@
       despesas: openDespesasModule,
       settings: openSettingsModule,
       help: () => openHelpModule(),
-      agenda: () => openAgendaModule()
+      agenda: () => openAgendaModule(),
+      opps: () => openOppsModule()
     };
     document.querySelectorAll('[data-nav]').forEach(el => el.addEventListener('click', () => {
       navStack = [];
@@ -5700,6 +5787,7 @@
       else if (action === 'projeto') openNewProjectModal();
       else if (action === 'ata') openNewAtaModal(null);
       else if (action === 'despesa') openNewExpenseModal(null);
+      else if (action === 'terreno') openPlotModal(null, id => openPlotView(id));
     }
 
     // ---------- Novo projeto ----------
@@ -12533,6 +12621,7 @@
       { id: 'horas', label: 'Horas e agenda', icon: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>' },
       { id: 'money', label: 'Faturação e despesas', icon: '<path d="M17.5 6.5A7 7 0 1 0 17.5 17.5"/><path d="M4.5 10.5h9M4.5 13.5h9"/>' },
       { id: 'clients', label: 'Clientes e satisfação', icon: '<circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 19.5c.8-3.3 3.4-5 6.5-5s5.7 1.7 6.5 5"/><path d="M15.5 5.2a3.5 3.5 0 010 6.6"/>' },
+      { id: 'opps', label: 'Terrenos e propostas', icon: '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0113 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>' },
       { id: 'mc', label: 'Mission Control', icon: '<path d="M4 19.5h16"/><path d="M6.5 16v-4M11 16V8M15.5 16v-6M20 16V5"/>' },
       { id: 'settings', label: 'Definições', icon: '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>' }
     ];
@@ -12742,6 +12831,49 @@
         kw: 'extrato banco millennium pdf movimentos conciliacao tesouraria importar banco',
         tour: [{ go: 'mc:finance', sel: '#fin-import', text: 'Toca aqui e escolhe o PDF do extrato.' }] },
 
+      // ---------- Terrenos, investidores e propostas ----------
+      { id: 'terreno', cat: 'opps', ctx: ['opps', 'plot'], first: 1,
+        q: 'registo um terreno que nos chegou',
+        a: 'Oportunidades → + Terreno. Depois abre-o para ver a análise e os investidores que encaixam.',
+        steps: ['Abre [[Oportunidades]] → [[+ Terreno]] (ou **Novo → Novo terreno**).', 'Diz **de onde veio**: da nossa network (e quem nos falou dele) ou trazido por um cliente.', 'Preenche o que já sabes: concelho, área, preço pedido, tipologia. O resto (PDM, viabilidade) podes completar mais tarde em [[Editar]].', 'Na ficha do terreno, muda a **Etapa** à medida que avança: Registado → Em análise → Apresentado → Proposta enviada → Ganho / Perdido / Descartado.'],
+        kw: 'terreno lote oportunidade novo registar network mediador funil etapa',
+        tour: [{ go: 'nav:opps', sel: '#opps-new', text: 'Toca aqui para registar um terreno.' }] },
+      { id: 'terreno-analise', cat: 'opps', ctx: ['plot'],
+        q: 'faço a análise de um terreno (PDM e viabilidade)',
+        a: 'Na ficha do terreno → Editar: índice do PDM, custo de construção e preço de venda. A app faz as contas.',
+        steps: ['Abre o terreno e toca em [[Editar]].', 'Em **Urbanismo (PDM)**: classe de espaço, índice de utilização e pisos. Se não escreveres a área de construção, a app usa **área do terreno × índice**.', 'Em **Viabilidade**: custo de construção por m², outros custos (% da construção: licenças, projetos, imprevistos), preço de venda por m² e a parte vendável.', 'A ficha mostra o **investimento total** (terreno + construção + outros) e a **margem do promotor**. É o investimento total que se compara com o perfil de cada investidor.'],
+        kw: 'pdm indice viabilidade margem rentabilidade construcao venda analise area de construcao',
+        tour: [{ go: 'nav:opps', sel: '[data-plot]', text: 'Abre um terreno.' }] },
+      { id: 'investidor', cat: 'opps', ctx: ['opps', 'plot'],
+        q: 'registo um investidor e o perfil de investimento',
+        a: 'Oportunidades → Investidores → + Investidor: tipologias, frações, investimento, zonas e se quer projeto aprovado.',
+        steps: ['Abre [[Oportunidades]] → separador **Investidores** → [[+ Investidor]].', 'Escolhe as **tipologias** que procura (pode ser mais do que uma). Em habitação coletiva, diz o intervalo de **frações**.', 'Indica o **investimento** mínimo e máximo (total: terreno + construção) e as **zonas** (concelhos ou freguesias, separados por vírgulas).', 'Diz se só quer terrenos **com projeto aprovado**, só **sem**, ou é indiferente.', 'A partir daí, cada terreno mostra os investidores que **encaixam** — e cada investidor, os terrenos que lhe servem.'],
+        kw: 'investidor promotor perfil investimento zonas fracoes tipologia encaixa match',
+        tour: [{ go: 'nav:opps', sel: '[data-otab="investors"]', text: 'Os investidores estão neste separador.' }] },
+      { id: 'apresentar', cat: 'opps', ctx: ['plot'],
+        q: 'apresento um terreno a um investidor',
+        a: 'Na ficha do terreno, em Investidores, toca em Apresentar. Depois regista a resposta.',
+        steps: ['Abre o terreno. Em **Investidores** aparecem os que **encaixam no perfil** (✓ em cada critério) e os que quase encaixam.', 'Toca em [[Apresentar]]: fica registado com a data e o terreno passa a **Apresentado**.', 'Quando o investidor responder, escolhe a resposta: Interessado, Não quis ou **Avança para proposta** — esta última abre logo a proposta de honorários.'],
+        kw: 'apresentar investidor oportunidade resposta interessado',
+        tour: [{ go: 'nav:opps', sel: '[data-plot]', text: 'Abre um terreno e vê os investidores que encaixam.' }] },
+      { id: 'proposta', cat: 'opps', ctx: ['opps', 'plot', 'proposal', 'settings:proposals'], first: 2,
+        q: 'faço uma proposta de honorários',
+        a: 'Oportunidades → Propostas → + Proposta (ou a partir do terreno). A app estima as horas e o custo; tu escolhes o valor.',
+        steps: ['Abre [[Oportunidades]] → **Propostas** → [[+ Proposta]], ou na ficha do terreno → [[+ Nova proposta]] (já vem preenchida).', 'Indica o cliente, a **tipologia** e a **área de construção** ou as **frações**.', 'Em **Quanto nos vai custar**, a app estima as **horas** a partir dos projetos parecidos que já fizemos (vê em que projetos se baseou) e soma as **especialidades** (lista-modelo da tipologia: ajusta, tira ou acrescenta linhas).', 'Em **Honorários a propor**, escolhe **por m²**, **valor global** ou **por fração**. A app mostra o valor pelo nosso objetivo (150 €/h): toca em [[Usar este valor]] se quiseres partir dele.', 'Confere o **valor por hora** e a **margem**, ajusta as **fases** e toca em [[Guardar proposta]].', '[[Ver proposta]] abre o documento (português ou inglês) para imprimir ou guardar em PDF.'],
+        kw: 'proposta honorarios orcamento preco valor m2 fracao global estimativa horas custo margem pdf nota de honorarios',
+        tour: [{ go: 'nav:opps', sel: '[data-otab="proposals"]', text: 'As propostas estão aqui.' }] },
+      { id: 'proposta-aceite', cat: 'opps', ctx: ['proposal'],
+        q: 'passo uma proposta aceite a projeto',
+        a: 'Na proposta, toca em Aceite → criar projeto: a app cria o projeto com o valor e as fases da proposta.',
+        steps: ['Depois de enviares a proposta, toca em [[Marcar como enviada]] (o terreno passa a **Proposta enviada**).', 'Quando o cliente aceitar, toca em [[Aceite → criar projeto]].', 'Confirma o nome, o código e a data de adjudicação. O projeto é criado com os honorários, a tipologia, a área e as fases com as percentagens da proposta.', 'Se era um investidor que ainda não era cliente, passa a cliente (completa depois o NIF na ficha). O terreno fica **Ganho**.'],
+        kw: 'proposta aceite adjudicacao criar projeto ganho',
+        tour: [{ go: 'nav:opps', sel: '[data-otab="proposals"]', text: 'Abre a proposta e toca em «Aceite → criar projeto».' }] },
+      { id: 'custo-hora', cat: 'opps', ctx: ['settings:proposals', 'proposal'],
+        q: 'mudo o custo/hora, o objetivo de 150 €/h e as especialidades-modelo',
+        a: 'Definições → Propostas de honorários.',
+        steps: ['Abre [[Definições]] → **Propostas de honorários**.', '**Custo/hora da NOVA**: quanto nos custa, em média, uma hora de trabalho (salários, encargos e custos fixos a dividir pelas horas). Serve para a margem.', '**Valor/hora objetivo**: 150 €/h. Também fica nos Objetivos do Mission Control.', 'Em **Especialidades**, escolhe a tipologia e ajusta a lista-modelo (nome, €/m² ou valor fixo). Tipologias sem lista própria usam a lista geral.'],
+        kw: 'custo hora objetivo 150 especialidades subcontratacao estruturas aguas avac modelo',
+        tour: [{ go: 'settings:proposals', sel: '#ps-cph', text: 'Custo/hora, objetivo e especialidades-modelo: tudo aqui.' }] },
       // ---------- Clientes e satisfação ----------
       { id: 'cliente', cat: 'clients', ctx: ['clients', 'client'],
         q: 'crio um cliente e ponho o NIF para faturar',
@@ -13182,6 +13314,1091 @@
     document.getElementById('top-help-btn').addEventListener('click', openHelpPanel);
     document.getElementById('help-panel-overlay').addEventListener('click', closeHelpPanel);
 
+    // ================= OPORTUNIDADES: terrenos, investidores e propostas de honorários =================
+    // Terrenos que nos chegam (de clientes ou da nossa network) → análise (PDM e viabilidade) → apresentação
+    // aos investidores cujo perfil encaixa → proposta de honorários → projeto. Tabelas em oportunidades.sql.
+    const PLOT_STATUSES = [['registered', 'Registado'], ['analysis', 'Em análise'], ['presented', 'Apresentado'], ['proposal', 'Proposta enviada'], ['won', 'Ganho'], ['lost', 'Perdido'], ['discarded', 'Descartado']];
+    const PLOT_OPEN = ['registered', 'analysis', 'presented', 'proposal'];
+    const PRES_STATUSES = [['presented', 'Apresentado'], ['interested', 'Interessado'], ['declined', 'Não quis'], ['proposal', 'Avança para proposta']];
+    const PROP_STATUSES = [['draft', 'Rascunho'], ['sent', 'Enviada'], ['accepted', 'Aceite'], ['declined', 'Recusada']];
+    const APPROVED_PREFS = [['any', 'Indiferente'], ['approved', 'Só com projeto aprovado'], ['not_approved', 'Só sem projeto aprovado']];
+    const PROP_METHODS = [['m2', 'Por m²'], ['global', 'Valor global'], ['fraction', 'Por fração']];
+    const optLabel = (list, v) => (list.find(x => x[0] === v) || [null, v || '—'])[1];
+    const isPartnerMember = m => !m || /partner|s[oó]cio/i.test(m.role || '');
+    const PROPOSAL_DEFAULT = {
+      cost_per_hour: null, target_rate: 150,
+      specialties: { default: [
+        { name: 'Topografia', mode: 'fixed', value: 0 }, { name: 'Estruturas e fundações', mode: 'm2', value: 0 },
+        { name: 'Águas e esgotos', mode: 'm2', value: 0 }, { name: 'Eletricidade e telecomunicações (ITED)', mode: 'm2', value: 0 },
+        { name: 'Comportamento térmico e AVAC', mode: 'm2', value: 0 }, { name: 'Acústica', mode: 'm2', value: 0 },
+        { name: 'Gás', mode: 'fixed', value: 0 }, { name: 'Segurança contra incêndio', mode: 'm2', value: 0 }
+      ] }
+    };
+    let mockProposalCfg = { ...PROPOSAL_DEFAULT, cost_per_hour: 45 };
+    let mockInvestors = [
+      { id: 'inv-a', name: 'Carlos Mendes', company: 'CM Invest', email: 'carlos@example.com', phone: '912 000 000', client_id: null, project_type_ids: ['pt-1'], fractions_min: 6, fractions_max: 20, invest_min: 1000000, invest_max: 4000000, zones: ['Porto', 'Gaia'], approved_pref: 'any', notes: 'Prefere zonas com metro.', active: true },
+      { id: 'inv-b', name: 'Ana Ribeiro', company: '', email: '', phone: '', client_id: null, project_type_ids: ['pt-2'], fractions_min: null, fractions_max: null, invest_min: 300000, invest_max: 900000, zones: ['Matosinhos', 'Maia'], approved_pref: 'approved', notes: '', active: true }
+    ];
+    let mockPlots = [
+      { id: 'lp-1', name: 'Terreno da Rua do Campo', status: 'analysis', origin: 'network', client_id: null, source_name: 'João (mediador)', scout_id: 'mock-member-1', address: 'Rua do Campo, 120', municipality: 'Vila Nova de Gaia', parish: 'Canidelo', maps_url: '', docs_url: '', land_area: 1200, asking_price: 450000, project_type_id: 'pt-1', has_approved_project: false, pdm_class: 'Espaço residencial — tipo II', pdm_index: 1.2, max_floors: 4, buildable_area: null, fractions_est: 12, build_cost_m2: 1100, other_costs_pct: 15, sale_price_m2: 3200, sellable_ratio: 80, notes: 'Frente de rua com 30 m.', risks: 'Confirmar servidão de passagem a nascente.', created_at: '2026-09-20T10:00:00Z' },
+      { id: 'lp-2', name: 'Lote em Matosinhos Sul', status: 'registered', origin: 'client', client_id: 'cl-2', source_name: '', scout_id: null, address: '', municipality: 'Matosinhos', parish: '', maps_url: '', docs_url: '', land_area: 450, asking_price: 280000, project_type_id: 'pt-2', has_approved_project: true, pdm_class: '', pdm_index: null, max_floors: 2, buildable_area: 260, fractions_est: 1, build_cost_m2: null, other_costs_pct: null, sale_price_m2: null, sellable_ratio: null, notes: '', risks: '', created_at: '2026-09-28T10:00:00Z' }
+    ];
+    let mockPresentations = [];
+    let mockProposals = [];
+
+    async function loadProposalCfg() {
+      if (devMode) return { ...PROPOSAL_DEFAULT, ...mockProposalCfg };
+      const r = await supabase.from('app_settings').select('value').eq('key', 'proposals').maybeSingle();
+      const v = r.data?.value || {};
+      return { ...PROPOSAL_DEFAULT, ...v, specialties: { ...PROPOSAL_DEFAULT.specialties, ...(v.specialties || {}) } };
+    }
+    async function saveProposalCfg(v) {
+      if (devMode) { mockProposalCfg = v; return; }
+      const r = await supabase.from('app_settings').upsert({ key: 'proposals', value: v, updated_at: new Date().toISOString() });
+      if (r.error) throw r.error;
+    }
+    const specialtyPreset = (cfg, typeId) => JSON.parse(JSON.stringify((typeId && cfg.specialties?.[typeId]) || cfg.specialties?.default || []));
+
+    async function loadOppsData() {
+      if (devMode) {
+        return {
+          plots: mockPlots, investors: mockInvestors, presentations: mockPresentations, proposals: mockProposals,
+          types: MOCK_PROJECT_TYPES.map(t => ({ ...t, size_measure: MOCK_PT_EXTRA[t.id] || 'area' })),
+          members: await loadAllMembers(), clients: MOCK_CLIENT_ROWS
+        };
+      }
+      const [pl, iv, pr, fp, ty, cl] = await Promise.all([
+        supabase.from('land_plots').select('*').order('created_at', { ascending: false }),
+        supabase.from('investors').select('*').order('name'),
+        supabase.from('land_presentations').select('*').order('presented_on', { ascending: false }),
+        supabase.from('fee_proposals').select('*').order('created_at', { ascending: false }),
+        supabase.from('project_types').select('id, name, size_measure').order('name'),
+        supabase.from('clients').select('id, name, email, language').order('name')
+      ]);
+      for (const r of [pl, iv, pr, fp, ty]) if (r.error) throw r.error;
+      return { plots: pl.data || [], investors: iv.data || [], presentations: pr.data || [], proposals: fp.data || [],
+        types: ty.data || [], members: await loadAllMembers().catch(() => []), clients: cl.data || [] };
+    }
+
+    // Contas do terreno: área de construção (área × índice, se não estiver escrita), investimento e margem
+    function plotCalc(p) {
+      const n = v => (v == null || v === '' || Number.isNaN(Number(v)) ? null : Number(v));
+      const land = n(p.land_area), idx = n(p.pdm_index), typed = n(p.buildable_area);
+      const build = typed ?? (land != null && idx != null ? Math.round(land * idx) : null);
+      const buildCost = build != null && n(p.build_cost_m2) != null ? build * n(p.build_cost_m2) : null;
+      const other = buildCost != null && n(p.other_costs_pct) != null ? buildCost * n(p.other_costs_pct) / 100 : 0;
+      const price = n(p.asking_price);
+      const investment = price != null || buildCost != null ? (price || 0) + (buildCost || 0) + other : null;
+      const sellable = build != null ? build * (n(p.sellable_ratio) ?? 80) / 100 : null;
+      const revenue = sellable != null && n(p.sale_price_m2) != null ? sellable * n(p.sale_price_m2) : null;
+      const margin = revenue != null && investment ? revenue - investment : null;
+      return { build, buildAuto: typed == null && build != null, buildCost, other, price, investment, investmentFull: buildCost != null,
+        sellable, revenue, margin, roi: margin != null && investment ? margin / investment * 100 : null };
+    }
+    // Um investidor encaixa num terreno quando todos os critérios que dá para comparar batem certo
+    function investorFit(inv, p, c, typeById) {
+      const checks = [];
+      const add = (ok, label) => checks.push({ ok, label });
+      if (inv.project_type_ids?.length && p.project_type_id) add(inv.project_type_ids.includes(p.project_type_id), 'tipologia');
+      const multi = typeById[p.project_type_id]?.size_measure === 'fractions';
+      if (multi && p.fractions_est && (inv.fractions_min != null || inv.fractions_max != null))
+        add(p.fractions_est >= (inv.fractions_min ?? 0) && p.fractions_est <= (inv.fractions_max ?? Infinity), 'frações');
+      if (c.investment && (inv.invest_min != null || inv.invest_max != null))
+        add(c.investment >= (Number(inv.invest_min) || 0) && c.investment <= (inv.invest_max != null ? Number(inv.invest_max) : Infinity), 'investimento');
+      if (inv.zones?.length && (p.municipality || p.parish || p.address)) {
+        const where = normTxt([p.municipality, p.parish, p.address].join(' '));
+        add(inv.zones.some(z => z && where.includes(normTxt(z))), 'localização');
+      }
+      if (inv.approved_pref && inv.approved_pref !== 'any')
+        add(inv.approved_pref === 'approved' ? !!p.has_approved_project : !p.has_approved_project, inv.approved_pref === 'approved' ? 'projeto aprovado' : 'sem projeto aprovado');
+      const fails = checks.filter(x => !x.ok);
+      return { checks, fails, fit: checks.length > 0 && !fails.length, near: fails.length === 1 && checks.length >= 2 };
+    }
+    const fitChecksHtml = f => f.checks.map(x => `<span class="op-check ${x.ok ? 'ok' : 'no'}">${x.ok ? '✓' : '✗'} ${escapeHtml(x.label)}</span>`).join('');
+    const fmtRangeEUR = (a, b) => a != null && b != null ? `${fmtEURShort(a)}–${fmtEURShort(b)}` : a != null ? `desde ${fmtEURShort(a)}` : b != null ? `até ${fmtEURShort(b)}` : '';
+    const fmtRangeN = (a, b, u) => a != null && b != null ? `${a}–${b} ${u}` : a != null ? `${a}+ ${u}` : b != null ? `até ${b} ${u}` : '';
+
+    // ---------- Página Oportunidades ----------
+    let oppsTab = 'plots', oppsPlotFilter = 'open', oppsCache = null;
+    async function openOppsModule(tab) {
+      if (tab) oppsTab = tab;
+      pushCurrentView({ name: 'opps' });
+      document.getElementById('nav-title').textContent = 'Oportunidades';
+      hideAllViews();
+      document.getElementById('opps-view').style.display = 'block';
+      await loadOpps();
+    }
+    async function loadOpps() {
+      const box = document.getElementById('opps-container');
+      beginLoad(box, 'opps', '<div class="gantt-wrap">' + SKELETON(6) + '</div>');
+      try {
+        oppsCache = await loadOppsData();
+        oppsCache.partner = isPartnerMember(await getCurrentMember());
+        if (!oppsCache.partner && oppsTab === 'proposals') oppsTab = 'plots';
+        renderOpps();
+      } catch (err) {
+        box.innerHTML = /land_plots|investors|fee_proposals/.test(err.message || '')
+          ? '<div class="error-box">Para usar as oportunidades, corre oportunidades.sql no Supabase.</div>'
+          : `<div class="error-box">Não foi possível carregar: ${escapeHtml(err.message)}</div>`;
+      }
+    }
+    function renderOpps() {
+      const d = oppsCache, box = document.getElementById('opps-container');
+      const typeById = Object.fromEntries(d.types.map(t => [t.id, t]));
+      const memberById = Object.fromEntries((d.members || []).map(m => [m.id, m]));
+      const clientById = Object.fromEntries((d.clients || []).map(c => [c.id, c]));
+      const invById = Object.fromEntries(d.investors.map(i => [i.id, i]));
+      const q = normTxt(document.getElementById('opps-search')?.value || '');
+      const presByPlot = {};
+      d.presentations.forEach(p => (presByPlot[p.plot_id] = presByPlot[p.plot_id] || []).push(p));
+      const fitsFor = p => { const c = plotCalc(p); return d.investors.filter(i => i.active !== false && investorFit(i, p, c, typeById).fit); };
+      const openPlots = d.plots.filter(p => PLOT_OPEN.includes(p.status));
+      const openProps = d.proposals.filter(p => ['draft', 'sent'].includes(p.status));
+      const tabs = [['plots', 'Terrenos', openPlots.length], ['investors', 'Investidores', d.investors.filter(i => i.active !== false).length]];
+      if (d.partner) tabs.push(['proposals', 'Propostas', openProps.length]);
+      const newLabel = { plots: '+ Terreno', investors: '+ Investidor', proposals: '+ Proposta' }[oppsTab];
+      let body = '';
+      if (oppsTab === 'plots') {
+        const match = p => !q || normTxt([p.name, p.municipality, p.parish, p.address, p.source_name, clientById[p.client_id]?.name].join(' ')).includes(q);
+        const list = d.plots.filter(match).filter(p => oppsPlotFilter === 'open' ? PLOT_OPEN.includes(p.status) : oppsPlotFilter === 'won' ? p.status === 'won' : ['lost', 'discarded'].includes(p.status));
+        const row = p => {
+          const c = plotCalc(p), nFit = fitsFor(p).length, nPres = (presByPlot[p.id] || []).length;
+          const sub = [p.municipality, p.land_area ? fmtNum(p.land_area) + ' m²' : null, typeById[p.project_type_id]?.name,
+            p.origin === 'client' ? 'cliente' + (clientById[p.client_id] ? ' ' + clientById[p.client_id].name : '') : p.source_name ? 'network · ' + p.source_name : 'network',
+            p.scout_id && memberById[p.scout_id] ? 'acompanha ' + memberById[p.scout_id].name.split(' ')[0] : null].filter(Boolean).join(' · ');
+          return `<div class="invoice-row click-row op-row" data-plot="${escapeHtml(p.id)}">
+            <span><b class="bl-title">${escapeHtml(p.name)}</b><br><small>${escapeHtml(sub)}</small></span>
+            <span class="op-fit">${nPres ? `<em>apresentado a ${nPres}</em>` : nFit ? `<em class="hi">${nFit} ${nFit === 1 ? 'investidor encaixa' : 'investidores encaixam'}</em>` : ''}</span>
+            <span class="amount">${c.price != null ? escapeHtml(fmtEURShort(c.price)) : ''}</span>
+          </div>`;
+        };
+        const filters = [['open', 'Em curso'], ['won', 'Ganhos'], ['closed', 'Perdidos e descartados']];
+        body = `<div class="segmented op-filter" id="opps-plot-filter">${filters.map(([k, l]) => `<button type="button" data-pf="${k}" class="${k === oppsPlotFilter ? 'active' : ''}">${l}</button>`).join('')}</div>`;
+        if (!list.length) body += `<div class="gantt-wrap"><div class="gantt-empty">${q ? 'Nenhum terreno encontrado.' : oppsPlotFilter === 'open' ? 'Ainda não há terrenos em curso. Toca em <b>+ Terreno</b> para registar o primeiro.' : 'Nada aqui.'}</div></div>`;
+        else if (oppsPlotFilter === 'open') body += PLOT_OPEN.map(st => {
+          const g = list.filter(p => p.status === st);
+          return g.length ? `<div class="section-label">${escapeHtml(optLabel(PLOT_STATUSES, st))} · ${g.length}</div><div class="gantt-wrap">${g.map(row).join('')}</div>` : '';
+        }).join('');
+        else body += `<div class="gantt-wrap">${list.map(row).join('')}</div>`;
+      } else if (oppsTab === 'investors') {
+        const list = d.investors.filter(i => !q || normTxt([i.name, i.company, i.email, (i.zones || []).join(' ')].join(' ')).includes(q))
+          .sort((a, b) => (b.active !== false) - (a.active !== false) || a.name.localeCompare(b.name, 'pt'));
+        body = list.length ? `<div class="gantt-wrap">${list.map(i => {
+          const nFit = d.plots.filter(p => PLOT_OPEN.includes(p.status) && investorFit(i, p, plotCalc(p), typeById).fit).length;
+          const sub = [(i.project_type_ids || []).map(t => typeById[t]?.name).filter(Boolean).join(', '), fmtRangeN(i.fractions_min, i.fractions_max, 'frações'),
+            fmtRangeEUR(i.invest_min, i.invest_max), (i.zones || []).join(', '), i.approved_pref !== 'any' ? optLabel(APPROVED_PREFS, i.approved_pref).toLowerCase() : null].filter(Boolean).join(' · ');
+          return `<div class="invoice-row click-row op-row${i.active === false ? ' bl-archived' : ''}" data-investor="${escapeHtml(i.id)}">
+            <span><b class="bl-title">${escapeHtml(i.name)}</b>${i.company ? ` <small>· ${escapeHtml(i.company)}</small>` : ''}<br><small>${escapeHtml(sub || 'perfil por preencher')}</small></span>
+            <span class="op-fit">${i.active === false ? '<em>inativo</em>' : nFit ? `<em class="hi">${nFit} ${nFit === 1 ? 'terreno encaixa' : 'terrenos encaixam'}</em>` : ''}</span>
+          </div>`;
+        }).join('')}</div>` : `<div class="gantt-wrap"><div class="gantt-empty">${q ? 'Nenhum investidor encontrado.' : 'Ainda não há investidores. Toca em <b>+ Investidor</b> e preenche o perfil de investimento: a app passa a sugerir os terrenos certos.'}</div></div>`;
+      } else {
+        const list = d.proposals.filter(p => !q || normTxt([p.ref, p.title, p.client_name, clientById[p.client_id]?.name].join(' ')).includes(q));
+        const pill = s => `<span class="invoice-status ${s === 'accepted' ? 'paid' : s === 'declined' ? 'neutral' : s === 'sent' ? 'partial' : 'neutral'}">${escapeHtml(optLabel(PROP_STATUSES, s))}</span>`;
+        body = list.length ? `<div class="gantt-wrap">${list.map(p => `
+          <div class="invoice-row click-row op-row" data-proposal="${escapeHtml(p.id)}">
+            <span><b class="bl-title">${escapeHtml([p.ref, p.title].filter(Boolean).join(' · '))}</b><br><small>${escapeHtml([clientById[p.client_id]?.name || p.client_name, typeById[p.project_type_id]?.name, optLabel(PROP_METHODS, p.method).toLowerCase(), p.sent_on ? 'enviada a ' + fmtDayMonth(p.sent_on) : null].filter(Boolean).join(' · '))}</small></span>
+            ${pill(p.status)}
+            <span class="amount">${p.total ? escapeHtml(fmtEURShort(p.total)) : ''}</span>
+          </div>`).join('')}</div>` : `<div class="gantt-wrap"><div class="gantt-empty">${q ? 'Nenhuma proposta encontrada.' : 'Ainda não há propostas. Toca em <b>+ Proposta</b> — ou cria-a a partir da ficha de um terreno.'}</div></div>`;
+      }
+      const searchVal = document.getElementById('opps-search')?.value || '';
+      box.innerHTML = `
+        <div class="billing-bar">
+          <div class="segmented" id="opps-tabs">${tabs.map(([k, l, n]) => `<button type="button" data-otab="${k}" class="${k === oppsTab ? 'active' : ''}">${l}${n ? `<em>${n}</em>` : ''}</button>`).join('')}</div>
+          <button type="button" class="secondary-btn toolbar-btn" id="opps-new">${newLabel}</button>
+        </div>
+        <input type="text" id="opps-search" class="search-input op-search" placeholder="Pesquisar…" autocomplete="off" value="${escapeHtml(searchVal)}">
+        ${body}`;
+      box.querySelectorAll('[data-otab]').forEach(b => b.addEventListener('click', () => { oppsTab = b.dataset.otab; document.getElementById('opps-search').value = ''; renderOpps(); }));
+      box.querySelectorAll('[data-pf]').forEach(b => b.addEventListener('click', () => { oppsPlotFilter = b.dataset.pf; renderOpps(); }));
+      const s = document.getElementById('opps-search');
+      s.addEventListener('input', () => { const pos = s.selectionStart; renderOpps(); const s2 = document.getElementById('opps-search'); s2.focus(); s2.setSelectionRange(pos, pos); });
+      box.querySelectorAll('[data-plot]').forEach(r => r.addEventListener('click', () => openPlotView(r.dataset.plot)));
+      box.querySelectorAll('[data-investor]').forEach(r => r.addEventListener('click', () => openInvestorModal(invById[r.dataset.investor], loadOpps)));
+      box.querySelectorAll('[data-proposal]').forEach(r => r.addEventListener('click', () => openProposalView(r.dataset.proposal)));
+      document.getElementById('opps-new').addEventListener('click', () => {
+        if (oppsTab === 'plots') openPlotModal(null, id => openPlotView(id));
+        else if (oppsTab === 'investors') openInvestorModal(null, loadOpps);
+        else openProposalView(null);
+      });
+    }
+
+    // ---------- Terreno: registar / editar ----------
+    async function openPlotModal(plot, onSaved) {
+      const isEdit = !!plot, p = plot || { origin: 'network', sellable_ratio: 80 };
+      const d = oppsCache || await loadOppsData();
+      const me = await getCurrentMember();
+      const v = k => escapeHtml(p[k] ?? '');
+      openQuickModal(isEdit ? 'Editar terreno' : 'Novo terreno', `
+        <label class="field-label" style="margin-top:0;">Nome</label>
+        <input type="text" id="pl-name" class="form-input" placeholder="ex.: Terreno da Rua do Campo" value="${v('name')}">
+        <label class="field-label">De onde veio</label>
+        <div class="segmented" id="pl-origin"><button type="button" data-o="network" class="${p.origin !== 'client' ? 'active' : ''}">Da nossa network</button><button type="button" data-o="client" class="${p.origin === 'client' ? 'active' : ''}">Trazido por um cliente</button></div>
+        <div id="pl-client-wrap"${p.origin === 'client' ? '' : ' hidden'}><label class="field-label">Cliente</label>${clientPickerHtml('pl-client')}</div>
+        <div id="pl-source-wrap"${p.origin === 'client' ? ' hidden' : ''}><label class="field-label">Quem nos falou dele</label><input type="text" id="pl-source" class="form-input" placeholder="ex.: João (mediador), anúncio, contacto do Nuno" value="${v('source_name')}"></div>
+        <label class="field-label">Quem acompanha</label>
+        <select id="pl-scout" class="form-input"><option value="">Ninguém em particular</option>${(d.members || []).map(m => `<option value="${escapeHtml(m.id)}"${String(m.id) === String(p.scout_id ?? (isEdit ? '' : me?.id)) ? ' selected' : ''}>${escapeHtml(m.name)}</option>`).join('')}</select>
+        <label class="field-label">Morada</label><input type="text" id="pl-address" class="form-input" value="${v('address')}">
+        <div class="form-grid">
+          <div><label class="field-label">Concelho</label><input type="text" id="pl-muni" class="form-input" placeholder="ex.: Vila Nova de Gaia" value="${v('municipality')}"></div>
+          <div><label class="field-label">Freguesia</label><input type="text" id="pl-parish" class="form-input" value="${v('parish')}"></div>
+        </div>
+        <label class="field-label">Link do mapa</label><input type="url" id="pl-maps" class="form-input" placeholder="cola o link do Google Maps" value="${v('maps_url')}">
+        <label class="field-label">Pasta com fotos e documentos</label><input type="url" id="pl-docs" class="form-input" placeholder="link da pasta (Drive, Dropbox…)" value="${v('docs_url')}">
+        <div class="form-grid">
+          <div><label class="field-label">Área do terreno (m²)</label><input type="text" inputmode="decimal" id="pl-area" class="form-input" value="${v('land_area')}"></div>
+          <div><label class="field-label">Preço pedido (€)</label><input type="text" inputmode="decimal" id="pl-price" class="form-input" value="${v('asking_price')}"></div>
+        </div>
+        <label class="field-label">Tipologia</label>
+        <select id="pl-type" class="form-input"><option value="">Por definir</option>${d.types.map(t => `<option value="${escapeHtml(t.id)}"${t.id === p.project_type_id ? ' selected' : ''}>${escapeHtml(t.name)}</option>`).join('')}</select>
+        <label class="check-row"><input type="checkbox" id="pl-approved"${p.has_approved_project ? ' checked' : ''}> Já tem projeto aprovado</label>
+
+        <div class="section-label op-form-sec">Urbanismo (PDM)</div>
+        <label class="field-label" style="margin-top:0;">Classe de espaço</label><input type="text" id="pl-pdm" class="form-input" placeholder="ex.: Espaço residencial — tipo II" value="${v('pdm_class')}">
+        <div class="form-grid">
+          <div><label class="field-label">Índice de utilização</label><input type="text" inputmode="decimal" id="pl-index" class="form-input" placeholder="ex.: 0,8" value="${v('pdm_index')}"></div>
+          <div><label class="field-label">Pisos máximos</label><input type="text" inputmode="numeric" id="pl-floors" class="form-input" value="${v('max_floors')}"></div>
+          <div><label class="field-label">Área de construção (m²)</label><input type="text" inputmode="decimal" id="pl-build" class="form-input" value="${v('buildable_area')}"></div>
+          <div><label class="field-label">Frações estimadas</label><input type="text" inputmode="numeric" id="pl-fractions" class="form-input" value="${v('fractions_est')}"></div>
+        </div>
+        <div class="field-hint" id="pl-build-hint"></div>
+
+        <div class="section-label op-form-sec">Viabilidade</div>
+        <div class="form-grid">
+          <div><label class="field-label" style="margin-top:0;">Custo de construção (€/m²)</label><input type="text" inputmode="decimal" id="pl-bcost" class="form-input" placeholder="ex.: 1100" value="${v('build_cost_m2')}"></div>
+          <div><label class="field-label" style="margin-top:0;">Outros custos (% da construção)</label><input type="text" inputmode="decimal" id="pl-other" class="form-input" placeholder="licenças, projetos, imprevistos" value="${v('other_costs_pct')}"></div>
+          <div><label class="field-label">Preço de venda (€/m²)</label><input type="text" inputmode="decimal" id="pl-sale" class="form-input" placeholder="ex.: 3200" value="${v('sale_price_m2')}"></div>
+          <div><label class="field-label">Área vendável (% da construção)</label><input type="text" inputmode="decimal" id="pl-sellable" class="form-input" placeholder="80" value="${v('sellable_ratio')}"></div>
+        </div>
+
+        <div class="section-label op-form-sec">Notas e riscos</div>
+        <label class="field-label" style="margin-top:0;">Notas</label><textarea id="pl-notes" class="form-input" rows="3">${v('notes')}</textarea>
+        <label class="field-label">Riscos e pontos de atenção</label><textarea id="pl-risks" class="form-input" rows="3" placeholder="servidões, RAN/REN, acessos, ruído…">${v('risks')}</textarea>
+        <button type="button" class="primary-btn" id="pl-save">${isEdit ? 'Guardar' : 'Registar terreno'}</button>
+        ${isEdit ? '<button type="button" class="text-btn danger-text" id="pl-delete" style="margin-top:12px;">Eliminar terreno</button>' : ''}
+        <div id="pl-msg" class="form-msg"></div>`);
+      let origin = p.origin === 'client' ? 'client' : 'network';
+      const picker = await mountClientPicker('pl-client', { clientId: p.client_id || null });
+      document.getElementById('pl-origin').addEventListener('click', e => {
+        const b = e.target.closest('[data-o]'); if (!b) return;
+        origin = b.dataset.o;
+        document.querySelectorAll('#pl-origin button').forEach(x => x.classList.toggle('active', x === b));
+        document.getElementById('pl-client-wrap').hidden = origin !== 'client';
+        document.getElementById('pl-source-wrap').hidden = origin === 'client';
+      });
+      const hint = () => {
+        const a = numOrNull(document.getElementById('pl-area').value), i = numOrNull(document.getElementById('pl-index').value);
+        const el = document.getElementById('pl-build-hint');
+        el.textContent = a && i && !document.getElementById('pl-build').value.trim()
+          ? `Sem área de construção escrita, a app usa área × índice = ${fmtNum(Math.round(a * i))} m².` : 'Se deixares a área de construção vazia, a app calcula-a com a área do terreno × índice.';
+      };
+      ['pl-area', 'pl-index', 'pl-build'].forEach(id => document.getElementById(id).addEventListener('input', hint));
+      hint();
+      document.getElementById('pl-save').addEventListener('click', async () => {
+        const name = document.getElementById('pl-name').value.trim();
+        if (!name) return formError('pl-msg', 'Indica um nome para o terreno.');
+        const g = id => document.getElementById(id).value.trim();
+        const row = {
+          name, origin, client_id: origin === 'client' ? picker.get().clientId : null, source_name: origin === 'client' ? null : valOrNull(g('pl-source')),
+          scout_id: g('pl-scout') || null, address: valOrNull(g('pl-address')), municipality: valOrNull(g('pl-muni')), parish: valOrNull(g('pl-parish')),
+          maps_url: valOrNull(g('pl-maps')), docs_url: valOrNull(g('pl-docs')), land_area: numOrNull(g('pl-area')), asking_price: numOrNull(g('pl-price')),
+          project_type_id: g('pl-type') || null, has_approved_project: document.getElementById('pl-approved').checked,
+          pdm_class: valOrNull(g('pl-pdm')), pdm_index: numOrNull(g('pl-index')), max_floors: numOrNull(g('pl-floors')),
+          buildable_area: numOrNull(g('pl-build')), fractions_est: numOrNull(g('pl-fractions')),
+          build_cost_m2: numOrNull(g('pl-bcost')), other_costs_pct: numOrNull(g('pl-other')), sale_price_m2: numOrNull(g('pl-sale')), sellable_ratio: numOrNull(g('pl-sellable')),
+          notes: valOrNull(g('pl-notes')), risks: valOrNull(g('pl-risks'))
+        };
+        if (Object.entries(row).some(([k, x]) => typeof x === 'number' && Number.isNaN(x))) return formError('pl-msg', 'Há um número inválido (usa só algarismos e vírgula).');
+        try {
+          let id = p.id;
+          if (isEdit) await dbUpdate('land_plots', p.id, { ...row, updated_at: new Date().toISOString() }, mockPlots);
+          else id = (await dbInsert('land_plots', { ...row, status: 'registered', created_by: me?.id ?? null, created_at: new Date().toISOString() }, mockPlots)).id;
+          closeQuickModal(); showToast(isEdit ? 'Terreno guardado' : 'Terreno registado');
+          onSaved && onSaved(id);
+        } catch (err) { formError('pl-msg', 'Não foi possível guardar: ' + err.message); }
+      });
+      if (isEdit) document.getElementById('pl-delete').addEventListener('click', async () => {
+        if (!window.confirm(`Eliminar o terreno "${p.name}"? As apresentações a investidores também são apagadas. As propostas ficam, sem terreno.`)) return;
+        try { await dbDelete('land_plots', p.id, mockPlots); closeQuickModal(); showToast('Terreno eliminado'); navStack = []; openOppsModule('plots'); }
+        catch (err) { formError('pl-msg', 'Não foi possível eliminar: ' + err.message); }
+      });
+    }
+
+    // ---------- Ficha do terreno ----------
+    async function openPlotView(plotId) {
+      pushCurrentView({ name: 'plot', plotId });
+      hideAllViews();
+      const view = document.getElementById('plot-view');
+      view.style.display = 'block';
+      beginLoad(view, 'plot:' + plotId, '<div class="gantt-wrap">' + SKELETON(4) + '</div><div class="gantt-wrap">' + SKELETON(4) + '</div>');
+      try {
+        const d = oppsCache = await loadOppsData();
+        d.partner = isPartnerMember(await getCurrentMember());
+        const p = d.plots.find(x => String(x.id) === String(plotId));
+        if (!p) { view.innerHTML = '<div class="error-box">Terreno não encontrado.</div>'; return; }
+        document.getElementById('nav-title').textContent = p.name;
+        const typeById = Object.fromEntries(d.types.map(t => [t.id, t]));
+        const memberById = Object.fromEntries((d.members || []).map(m => [m.id, m]));
+        const clientById = Object.fromEntries((d.clients || []).map(c => [c.id, c]));
+        const invById = Object.fromEntries(d.investors.map(i => [i.id, i]));
+        const c = plotCalc(p);
+        const pres = d.presentations.filter(x => x.plot_id === p.id);
+        const presented = new Set(pres.map(x => x.investor_id));
+        const others = d.investors.filter(i => i.active !== false && !presented.has(i.id)).map(i => ({ i, f: investorFit(i, p, c, typeById) }));
+        const fits = others.filter(x => x.f.fit), near = others.filter(x => !x.f.fit && x.f.near);
+        const props = d.proposals.filter(x => x.plot_id === p.id);
+        const kv = (label, value, cls = '') => `<div class="invoice-row op-kv"><span>${label}</span><span class="${cls}">${value}</span></div>`;
+        const eur = n => n != null ? escapeHtml(fmtEUR(n)) : '<span class="muted">—</span>';
+        const txt = s => s ? escapeHtml(s) : '<span class="muted">—</span>';
+        const link = (url, label) => url && /^https?:\/\//i.test(url) ? `<a class="text-btn" href="${escapeHtml(url)}" target="_blank" rel="noopener">${label}</a>` : '<span class="muted">—</span>';
+        const origin = p.origin === 'client' ? 'Trazido por ' + (clientById[p.client_id]?.name || 'um cliente') : 'Network' + (p.source_name ? ' · ' + p.source_name : '');
+        const presRow = x => {
+          const i = invById[x.investor_id];
+          return `<div class="invoice-row op-pres">
+            <span><b class="bl-title">${escapeHtml(i?.name || 'Investidor')}</b><br><small>apresentado a ${escapeHtml(fmtDayMonthYear(x.presented_on))}</small></span>
+            <select class="form-input op-pres-status" data-pres="${escapeHtml(x.id)}" aria-label="Resposta de ${escapeHtml(i?.name || '')}">${PRES_STATUSES.map(([k, l]) => `<option value="${k}"${k === x.status ? ' selected' : ''}>${l}</option>`).join('')}</select>
+          </div>`;
+        };
+        const fitRow = (x, nearOnly) => `<div class="invoice-row op-fitrow">
+            <span><b class="bl-title">${escapeHtml(x.i.name)}</b>${x.i.company ? ` <small>· ${escapeHtml(x.i.company)}</small>` : ''}<br><span class="op-checks">${fitChecksHtml(x.f)}</span></span>
+            <button type="button" class="secondary-btn op-present" data-present="${escapeHtml(x.i.id)}">${nearOnly ? 'Apresentar mesmo assim' : 'Apresentar'}</button>
+          </div>`;
+        view.innerHTML = `
+          <div class="detail-header">
+            <div class="titles"><h2>${escapeHtml(p.name)}</h2>
+              <div class="sub">${escapeHtml([origin, p.municipality, p.scout_id && memberById[p.scout_id] ? 'acompanha ' + memberById[p.scout_id].name : null].filter(Boolean).join(' · '))}</div></div>
+            <button type="button" class="secondary-btn" id="pl-edit">Editar</button>
+          </div>
+          <div class="op-stage">
+            <label class="field-label" for="pl-status" style="margin:0;">Etapa</label>
+            <select id="pl-status" class="form-input">${PLOT_STATUSES.map(([k, l]) => `<option value="${k}"${k === p.status ? ' selected' : ''}>${l}</option>`).join('')}</select>
+            ${p.closed_reason && ['lost', 'discarded'].includes(p.status) ? `<small>${escapeHtml(p.closed_reason)}</small>` : ''}
+            ${p.project_id ? `<button type="button" class="text-btn" data-open-project="${escapeHtml(p.project_id)}">Abrir o projeto →</button>` : ''}
+          </div>
+          <div class="op-grid">
+            <div class="gantt-wrap">
+              <div class="card-head"><h2>Terreno</h2></div>
+              ${kv('Área do terreno', p.land_area ? escapeHtml(fmtNum(p.land_area)) + ' m²' : txt(null))}
+              ${kv('Preço pedido', eur(p.asking_price))}
+              ${kv('Tipologia', txt(typeById[p.project_type_id]?.name))}
+              ${kv('Projeto aprovado', p.has_approved_project ? 'Sim' : 'Não')}
+              ${kv('Morada', txt([p.address, p.parish].filter(Boolean).join(', ')))}
+              ${kv('Mapa', link(p.maps_url, 'Abrir mapa'))}
+              ${kv('Fotos e documentos', link(p.docs_url, 'Abrir pasta'))}
+            </div>
+            <div class="gantt-wrap">
+              <div class="card-head"><h2>Urbanismo (PDM)</h2></div>
+              ${kv('Classe de espaço', txt(p.pdm_class))}
+              ${kv('Índice de utilização', p.pdm_index != null ? escapeHtml(fmtNum(p.pdm_index)) : txt(null))}
+              ${kv('Pisos máximos', p.max_floors != null ? escapeHtml(String(p.max_floors)) : txt(null))}
+              ${kv('Área de construção', c.build != null ? escapeHtml(fmtNum(c.build)) + ' m²' + (c.buildAuto ? ' <small class="muted">(área × índice)</small>' : '') : txt(null))}
+              ${kv('Frações estimadas', p.fractions_est != null ? escapeHtml(String(p.fractions_est)) : txt(null))}
+            </div>
+            <div class="gantt-wrap">
+              <div class="card-head"><h2>Viabilidade</h2></div>
+              ${c.investment == null && c.revenue == null ? '<div class="field-hint" style="margin:0 0 8px;">Preenche em <b>Editar</b> o custo de construção e o preço de venda por m² para ver as contas do investidor.</div>' : ''}
+              ${kv('Terreno', eur(c.price))}
+              ${kv('Construção', c.buildCost != null ? eur(c.buildCost) + ` <small class="muted">${escapeHtml(fmtNum(c.build))} m² × ${escapeHtml(fmtEURShort(p.build_cost_m2))}</small>` : txt(null))}
+              ${c.other ? kv(`Outros custos (${escapeHtml(fmtNum(p.other_costs_pct))}%)`, eur(c.other)) : ''}
+              ${kv('<b>Investimento total</b>', c.investment != null ? `<b>${eur(c.investment)}</b>${c.investmentFull ? '' : ' <small class="muted">(só o terreno)</small>'}` : txt(null))}
+              ${kv('Receita de venda', c.revenue != null ? eur(c.revenue) + ` <small class="muted">${escapeHtml(fmtNum(Math.round(c.sellable)))} m² vendáveis</small>` : txt(null))}
+              ${kv('<b>Margem do promotor</b>', c.margin != null ? `<b class="${c.margin < 0 ? 'late' : ''}">${eur(c.margin)}</b> <small class="muted">${escapeHtml(fmtNum(Math.round(c.roi)))}% do investimento</small>` : txt(null))}
+            </div>
+          </div>
+          <div class="gantt-wrap">
+            <div class="card-head"><h2>Investidores</h2><span>${d.investors.length ? '' : '<button type="button" class="text-btn" id="pl-go-investors">+ Investidor</button>'}</span></div>
+            ${pres.length ? `<div class="section-label" style="margin-top:0;">Já apresentado a</div>${pres.map(presRow).join('')}` : ''}
+            ${fits.length ? `<div class="section-label"${pres.length ? '' : ' style="margin-top:0;"'}>Encaixam no perfil</div>${fits.map(x => fitRow(x, false)).join('')}` : ''}
+            ${near.length ? `<div class="section-label">Quase encaixam</div>${near.map(x => fitRow(x, true)).join('')}` : ''}
+            ${!pres.length && !fits.length && !near.length ? `<div class="gantt-empty">${d.investors.length ? 'Nenhum investidor encaixa neste terreno (ainda). Completa a tipologia, o concelho e a viabilidade, ou revê os perfis dos investidores.' : 'Ainda não há investidores. Regista-os em Oportunidades → Investidores.'}</div>` : ''}
+            ${others.length ? `<div class="op-present-other"><select class="form-input" id="pl-other-inv" aria-label="Outro investidor"><option value="">Apresentar a outro investidor…</option>${others.filter(x => !x.f.fit && !x.f.near).map(x => `<option value="${escapeHtml(x.i.id)}">${escapeHtml(x.i.name)}</option>`).join('')}</select></div>` : ''}
+          </div>
+          ${d.partner ? `<div class="gantt-wrap">
+            <div class="card-head"><h2>Proposta de honorários</h2><button type="button" class="text-btn" id="pl-new-prop">+ Nova proposta</button></div>
+            ${props.length ? props.map(x => `<div class="invoice-row click-row" data-proposal="${escapeHtml(x.id)}"><span><b class="bl-title">${escapeHtml([x.ref, x.title].filter(Boolean).join(' · '))}</b><br><small>${escapeHtml(optLabel(PROP_STATUSES, x.status))}${x.sent_on ? ' · enviada a ' + escapeHtml(fmtDayMonth(x.sent_on)) : ''}</small></span><span class="amount">${x.total ? escapeHtml(fmtEURShort(x.total)) : ''}</span></div>`).join('')
+              : '<div class="gantt-empty">Quando um investidor avançar, cria aqui a proposta: a app estima as horas com base nos projetos parecidos que já fizemos.</div>'}
+          </div>` : ''}
+          ${p.notes || p.risks ? `<div class="gantt-wrap">
+            <div class="card-head"><h2>Notas e riscos</h2></div>
+            ${p.notes ? `<p class="op-note">${escapeHtml(p.notes)}</p>` : ''}
+            ${p.risks ? `<p class="op-note op-risk"><b>Riscos:</b> ${escapeHtml(p.risks)}</p>` : ''}
+          </div>` : ''}`;
+        const reopen = () => { suppressNavPush = true; openPlotView(p.id); };
+        document.getElementById('pl-edit').addEventListener('click', () => openPlotModal(p, reopen));
+        view.querySelectorAll('[data-open-project]').forEach(b => b.addEventListener('click', () => openDetail(b.dataset.openProject)));
+        view.querySelectorAll('[data-proposal]').forEach(b => b.addEventListener('click', () => openProposalView(b.dataset.proposal)));
+        document.getElementById('pl-go-investors')?.addEventListener('click', () => openInvestorModal(null, reopen));
+        document.getElementById('pl-status').addEventListener('change', async e => {
+          const st = e.target.value, prev = p.status;
+          const save = async (reason) => {
+            try {
+              await dbUpdate('land_plots', p.id, { status: st, closed_reason: reason ?? null, updated_at: new Date().toISOString() }, mockPlots);
+              showToast('Etapa: ' + optLabel(PLOT_STATUSES, st), { ms: 8000, undo: async () => { await dbUpdate('land_plots', p.id, { status: prev, closed_reason: p.closed_reason ?? null }, mockPlots); reopen(); } });
+              reopen();
+            } catch (err) { showError('mudar a etapa', err); e.target.value = prev; }
+          };
+          if (['lost', 'discarded'].includes(st)) {
+            openQuickModal(st === 'lost' ? 'Terreno perdido' : 'Terreno descartado', `
+              <label class="field-label" style="margin-top:0;">Porquê? (opcional)</label>
+              <input type="text" id="pl-reason" class="form-input" maxlength="200" placeholder="${st === 'lost' ? 'ex.: vendido a outro promotor' : 'ex.: índice baixo, preço alto, RAN'}">
+              <button type="button" class="primary-btn" id="pl-reason-go">Guardar</button>`);
+            const go = () => { closeQuickModal(); save(valOrNull(document.getElementById('pl-reason').value.trim())); };
+            document.getElementById('pl-reason-go').addEventListener('click', go);
+            document.getElementById('pl-reason').addEventListener('keydown', ev => { if (ev.key === 'Enter') go(); });
+            e.target.value = prev;
+          } else save(null);
+        });
+        const present = async (invId) => {
+          try {
+            await dbInsert('land_presentations', { plot_id: p.id, investor_id: invId, presented_on: dateKey(new Date()), status: 'presented' }, mockPresentations);
+            if (['registered', 'analysis'].includes(p.status)) await dbUpdate('land_plots', p.id, { status: 'presented', updated_at: new Date().toISOString() }, mockPlots);
+            showToast('Apresentado a ' + (invById[invId]?.name || 'investidor'));
+            reopen();
+          } catch (err) { showError('registar a apresentação', err); }
+        };
+        view.querySelectorAll('[data-present]').forEach(b => b.addEventListener('click', () => present(b.dataset.present)));
+        document.getElementById('pl-other-inv')?.addEventListener('change', e => { if (e.target.value) present(e.target.value); });
+        view.querySelectorAll('[data-pres]').forEach(sel => sel.addEventListener('change', async () => {
+          try {
+            await dbUpdate('land_presentations', sel.dataset.pres, { status: sel.value }, mockPresentations);
+            const x = pres.find(y => String(y.id) === sel.dataset.pres);
+            if (sel.value === 'proposal' && d.partner) {
+              showToast('Boa! Cria a proposta de honorários', { ms: 8000 });
+              openProposalView(null, { plot: p, investor: invById[x?.investor_id] });
+            } else { showToast('Resposta guardada'); reopen(); }
+          } catch (err) { showError('guardar', err); }
+        }));
+        document.getElementById('pl-new-prop')?.addEventListener('click', () => {
+          const keen = pres.find(x => ['proposal', 'interested'].includes(x.status));
+          openProposalView(null, { plot: p, investor: keen ? invById[keen.investor_id] : null });
+        });
+      } catch (err) {
+        view.innerHTML = `<div class="error-box">Não foi possível abrir o terreno: ${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    // ---------- Investidor: perfil de investimento ----------
+    async function openInvestorModal(inv, onSaved) {
+      const isEdit = !!inv, x = inv || { approved_pref: 'any', project_type_ids: [], zones: [], active: true };
+      const d = oppsCache || await loadOppsData();
+      const typeById = Object.fromEntries(d.types.map(t => [t.id, t]));
+      const v = k => escapeHtml(x[k] ?? '');
+      const fitting = isEdit ? d.plots.filter(p => PLOT_OPEN.includes(p.status) && investorFit(x, p, plotCalc(p), typeById).fit) : [];
+      openQuickModal(isEdit ? 'Investidor' : 'Novo investidor', `
+        <label class="field-label" style="margin-top:0;">Nome</label>
+        <input type="text" id="iv-name" class="form-input" value="${v('name')}">
+        <div class="form-grid">
+          <div><label class="field-label">Empresa</label><input type="text" id="iv-company" class="form-input" value="${v('company')}"></div>
+          <div><label class="field-label">Telefone</label><input type="tel" id="iv-phone" class="form-input" value="${v('phone')}"></div>
+        </div>
+        <label class="field-label">Email</label><input type="email" id="iv-email" class="form-input" value="${v('email')}">
+        <div class="section-label op-form-sec">Perfil de investimento</div>
+        <label class="field-label" style="margin-top:0;">Tipologias que procura</label>
+        <div class="op-chips" id="iv-types">${d.types.map(t => `<label class="op-chip"><input type="checkbox" value="${escapeHtml(t.id)}"${(x.project_type_ids || []).includes(t.id) ? ' checked' : ''}><span>${escapeHtml(t.name)}</span></label>`).join('')}</div>
+        <div class="form-grid" id="iv-fr-wrap">
+          <div><label class="field-label">Frações (mín.)</label><input type="text" inputmode="numeric" id="iv-frmin" class="form-input" value="${v('fractions_min')}"></div>
+          <div><label class="field-label">Frações (máx.)</label><input type="text" inputmode="numeric" id="iv-frmax" class="form-input" value="${v('fractions_max')}"></div>
+        </div>
+        <div class="form-grid">
+          <div><label class="field-label">Investimento mínimo (€)</label><input type="text" inputmode="decimal" id="iv-imin" class="form-input" placeholder="ex.: 500000" value="${v('invest_min')}"></div>
+          <div><label class="field-label">Investimento máximo (€)</label><input type="text" inputmode="decimal" id="iv-imax" class="form-input" placeholder="ex.: 3000000" value="${v('invest_max')}"></div>
+        </div>
+        <div class="field-hint">Investimento total: terreno + construção + outros custos.</div>
+        <label class="field-label">Localização</label>
+        <input type="text" id="iv-zones" class="form-input" placeholder="concelhos ou freguesias, separados por vírgulas: Porto, Gaia, Matosinhos" value="${escapeHtml((x.zones || []).join(', '))}">
+        <label class="field-label">Projeto aprovado</label>
+        <select id="iv-approved" class="form-input">${APPROVED_PREFS.map(([k, l]) => `<option value="${k}"${k === (x.approved_pref || 'any') ? ' selected' : ''}>${l}</option>`).join('')}</select>
+        <label class="field-label">Notas</label><textarea id="iv-notes" class="form-input" rows="3">${v('notes')}</textarea>
+        ${isEdit ? `<label class="check-row"><input type="checkbox" id="iv-active"${x.active !== false ? ' checked' : ''}> Ativo (desliga para deixar de lhe sugerir terrenos)</label>` : ''}
+        ${isEdit ? `<div class="section-label op-form-sec">Terrenos em curso que encaixam</div>${fitting.length ? fitting.map(p => `<div class="invoice-row click-row" data-iv-plot="${escapeHtml(p.id)}"><span>${escapeHtml(p.name)}<br><small class="muted">${escapeHtml([p.municipality, optLabel(PLOT_STATUSES, p.status)].filter(Boolean).join(' · '))}</small></span></div>`).join('') : '<div class="gantt-empty">Nenhum, por agora.</div>'}` : ''}
+        <button type="button" class="primary-btn" id="iv-save">${isEdit ? 'Guardar' : 'Criar investidor'}</button>
+        ${isEdit ? '<button type="button" class="text-btn danger-text" id="iv-delete" style="margin-top:12px;">Eliminar investidor</button>' : ''}
+        <div id="iv-msg" class="form-msg"></div>`);
+      const syncFr = () => {
+        const multi = [...document.querySelectorAll('#iv-types input:checked')].some(cb => typeById[cb.value]?.size_measure === 'fractions');
+        document.getElementById('iv-fr-wrap').hidden = !multi;
+      };
+      document.getElementById('iv-types').addEventListener('change', syncFr); syncFr();
+      document.querySelectorAll('[data-iv-plot]').forEach(r => r.addEventListener('click', () => { closeQuickModal(); openPlotView(r.dataset.ivPlot); }));
+      document.getElementById('iv-save').addEventListener('click', async () => {
+        const g = id => document.getElementById(id).value.trim();
+        const name = g('iv-name');
+        if (!name) return formError('iv-msg', 'Indica o nome.');
+        const multi = !document.getElementById('iv-fr-wrap').hidden;
+        const row = {
+          name, company: valOrNull(g('iv-company')), phone: valOrNull(g('iv-phone')), email: valOrNull(g('iv-email')),
+          project_type_ids: [...document.querySelectorAll('#iv-types input:checked')].map(cb => cb.value),
+          fractions_min: multi ? numOrNull(g('iv-frmin')) : null, fractions_max: multi ? numOrNull(g('iv-frmax')) : null,
+          invest_min: numOrNull(g('iv-imin')), invest_max: numOrNull(g('iv-imax')),
+          zones: g('iv-zones').split(/[,;]/).map(s => s.trim()).filter(Boolean),
+          approved_pref: g('iv-approved'), notes: valOrNull(g('iv-notes')),
+          active: isEdit ? document.getElementById('iv-active').checked : true
+        };
+        if ([row.fractions_min, row.fractions_max, row.invest_min, row.invest_max].some(n => Number.isNaN(n))) return formError('iv-msg', 'Há um número inválido.');
+        if (row.invest_min != null && row.invest_max != null && row.invest_max < row.invest_min) return formError('iv-msg', 'O investimento máximo é menor que o mínimo.');
+        try {
+          if (isEdit) await dbUpdate('investors', x.id, { ...row, updated_at: new Date().toISOString() }, mockInvestors);
+          else await dbInsert('investors', { ...row, created_by: (await getCurrentMember())?.id ?? null }, mockInvestors);
+          closeQuickModal(); showToast(isEdit ? 'Investidor guardado' : 'Investidor criado');
+          onSaved && onSaved();
+        } catch (err) { formError('iv-msg', 'Não foi possível guardar: ' + err.message); }
+      });
+      if (isEdit) document.getElementById('iv-delete').addEventListener('click', async () => {
+        if (!window.confirm(`Eliminar "${x.name}"? O registo das apresentações a este investidor também é apagado. Para só deixar de lhe sugerir terrenos, desliga "Ativo".`)) return;
+        try { await dbDelete('investors', x.id, mockInvestors); closeQuickModal(); showToast('Investidor eliminado'); onSaved && onSaved(); }
+        catch (err) { formError('iv-msg', 'Não foi possível eliminar: ' + err.message); }
+      });
+    }
+
+    // ---------- Propostas de honorários ----------
+    // Horas que projetos parecidos levaram: horas registadas, projetadas até ao fim pela parte já concluída
+    async function loadHoursHistory() {
+      if (devMode) return [
+        { id: 'mock-1', code: 'NOVA-001', name: 'Edifício Miradouro', project_type_id: 'pt-1', area: 1800, fractions: 14, hours: 420, share: 0.6 },
+        { id: 'mock-2', code: 'NOVA-002', name: 'Moradia Vale das Flores', project_type_id: 'pt-2', area: 250, fractions: null, hours: 160, share: 0.8 },
+        { id: 'mock-3', code: 'NOVA-003', name: 'Moradia Foz', project_type_id: 'pt-2', area: 320, fractions: null, hours: 230, share: 1 }
+      ];
+      const entries = [];
+      for (let from = 0; from < 50000; from += 1000) {
+        const r = await supabase.from('time_entries').select('project_id, hours').not('project_id', 'is', null).order('id').range(from, from + 999);
+        if (r.error) throw r.error;
+        entries.push(...(r.data || []));
+        if (!r.data || r.data.length < 1000) break;
+      }
+      const [p, s] = await Promise.all([
+        supabase.from('projects').select('id, code, name, project_type_id, area, fractions, status'),
+        supabase.from('project_stages').select('project_id, status, percentage')
+      ]);
+      if (p.error) throw p.error;
+      if (s.error) throw s.error;
+      await loadProjectStatuses();
+      const hours = {}, stages = {};
+      entries.forEach(e => { hours[e.project_id] = (hours[e.project_id] || 0) + Number(e.hours || 0); });
+      (s.data || []).forEach(x => (stages[x.project_id] = stages[x.project_id] || []).push(x));
+      return (p.data || []).map(pr => {
+        const st = stages[pr.id] || [];
+        const pctAll = st.reduce((t, x) => t + (Number(x.percentage) || 0), 0);
+        const pctDone = st.filter(isStageDone).reduce((t, x) => t + (Number(x.percentage) || 0), 0);
+        let share = pctAll > 0 ? pctDone / pctAll : st.length ? st.filter(isStageDone).length / st.length : 0;
+        if (statusByCode(pr.status)?.is_closed) share = 1;
+        return { ...pr, hours: Math.round((hours[pr.id] || 0) * 10) / 10, share };
+      });
+    }
+    // Estimativa: mediana das horas por m² (ou por fração) dos projetos do mesmo tipo e de dimensão parecida
+    function estimateHours(hist, typeId, area, fractions) {
+      area = Number(area) || 0; fractions = Number(fractions) || 0;
+      const usable = hist.filter(h => h.hours > 0 && h.share >= 0.3);
+      const unit = fractions && usable.some(h => h.fractions) ? 'fr' : area ? 'm2' : null;
+      if (!unit) return null;
+      const size = unit === 'fr' ? fractions : area;
+      const refsOf = list => list.filter(h => (unit === 'fr' ? h.fractions : h.area) > 0).map(h => {
+        const projected = h.hours / Math.min(1, h.share), s = unit === 'fr' ? Number(h.fractions) : Number(h.area);
+        return { ...h, projected, size: s, rate: projected / s };
+      });
+      let refs = refsOf(usable.filter(h => h.project_type_id === typeId)), sameType = true;
+      if (!refs.length) { refs = refsOf(usable); sameType = false; }
+      if (!refs.length) return null;
+      const near = refs.filter(r => r.size >= size / 2.5 && r.size <= size * 2.5);
+      const base = near.length ? near : refs;
+      const rates = base.map(r => r.rate).sort((a, b) => a - b), m = rates.length;
+      const med = m % 2 ? rates[(m - 1) / 2] : (rates[m / 2 - 1] + rates[m / 2]) / 2;
+      return { hours: Math.max(5, Math.round(med * size / 5) * 5), refs: base, unit, sameType, rate: med, similarSize: !!near.length };
+    }
+    function proposalCalc(pp) {
+      const area = Number(pp.area) || 0, fr = Number(pp.fractions) || 0, unit = Number(pp.unit_value) || 0;
+      const total = pp.method === 'global' ? (Number(pp.total) || 0) : pp.method === 'fraction' ? unit * fr : unit * area;
+      const lineValue = s => s.mode === 'm2' ? (Number(s.value) || 0) * area : (Number(s.value) || 0);
+      const spec = (pp.specialties || []).reduce((t, s) => t + lineValue(s), 0);
+      const hours = Number(pp.est_hours) || 0, cph = Number(pp.cost_per_hour) || 0, rate = Number(pp.target_rate) || 0;
+      const team = hours * cph, cost = team + spec;
+      return {
+        total: Math.round(total * 100) / 100, spec, lineValue, team, cost, targetValue: hours * rate + spec,
+        margin: total - cost, marginPct: total ? (total - cost) / total * 100 : null,
+        perHour: hours ? (total - spec) / hours : null, perM2: area ? total / area : null, perFr: fr ? total / fr : null
+      };
+    }
+    let proposalState = null;   // proposta aberta no editor
+    async function openProposalView(proposalId, preset = {}) {
+      pushCurrentView({ name: 'proposal', proposalId: proposalId || null });
+      hideAllViews();
+      const view = document.getElementById('proposal-view');
+      view.style.display = 'block';
+      document.getElementById('nav-title').textContent = proposalId ? 'Proposta de honorários' : 'Nova proposta';
+      beginLoad(view, 'proposal:' + (proposalId || 'new'), '<div class="gantt-wrap">' + SKELETON(5) + '</div><div class="gantt-wrap">' + SKELETON(5) + '</div>');
+      try {
+        const [d, cfg, modelData, hist] = await Promise.all([loadOppsData(), loadProposalCfg(), loadPhaseModelData(), loadHoursHistory().catch(() => [])]);
+        oppsCache = d;
+        let pp = proposalId ? d.proposals.find(x => String(x.id) === String(proposalId)) : null;
+        if (proposalId && !pp) { view.innerHTML = '<div class="error-box">Proposta não encontrada.</div>'; return; }
+        const typeById = Object.fromEntries(d.types.map(t => [t.id, t]));
+        if (!pp) {
+          const plot = preset.plot, c = plot ? plotCalc(plot) : null, inv = preset.investor;
+          const typeId = plot?.project_type_id || null;
+          pp = {
+            id: null, title: plot ? 'Projeto — ' + plot.name : '', plot_id: plot?.id || null,
+            client_id: plot?.origin === 'client' ? plot.client_id : (inv?.client_id || null), investor_id: inv?.id || null,
+            client_name: inv ? [inv.name, inv.company].filter(Boolean).join(' — ') : null,
+            project_type_id: typeId, method: typeById[typeId]?.size_measure === 'fractions' ? 'fraction' : 'm2',
+            area: c?.build ?? null, fractions: plot?.fractions_est ?? null, unit_value: null, total: null,
+            est_hours: null, cost_per_hour: cfg.cost_per_hour, target_rate: cfg.target_rate,
+            specialties: specialtyPreset(cfg, typeId), phases: [], status: 'draft',
+            language: d.clients.find(x => x.id === (plot?.client_id || inv?.client_id))?.language === 'en' ? 'en' : 'pt', valid_days: 30, notes: null
+          };
+        } else pp = JSON.parse(JSON.stringify(pp));
+        proposalState = { pp, d, cfg, modelData, hist, typeById, dirty: false, estimate: null };
+        renderProposalEditor();
+      } catch (err) {
+        view.innerHTML = /fee_proposals/.test(err.message || '') ? '<div class="error-box">Para usar as propostas, corre oportunidades.sql no Supabase.</div>'
+          : `<div class="error-box">Não foi possível abrir a proposta: ${escapeHtml(err.message)}</div>`;
+      }
+    }
+    async function refreshPhasesFromModel(force) {
+      const S = proposalState, pp = S.pp;
+      if (!pp.project_type_id) return;
+      if (pp.phases?.length && !force) return;
+      const m = await modelFor(pp.project_type_id, pp.area, pp.fractions, S.modelData);
+      const names = Object.fromEntries(S.modelData.stageTypes.map(x => [x.id, x.name]));
+      pp.phases = (m.rows || []).map(r => ({ stage_type_id: r.stage_type_id, name: names[r.stage_type_id] || 'Fase', pct: Number(r.percentage) || 0 }));
+      S.modelBand = m.band ? bandLabel(m.band, m.type?.size_measure) : null;
+    }
+    function renderProposalEditor() {
+      const S = proposalState, pp = S.pp, d = S.d, view = document.getElementById('proposal-view');
+      const plot = d.plots.find(x => x.id === pp.plot_id);
+      const locked = pp.status === 'accepted';
+      const typeOpts = d.types.map(t => `<option value="${escapeHtml(t.id)}"${t.id === pp.project_type_id ? ' selected' : ''}>${escapeHtml(t.name)}</option>`).join('');
+      view.innerHTML = `
+        <div class="detail-header">
+          <div class="titles"><h2>${escapeHtml(pp.title || 'Nova proposta de honorários')}</h2>
+            <div class="sub">${escapeHtml([pp.ref, optLabel(PROP_STATUSES, pp.status), plot ? 'terreno: ' + plot.name : null, pp.sent_on ? 'enviada a ' + fmtDayMonthYear(pp.sent_on) : null].filter(Boolean).join(' · '))}</div></div>
+          ${pp.id ? '<button type="button" class="secondary-btn" id="pp-print">Ver proposta</button>' : ''}
+        </div>
+        ${locked ? `<div class="archived-banner" style="display:flex;"><span>Proposta aceite${pp.project_id ? ' — o projeto já foi criado' : ''}.</span>${pp.project_id ? `<button type="button" class="text-btn" data-open-project="${escapeHtml(pp.project_id)}">Abrir o projeto</button>` : ''}</div>` : ''}
+        <div class="op-prop">
+          <div class="gantt-wrap">
+            <div class="card-head"><h2>1 · O projeto</h2></div>
+            <label class="field-label" style="margin-top:0;">Título</label>
+            <input type="text" id="pp-title" class="form-input" placeholder="ex.: Edifício de habitação na Rua do Campo" value="${escapeHtml(pp.title || '')}">
+            <label class="field-label">Cliente</label>
+            ${clientPickerHtml('pp-client')}
+            <div class="field-hint" id="pp-client-hint">${pp.client_id ? '' : pp.client_name ? 'Para: ' + escapeHtml(pp.client_name) + ' (investidor — escolhe ou cria o cliente para o projeto)' : ''}</div>
+            <div class="form-grid">
+              <div><label class="field-label">Tipologia</label><select id="pp-type" class="form-input"><option value="">Escolhe…</option>${typeOpts}</select></div>
+              <div><label class="field-label">Idioma da proposta</label><select id="pp-lang" class="form-input"><option value="pt"${pp.language !== 'en' ? ' selected' : ''}>Português</option><option value="en"${pp.language === 'en' ? ' selected' : ''}>English</option></select></div>
+              <div><label class="field-label">Área de construção (m²)</label><input type="text" inputmode="decimal" id="pp-area" class="form-input" value="${escapeHtml(pp.area ?? '')}"></div>
+              <div><label class="field-label">Frações</label><input type="text" inputmode="numeric" id="pp-fr" class="form-input" value="${escapeHtml(pp.fractions ?? '')}"></div>
+            </div>
+          </div>
+
+          <div class="gantt-wrap">
+            <div class="card-head"><h2>2 · Quanto nos vai custar</h2></div>
+            <div class="op-est" id="pp-est"></div>
+            <div class="form-grid">
+              <div><label class="field-label">Horas previstas</label><input type="text" inputmode="decimal" id="pp-hours" class="form-input" value="${escapeHtml(pp.est_hours ?? '')}"></div>
+              <div><label class="field-label">Custo/hora da NOVA (€)</label><input type="text" inputmode="decimal" id="pp-cph" class="form-input" placeholder="definir em Definições" value="${escapeHtml(pp.cost_per_hour ?? '')}"></div>
+            </div>
+            <div class="section-label op-form-sec">Especialidades e outros custos de projeto</div>
+            <div id="pp-specs"></div>
+            <button type="button" class="text-btn" id="pp-spec-add">+ Acrescentar linha</button>
+            <div class="op-sum" id="pp-cost-sum"></div>
+          </div>
+
+          <div class="gantt-wrap">
+            <div class="card-head"><h2>3 · Honorários a propor</h2></div>
+            <div class="segmented" id="pp-method">${PROP_METHODS.map(([k, l]) => `<button type="button" data-m="${k}" class="${k === pp.method ? 'active' : ''}">${l}</button>`).join('')}</div>
+            <div id="pp-method-fields"></div>
+            <div class="op-target" id="pp-target"></div>
+            <div class="op-sum" id="pp-fee-sum"></div>
+          </div>
+
+          <div class="gantt-wrap">
+            <div class="card-head"><h2>4 · Fases e pagamento</h2><button type="button" class="text-btn" id="pp-phases-reset">Repor o modelo</button></div>
+            <div id="pp-phases"></div>
+          </div>
+
+          <div class="gantt-wrap">
+            <div class="card-head"><h2>5 · Notas</h2></div>
+            <div class="form-grid">
+              <div><label class="field-label" style="margin-top:0;">Validade (dias)</label><input type="text" inputmode="numeric" id="pp-valid" class="form-input" value="${escapeHtml(pp.valid_days ?? 30)}"></div>
+              <div><label class="field-label" style="margin-top:0;">Terreno</label><select id="pp-plot" class="form-input"><option value="">Sem terreno</option>${d.plots.map(x => `<option value="${escapeHtml(x.id)}"${x.id === pp.plot_id ? ' selected' : ''}>${escapeHtml(x.name)}</option>`).join('')}</select></div>
+            </div>
+            <label class="field-label">Notas (aparecem na proposta)</label>
+            <textarea id="pp-notes" class="form-input" rows="3" placeholder="ex.: não inclui fiscalização de obra nem levantamento arquitetónico">${escapeHtml(pp.notes || '')}</textarea>
+          </div>
+        </div>
+        <div class="op-actions">
+          <button type="button" class="primary-btn" id="pp-save">${pp.id ? 'Guardar' : 'Guardar proposta'}</button>
+          ${pp.id && pp.status === 'draft' ? '<button type="button" class="secondary-btn" id="pp-sent">Marcar como enviada</button>' : ''}
+          ${pp.id && ['draft', 'sent'].includes(pp.status) ? '<button type="button" class="secondary-btn" id="pp-accept">Aceite → criar projeto</button><button type="button" class="text-btn" id="pp-decline">Recusada</button>' : ''}
+          ${pp.id && pp.status === 'declined' ? '<button type="button" class="text-btn" id="pp-reopen">Voltar a rascunho</button>' : ''}
+          ${pp.id && !locked ? '<button type="button" class="text-btn danger-text" id="pp-delete">Eliminar</button>' : ''}
+          <div id="pp-msg" class="form-msg"></div>
+        </div>`;
+      const picker = { get: () => ({ clientId: pp.client_id }) };
+      mountClientPicker('pp-client', { clientId: pp.client_id || null }).then(pk => {
+        Object.assign(picker, pk);
+        const root = document.getElementById('pp-client');
+        root?.addEventListener('focusout', () => setTimeout(() => {
+          const v = pk.get(); if (v.clientId !== pp.client_id) { pp.client_id = v.clientId; S.dirty = true; }
+          if (pp.client_id) document.getElementById('pp-client-hint').textContent = '';
+        }, 150));
+        root?.querySelector('.cp-clear')?.addEventListener('click', () => { pp.client_id = null; S.dirty = true; });
+        S.picker = pk;
+      });
+      const num = id => numOrNull(document.getElementById(id).value);
+      const field = (id, key, conv = x => x) => document.getElementById(id).addEventListener('input', e => { pp[key] = conv(e.target.value); S.dirty = true; recalc(); });
+      field('pp-title', 'title', s => s.trim());
+      field('pp-area', 'area', numOrNull); field('pp-fr', 'fractions', numOrNull);
+      field('pp-hours', 'est_hours', numOrNull); field('pp-cph', 'cost_per_hour', numOrNull);
+      field('pp-valid', 'valid_days', numOrNull); field('pp-notes', 'notes', s => s.trim() || null);
+      document.getElementById('pp-lang').addEventListener('change', e => { pp.language = e.target.value; S.dirty = true; });
+      document.getElementById('pp-plot').addEventListener('change', e => { pp.plot_id = e.target.value || null; S.dirty = true; });
+      document.getElementById('pp-type').addEventListener('change', async e => {
+        const had = (pp.specialties || []).some(s => Number(s.value));
+        pp.project_type_id = e.target.value || null; S.dirty = true;
+        if (!had) pp.specialties = specialtyPreset(S.cfg, pp.project_type_id);
+        if (S.typeById[pp.project_type_id]?.size_measure === 'fractions' && pp.method === 'm2' && !pp.unit_value) pp.method = 'fraction';
+        await refreshPhasesFromModel(true);
+        drawMethod(); drawSpecs(); drawPhases(); recalc();
+      });
+      ['pp-area', 'pp-fr'].forEach(id => document.getElementById(id).addEventListener('change', async () => { if (!S.phasesTouched) { await refreshPhasesFromModel(true); drawPhases(); recalc(); } }));
+      // Especialidades
+      const drawSpecs = () => {
+        const box = document.getElementById('pp-specs');
+        box.innerHTML = (pp.specialties || []).length ? (pp.specialties || []).map((s, i) => `
+          <div class="op-spec" data-i="${i}">
+            <input type="text" class="form-input" data-k="name" value="${escapeHtml(s.name || '')}" aria-label="Especialidade" placeholder="Especialidade">
+            <select class="form-input" data-k="mode" aria-label="Como se calcula"><option value="m2"${s.mode === 'm2' ? ' selected' : ''}>€/m²</option><option value="fixed"${s.mode !== 'm2' ? ' selected' : ''}>valor fixo</option></select>
+            <input type="text" inputmode="decimal" class="form-input" data-k="value" value="${escapeHtml(s.value || s.value === 0 ? s.value : '')}" aria-label="Valor" placeholder="0">
+            <b class="op-spec-total" data-total="${i}"></b>
+            <button type="button" class="icon-btn op-spec-del" data-del="${i}" aria-label="Tirar ${escapeHtml(s.name || 'linha')}">×</button>
+          </div>`).join('') : '<div class="gantt-empty">Sem especialidades. Acrescenta as que a NOVA subcontrata neste projeto.</div>';
+        box.querySelectorAll('.op-spec').forEach(row => row.addEventListener('input', e => {
+          const k = e.target.dataset.k, s = pp.specialties[Number(row.dataset.i)];
+          s[k] = k === 'value' ? numOrNull(e.target.value) : e.target.value; S.dirty = true; recalc();
+        }));
+        box.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => { pp.specialties.splice(Number(b.dataset.del), 1); S.dirty = true; drawSpecs(); recalc(); }));
+      };
+      document.getElementById('pp-spec-add').addEventListener('click', () => { (pp.specialties = pp.specialties || []).push({ name: '', mode: 'fixed', value: null }); S.dirty = true; drawSpecs(); recalc(); document.querySelector('#pp-specs .op-spec:last-child input')?.focus(); });
+      // Método
+      const drawMethod = () => {
+        document.querySelectorAll('#pp-method button').forEach(b => b.classList.toggle('active', b.dataset.m === pp.method));
+        const box = document.getElementById('pp-method-fields');
+        box.innerHTML = pp.method === 'global'
+          ? `<label class="field-label">Valor global (€, sem IVA)</label><input type="text" inputmode="decimal" id="pp-total" class="form-input" value="${escapeHtml(pp.total ?? '')}">`
+          : `<label class="field-label">${pp.method === 'fraction' ? 'Valor por fração (€)' : 'Valor por m² (€)'}</label><input type="text" inputmode="decimal" id="pp-unit" class="form-input" value="${escapeHtml(pp.unit_value ?? '')}">`;
+        const inp = box.querySelector('input');
+        inp.addEventListener('input', e => { if (pp.method === 'global') pp.total = numOrNull(e.target.value); else pp.unit_value = numOrNull(e.target.value); S.dirty = true; recalc(); });
+      };
+      document.getElementById('pp-method').addEventListener('click', e => {
+        const b = e.target.closest('[data-m]'); if (!b || b.dataset.m === pp.method) return;
+        const c = proposalCalc(pp);
+        pp.method = b.dataset.m; S.dirty = true;
+        // Mantém o mesmo total ao mudar de método (quando dá)
+        if (pp.method === 'global') pp.total = c.total || pp.total;
+        else if (pp.method === 'm2') pp.unit_value = c.total && Number(pp.area) ? Math.round(c.total / Number(pp.area) * 100) / 100 : pp.unit_value;
+        else pp.unit_value = c.total && Number(pp.fractions) ? Math.round(c.total / Number(pp.fractions)) : pp.unit_value;
+        drawMethod(); recalc();
+      });
+      // Fases
+      const drawPhases = () => {
+        const box = document.getElementById('pp-phases');
+        const c = proposalCalc(pp);
+        const sum = (pp.phases || []).reduce((t, x) => t + (Number(x.pct) || 0), 0);
+        box.innerHTML = (pp.phases || []).length ? `
+          ${S.modelBand ? `<div class="field-hint" style="margin:0 0 6px;">Do modelo de fases ${escapeHtml(S.modelBand)}. Muda as percentagens à vontade.</div>` : ''}
+          ${pp.phases.map((x, i) => `<div class="op-phase" data-i="${i}"><span>${escapeHtml(x.name)}</span><input type="text" inputmode="decimal" class="form-input" value="${escapeHtml(x.pct ?? '')}" aria-label="% de ${escapeHtml(x.name)}"><em>%</em><b data-pv="${i}">${escapeHtml(fmtEUR(c.total * (Number(x.pct) || 0) / 100))}</b><button type="button" class="icon-btn op-spec-del" data-pdel="${i}" aria-label="Tirar ${escapeHtml(x.name)}">×</button></div>`).join('')}
+          <div class="op-phase op-phase-sum"><span>Total</span><b class="${Math.abs(sum - 100) > 0.01 ? 'warn-text' : ''}" id="pp-pct-sum">${escapeHtml(fmtNum(sum))}%${Math.abs(sum - 100) > 0.01 ? ' — devia dar 100%' : ''}</b></div>`
+          : `<div class="gantt-empty">${pp.project_type_id ? 'Não há modelo de fases para esta tipologia e dimensão. Acrescenta as fases abaixo (ou define o modelo em Definições → Modelos de fases).' : 'Escolhe a tipologia para ver as fases do modelo.'}</div>`;
+        box.insertAdjacentHTML('beforeend', `<select class="form-input op-phase-add" id="pp-phase-add" aria-label="Acrescentar fase"><option value="">+ Acrescentar fase…</option>${S.modelData.stageTypes.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('')}</select>`);
+        box.querySelectorAll('.op-phase[data-i] input').forEach(inp => inp.addEventListener('input', e => {
+          pp.phases[Number(e.target.closest('[data-i]').dataset.i)].pct = numOrNull(e.target.value) ?? 0; S.dirty = true; S.phasesTouched = true; recalc();
+        }));
+        box.querySelectorAll('[data-pdel]').forEach(b => b.addEventListener('click', () => { pp.phases.splice(Number(b.dataset.pdel), 1); S.dirty = true; S.phasesTouched = true; drawPhases(); recalc(); }));
+        document.getElementById('pp-phase-add').addEventListener('change', e => {
+          const t = S.modelData.stageTypes.find(x => x.id === e.target.value); if (!t) return;
+          pp.phases.push({ stage_type_id: t.id, name: t.name, pct: 0 }); S.dirty = true; S.phasesTouched = true; drawPhases(); recalc();
+        });
+      };
+      document.getElementById('pp-phases-reset').addEventListener('click', async () => { S.phasesTouched = false; await refreshPhasesFromModel(true); drawPhases(); recalc(); });
+      // Contas em direto (sem redesenhar os campos onde se está a escrever)
+      const recalc = () => {
+        const c = proposalCalc(pp), est = estimateHours(S.hist, pp.project_type_id, pp.area, pp.fractions);
+        S.estimate = est;
+        const estBox = document.getElementById('pp-est');
+        if (!est) estBox.innerHTML = `<div class="field-hint" style="margin:0;">${!Number(pp.area) && !Number(pp.fractions) ? 'Indica a área de construção (ou as frações) para a app estimar as horas.' : 'Ainda não há projetos com horas suficientes para comparar. Escreve as horas que esperas.'}</div>`;
+        else {
+          const u = est.unit === 'fr' ? 'fração' : 'm²';
+          estBox.innerHTML = `
+            <div class="op-est-main"><div><span>Estimativa pelo histórico</span><b>≈ ${escapeHtml(fmtNum(est.hours))} h</b></div>
+              ${Number(pp.est_hours) !== est.hours ? `<button type="button" class="text-btn" id="pp-use-est">Usar ${escapeHtml(fmtNum(est.hours))} h</button>` : '<small class="muted">em uso</small>'}</div>
+            <details class="op-est-why"><summary>Com base em ${est.refs.length} ${est.refs.length === 1 ? 'projeto' : 'projetos'}${est.sameType ? ' do mesmo tipo' : ' (nenhum do mesmo tipo — pouco fiável)'}${est.similarSize ? ' e de dimensão parecida' : ''} · ${escapeHtml(fmtNum(Math.round(est.rate * 100) / 100))} h por ${u}</summary>
+              ${est.refs.map(r => `<div class="op-ref"><span>${escapeHtml([r.code, r.name].filter(Boolean).join(' — '))}</span><small>${escapeHtml(fmtNum(r.size))} ${est.unit === 'fr' ? 'frações' : 'm²'} · ${escapeHtml(fmtNum(r.hours))} h registadas${r.share < 1 ? ` com ${Math.round(r.share * 100)}% feito → ~${escapeHtml(fmtNum(Math.round(r.projected)))} h no fim` : ' (concluído)'}</small></div>`).join('')}
+            </details>`;
+          document.getElementById('pp-use-est')?.addEventListener('click', () => { pp.est_hours = est.hours; document.getElementById('pp-hours').value = est.hours; S.dirty = true; recalc(); });
+        }
+        if (pp.est_hours == null && est && !pp.id && !S.autoHours) { pp.est_hours = est.hours; S.autoHours = true; document.getElementById('pp-hours').value = est.hours; return recalc(); }
+        (pp.specialties || []).forEach((s, i) => { const el = document.querySelector(`[data-total="${i}"]`); if (el) el.textContent = fmtEUR(c.lineValue(s)); });
+        const missingCph = !Number(pp.cost_per_hour);
+        document.getElementById('pp-cost-sum').innerHTML = `
+          <div><span>Equipa${Number(pp.est_hours) ? ` (${escapeHtml(fmtNum(pp.est_hours))} h × ${missingCph ? '?' : escapeHtml(fmtEUR(pp.cost_per_hour))})` : ''}</span><b>${missingCph ? '<span class="warn-text">falta o custo/hora</span>' : escapeHtml(fmtEUR(c.team))}</b></div>
+          <div><span>Especialidades e outros</span><b>${escapeHtml(fmtEUR(c.spec))}</b></div>
+          <div class="op-sum-total"><span>Custo previsto</span><b>${escapeHtml(fmtEUR(c.cost))}</b></div>`;
+        const tgt = document.getElementById('pp-target');
+        tgt.innerHTML = Number(pp.est_hours) && Number(pp.target_rate) ? `
+          <div><span>Pelo nosso objetivo de ${escapeHtml(fmtEUR(pp.target_rate))}/h</span><b>${escapeHtml(fmtEUR(c.targetValue))}</b>
+          <small>${escapeHtml(fmtNum(pp.est_hours))} h × ${escapeHtml(fmtEUR(pp.target_rate))} + ${escapeHtml(fmtEUR(c.spec))} de especialidades${Number(pp.area) ? ' · ' + escapeHtml(fmtEUR(c.targetValue / Number(pp.area))) + '/m²' : ''}${Number(pp.fractions) ? ' · ' + escapeHtml(fmtEUR(c.targetValue / Number(pp.fractions))) + '/fração' : ''}</small></div>
+          <button type="button" class="text-btn" id="pp-use-target">Usar este valor</button>` : '';
+        document.getElementById('pp-use-target')?.addEventListener('click', () => {
+          const v = c.targetValue;
+          if (pp.method === 'global') pp.total = Math.round(v / 50) * 50;
+          else if (pp.method === 'm2') pp.unit_value = Number(pp.area) ? Math.round(v / Number(pp.area) * 100) / 100 : null;
+          else pp.unit_value = Number(pp.fractions) ? Math.round(v / Number(pp.fractions) / 10) * 10 : null;
+          S.dirty = true; drawMethod(); recalc();
+        });
+        const low = c.perHour != null && Number(pp.target_rate) && c.perHour < Number(pp.target_rate);
+        document.getElementById('pp-fee-sum').innerHTML = c.total ? `
+          <div class="op-sum-total"><span>Honorários (sem IVA)</span><b>${escapeHtml(fmtEUR(c.total))}</b></div>
+          <div><span>Equivale a</span><b>${escapeHtml([c.perM2 ? fmtEUR(c.perM2) + '/m²' : null, c.perFr ? fmtEUR(c.perFr) + '/fração' : null].filter(Boolean).join(' · ') || '—')}</b></div>
+          <div><span>Valor por hora previsto</span><b class="${low ? 'warn-text' : ''}">${c.perHour != null ? escapeHtml(fmtEUR(c.perHour)) + '/h' : '—'}${low ? ` <small>abaixo do objetivo (${escapeHtml(fmtEUR(pp.target_rate))}/h)</small>` : ''}</b></div>
+          <div><span>Margem prevista</span><b class="${c.margin < 0 ? 'late' : ''}">${missingCph ? '<span class="muted">falta o custo/hora</span>' : escapeHtml(fmtEUR(c.margin)) + (c.marginPct != null ? ` <small>${Math.round(c.marginPct)}%</small>` : '')}</b></div>`
+          : '<div class="field-hint" style="margin:0;">Escreve o valor para ver o total, o valor por hora e a margem.</div>';
+        (pp.phases || []).forEach((x, i) => { const el = document.querySelector(`[data-pv="${i}"]`); if (el) el.textContent = fmtEUR(c.total * (Number(x.pct) || 0) / 100); });
+        const sumEl = document.getElementById('pp-pct-sum');
+        if (sumEl) { const sum = pp.phases.reduce((t, x) => t + (Number(x.pct) || 0), 0), off = Math.abs(sum - 100) > 0.01; sumEl.className = off ? 'warn-text' : ''; sumEl.textContent = fmtNum(sum) + '%' + (off ? ' — devia dar 100%' : ''); }
+      };
+      drawSpecs(); drawMethod();
+      (async () => { if (!pp.phases?.length) await refreshPhasesFromModel(false); drawPhases(); recalc(); })();
+      if (locked) view.querySelectorAll('.op-prop input, .op-prop select, .op-prop textarea, .op-prop button').forEach(el => { el.disabled = true; });
+      view.querySelectorAll('[data-open-project]').forEach(b => b.addEventListener('click', () => openDetail(b.dataset.openProject)));
+      // Guardar
+      const save = async (extra = {}) => {
+        if (S.picker) pp.client_id = S.picker.get().clientId ?? pp.client_id;
+        if (!pp.title) { formError('pp-msg', 'Dá um título à proposta.'); document.getElementById('pp-title').focus(); return null; }
+        const c = proposalCalc(pp);
+        const row = {
+          title: pp.title, plot_id: pp.plot_id, client_id: pp.client_id || null, investor_id: pp.investor_id || null,
+          client_name: pp.client_id ? (d.clients.find(x => x.id === pp.client_id)?.name || pp.client_name) : pp.client_name,
+          project_type_id: pp.project_type_id || null, method: pp.method, area: numOrNull(pp.area), fractions: numOrNull(pp.fractions),
+          unit_value: pp.method === 'global' ? null : numOrNull(pp.unit_value), total: c.total || null,
+          est_hours: numOrNull(pp.est_hours), cost_per_hour: numOrNull(pp.cost_per_hour), target_rate: numOrNull(pp.target_rate),
+          specialties: (pp.specialties || []).filter(s => (s.name || '').trim()).map(s => ({ name: s.name.trim(), mode: s.mode === 'm2' ? 'm2' : 'fixed', value: Number(s.value) || 0 })),
+          phases: (pp.phases || []).map(x => ({ stage_type_id: x.stage_type_id, name: x.name, pct: Number(x.pct) || 0 })),
+          language: pp.language === 'en' ? 'en' : 'pt', valid_days: numOrNull(pp.valid_days) || 30, notes: pp.notes || null,
+          updated_at: new Date().toISOString(), ...extra
+        };
+        if (Number.isNaN(row.area) || Number.isNaN(row.fractions)) { formError('pp-msg', 'Área ou frações inválidas.'); return null; }
+        try {
+          if (pp.id) await dbUpdate('fee_proposals', pp.id, row, mockProposals);
+          else {
+            const year = new Date().getFullYear();
+            const n = d.proposals.filter(x => (x.ref || '').startsWith(`PH-${year}-`)).length + 1;
+            row.ref = `PH-${year}-${String(n).padStart(3, '0')}`;
+            row.created_by = (await getCurrentMember())?.id ?? null;
+            row.status = row.status || pp.status || 'draft';
+            const r = await dbInsert('fee_proposals', row, mockProposals);
+            pp.id = r.id; pp.ref = row.ref;
+          }
+          Object.assign(pp, row); S.dirty = false;
+          if (pp.plot_id && extra.status === 'sent') {
+            const plot = d.plots.find(x => x.id === pp.plot_id);
+            if (plot && ['registered', 'analysis', 'presented'].includes(plot.status)) await dbUpdate('land_plots', plot.id, { status: 'proposal' }, mockPlots);
+          }
+          return pp;
+        } catch (err) { formError('pp-msg', 'Não foi possível guardar: ' + err.message); return null; }
+      };
+      const reopen = id => { suppressNavPush = true; openProposalView(id); };
+      document.getElementById('pp-save').addEventListener('click', async () => { const r = await save(); if (r) { showToast('Proposta guardada'); reopen(r.id); } });
+      document.getElementById('pp-print')?.addEventListener('click', async () => { if (S.dirty && !(await save())) return; printProposal(pp, d, S.typeById); });
+      document.getElementById('pp-sent')?.addEventListener('click', async () => { const r = await save({ status: 'sent', sent_on: dateKey(new Date()) }); if (r) { showToast('Marcada como enviada'); reopen(r.id); } });
+      document.getElementById('pp-decline')?.addEventListener('click', async () => {
+        const r = await save({ status: 'declined', decided_on: dateKey(new Date()) });
+        if (r) { showToast('Proposta recusada', { ms: 8000, undo: async () => { await dbUpdate('fee_proposals', r.id, { status: 'sent', decided_on: null }, mockProposals); reopen(r.id); } }); reopen(r.id); }
+      });
+      document.getElementById('pp-reopen')?.addEventListener('click', async () => { const r = await save({ status: 'draft', decided_on: null }); if (r) reopen(r.id); });
+      document.getElementById('pp-delete')?.addEventListener('click', async () => {
+        if (!window.confirm(`Eliminar a proposta ${pp.ref || ''}?`)) return;
+        try { await dbDelete('fee_proposals', pp.id, mockProposals); showToast('Proposta eliminada'); navStack = []; openOppsModule('proposals'); }
+        catch (err) { formError('pp-msg', 'Não foi possível eliminar: ' + err.message); }
+      });
+      document.getElementById('pp-accept')?.addEventListener('click', async () => {
+        const r = await save(); if (!r) return;
+        if (!r.client_id && !r.investor_id) return formError('pp-msg', 'Escolhe (ou cria) o cliente antes de criar o projeto.');
+        if (!r.total) return formError('pp-msg', 'Falta o valor dos honorários.');
+        acceptProposal(r, d, S.modelData);
+      });
+    }
+    // Aceite: cria o projeto com o valor, a tipologia, a dimensão e as fases (com as % da proposta)
+    async function acceptProposal(pp, d, modelData) {
+      const plot = d.plots.find(x => x.id === pp.plot_id);
+      openQuickModal('Criar o projeto', `
+        <div class="field-hint" style="margin:0 0 8px;">A proposta <b>${escapeHtml(pp.ref || '')}</b> passa a aceite e a app cria o projeto com ${escapeHtml(fmtEUR(pp.total))} de honorários e ${pp.phases.length} fases.</div>
+        ${pp.client_id ? '' : `<div class="field-hint" style="margin:0 0 8px;">O investidor <b>${escapeHtml(pp.client_name || '')}</b> passa a cliente (completas o NIF depois, na ficha do cliente).</div>`}
+        <label class="field-label" style="margin-top:0;">Nome do projeto</label><input type="text" id="pa-name" class="form-input" value="${escapeHtml(pp.title)}">
+        <div class="form-grid">
+          <div><label class="field-label">Código</label><input type="text" id="pa-code" class="form-input" placeholder="ex.: 26004"></div>
+          <div><label class="field-label">Data de adjudicação</label><input type="date" id="pa-date" class="form-input" value="${dateKey(new Date())}"></div>
+        </div>
+        <button type="button" class="primary-btn" id="pa-go">Criar projeto</button>
+        <div id="pa-msg" class="form-msg"></div>`);
+      document.getElementById('pa-go').addEventListener('click', async () => {
+        const name = document.getElementById('pa-name').value.trim();
+        if (!name) return formError('pa-msg', 'Indica o nome do projeto.');
+        const btn = document.getElementById('pa-go'); btn.disabled = true; btn.textContent = 'A criar…';
+        const awarding = document.getElementById('pa-date').value || null;
+        try {
+          await loadProjectStatuses();
+          // Investidor que ainda não é cliente: passa a cliente (e fica ligado ao investidor)
+          if (!pp.client_id && pp.investor_id) {
+            const inv = d.investors.find(x => x.id === pp.investor_id);
+            const cl = await dbInsert('clients', { name: inv?.company || inv?.name || pp.client_name, email: inv?.email || null, phone: inv?.phone || null }, MOCK_CLIENT_ROWS);
+            d.clients.push(cl);
+            pp.client_id = cl.id;
+            await dbUpdate('fee_proposals', pp.id, { client_id: cl.id }, mockProposals);
+            if (inv && !inv.client_id) await dbUpdate('investors', inv.id, { client_id: cl.id }, mockInvestors);
+          }
+          const firstOpen = (projectStatusCache || []).find(s => s.code === 'To Do') || (projectStatusCache || []).find(s => !s.is_closed);
+          const payload = {
+            name, code: document.getElementById('pa-code').value.trim() || null, client_id: pp.client_id,
+            client: d.clients.find(x => x.id === pp.client_id)?.name || pp.client_name || null, project_type_id: pp.project_type_id,
+            area: pp.area, fractions: pp.fractions, commission_value: pp.total, awarding_date: awarding, status: firstOpen?.code ?? null,
+            address: plot ? [plot.address, plot.parish].filter(Boolean).join(', ') || null : null, municipality: plot?.municipality || null,
+            owner_id: (await getCurrentMember())?.id ?? null
+          };
+          let projectId = 'mock-new';
+          if (!devMode) {
+            const res = await supabase.from('projects').insert(payload).select('id').single();
+            if (res.error) throw res.error;
+            projectId = res.data.id;
+            const m = await modelFor(pp.project_type_id, pp.area, pp.fractions, modelData);
+            const tmpl = Object.fromEntries((m.rows || []).map(r => [r.stage_type_id, r]));
+            const model = { data: modelData, rows: pp.phases.map((x, i) => ({ stage_type_id: x.stage_type_id, percentage: x.pct, lead_days: tmpl[x.stage_type_id]?.lead_days ?? null, work_days: tmpl[x.stage_type_id]?.work_days ?? null, sort_order: i + 1 })) };
+            try { await createStagesFromModel(projectId, awarding, model); }
+            catch (err) { showToast('Projeto criado, mas as fases não: ' + err.message, { type: 'error', ms: 7000 }); }
+          }
+          await dbUpdate('fee_proposals', pp.id, { status: 'accepted', decided_on: dateKey(new Date()), project_id: devMode ? null : projectId }, mockProposals);
+          if (plot) await dbUpdate('land_plots', plot.id, { status: 'won', project_id: devMode ? null : projectId }, mockPlots);
+          closeQuickModal();
+          invalidateActivePhases();
+          showToast(devMode ? 'Modo de demonstração — proposta aceite (o projeto não é criado)' : 'Projeto criado 🎉');
+          if (devMode) { suppressNavPush = true; openProposalView(pp.id); } else openDetail(projectId);
+        } catch (err) { formError('pa-msg', 'Não foi possível criar: ' + err.message); btn.disabled = false; btn.textContent = 'Criar projeto'; }
+      });
+    }
+    // Documento da proposta (abre numa janela para imprimir ou guardar em PDF), em português ou inglês
+    function printProposal(pp, d, typeById) {
+      const en = pp.language === 'en', T = (pt, e) => en ? e : pt;
+      const loc = en ? 'en-GB' : 'pt-PT';
+      const eur = n => Number(n || 0).toLocaleString(loc, { style: 'currency', currency: 'EUR' });
+      const nf = n => Number(n || 0).toLocaleString(loc, { maximumFractionDigits: 2 });
+      const plot = d.plots.find(x => x.id === pp.plot_id);
+      const client = d.clients.find(x => x.id === pp.client_id)?.name || pp.client_name || '';
+      const today = new Date().toLocaleDateString(loc, { day: 'numeric', month: 'long', year: 'numeric' });
+      const c = proposalCalc(pp);
+      const method = pp.method === 'global' ? T('Valor global', 'Lump sum')
+        : pp.method === 'fraction' ? `${eur(pp.unit_value)} ${T('por fração', 'per unit')} × ${nf(pp.fractions)} ${T('frações', 'units')}`
+        : `${eur(pp.unit_value)}/m² × ${nf(pp.area)} m²`;
+      const specs = (pp.specialties || []).filter(s => s.name);
+      const logo = new URL('assets/nova-logo-plum-cropped.png', location.href).href;
+      const e = escapeHtml;
+      const html = `<!doctype html><html lang="${en ? 'en' : 'pt'}"><head><meta charset="utf-8"><title>${e(pp.ref || '')} ${e(T('Proposta de honorários', 'Fee proposal'))}</title>
+        <style>
+          @page { size: A4; margin: 22mm 20mm; }
+          body { font: 11pt/1.5 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color: #1d1b1a; margin: 0; padding: 24px; max-width: 760px; }
+          header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #714D79; padding-bottom: 14px; margin-bottom: 22px; }
+          header img { height: 34px; } header .meta { text-align: right; font-size: 9.5pt; color: #5a5450; }
+          h1 { font-size: 18pt; margin: 0 0 4px; font-weight: 600; } h2 { font-size: 11.5pt; margin: 22px 0 6px; color: #714D79; text-transform: uppercase; letter-spacing: .04em; }
+          table { width: 100%; border-collapse: collapse; } td, th { padding: 6px 4px; border-bottom: 1px solid #e6e2dd; text-align: left; } th { font-size: 9pt; color: #5a5450; font-weight: 600; }
+          .r { text-align: right; white-space: nowrap; } .total td { font-weight: 700; border-bottom: 2px solid #1d1b1a; }
+          .muted { color: #5a5450; font-size: 9.5pt; } ul { margin: 4px 0; padding-left: 18px; }
+          .sign { margin-top: 48px; display: flex; justify-content: space-between; gap: 40px; } .sign div { flex: 1; border-top: 1px solid #1d1b1a; padding-top: 6px; font-size: 9.5pt; }
+          .noprint { margin-bottom: 18px; } @media print { .noprint { display: none; } body { padding: 0; } }
+        </style></head><body>
+        <div class="noprint"><button onclick="window.print()">${e(T('Imprimir / guardar em PDF', 'Print / save as PDF'))}</button></div>
+        <header><img src="${e(logo)}" alt="NOVA"><div class="meta">${e(pp.ref || '')}<br>${e(today)}</div></header>
+        <h1>${e(T('Proposta de honorários', 'Fee proposal'))}</h1>
+        <div>${e(T('Para', 'To'))}: <b>${e(client)}</b></div>
+        <h2>${e(T('Objeto', 'Scope'))}</h2>
+        <p><b>${e(pp.title)}</b>${plot ? `<br>${e([plot.address, plot.parish, plot.municipality].filter(Boolean).join(', '))}` : ''}</p>
+        <table>
+          ${pp.project_type_id ? `<tr><td>${e(T('Tipologia', 'Typology'))}</td><td class="r">${e(typeById[pp.project_type_id]?.name || '')}</td></tr>` : ''}
+          ${Number(pp.area) ? `<tr><td>${e(T('Área de construção', 'Gross floor area'))}</td><td class="r">${e(nf(pp.area))} m²</td></tr>` : ''}
+          ${Number(pp.fractions) ? `<tr><td>${e(T('Frações', 'Units'))}</td><td class="r">${e(nf(pp.fractions))}</td></tr>` : ''}
+        </table>
+        <h2>${e(T('Honorários', 'Fees'))}</h2>
+        <table><tr><td>${e(method)}</td><td class="r">${e(eur(c.total))}</td></tr>
+          <tr class="total"><td>${e(T('Total (acresce IVA à taxa legal em vigor)', 'Total (VAT at the legal rate is added)'))}</td><td class="r">${e(eur(c.total))}</td></tr></table>
+        ${specs.length ? `<p class="muted">${e(T('Incluem a coordenação e os projetos de especialidades:', 'Includes coordination and the following engineering designs:'))}</p><ul>${specs.map(s => `<li>${e(s.name)}</li>`).join('')}</ul>` : ''}
+        ${pp.phases?.length ? `<h2>${e(T('Faseamento e pagamento', 'Phasing and payment'))}</h2>
+        <table><tr><th>${e(T('Fase', 'Phase'))}</th><th class="r">%</th><th class="r">${e(T('Valor', 'Amount'))}</th></tr>
+          ${pp.phases.map(x => `<tr><td>${e(x.name)}</td><td class="r">${e(nf(x.pct))}%</td><td class="r">${e(eur(c.total * (Number(x.pct) || 0) / 100))}</td></tr>`).join('')}</table>
+        <p class="muted">${e(T('Cada fase é faturada na entrega respetiva. Pagamento a 30 dias da data da fatura.', 'Each phase is invoiced upon delivery. Payment within 30 days of the invoice date.'))}</p>` : ''}
+        ${pp.notes ? `<h2>${e(T('Notas', 'Notes'))}</h2><p>${e(pp.notes)}</p>` : ''}
+        <h2>${e(T('Validade', 'Validity'))}</h2>
+        <p>${e(T(`Esta proposta é válida por ${pp.valid_days || 30} dias.`, `This proposal is valid for ${pp.valid_days || 30} days.`))}</p>
+        <div class="sign"><div>NOVA Associates</div><div>${e(T('Aceito', 'Accepted'))} — ${e(client)}</div></div>
+        </body></html>`;
+      const w = window.open('', '_blank');
+      if (!w) { showToast('O navegador bloqueou a janela da proposta. Permite janelas deste site e tenta outra vez.', { type: 'error', ms: 7000 }); return; }
+      w.document.open(); w.document.write(html); w.document.close();
+    }
+
+    // ---------- Definições → Propostas de honorários ----------
+    async function loadProposalSettings() {
+      const box = document.getElementById('settings-proposals-container');
+      try {
+        const [cfg, types] = await Promise.all([loadProposalCfg(), devMode ? MOCK_PROJECT_TYPES : ((await supabase.from('project_types').select('id, name').order('name')).data || [])]);
+        let sel = box.dataset.type || 'default';
+        const lines = () => cfg.specialties[sel] || null;
+        const draw = () => {
+          const own = lines();
+          const list = own || cfg.specialties.default || [];
+          box.innerHTML = `
+            <div class="form-grid">
+              <div><label class="field-label" style="margin-top:0;">Custo/hora da NOVA (€)</label><input type="text" inputmode="decimal" id="ps-cph" class="form-input" value="${escapeHtml(cfg.cost_per_hour ?? '')}" placeholder="ex.: 35"></div>
+              <div><label class="field-label" style="margin-top:0;">Valor/hora objetivo (€)</label><input type="text" inputmode="decimal" id="ps-rate" class="form-input" value="${escapeHtml(cfg.target_rate ?? '')}"></div>
+            </div>
+            <div class="field-hint">Custo/hora: salários, encargos e custos fixos do escritório a dividir pelas horas de trabalho. O valor/hora objetivo também fica nos Objetivos do Mission Control.</div>
+            <div class="section-label op-form-sec">Especialidades e outros custos — modelo por tipologia</div>
+            <select id="ps-type" class="form-input"><option value="default"${sel === 'default' ? ' selected' : ''}>Lista geral (tipologias sem lista própria)</option>${types.map(t => `<option value="${escapeHtml(t.id)}"${t.id === sel ? ' selected' : ''}>${escapeHtml(t.name)}${cfg.specialties[t.id] ? '' : ' — usa a lista geral'}</option>`).join('')}</select>
+            ${sel !== 'default' && !own ? '<div class="field-hint">Esta tipologia usa a lista geral. <button type="button" class="text-btn" id="ps-copy">Criar uma lista própria</button></div>' : ''}
+            <div id="ps-lines">${(sel === 'default' || own) ? list.map((s, i) => `
+              <div class="op-spec" data-i="${i}">
+                <input type="text" class="form-input" data-k="name" value="${escapeHtml(s.name)}" aria-label="Especialidade">
+                <select class="form-input" data-k="mode" aria-label="Como se calcula"><option value="m2"${s.mode === 'm2' ? ' selected' : ''}>€/m²</option><option value="fixed"${s.mode !== 'm2' ? ' selected' : ''}>valor fixo</option></select>
+                <input type="text" inputmode="decimal" class="form-input" data-k="value" value="${escapeHtml(s.value ?? '')}" aria-label="Valor">
+                <button type="button" class="icon-btn op-spec-del" data-del="${i}" aria-label="Tirar ${escapeHtml(s.name)}">×</button>
+              </div>`).join('') + '<button type="button" class="text-btn" id="ps-add">+ Acrescentar</button>' : list.map(s => `<div class="invoice-row"><span>${escapeHtml(s.name)}</span><span class="muted">${s.mode === 'm2' ? escapeHtml(fmtEUR(s.value)) + '/m²' : escapeHtml(fmtEUR(s.value))}</span></div>`).join('')}</div>
+            ${sel !== 'default' && own ? '<button type="button" class="text-btn" id="ps-useDefault">Voltar a usar a lista geral</button>' : ''}
+            <div class="field-hint">Os valores são o ponto de partida de cada proposta; em cada uma podes mudar, tirar ou acrescentar linhas.</div>
+            <button type="button" class="primary-btn" id="ps-save">Guardar</button>
+            <div id="ps-msg" class="form-msg"></div>`;
+          document.getElementById('ps-type').addEventListener('change', e => { sel = box.dataset.type = e.target.value; draw(); });
+          document.getElementById('ps-copy')?.addEventListener('click', () => { cfg.specialties[sel] = JSON.parse(JSON.stringify(cfg.specialties.default || [])); draw(); });
+          document.getElementById('ps-useDefault')?.addEventListener('click', () => { delete cfg.specialties[sel]; draw(); });
+          document.getElementById('ps-add')?.addEventListener('click', () => { (cfg.specialties[sel] = cfg.specialties[sel] || []).push({ name: '', mode: 'fixed', value: 0 }); draw(); });
+          box.querySelectorAll('#ps-lines .op-spec').forEach(row => row.addEventListener('input', e => {
+            const s = cfg.specialties[sel][Number(row.dataset.i)], k = e.target.dataset.k;
+            s[k] = k === 'value' ? (numOrNull(e.target.value) ?? 0) : e.target.value;
+          }));
+          box.querySelectorAll('#ps-lines [data-del]').forEach(b => b.addEventListener('click', () => { cfg.specialties[sel].splice(Number(b.dataset.del), 1); draw(); }));
+          ['ps-cph', 'ps-rate'].forEach(id => document.getElementById(id).addEventListener('input', e => { cfg[id === 'ps-cph' ? 'cost_per_hour' : 'target_rate'] = numOrNull(e.target.value); }));
+          document.getElementById('ps-save').addEventListener('click', async () => {
+            if ([cfg.cost_per_hour, cfg.target_rate].some(n => Number.isNaN(n))) return formError('ps-msg', 'Número inválido.');
+            Object.keys(cfg.specialties).forEach(k => { cfg.specialties[k] = (cfg.specialties[k] || []).filter(s => (s.name || '').trim()); });
+            try {
+              await saveProposalCfg(cfg);
+              if (!devMode && cfg.target_rate != null) await supabase.from('company_goals').upsert({ year: new Date().getFullYear(), metric: 'revenue_per_hour', target: cfg.target_rate }, { onConflict: 'year,metric' });
+              showToast('Definições das propostas guardadas'); draw();
+            } catch (err) { formError('ps-msg', 'Não foi possível guardar: ' + err.message); }
+          });
+        };
+        draw();
+      } catch (err) {
+        box.innerHTML = `<div class="error-box">Não foi possível carregar: ${escapeHtml(err.message)}</div>`;
+      }
+    }
+
     const CMDK_ACTIONS = [
       { group: 'Criar', label: 'Registar horas', hint: 'H', keys: 'horas imputar tempo registar', run: () => runCreateAction('horas') },
       { group: 'Criar', label: 'Novo marco', keys: 'marco reuniao visita vistoria entrega prazo evento', run: () => runCreateAction('marco') },
@@ -13193,6 +14410,10 @@
       { group: 'Ir para', label: 'Hoje', keys: 'home inicio', run: () => NAV_ACTIONS.home() },
       { group: 'Ir para', label: 'Projetos', keys: 'lista carteira', run: () => NAV_ACTIONS.projects() },
       { group: 'Ir para', label: 'Clientes', keys: 'clientes nif empresas score', run: () => NAV_ACTIONS.clients() },
+      { group: 'Ir para', label: 'Oportunidades', keys: 'terrenos investidores propostas honorarios oportunidades lotes', run: () => NAV_ACTIONS.opps() },
+      { group: 'Criar', label: 'Novo terreno', keys: 'terreno lote oportunidade', run: () => runCreateAction('terreno') },
+      { group: 'Criar', label: 'Novo investidor', keys: 'investidor promotor perfil', run: () => openInvestorModal(null, () => openOppsModule('investors')) },
+      { group: 'Criar', label: 'Nova proposta de honorários', keys: 'proposta honorarios orcamento nota', run: () => openProposalView(null) },
       { group: 'Ir para', label: 'Faturação', keys: 'faturas por faturar por receber weoinvoice saft', run: () => NAV_ACTIONS.billing() },
       { group: 'Ir para', label: 'Mission Control', keys: 'financas iva irc ebitda objetivos extrato banco tesouraria', run: () => NAV_ACTIONS.finance() },
       { group: 'Criar', label: 'Importar extrato bancário', keys: 'extrato banco pdf millennium', run: () => { openFinanceModule('finance'); openBankImport(loadFinance); } },
