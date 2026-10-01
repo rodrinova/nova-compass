@@ -1931,6 +1931,9 @@
   .vt-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--sp-3); align-items: start; }
   @media (max-width: 1000px) { .vt-layout { grid-template-columns: 1fr; } .vt-side { order: -1; } }
   .vt-side { position: sticky; top: 64px; }
+  .rs-block + .rs-block { margin-top: var(--sp-4); padding-top: var(--sp-3); border-top: 1px solid var(--border); }
+  .rs-tag { display: inline-block; font-size: var(--fs-xs); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: .06em; color: var(--accent); background: var(--accent-soft); border-radius: var(--r-full); padding: 2px var(--sp-2); margin-bottom: var(--sp-2); }
+  .op-sum.rs-inv { margin-top: 0; border-top: none; padding-top: 0; }
   .vt-side .ps-result { margin-bottom: 0; position: static; }
   @media (max-width: 1000px) { .vt-side { position: static; } }
   .vt-g { margin-top: var(--sp-5); }
@@ -2085,6 +2088,8 @@
   .op-check { display: inline-block; font-size: var(--fs-xs); margin: 2px var(--sp-2) 0 0; color: var(--success); }
   .op-check.no { color: var(--text-3); }
   .op-present { width: auto; height: 34px; padding: 0 var(--sp-3); margin: 0; flex-shrink: 0; }
+  .op-pres .op-spec-del { flex-shrink: 0; margin-left: calc(-1 * var(--sp-1)); }
+  .op-pres .op-pres-status { flex-shrink: 1; min-width: 0; }
   .op-pres-status { width: auto; max-width: 200px; flex-shrink: 0; margin: 0; }
   .op-present-other { margin-top: var(--sp-3); }
   .op-note { margin: 0 0 var(--sp-2); white-space: pre-wrap; color: var(--text-2); }
@@ -14159,82 +14164,132 @@
     // Resumo da viabilidade para o investidor (janela para imprimir / guardar em PDF)
     function printFeasibility(p, f, o) {
       const en = o.lang === 'en', T = (a, b) => en ? b : a, loc = en ? 'en-GB' : 'pt-PT';
-      const eur = n => Number(Math.round(n || 0)).toLocaleString(loc, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+      const eur = n => n == null || !Number.isFinite(n) ? '—' : Number(Math.round(n)).toLocaleString(loc, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
       const nf = n => Number(n || 0).toLocaleString(loc, { maximumFractionDigits: 1 });
-      const pc = v => v == null || !Number.isFinite(v) ? '—' : (v * 100).toLocaleString(loc, { maximumFractionDigits: 1 }) + '%';
-      const c = feasCalc(p, f), sc = feasScenarios(p, f), e = escapeHtml;
-      const typ = c.typs || [];
+      const m2 = n => n ? nf(Math.round(n)) + ' m²' : '—';
+      const pc = (v, d = 1) => v == null || !Number.isFinite(v) ? '—' : (v * 100).toLocaleString(loc, { maximumFractionDigits: d }) + '%';
+      const c = feasCalc(p, f), sc = feasScenarios(p, f), e = escapeHtml, N = v => Number(v) || 0;
+      const R = c.hasRange ? [feasCalc(p, f, { sales: 1, build: 1, price: 'min' }), feasCalc(p, f, { sales: 1, build: 1, price: 'max' })] : null;
+      const typ = (c.typs || []).filter(t => N(t.units) > 0);
+      const rentOk = o.rent && c.rentYear > 0;
       const logo = new URL('assets/nova-logo-plum-cropped.png', location.href).href;
-      const tr = (a, b, cls = '') => `<tr class="${cls}"><td>${a}</td><td class="r">${b}</td></tr>`;
-      const html = `<!doctype html><html lang="${en ? 'en' : 'pt'}"><head><meta charset="utf-8"><title>${e(p.name)} — ${e(T('Estudo de viabilidade', 'Feasibility study'))}</title>
+      // linha da folha: rubrica | valor unitário | × quantidade | = valor global
+      const row = (l, u, q, t, cls = '') => `<tr class="${cls}"><td>${l}</td><td class="r u">${u || ''}</td><td class="x">${u && q ? '×' : ''}</td><td class="r q">${q || ''}</td><td class="r t">${t}</td></tr>`;
+      const head = `<tr class="h"><th>${e(T('Rubrica', 'Item'))}</th><th class="r">${e(T('Valor unitário', 'Unit value'))}</th><th></th><th class="r">${e(T('Quantidade', 'Quantity'))}</th><th class="r">${e(T('Valor global', 'Total'))}</th></tr>`;
+      const sec = (title, body, note = '') => `<section><h2>${e(title)}</h2><table>${head}${body}</table>${note ? `<p class="note">${note}</p>` : ''}</section>`;
+      const lbl = { 'Habitação (área vendável)': T('Habitação (área vendável)', 'Residential (sellable area)'), 'Comércio': T('Comércio', 'Retail'), 'Áreas comuns': T('Áreas comuns', 'Common areas'),
+        'Estacionamento (abaixo do solo)': T('Estacionamento (abaixo do solo)', 'Parking (below ground)'), 'Áreas verdes': T('Áreas verdes', 'Landscaping'), 'Infraestruturas': T('Infraestruturas', 'Infrastructure') };
+      const neg = n => n ? '− ' + e(eur(n)) : e(eur(0));
+      const priceTxt = t => { const lo = N(t.price) || N(t.price_max), hi = N(t.price_max) || lo; return lo === hi ? eur(lo) : `${eur(Math.min(lo, hi))} – ${eur(Math.max(lo, hi))}`; };
+      const kpi = (tag, label, big, sub, bad = false) => `<div class="kpi"><span class="tag">${e(tag)}</span><span class="l">${e(label)}</span><b class="${bad ? 'bad' : ''}">${big}</b><small>${sub}</small></div>`;
+      const html = `<!doctype html><html lang="${en ? 'en' : 'pt'}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${e(p.name)} — ${e(T('Estudo de viabilidade', 'Feasibility study'))}</title>
         <style>
-          @page { size: A4; margin: 18mm 18mm; }
-          body { font: 10.5pt/1.45 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color: #1d1b1a; margin: 0; padding: 24px; max-width: 780px; }
-          header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #714D79; padding-bottom: 12px; margin-bottom: 18px; }
-          header img { height: 32px; } header .meta { text-align: right; font-size: 9pt; color: #5a5450; }
-          h1 { font-size: 17pt; margin: 0 0 2px; font-weight: 600; } h2 { font-size: 10.5pt; margin: 18px 0 6px; color: #714D79; text-transform: uppercase; letter-spacing: .04em; }
-          .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 14px 0 6px; }
-          .kpis div { border: 1px solid #e6e2dd; border-radius: 8px; padding: 8px 10px; } .kpis span { display: block; font-size: 8.5pt; color: #5a5450; } .kpis b { font-size: 13pt; }
-          table { width: 100%; border-collapse: collapse; } td, th { padding: 5px 4px; border-bottom: 1px solid #ece8e3; text-align: left; } th { font-size: 8.5pt; color: #5a5450; font-weight: 600; }
-          .r { text-align: right; white-space: nowrap; } .total td { font-weight: 700; border-bottom: 2px solid #1d1b1a; } .sub td { color: #5a5450; font-size: 9pt; padding-left: 14px; }
-          .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; } .muted { color: #5a5450; font-size: 8.5pt; }
-          .noprint { margin-bottom: 14px; } @media print { .noprint { display: none; } body { padding: 0; } }
+          @page { size: A4; margin: 14mm 14mm 16mm; }
+          * { box-sizing: border-box; }
+          html { background: #F7F7F5; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          body { font: 9.5pt/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1B1A19; margin: 0 auto; padding: 28px 24px 40px; max-width: 820px; font-variant-numeric: tabular-nums; }
+          .bar { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+          .bar button { font: inherit; font-weight: 600; background: #714D79; color: #fff; border: 0; border-radius: 10px; padding: 9px 16px; cursor: pointer; }
+          header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; }
+          header img { height: 26px; } header .meta { text-align: right; font-size: 8.5pt; color: #6B6660; }
+          .title { margin-bottom: 18px; }
+          .title .eyebrow { font-size: 8pt; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #714D79; }
+          h1 { font-size: 20pt; line-height: 1.15; margin: 4px 0 4px; font-weight: 600; letter-spacing: -0.02em; }
+          .loc { color: #6B6660; font-size: 9pt; } .loc a { color: #714D79; }
+          .kpis { display: grid; grid-template-columns: repeat(${rentOk ? 3 : 2}, 1fr); gap: 10px; margin-bottom: 14px; }
+          .kpi { background: #fff; border: 1px solid #E4E3DE; border-radius: 14px; padding: 12px 14px; break-inside: avoid; }
+          .kpi .tag { display: inline-block; font-size: 7pt; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: #714D79; background: rgba(113,77,121,.09); border-radius: 99px; padding: 2px 8px; margin-bottom: 6px; }
+          .kpi .l { display: block; font-size: 8.5pt; color: #6B6660; }
+          .kpi b { display: block; font-size: 17pt; font-weight: 600; letter-spacing: -0.02em; margin: 2px 0; } .kpi b.bad { color: #C4453D; }
+          .kpi small { font-size: 8pt; color: #6B6660; display: block; }
+          section { background: #fff; border: 1px solid #E4E3DE; border-radius: 14px; padding: 12px 16px 10px; margin-bottom: 12px; break-inside: avoid; }
+          h2 { font-size: 10.5pt; font-weight: 600; margin: 0 0 6px; padding-bottom: 6px; border-bottom: 2px solid #1B1A19; }
+          table { width: 100%; border-collapse: collapse; }
+          td, th { padding: 5px 4px; border-bottom: 1px solid #EEEDE9; text-align: left; vertical-align: top; }
+          tr.h th { font-size: 7.5pt; font-weight: 500; color: #736D66; border-bottom: 1px solid #E4E3DE; padding-top: 2px; }
+          td:first-child { width: 38%; } td small { display: block; color: #736D66; font-size: 7.5pt; }
+          .r { text-align: right; white-space: nowrap; } .u, .q { color: #6B6660; } .x { width: 14px; color: #A29C95; text-align: center; }
+          tr.sub td { background: #F3F3F0; font-weight: 600; border-bottom: 0; } tr.sub td:first-child { border-radius: 8px 0 0 8px; } tr.sub td:last-child { border-radius: 0 8px 8px 0; }
+          tr.big td { font-size: 10.5pt; } tr.gap td { border: 0; padding: 2px; }
+          .bad { color: #C4453D; } .rng { display: block; font-size: 7.5pt; color: #736D66; font-weight: 400; }
+          .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } .two section { margin-bottom: 12px; }
+          .scen { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 4px; }
+          .scen div { background: #F3F3F0; border-radius: 10px; padding: 8px 10px; } .scen span { display: block; font-size: 8pt; color: #6B6660; } .scen b { font-size: 12pt; font-weight: 600; } .scen small { display: block; font-size: 7.5pt; color: #736D66; }
+          .note { font-size: 7.5pt; color: #736D66; margin: 6px 0 0; }
+          footer { display: flex; justify-content: space-between; gap: 16px; font-size: 7.5pt; color: #736D66; margin-top: 16px; }
+          @media print { html { background: #F7F7F5; } body { padding: 0; max-width: none; } .bar { display: none; } }
+          @media (max-width: 640px) { .kpis, .two { grid-template-columns: 1fr; } td:first-child { width: auto; } }
         </style></head><body>
-        <div class="noprint"><button onclick="window.print()">${e(T('Imprimir / guardar em PDF', 'Print / save as PDF'))}</button></div>
-        <header><img src="${e(logo)}" alt="NOVA"><div class="meta">${e(T('Estudo de viabilidade', 'Feasibility study'))}<br>${e(new Date().toLocaleDateString(loc, { day: 'numeric', month: 'long', year: 'numeric' }))}</div></header>
-        <h1>${e(p.name)}</h1>
-        <div class="muted">${e([p.address, p.parish, p.municipality].filter(Boolean).join(', '))}${p.maps_url && /^https?:/i.test(p.maps_url) ? ` · <a href="${e(p.maps_url)}">${e(T('mapa', 'map'))}</a>` : ''}</div>
+        <div class="bar"><button onclick="window.print()">${e(T('Imprimir / guardar em PDF', 'Print / save as PDF'))}</button></div>
+        <header><img src="${e(logo)}" alt="NOVA"><div class="meta">NOVA Associates<br>${e(new Date().toLocaleDateString(loc, { day: 'numeric', month: 'long', year: 'numeric' }))}</div></header>
+        <div class="title"><div class="eyebrow">${e(T('Estudo de viabilidade', 'Feasibility study'))}</div><h1>${e(p.name)}</h1>
+          <div class="loc">${e([p.address, p.parish, p.municipality].filter(Boolean).join(', '))}${p.maps_url && /^https?:/i.test(p.maps_url) ? ` · <a href="${e(p.maps_url)}">${e(T('ver no mapa', 'view map'))}</a>` : ''}</div></div>
         <div class="kpis">
-          <div><span>${e(T('Investimento total', 'Total investment'))}</span><b>${e(eur(c.costGlobal))}</b></div>
-          <div><span>${e(T('Receita líquida', 'Net revenue'))}</span><b>${e(eur(c.salesNet))}</b></div>
-          <div><span>${e(T('Lucro', 'Profit'))}</span><b>${e(eur(c.profit))}</b></div>
-          <div><span>ROI</span><b>${e(pc(c.roi))}</b></div>
+          ${kpi(T('Custo', 'Cost'), T('Custo global', 'Total cost'), e(eur(c.costGlobal)), `${e(T('terreno', 'land'))} ${e(eur(c.acquisition))} · ${e(T('construção e outros', 'construction & other'))} ${e(eur(c.costGlobal - c.acquisition))}`)}
+          ${kpi(T('Venda', 'Sale'), T('Lucro', 'Profit'), e(eur(c.profit)), `ROI <b style="display:inline;font-size:inherit;margin:0">${e(pc(c.roi))}</b>${R ? ` · ${e(T('intervalo', 'range'))} ${e(pc(R[0].roi))} – ${e(pc(R[1].roi))}` : ''}`, c.profit < 0)}
+          ${rentOk ? kpi(T('Arrendamento', 'Rental'), T('Renda anual', 'Annual rent'), e(eur(c.rentYear)), `yield ${e(pc(c.yieldGross))}`) : ''}
         </div>
-        <div class="cols"><div>
-          <h2>${e(T('Premissas', 'Assumptions'))}</h2>
-          <table>
-            ${p.land_area ? tr(e(T('Área do terreno', 'Plot area')), e(nf(p.land_area)) + ' m²') : ''}
-            ${tr(e(T('Construção — habitação', 'Gross floor area — residential')), e(nf(c.housing)) + ' m²')}
-            ${c.commerce ? tr(e(T('Construção — comércio', 'Gross floor area — retail')), e(nf(c.commerce)) + ' m²') : ''}
-            ${c.below ? tr(e(T('Abaixo do solo / estacionamento', 'Below ground / parking')), e(nf(c.below)) + ' m²') : ''}
-            ${tr(e(T('Área vendável', 'Sellable area')), e(nf(c.sellable)) + ' m²')}
-            ${c.units ? tr(e(T('Frações', 'Units')), e(String(c.units))) : ''}
-            ${typ.length ? tr(e(T('Tipologias', 'Unit mix')), e(typ.map(t => `${t.units}× ${t.name}`).join(' · '))) : ''}
-            ${tr(e(T('Preço de venda', 'Sale price')), f.sale_mode === 'typology' ? e(T('intervalo por tipologia', 'range per unit type')) : e(eur(f.sale_m2)) + '/m²')}
-          </table>
-          ${typ.length && f.sale_mode === 'typology' ? `<table style="margin-top:8px;"><tr><th>${e(T('Tipologia', 'Type'))}</th><th class="r">${e(T('Unid.', 'Units'))}</th><th class="r">m²</th><th class="r">${e(T('Preço', 'Price'))}</th></tr>${typ.map(t => `<tr><td>${e(t.name)}</td><td class="r">${e(String(t.units))}</td><td class="r">${e(nf(t.area))}</td><td class="r">${e(t.price_max && Number(t.price_max) !== Number(t.price) && t.price ? eur(t.price) + ' – ' + eur(t.price_max) : eur(t.price || t.price_max))}</td></tr>`).join('')}</table>` : ''}
-          ${o.scen ? `<h2>${e(T('Cenários', 'Scenarios'))}</h2><table><tr><th></th><th class="r">${e(T('Lucro', 'Profit'))}</th><th class="r">ROI</th></tr>${sc.map(([l, x]) => `<tr><td>${e(T(l, { Conservador: 'Conservative', Base: 'Base', Otimista: 'Optimistic' }[l]))}</td><td class="r">${e(eur(x.profit))}</td><td class="r">${e(pc(x.roi))}</td></tr>`).join('')}</table>
-            <p class="muted">${e(T(`Conservador: vendas −${nf(f.delta_pct)}% e construção +${nf(f.delta_pct)}%. Otimista: o inverso.`, `Conservative: sales −${nf(f.delta_pct)}% and construction +${nf(f.delta_pct)}%. Optimistic: the reverse.`))}</p>` : ''}
-          ${o.rent && c.rentYear ? `<h2>${e(T('Arrendamento', 'Rental'))}</h2><table>
-            ${tr(e(T('Renda anual (com ocupação)', 'Annual rent (after vacancy)')), e(eur(c.rentYear)))}
-            ${tr(e(T('Yield bruto', 'Gross yield')), e(pc(c.yieldGross)))}
-            ${tr(e(T('Yield líquido', 'Net yield')), e(pc(c.yieldNet)))}</table>` : ''}
-        </div><div>
-          <h2>${e(T('Custos e receita', 'Costs and revenue'))}</h2>
-          <table>
-            ${tr(e(T('Aquisição do terreno', 'Land acquisition')), e(eur(c.price)))}
-            ${tr(e(T('IMT, Imposto do Selo e escritura', 'Transfer tax, stamp duty and deeds')), e(eur(c.imt + c.stamp + c.acqOther)), 'sub')}
-            ${tr(e(T('Construção', 'Construction')), e(eur(c.construction)))}
-            ${tr(e(T('Licenças, projetos e taxas', 'Permits, design and fees')), e(eur(c.indirect)))}
-            ${tr(e(T('Reservas de contingência e gestão', 'Contingency and management reserves')), e(eur(c.reserves)))}
-            ${tr(e(T('IVA da construção', 'VAT on construction')), e(eur(c.vat)))}
-            ${tr(e(T('Custo global', 'Total cost')), e(eur(c.costGlobal)), 'total')}
-            ${tr(e(T('Vendas', 'Sales')), e(eur(c.salesGross)))}
-            ${tr(e(T('Comissão imobiliária', 'Agency commission')), '− ' + e(eur(c.commission)), 'sub')}
-            ${tr(e(T('Receita líquida', 'Net revenue')), e(eur(c.salesNet)), 'total')}
-            ${tr(e(T('Lucro', 'Profit')), e(eur(c.profit)))}
-            ${tr('ROI', e(pc(c.roi)) + ' · ' + e(pc(c.roiNoRes)) + ' ' + e(T('sem reservas', 'excl. reserves')))}
-          </table>
-          <h2>${e(T('Rácios', 'Ratios'))}</h2>
-          <table>
-            ${tr(e(T('Terreno por m² de construção', 'Land per m² of floor area')), c.ratios.abc ? e(eur(c.ratios.abc)) + '/m²' : '—')}
-            ${tr(e(T('Terreno / receita', 'Land / revenue')), e(pc(c.ratios.revenue)))}
-            ${tr(e(T('Terreno / custo global', 'Land / total cost')), e(pc(c.ratios.cost)))}
-            ${c.ratios.unit ? tr(e(T('Terreno por fração', 'Land per unit')), e(eur(c.ratios.unit))) : ''}
-          </table>
-        </div></div>
-        <p class="muted" style="margin-top:18px;">${e(T('Estudo indicativo, sem financiamento nem impostos sobre o lucro. Valores sem IVA salvo indicação. Os preços de mercado e as áreas devem ser confirmados.', 'Indicative study, excluding financing and taxes on profit. Figures exclude VAT unless stated. Market prices and areas are to be confirmed.'))}</p>
-        <p class="muted">NOVA Associates</p>
+        <div class="two">
+          <section><h2>${e(T('Áreas', 'Areas'))}</h2><table>
+            ${p.land_area ? row(e(T('Área do terreno', 'Plot area')), '', '', e(m2(N(p.land_area)))) : ''}
+            ${row(e(T('Construção — habitação', 'Floor area — residential')), p.pdm_index && !p.buildable_area ? e(T('índice', 'index')) + ' ' + e(nf(p.pdm_index)) : '', '', e(m2(c.housing)))}
+            ${row(e(T('Área vendável', 'Sellable area')), e(nf(f.sellable_pct)) + '%', e(m2(c.housing)), e(m2(c.sellable)))}
+            ${row(e(T('Áreas comuns', 'Common areas')), '', '', e(m2(c.common)))}
+            ${c.commerce ? row(e(T('Comércio', 'Retail')), '', '', e(m2(c.commerce))) : ''}
+            ${c.below ? row(e(T('Abaixo do solo', 'Below ground')), '', '', e(m2(c.below))) : ''}
+          </table></section>
+          <section><h2>${e(T('Frações', 'Units'))}</h2><table>
+            ${typ.map(t => row(e(t.name), e(m2(N(t.area)) + ' ' + T('cada', 'each')), e(String(t.units)), e(m2(N(t.units) * N(t.area))))).join('')}
+            ${row(e(T('Total', 'Total')), '', e(String(c.units || 0)), e(m2(typ.reduce((x, t) => x + N(t.units) * N(t.area), 0))), 'sub')}
+          </table></section>
+        </div>
+        ${sec(T('Custos de aquisição do terreno', 'Land acquisition costs'), `
+          ${row(e(T('Preço do terreno', 'Land price')), '', '', e(eur(c.price)))}
+          ${row(e(T('IMT', 'Property transfer tax (IMT)')), e(pc(c.imtRate / 100)), e(eur(c.price)), e(eur(c.imt)))}
+          ${row(e(T('Imposto do Selo', 'Stamp duty')), e(nf(f.stamp_pct)) + '%', e(eur(c.price)), e(eur(c.stamp)))}
+          ${c.acqOther ? row(e(T('Escritura e registos', 'Deeds and registration')), '', '', e(eur(c.acqOther))) : ''}
+          ${row(e(T('Total da aquisição', 'Total acquisition')), '', '', e(eur(c.acquisition)), 'sub')}`)}
+        ${sec(T('Custos de construção e outros custos', 'Construction and other costs'), `
+          ${c.lines.filter(l => l.area).map(l => row(e(lbl[l.label] || l.label), e(eur(l.unit)) + '/m²', e(m2(l.area)), e(eur(l.value)))).join('')}
+          ${row(e(T('Construção', 'Construction')), '', '', e(eur(c.construction)), 'sub')}
+          ${row(e(T('Licenças', 'Permits')), e(nf(f.lic_pct)) + '%', e(eur(c.construction)), e(eur(c.licences)))}
+          ${row(e(T('Projetos', 'Design')), e(nf(f.proj_pct)) + '%', e(eur(c.construction)), e(eur(c.projects)))}
+          ${c.muni ? row(e(T('Taxas municipais', 'Municipal fees')), '', '', e(eur(c.muni))) : ''}
+          ${row(e(T('Contingência', 'Contingency')), e(nf(f.cont_pct)) + '%', e(eur(c.construction + c.indirect)), e(eur(c.contingency)))}
+          ${row(e(T('Gestão do projeto', 'Project management')), e(nf(f.mgmt_pct)) + '%', e(eur(c.construction + c.indirect)), e(eur(c.management)))}
+          ${row(e(T('IVA da construção', 'VAT on construction')), e(nf(f.vat_pct)) + '%', e(eur(c.construction)), e(eur(c.vat)))}
+          ${row(e(T('Total construção e outros custos', 'Total construction and other costs')), '', '', e(eur(c.construction + c.indirect + c.reserves + c.vat)), 'sub')}
+          <tr class="gap"><td colspan="5"></td></tr>
+          ${row(e(T('Custo global', 'Total cost')), '', '', e(eur(c.costGlobal)), 'sub big')}`)}
+        ${sec(T('Receitas de venda', 'Sales revenue'), `
+          ${f.sale_mode === 'typology' ? typ.map(t => row(e(t.name) + `<small>${e(m2(N(t.area)))}</small>`, e(priceTxt(t)), e(String(t.units)), e(eur(N(t.units) * ((N(t.price) || N(t.price_max)) + (N(t.price_max) || N(t.price))) / 2)))).join('')
+            : row(e(T('Habitação', 'Residential')), e(eur(f.sale_m2)) + '/m²', e(m2(c.sellable)), e(eur(c.housingSales)))}
+          ${c.commerce && N(f.commerce_sale_m2) ? row(e(T('Comércio', 'Retail')), e(eur(f.commerce_sale_m2)) + '/m²', e(m2(c.commerce)), e(eur(c.commerce * N(f.commerce_sale_m2)))) : ''}
+          ${row(e(T('Vendas', 'Sales')), '', '', e(eur(c.salesGross)) + (R ? `<span class="rng">${e(eur(R[0].salesGross))} – ${e(eur(R[1].salesGross))}</span>` : ''), 'sub')}
+          ${row(e(T('Comissão imobiliária', 'Agency commission')) + `<small>${e(T('paga por quem vende, + IVA', 'paid by the seller, + VAT'))}</small>`, e(nf(f.comm_pct)) + '% + ' + e(nf(f.comm_vat)) + '%', e(eur(c.salesGross)), neg(c.commission))}
+          ${row(e(T('Receita líquida', 'Net revenue')), '', '', e(eur(c.salesNet)), 'sub big')}`,
+          f.sale_mode === 'typology' && R ? e(T('Preços por tipologia em intervalo; os totais usam o meio do intervalo.', 'Unit prices as a range; totals use the midpoint.')) : '')}
+        <section><h2>${e(T('Resultado da venda', 'Sale result'))}</h2><table>
+          ${row(e(T('Receita líquida', 'Net revenue')), '', '', e(eur(c.salesNet)))}
+          ${row(e(T('Custo global', 'Total cost')), '', '', neg(c.costGlobal))}
+          ${row(e(T('Lucro', 'Profit')), '', '', `<span class="${c.profit < 0 ? 'bad' : ''}">${e(eur(c.profit))}</span>` + (R ? `<span class="rng">${e(eur(R[0].profit))} – ${e(eur(R[1].profit))}</span>` : ''), 'sub big')}
+          ${row('ROI' + `<small>${e(T('lucro ÷ custo global', 'profit ÷ total cost'))}</small>`, '', '', e(pc(c.roi)) + (R ? `<span class="rng">${e(pc(R[0].roi))} – ${e(pc(R[1].roi))}</span>` : ''))}
+        </table>
+        ${o.scen ? `<div class="scen">${sc.map(([l, x]) => `<div><span>${e(T(l, { Conservador: 'Conservative', Base: 'Base', Otimista: 'Optimistic' }[l]))}</span><b class="${x.profit < 0 ? 'bad' : ''}">${e(pc(x.roi))}</b><small>${e(eur(x.profit))}</small></div>`).join('')}</div>
+          <p class="note">${e(T(`Conservador: vendas −${nf(f.delta_pct)}% e construção +${nf(f.delta_pct)}%. Otimista: o inverso.`, `Conservative: sales −${nf(f.delta_pct)}% and construction +${nf(f.delta_pct)}%. Optimistic: the reverse.`))}</p>` : ''}
+        </section>
+        ${rentOk ? sec(T('Resultado do arrendamento', 'Rental result'), `
+          ${f.sale_mode === 'typology' && typ.some(t => N(t.rent)) ? typ.map(t => row(e(t.name), e(eur(t.rent)) + e(T('/mês', '/month')), e(String(t.units)), e(eur(N(t.units) * N(t.rent))) + e(T('/mês', '/month')))).join('')
+            : row(e(T('Renda mensal', 'Monthly rent')), e(eur(f.rent_m2)) + e(T('/m²/mês', '/m²/month')), e(m2(c.sellable)), e(eur(c.rentMonth)) + e(T('/mês', '/month')))}
+          ${row(e(T('Renda anual', 'Annual rent')) + `<small>${e(T('12 meses × ocupação', '12 months × occupancy'))}</small>`, e(nf(f.occupancy)) + '%', e(eur(c.rentMonth * 12)), e(eur(c.rentYear)), 'sub')}
+          ${row(e(T('Yield', 'Yield')) + `<small>${e(T('renda anual ÷ custo global', 'annual rent ÷ total cost'))}</small>`, '', '', e(pc(c.yieldGross)), 'sub big')}`) : ''}
+        <section><h2>${e(T('Rácios do terreno', 'Land ratios'))}</h2><table>
+          ${row(e(T('Terreno por m² de construção', 'Land per m² of floor area')), '', '', c.ratios.abc ? e(eur(c.ratios.abc)) + '/m²' : '—')}
+          ${row(e(T('Terreno / receita', 'Land / revenue')), '', '', e(pc(c.ratios.revenue)))}
+          ${row(e(T('Terreno / custo global', 'Land / total cost')), '', '', e(pc(c.ratios.cost)))}
+          ${c.ratios.unit ? row(e(T('Terreno por fração', 'Land per unit')), '', '', e(eur(c.ratios.unit))) : ''}
+        </table></section>
+        <footer><span>${e(T('Estudo indicativo, sem financiamento nem impostos sobre o lucro. Valores sem IVA salvo indicação. Os preços de mercado e as áreas devem ser confirmados.', 'Indicative study, excluding financing and taxes on profit. Figures exclude VAT unless stated. Market prices and areas are to be confirmed.'))}</span><span>NOVA Associates</span></footer>
         </body></html>`;
       const w = window.open('', '_blank');
       if (!w) { showToast('O navegador bloqueou a janela. Permite janelas deste site e tenta outra vez.', { type: 'error', ms: 7000 }); return; }
@@ -14807,7 +14862,7 @@
               ${vrow('Gestão do projeto', fIn('mgmt_pct', f.mgmt_pct, '%'), o('indBase'), o('management'))}
               ${vrow('IVA da construção', fIn('vat_pct', f.vat_pct, '%'), o('constr'), o('vat'))}
               ${vrow('Total construção e outros custos', '', '', o('buildTotal'), 'vt-sub')}
-              ${vrow('Investimento total<small>aquisição + construção e outros custos</small>', '', '', o('costGlobal'), 'vt-sub vt-big')}`)}
+              ${vrow('Custo global<small>aquisição + construção e outros custos</small>', '', '', o('costGlobal'), 'vt-sub vt-big')}`)}
             ${grp('vt-sales', 'Receitas de venda', '', `<div class="segmented vt-mode" id="vt-sale-mode"><button type="button" data-sm="m2">Preço por m²</button><button type="button" data-sm="typology">Intervalo por tipologia</button></div>
               ${vhead('Valor unitário (mín. a máx. por tipologia)')}
               ${vrow('Habitação<small>preço por m² na zona</small>', fIn('sale_m2', f.sale_m2, '€/m²', 'ex.: 4500'), o('sellable'), o('housingSales'), '', ' data-mode="m2"')}
@@ -14818,19 +14873,15 @@
               ${vrow('Receita líquida', '', '', o('salesNet'), 'vt-sub vt-big')}`)}
             ${grp('vt-res', 'Resultado', '', `
               ${vrow('Receita líquida', '', '', o('salesNet'))}
-              ${vrow('Investimento total', '', '', o('costGlobalNeg'))}
-              ${vrow('Lucro do promotor', '', '', o('profit'), 'vt-sub vt-big')}
-              ${vrow('ROI<small>lucro ÷ investimento total</small>', '', '', o('roi'))}
-              ${vrow('ROI sem reservas<small>sem contingência nem gestão</small>', '', '', o('roiNoRes'))}
-              ${vrow('Margem sobre as vendas', '', '', o('margin'))}
+              ${vrow('Custo global', '', '', o('costGlobalNeg'))}
+              ${vrow('Lucro', '', '', o('profit'), 'vt-sub vt-big')}
+              ${vrow('ROI<small>lucro ÷ custo global</small>', '', '', o('roi'))}
               ${vrow('Cenários<small>vendas e construção ± esta variação</small>', fIn('delta_pct', f.delta_pct, '± %'), '', o('scen'))}`)}
             ${grp('vt-rent', `Arrendamento <label class="vt-chk"><input type="checkbox" data-f="rent_on"${f.rent_on ? ' checked' : ''}> calcular</label>`, 'alternativa à venda', `<div id="vt-rent-body"${f.rent_on ? '' : ' hidden'}>${vhead()}
               ${vrow('Renda mensal', fIn('rent_m2', f.rent_m2, '€/m²/mês'), o('sellable'), o('rentM2Month'), '', ' data-mode="m2"')}
               <div id="vt-rent-typ" class="vt-typ" data-mode="typology"></div>
-              ${vrow('Renda anual<small>× 12 meses × ocupação</small>', fIn('occupancy', f.occupancy, '%'), o('rentMonth12'), o('rentYear'))}
-              ${vrow('Despesas<small>IMI, condomínio, gestão, manutenção</small>', fIn('rent_opex_pct', f.rent_opex_pct, '%'), o('rentYear'), o('rentOpex'))}
-              ${vrow('Renda líquida anual', '', '', o('rentNet'), 'vt-sub')}
-              ${vrow('Yield bruto / líquido<small>sobre o investimento total</small>', '', '', o('yields'), 'vt-sub')}</div>`)}
+              ${vrow('Renda anual<small>× 12 meses × ocupação</small>', fIn('occupancy', f.occupancy, '%'), o('rentMonth12'), o('rentYear'), 'vt-sub')}
+              ${vrow('Yield<small>renda anual ÷ custo global</small>', '', '', o('yield'), 'vt-sub')}</div>`)}
             <div class="vt-foot"><button type="button" class="text-btn" id="fz-reset">Repor os valores de referência</button></div>
           </div>
           <aside class="vt-side"><div class="gantt-wrap ps-result" id="fz-result"></div></aside>
@@ -15023,10 +15074,10 @@
           housingSales: E(c.housingSales), commerceQ: M(c.commerce), commerceSales: E(c.commerce * Nn(f.commerce_sale_m2)),
           salesGross: E(c.salesGross) + rng('salesGross'), salesQ: E(c.salesGross), commission: c.commission ? '− ' + E(c.commission) : E(0), salesNet: E(c.salesNet) + rng('salesNet'),
           profit: ok ? `<b class="${c.profit < 0 ? 'late' : ''}">${E(c.profit)}</b>${rng('profit')}` : '—',
-          roi: ok ? pct(c.roi) + rng('roi', x => pct(x)) : '—', roiNoRes: ok ? pct(c.roiNoRes) : '—', margin: ok ? pct(c.margin) : '—',
+          roi: ok ? pct(c.roi) + rng('roi', x => pct(x)) : '—',
           scen: ok ? sc.map(([l, x]) => `<span class="vt-sc"><small>${l}</small> <b class="${x.profit < 0 ? 'late' : ''}">${pct(x.roi)}</b></span>`).join('') : '—',
           rentM2Month: E(c.sellable * Nn(f.rent_m2)) + '<small class="vt-rng">por mês</small>', rentMonth12: E(c.rentMonth * 12), rentYear: E(c.rentYear),
-          rentOpex: c.rentYear ? '− ' + E(c.rentYear - c.rentNet) : E(0), rentNet: E(c.rentNet), yields: `${pct(c.yieldGross, 2)} / ${pct(c.yieldNet, 2)}`,
+          yield: pct(c.yieldGross, 1),
           fracN: `${fracN} ${fracN === 1 ? 'fração' : 'frações'}`, fracM2: `<b class="${over ? 'late' : ''}">${M(fracM2)}</b>`,
           fracCmp: `de ${M(c.sellable)} vendáveis${over ? ' — <b class="late">passa da área vendável</b>' : ''}`
         };
@@ -15043,19 +15094,32 @@
         document.getElementById('fz-size-v').textContent = (mk <= 5 ? 'compacto' : mk <= 22 ? 'médio' : 'generoso') + ` · +${fmtNum(mk)}%`;
         document.getElementById('fz-sizes').innerHTML = mx.typ.map(t => `<span><b>${t.name}</b> ${t.area} m²</span>`).join('');
         const row = (l, val, cls = '') => `<div class="${cls}"><span>${l}</span><b>${val}</b></div>`;
+        // Só as métricas do Excel: custo global, receita, lucro e ROI; renda anual e yield; rácios do terreno
+        const rentOk = f.rent_on && c.rentYear > 0 && c.hasCosts;
         document.getElementById('fz-result').innerHTML = `
-          <div class="fz-big"><span>Lucro do promotor</span><b class="${ok && c.profit < 0 ? 'late' : ''}">${ok ? E(c.profit) : '—'}</b>
-            <small>${ok ? `ROI <b>${pct(c.roi)}</b> · ${pct(c.roiNoRes)} sem reservas` : !c.hasCosts ? 'Falta a área de construção.' : 'Falta o preço de venda.'}</small>
-            ${ok && R ? `<small class="vt-rng">Com os preços do intervalo: ${E(R[0].profit)} a ${E(R[1].profit)} · ROI ${pct(R[0].roi)} a ${pct(R[1].roi)}</small>` : ''}</div>
-          <div class="op-sum">
-            ${row('Investimento total', c.hasCosts ? E(c.costGlobal) : '—', 'op-sum-total')}
-            ${row('<small>aquisição do terreno</small>', `<small>${E(c.acquisition)}</small>`, 'fz-sub')}
-            ${row('<small>construção e outros custos</small>', `<small>${E(c.construction + c.indirect + c.reserves + c.vat)}</small>`, 'fz-sub')}
-            ${row('Receita líquida', ok ? E(c.salesNet) : '—')}
-            ${c.units ? row('Por fração', `${c.avgPrice ? E(c.avgPrice) + ' · ' : ''}terreno ${c.ratios.unit ? E(c.ratios.unit) : '—'}`) : ''}
+          <div class="rs-block">
+            <div class="rs-tag">Venda</div>
+            <div class="fz-big"><span>Lucro</span><b class="${ok && c.profit < 0 ? 'late' : ''}">${ok ? E(c.profit) : '—'}</b>
+              <small>${ok ? `ROI <b>${pct(c.roi)}</b>${R ? ` · intervalo ${pct(R[0].roi)} a ${pct(R[1].roi)}` : ''}` : !c.hasCosts ? 'Falta a área de construção.' : 'Falta o preço de venda.'}</small></div>
+            <div class="op-sum">
+              ${row('Custo global', c.hasCosts ? E(c.costGlobal) : '—')}
+              ${row('Receita líquida', ok ? E(c.salesNet) : '—')}
+            </div>
           </div>
-          <div class="fz-scen">${sc.map(([l, x]) => `<div><span>${l}</span><b class="${x.profit < 0 ? 'late' : ''}">${ok ? pct(x.roi) : '—'}</b></div>`).join('')}</div>
-          ${f.rent_on && c.rentYear ? `<div class="op-sum">${row('Yield bruto / líquido', `${pct(c.yieldGross, 2)} / ${pct(c.yieldNet, 2)}`)}</div>` : ''}`;
+          ${f.rent_on ? `<div class="rs-block">
+            <div class="rs-tag">Arrendamento</div>
+            <div class="fz-big"><span>Renda anual</span><b>${rentOk ? E(c.rentYear) : '—'}</b>
+              <small>${rentOk ? `Yield <b>${pct(c.yieldGross, 1)}</b> · ${E(c.rentMonth)}/mês × 12 × ${escapeHtml(fmtNum(f.occupancy))}%` : 'Falta a renda (no grupo Arrendamento).'}</small></div>
+          </div>` : ''}
+          <div class="rs-block">
+            <div class="rs-tag">Rácios do terreno</div>
+            <div class="op-sum rs-inv">
+              ${row('Terreno / m² de construção', c.ratios.abc ? E(c.ratios.abc) + '/m²' : '—')}
+              ${row('Terreno / receita', ok ? pct(c.ratios.revenue) : '—')}
+              ${row('Terreno por fração', c.ratios.unit ? E(c.ratios.unit) : '—')}
+              ${row('Terreno / custo global', c.hasCosts ? pct(c.ratios.cost) : '—')}
+            </div>
+          </div>`;
       };
       // ---- Investidores: os 3 melhores do matchmaker + já apresentados ----
       const drawInvestors = () => {
@@ -15070,7 +15134,8 @@
             <button type="button" class="secondary-btn op-present" data-present="${escapeHtml(x.i.id)}">Apresentar</button></div>`;
         box.innerHTML = `<div class="card-head"><h2>Investidores</h2>${d.investors.length ? '' : '<button type="button" class="text-btn" id="pl-go-investors">+ Investidor</button>'}</div>
           ${pres.length ? pres.map(x => `<div class="invoice-row op-pres"><span><b class="bl-title">${escapeHtml(invById[x.investor_id]?.name || 'Investidor')}</b><br><small>apresentado a ${escapeHtml(fmtDayMonthYear(x.presented_on))}</small></span>
-              <select class="form-input op-pres-status" data-pres="${escapeHtml(x.id)}">${PRES_STATUSES.map(([k, l]) => `<option value="${k}"${k === x.status ? ' selected' : ''}>${l}</option>`).join('')}</select></div>`).join('') : ''}
+              <select class="form-input op-pres-status" data-pres="${escapeHtml(x.id)}">${PRES_STATUSES.map(([k, l]) => `<option value="${k}"${k === x.status ? ' selected' : ''}>${l}</option>`).join('')}</select>
+              <button type="button" class="op-spec-del" data-unpres="${escapeHtml(x.id)}" aria-label="Anular a apresentação a ${escapeHtml(invById[x.investor_id]?.name || 'investidor')}" title="Anular (foi engano)">×</button></div>`).join('') : ''}
           ${top.length ? top.map(fitRow).join('') : `<div class="gantt-empty">${d.investors.length ? 'Ainda nenhum investidor com bom encaixe. Preenche as premissas e as tipologias de uso.' : 'Ainda não há investidores registados.'}</div>`}
           ${rest.length ? `<details class="mm-more"><summary>Outros ${rest.length} investidores — ver porquê e o que mudar</summary>${rest.map(fitRow).join('')}</details>` : ''}`;
         box.querySelectorAll('[data-present]').forEach(b => b.addEventListener('click', async () => {
@@ -15081,6 +15146,11 @@
             showToast('Apresentado a ' + (invById[b.dataset.present]?.name || 'investidor'));
             suppressNavPush = true; openPlotView(p.id);
           } catch (err) { showError('registar a apresentação', err); }
+        }));
+        box.querySelectorAll('[data-unpres]').forEach(b => b.addEventListener('click', async () => {
+          try {
+            await deleteWithUndo('land_presentations', b.dataset.unpres, mockPresentations, 'Apresentação anulada', () => { suppressNavPush = true; openPlotView(p.id); });
+          } catch (err) { showError('anular a apresentação', err); }
         }));
         box.querySelectorAll('[data-pres]').forEach(sel => sel.addEventListener('change', async () => {
           try {
