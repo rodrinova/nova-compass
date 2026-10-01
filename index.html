@@ -10346,14 +10346,14 @@
         <div class="fin-note">Estimativas a partir das faturas (SAF-T) e das despesas registadas; o valor final é o da declaração da contabilidade. Regime de IVA: <b>${b.settings.vat_regime === 'monthly' ? 'mensal' : b.settings.vat_regime === 'cash' ? 'trimestral, IVA de caixa' : 'trimestral'}</b> · <button type="button" class="text-btn" data-fin-settings>mudar</button></div>
 
         </section>`;
-      // Custo/hora da NOVA (funcionamento + salários ÷ horas úteis) — calculado em Pessoas, salários e custo/hora
+      // Custo/hora da NOVA (funcionamento + salários ÷ horas faturáveis) — calculado em Pessoas, salários e custo/hora
       computeHourCost(undefined, b).then(hc => {
         const el = document.getElementById('fin-hourcost');
         if (!el) return;
         const eur = n => n != null ? escapeHtml(fmtEUR(n)) : '—';
         el.innerHTML = `
           <div class="pay-hero-main"><span>Custo/hora da NOVA</span><b>${hc.total != null ? eur(hc.total) + '/h' : '—'}</b>
-            <small>${hc.hours ? `${escapeHtml(fmtNum(Math.round(hc.hours)))} horas úteis em ${hc.year} · <button type="button" class="text-btn" id="fin-hc-go">ver as contas</button>` : 'Preenche o quadro de pessoas em <button type="button" class="text-btn" id="fin-hc-go">Definições → Pessoas, salários e custo/hora</button>.'}</small></div>
+            <small>${hc.hours ? `por hora faturável (${escapeHtml(fmtNum(hc.billPct))}% de ${escapeHtml(fmtNum(Math.round(hc.hours)))} horas úteis em ${hc.year}) · <button type="button" class="text-btn" id="fin-hc-go">ver as contas</button>` : 'Preenche o quadro de pessoas em <button type="button" class="text-btn" id="fin-hc-go">Definições → Pessoas, salários e custo/hora</button>.'}</small></div>
           <div class="pay-hero-parts">
             <div><span>Funcionamento</span><b>${hc.opsHour != null ? eur(hc.opsHour) + '/h' : '—'}</b><small>${hc.ops ? eur(hc.ops.annual) + ' por ano' : ''}</small></div>
             <div><span>Salários</span><b>${hc.salHour != null ? eur(hc.salHour) + '/h' : '—'}</b><small>${hc.salaries ? eur(hc.salaries) + ' por ano' : ''}</small></div>
@@ -13182,13 +13182,13 @@
       { id: 'custo-hora', cat: 'opps', ctx: ['settings:proposals', 'proposal'],
         q: 'mudo o custo/hora, o objetivo de 150 €/h e as especialidades-modelo',
         a: 'Definições → Propostas de honorários.',
-        steps: ['Abre [[Definições]] → **Pessoas, salários e custo/hora**: o custo/hora é calculado aí (custos de funcionamento + salários ÷ horas úteis do ano).', 'Em **Propostas de honorários** só escreves um custo/hora se quiseres substituir o calculado.', '**Valor/hora objetivo**: 150 €/h. Também fica nos Objetivos do Mission Control.', 'Em **Especialidades**, escolhe a tipologia e ajusta a lista-modelo (nome, €/m² ou valor fixo). Tipologias sem lista própria usam a lista geral.'],
+        steps: ['Abre [[Definições]] → **Pessoas, salários e custo/hora**: o custo/hora é calculado aí (custos de funcionamento + salários ÷ horas faturáveis do ano — 70% das horas úteis, ajustável).', 'Em **Propostas de honorários** só escreves um custo/hora se quiseres substituir o calculado.', '**Valor/hora objetivo**: 150 €/h. Também fica nos Objetivos do Mission Control.', 'Em **Especialidades**, escolhe a tipologia e ajusta a lista-modelo (nome, €/m² ou valor fixo). Tipologias sem lista própria usam a lista geral.'],
         kw: 'custo hora objetivo 150 especialidades subcontratacao estruturas aguas avac modelo',
         tour: [{ go: 'settings:proposals', sel: '#ps-cph', text: 'Custo/hora, objetivo e especialidades-modelo: tudo aqui.' }] },
       { id: 'salarios', cat: 'mc', ctx: ['settings:payroll', 'settings:proposals', 'home'],
         q: 'configuro os salários e vejo o custo/hora da NOVA',
         a: 'Definições → Pessoas, salários e custo/hora. A app calcula o custo para a empresa (lei de 2026) e o custo/hora.',
-        steps: ['Abre [[Definições]] → **Pessoas, salários e custo/hora** → [[+ Pessoa]].', 'Escolhe a pessoa e o **regime** (gerente com funções de gerência: empresa 23,75% e pessoa 11% para a Segurança Social).', 'Escreve o **salário bruto**, o **subsídio de alimentação** por dia (cartão isento até 10,46 €, dinheiro até 6,15 €), a situação de IRS e as **outras remunerações** (marca se são tributadas).', 'A app mostra o **líquido** estimado, o **custo anual para a empresa** (14 salários + Segurança Social + alimentação + outras) e o custo por hora útil.', 'No topo está o **custo/hora da NOVA**: custos de funcionamento dos últimos 12 meses (sem salários nem o Glenn) mais os salários, a dividir pelas horas úteis do ano (horas por semana, sem férias nem feriados). É o valor que as propostas usam.', 'Em janeiro de cada ano a Hoje avisa para atualizar as tabelas de IRS e os valores legais.'],
+        steps: ['Abre [[Definições]] → **Pessoas, salários e custo/hora** → [[+ Pessoa]].', 'Escolhe a pessoa e o **regime** (gerente com funções de gerência: empresa 23,75% e pessoa 11% para a Segurança Social).', 'Escreve o **salário bruto**, o **subsídio de alimentação** por dia (cartão isento até 10,46 €, dinheiro até 6,15 €), a situação de IRS e as **outras remunerações** (marca se são tributadas).', 'A app mostra o **líquido** estimado, o **custo anual para a empresa** (14 salários + Segurança Social + alimentação + outras) e o custo por hora útil.', 'No topo está o **custo/hora da NOVA**: custos de funcionamento dos últimos 12 meses (sem salários nem o Glenn) mais os salários, a dividir pelas horas faturáveis do ano: as horas úteis (horas por semana, sem férias nem feriados) × a % faturável (70% por referência). É o valor que as propostas usam.', 'Em janeiro de cada ano a Hoje avisa para atualizar as tabelas de IRS e os valores legais.'],
         kw: 'salario salarios bruto liquido custo hora empresa seguranca social tsu irs retencao subsidio alimentacao refeicao pessoas quadro ferias feriados',
         tour: [{ go: 'settings:payroll', sel: '#pay-add', text: 'Acrescenta aqui cada pessoa e o salário.' }] },
       // ---------- Clientes e satisfação ----------
@@ -13693,6 +13693,7 @@
       calendar: { vacation_days: 22, municipal_holiday: '06-24', hours_week: 30 },
       at_insurance_year: null,             // seguro de acidentes de trabalho: prémio anual da apólice (vazio = estimativa)
       at_estimate_pct: 1,                  // estimativa enquanto não há apólice: ~1% da massa salarial (trabalho de escritório)
+      billable_pct: 70,                    // % das horas úteis que se fatura: o custo/hora reparte-se só por estas
       exclude_words: ['glenn'],            // despesas com estas palavras não contam para o custo de funcionamento
       people: []
     };
@@ -13795,8 +13796,10 @@
       const salaries = pays.reduce((t, x) => t + x.pay.costYear, 0) + atYear;
       let ops = null;
       try { ops = await operatingCosts(cfg, base); } catch (e) { console.error('Custos de funcionamento:', e); }
-      const opsHour = ops && hours ? ops.annual / hours : null, salHour = hours ? salaries / hours : null;
-      return { year, people: pays, hours, salaries, atYear, atEstimated, ops, opsHour, salHour,
+      // os custos repartem-se pelas horas faturáveis (as outras não se cobram a ninguém)
+      const billPct = Number(cfg.billable_pct ?? 70) || 100, billHours = hours * billPct / 100;
+      const opsHour = ops && billHours ? ops.annual / billHours : null, salHour = billHours ? salaries / billHours : null;
+      return { year, people: pays, hours, billPct, billHours, salaries, atYear, atEstimated, ops, opsHour, salHour,
         total: hours ? (opsHour || 0) + (salHour || 0) : null, lawOutdated: (cfg.law?.year || 0) < year };
     }
     // Aviso na Hoje (sócios): ano novo → atualizar as tabelas de IRS e os valores legais
@@ -13835,7 +13838,7 @@
           ${hc.lawOutdated ? `<div class="archived-banner" style="display:flex;"><span>Os valores legais são de <b>${law.year}</b>. É preciso atualizar as tabelas de IRS e os valores de ${y} (em baixo, em «Valores legais»).</span></div>` : ''}
           <div class="gantt-wrap pay-hero">
             <div class="pay-hero-main"><span>Custo/hora da NOVA</span><b>${hc.total != null ? eur(hc.total) + '/h' : '—'}</b>
-              <small>${hc.hours ? `${escapeHtml(fmtNum(Math.round(hc.hours)))} horas úteis em ${y} · usado nas propostas de honorários` : 'Acrescenta as pessoas em baixo para calcular as horas do ano.'}</small></div>
+              <small>${hc.hours ? `por hora faturável: ${escapeHtml(fmtNum(Math.round(hc.billHours)))} h (${escapeHtml(fmtNum(hc.billPct))}% de ${escapeHtml(fmtNum(Math.round(hc.hours)))} horas úteis) em ${y} · usado nas propostas de honorários` : 'Acrescenta as pessoas em baixo para calcular as horas do ano.'}</small></div>
             <div class="pay-hero-parts">
               <div><span>Funcionamento</span><b>${hc.opsHour != null ? eur(hc.opsHour) + '/h' : '—'}</b><small>${hc.ops ? eur(hc.ops.annual) + ' por ano' : 'sem extratos'}</small></div>
               <div><span>Salários</span><b>${hc.salHour != null ? eur(hc.salHour) + '/h' : '—'}</b><small>${eur(hc.salaries)} por ano</small></div>
@@ -13871,6 +13874,7 @@
               <div><label class="field-label" style="margin-top:0;">Horas por semana (referência)</label><input type="text" inputmode="decimal" id="pay-hw" class="form-input" value="${escapeHtml(cfg.calendar.hours_week)}"></div>
               <div><label class="field-label" style="margin-top:0;">Dias de férias por ano</label><input type="text" inputmode="numeric" id="pay-vac" class="form-input" value="${escapeHtml(cfg.calendar.vacation_days)}"></div>
               <div><label class="field-label">Feriado municipal (dia-mês)</label><input type="text" id="pay-muni" class="form-input" placeholder="24-06" value="${escapeHtml(cfg.calendar.municipal_holiday ? cfg.calendar.municipal_holiday.split('-').reverse().join('-') : '')}"></div>
+              <div><label class="field-label">Horas faturáveis (% das horas úteis)</label><input type="text" inputmode="decimal" id="pay-bill" class="form-input" value="${escapeHtml(cfg.billable_pct ?? 70)}"></div>
               <div><label class="field-label">Seguro de acidentes de trabalho (€/ano)</label><input type="text" inputmode="decimal" id="pay-at" class="form-input" value="${escapeHtml(cfg.at_insurance_year ?? '')}" placeholder="${hc.atEstimated && hc.atYear ? 'estimativa: ' + escapeHtml(fmtEUR(hc.atYear)) : 'valor da apólice'}"></div>
             </div>
             <div class="field-hint">${(() => { const w = workYear(y, cfg.calendar, cfg.calendar.hours_week); return `${y}: ${w.workdays} dias úteis − ${cfg.calendar.vacation_days} de férias = ${w.worked} dias de trabalho → ${fmtNum(Math.round(w.hours))} h por pessoa a ${cfg.calendar.hours_week} h/semana.`; })()}</div>
@@ -13907,8 +13911,10 @@
             calendar: { hours_week: numOrNull(document.getElementById('pay-hw').value) ?? 30, vacation_days: numOrNull(document.getElementById('pay-vac').value) ?? 22,
               municipal_holiday: mm ? `${mm[2].padStart(2, '0')}-${mm[1].padStart(2, '0')}` : null },
             at_insurance_year: numOrNull(document.getElementById('pay-at').value),
+            billable_pct: numOrNull(document.getElementById('pay-bill').value) ?? 70,
             exclude_words: document.getElementById('pay-exclude').value.split(/[,;]/).map(s => s.trim()).filter(Boolean) };
-          if ([next.calendar.hours_week, next.calendar.vacation_days, next.at_insurance_year].some(n => Number.isNaN(n))) return formError('pay-msg', 'Há um número inválido.');
+          if ([next.calendar.hours_week, next.calendar.vacation_days, next.at_insurance_year, next.billable_pct].some(n => Number.isNaN(n))) return formError('pay-msg', 'Há um número inválido.');
+          if (next.billable_pct <= 0 || next.billable_pct > 100) return formError('pay-msg', 'Horas faturáveis: entre 1 e 100%.');
           try { await savePayrollCfg(next); showToast('Guardado'); loadPayrollSettings(); }
           catch (err) { formError('pay-msg', 'Não foi possível guardar: ' + err.message); }
         });
