@@ -1281,7 +1281,24 @@
   .ts-cell.saving { opacity: .5; }
   .ts-cell.saved { border-color: var(--success); box-shadow: 0 0 0 3px var(--success-soft); }
 
-  /* Célula: número + seta que abre faturável / não faturável; barra quando há dos dois tipos */
+  /* Célula: campos de horas */
+  /* Dois campos por dia: F (faturável, cor da marca) e NF (não faturável, cinzento) */
+  .ts-pair { flex-direction: column; gap: 3px; }
+  .ts-pair .ts-cell { height: 28px; font-size: var(--fs-sm); padding: 0 var(--sp-1); text-align: center; }
+  .ts-cell.ts-f { border-left: 3px solid var(--accent); }
+  .ts-cell.ts-f:not(:placeholder-shown) { background: var(--accent-soft); color: var(--accent); font-weight: var(--fw-semibold); }
+  .ts-cell.ts-nf { border-left: 3px solid var(--text-3); }
+  .ts-cell.ts-nf:not(:placeholder-shown) { background: var(--surface-2); color: var(--text-2); font-weight: var(--fw-medium); }
+  .ts-cell.ts-f:placeholder-shown::placeholder { color: var(--accent); opacity: .45; font-size: var(--fs-micro); font-weight: var(--fw-semibold); }
+  .ts-cell.ts-nf:placeholder-shown::placeholder { color: var(--text-3); opacity: .7; font-size: var(--fs-micro); font-weight: var(--fw-semibold); }
+  .ts-pair.big { flex-direction: row; max-width: none; gap: var(--sp-2); }
+  .ts-kbox { display: flex; flex-direction: column; gap: 2px; white-space: nowrap; font-size: var(--fs-micro); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: .03em; }
+  .ts-kbox.ts-f span { color: var(--accent); } .ts-kbox.ts-nf span { color: var(--text-3); }
+  .ts-pair.big .ts-cell { width: 76px; height: 40px; font-size: var(--fs-base); }
+  .ts-leg { display: inline-block; font-size: var(--fs-micro); padding: 0 4px; border-radius: var(--r-xs); margin: 0 2px 0 6px; }
+  .ts-leg.f { background: var(--accent-soft); color: var(--accent); border-left: 3px solid var(--accent); }
+  .ts-leg.nf { background: var(--surface-2); color: var(--text-2); border-left: 3px solid var(--text-3); }
+  .ts-legend { display: block; font-weight: var(--fw-regular); font-size: var(--fs-xs); color: var(--text-3); margin-top: 2px; text-transform: none; letter-spacing: 0; }
   .ts-cellbox { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 100%; max-width: 64px; vertical-align: middle; }
   .ts-cellbox.big { max-width: 104px; width: auto; gap: var(--sp-1); flex-shrink: 0; }
   .ts-cellbox .ts-cell { max-width: none; }
@@ -12924,10 +12941,10 @@
         tour: [{ go: 'nav:home', sel: '#today-punch .board, #today-punch', text: 'O placar da semana: copos à sexta, jantar de deboche no fim do mês.' }] },
       { id: 'horas-nf', cat: 'horas', ctx: ['horas'],
         q: 'separo horas faturáveis e não faturáveis no mesmo dia',
-        a: 'Na célula do dia, toca na seta ⌄: aparecem dois campos, faturável e não faturável.',
-        steps: ['Em [[Horas]], toca na **seta ⌄** da célula do dia.', 'Preenche **Faturável** e **Não faturável**.', 'No total, a parte não faturável aparece à parte.'],
+        a: 'Cada dia tem dois campos: F (faturável, a cor) e NF (não faturável, cinzento). Escreves diretamente em cada um.',
+        steps: ['Em [[Horas]], cada dia de cada linha tem dois campos: **F** em cima (faturável) e **NF** em baixo (não faturável). No telemóvel aparecem lado a lado.', 'Escreve as horas no campo certo e sai da célula: fica gravado.', 'No total, a parte não faturável aparece à parte.'],
         kw: 'faturavel nao faturavel horas internas billable separar',
-        tour: [{ go: 'nav:horas', sel: '#ts-box .ts-cell', text: 'Toca na seta da célula para separar faturável e não faturável.' }] },
+        tour: [{ go: 'nav:horas', sel: '#ts-box .ts-pair', text: 'F em cima: faturável. NF em baixo: não faturável.' }] },
       { id: 'alvo', cat: 'horas', ctx: ['home', 'horas'],
         q: 'sei se cumpri as horas da semana',
         a: 'Na página Hoje, o cartão Horas mostra a barra até ao alvo (30 h por semana) e os dias sem registo.',
@@ -15800,25 +15817,23 @@
       return { bill: sum(bill), non: sum(non), nBill: bill.length, nNon: non.length };
     }
     const tsSplitText = sp => [sp.bill ? fmtHours(sp.bill) + ' faturáve' + (sp.bill === 1 ? 'l' : 'is') : '', sp.non ? fmtHours(sp.non) + ' não faturáve' + (sp.non === 1 ? 'l' : 'is') : ''].filter(Boolean).join(' · ');
-    // A célula só se escreve diretamente quando tem no máximo um registo; com os dois tipos
-    // (ou vários registos) abre o painel faturável / não faturável
+    // Cada dia tem dois campos: horas faturáveis (F) e não faturáveis (NF). Um tipo com vários registos
+    // nesse dia fica só de leitura e abre a lista para os editar um a um.
+    function tsKindOf(list, billable) {
+      const mine = list.filter(e => !!e.billable === billable);
+      return { mine, tot: mine.reduce((t, e) => t + Number(e.hours || 0), 0), many: mine.length > 1, note: mine.length === 1 ? (mine[0].description || '') : '' };
+    }
     function tsInputHtml(l, day, big) {
-      const c = tsCell(l.key, day);
-      const sp = tsSplitOf(c.list);
-      const locked = c.list.length > 1;
-      const note = c.list.length === 1 ? (c.list[0].description || '') : '';
-      // Barra: só quando as horas do dia não são todas do tipo da linha
-      const off = c.total > 0 && (l.billable ? sp.non > 0 : sp.bill > 0);
-      const pct = c.total ? Math.round(sp.bill / c.total * 100) : 0;
-      const tip = c.total ? tsSplitText(sp) + (note ? ' — ' + note : '') : '';
-      return `<div class="ts-cellbox${big ? ' big' : ''}">
-        <input class="ts-cell${big ? ' big' : ''}${locked ? ' multi' : ''}${note ? ' has-note' : ''}" inputmode="${big ? 'decimal' : 'text'}" autocomplete="off" placeholder="–"
-          data-line="${escapeHtml(l.key)}" data-day="${day}" value="${fmtHoursInput(c.total)}"
-          ${locked ? 'readonly' : ''} ${tip ? `title="${escapeHtml(tip)}"` : ''}
-          aria-label="${escapeHtml(tsLineName(l).title + ' — ' + fmtDayMonth(day) + (tip ? ' — ' + tip : ''))}">
-        ${off ? `<span class="ts-mix" style="--b:${pct}%" aria-hidden="true"></span>` : ''}
-        <button type="button" class="ts-split" data-ts-split tabindex="-1" aria-label="Faturável e não faturável" title="Faturável / não faturável"><svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></button>
-      </div>`;
+      const c = tsCell(l.key, day), title = tsLineName(l).title;
+      const one = b => {
+        const k = tsKindOf(c.list, b), lbl = b ? 'faturáveis' : 'não faturáveis';
+        const tip = k.many ? `${k.mine.length} registos — tocar para ver` : k.note;
+        const input = `<input class="ts-cell ts-k ${b ? 'ts-f' : 'ts-nf'}${big ? ' big' : ''}${k.many ? ' multi' : ''}${k.note ? ' has-note' : ''}" inputmode="decimal" autocomplete="off" placeholder="${big ? '–' : b ? 'F' : 'NF'}"
+          data-line="${escapeHtml(l.key)}" data-day="${day}" data-kind="${b ? 1 : 0}" value="${fmtHoursInput(k.tot)}"${k.many ? ' readonly' : ''}${tip ? ` title="${escapeHtml(tip)}"` : ''}
+          aria-label="${escapeHtml(`${title} — ${fmtDayMonth(day)} — horas ${lbl}${tip ? ' — ' + tip : ''}`)}">`;
+        return big ? `<label class="ts-kbox ${b ? 'ts-f' : 'ts-nf'}"><span>${b ? 'Fat.' : 'Não fat.'}</span>${input}</label>` : input;
+      };
+      return `<div class="ts-cellbox ts-pair${big ? ' big' : ''}">${one(true)}${one(false)}</div>`;
     }
     // Totais: por baixo, a parte não faturável (discreta)
     function tsTotalHtml(list, { always = false, week = false } = {}) {
@@ -15828,12 +15843,10 @@
       const show = sp.non > 0 && (always || sp.bill > 0);
       return `${main}${show ? `<small class="ts-sub" title="${escapeHtml(tsSplitText(sp))}">${escapeHtml(fmtHoursInput(sp.non))} não fat.</small>` : ''}`;
     }
-    const tsBillTitle = on => `Horas novas desta linha: ${on ? 'faturáveis' : 'não faturáveis'} (tocar para mudar)`;
     function tsLineCellHtml(l) {
       const nm = tsLineName(l);
       const canHide = l.origin !== 'week' && tsRowTotal(l.key) === 0;
       return `<div class="ts-line-name"><b>${escapeHtml(nm.title)}</b><span>${escapeHtml(nm.sub)}${l.origin === 'phase' ? ' · atribuída' : ''}</span></div>
-        <button type="button" class="ts-bill${l.billable ? ' on' : ''}" data-ts-bill="${escapeHtml(l.key)}" title="${tsBillTitle(l.billable)}" aria-label="${tsBillTitle(l.billable)}">€</button>
         ${canHide ? `<button type="button" class="ts-x" data-ts-hide="${escapeHtml(l.key)}" title="Tirar esta linha da semana" aria-label="Tirar linha">×</button>` : ''}`;
     }
 
@@ -15876,7 +15889,7 @@
       } else {
         // Computador / iPad: grelha da semana
         html += `<div class="gantt-wrap ts-wrap"><div class="table-scroll"><table class="ts-table">
-          <thead><tr><th class="ts-line-h">Projeto · fase</th>${days.map((d, i) => `<th class="${d === todayKey ? 'today' : ''}">${letters[i]} <span>${parseDateKey(d).getDate()}</span></th>`).join('')}<th class="col-value">Total</th></tr></thead>
+          <thead><tr><th class="ts-line-h">Projeto · fase <span class="ts-legend"><b class="ts-leg f">F</b> faturável <b class="ts-leg nf">NF</b> não faturável</span></th>${days.map((d, i) => `<th class="${d === todayKey ? 'today' : ''}">${letters[i]} <span>${parseDateKey(d).getDate()}</span></th>`).join('')}<th class="col-value">Total</th></tr></thead>
           <tbody>${tsState.lines.map(l => `
             <tr class="${l.origin !== 'week' && tsRowTotal(l.key) === 0 ? 'sugg' : ''}">
               <td class="ts-linecell"><div class="ts-line">${tsLineCellHtml(l)}</div></td>
@@ -15889,7 +15902,7 @@
       }
       html += `<div class="ts-foot">
           <button type="button" class="secondary-btn ts-add" data-ts-add>+ Acrescentar linha</button>
-          <span class="field-hint">Escreve as horas e sai da célula: fica gravado. Aceita 1,5 ou 1:30${tsNarrow.matches ? '' : ', e uma nota a seguir (ex.: <b>2 revisão de plantas</b>)'}. Para apagar, deixa vazio. Faturáveis e não faturáveis no mesmo dia: toca na seta <b>⌄</b> da célula.</span>
+          <span class="field-hint">Escreve as horas e sai da célula: fica gravado. Aceita 1,5 ou 1:30${tsNarrow.matches ? '' : ', e uma nota a seguir (ex.: <b>2 revisão de plantas</b>)'}. Para apagar, deixa vazio. Cada dia tem dois campos: <b class="ts-leg f">F</b> faturável e <b class="ts-leg nf">NF</b> não faturável.</span>
           <button type="button" class="text-btn" data-ts-list>Ver registos</button>
         </div>`;
       box.innerHTML = html;
@@ -15967,37 +15980,25 @@
 
     async function tsSaveCell(input) {
       if (input.readOnly) return;
-      const key = input.dataset.line, day = input.dataset.day;
+      const key = input.dataset.line, day = input.dataset.day, billable = input.dataset.kind === '1';
       const line = tsState.lines.find(l => l.key === key);
-      const cell = tsCell(key, day);
+      const k = tsKindOf(tsCell(key, day).list, billable);
       // "2 revisão de plantas" → 2 horas com a nota "revisão de plantas"
-      const typed = input.value.trim().match(/^([\d.,:]+)\s+(.+)$/);
-      const note = typed ? typed[2].trim().slice(0, 500) : null;
-      const v = parseHoursInput(typed ? typed[1] : input.value);
+      const { v, note } = tsParseTyped(input.value);
       if (Number.isNaN(v) || v < 0 || v > 24) {
-        input.value = fmtHoursInput(cell.total);
+        input.value = fmtHoursInput(k.tot);
         showToast('Valor inválido. Escreve horas, por exemplo 1,5 ou 1:30.', { type: 'error' });
         return;
       }
-      if (Math.abs(v - cell.total) < 0.001 && !(note && cell.list.length === 1)) { input.value = fmtHoursInput(cell.total); return; }
-
+      if (Math.abs(v - k.tot) < 0.001 && !note) { input.value = fmtHoursInput(k.tot); return; }
       input.classList.add('saving');
       try {
-        // Uma célula com um registo mantém o tipo desse registo; vazia, usa o tipo da linha (€)
-        const billable = cell.list.length === 1 ? !!cell.list[0].billable : !!line.billable;
         await tsWriteKind(line, day, billable, v, note);
-        input.value = fmtHoursInput(v);
-        const saved = tsCell(key, day);
-        const savedNote = saved.list.length === 1 ? (saved.list[0].description || '') : '';
-        input.classList.toggle('has-note', !!savedNote);
-        if (savedNote) input.title = savedNote; else input.removeAttribute('title');
         if (note) showToast('Nota guardada: ' + note);
-        input.classList.add('saved');
-        setTimeout(() => input.classList.remove('saved'), 900);
-        tsRefreshCell(key, day);
+        tsRefreshCell(key, day, { focusKind: document.activeElement === input ? input.dataset.kind : null });
         tsUpdateTotals();
       } catch (err) {
-        input.value = fmtHoursInput(cell.total);
+        input.value = fmtHoursInput(k.tot);
         showToast('Não foi possível guardar: ' + err.message, { type: 'error' });
       } finally {
         input.classList.remove('saving');
@@ -16023,129 +16024,23 @@
       }));
     }
 
-    // € da linha: só o tipo das horas novas; as horas já gravadas não mudam
-    function tsToggleBill(key) {
-      const line = tsState.lines.find(l => l.key === key);
-      line.billable = !line.billable;
-      document.querySelectorAll(`[data-ts-bill="${CSS.escape(key)}"]`).forEach(b => {
-        b.classList.toggle('on', line.billable);
-        b.title = tsBillTitle(line.billable);
-        b.setAttribute('aria-label', tsBillTitle(line.billable));
-      });
-      tsDays().forEach(d => tsRefreshCell(key, d, { flash: false }));
-      showToast(`Horas novas nesta linha: ${line.billable ? 'faturáveis' : 'não faturáveis'}. As já registadas não mudam.`);
-    }
 
     // Redesenha uma célula (depois de gravar), mantendo o foco se estava lá
-    function tsRefreshCell(key, day, { flash = true } = {}) {
-      const input = document.querySelector(`#ts-box .ts-cell[data-line="${CSS.escape(key)}"][data-day="${day}"]`);
+    function tsRefreshCell(key, day, { flash = true, focusKind = null } = {}) {
+      const first = document.querySelector(`#ts-box .ts-cell[data-line="${CSS.escape(key)}"][data-day="${day}"]`);
       const line = tsState.lines.find(l => l.key === key);
-      if (!input || !line) return;
-      const had = document.activeElement === input;
-      const box = input.closest('.ts-cellbox');
+      if (!first || !line) return;
+      const box = first.closest('.ts-cellbox');
+      const active = box.contains(document.activeElement) ? document.activeElement.dataset.kind : focusKind;
       const tmp = document.createElement('div');
-      tmp.innerHTML = tsInputHtml(line, day, input.classList.contains('big'));
+      tmp.innerHTML = tsInputHtml(line, day, box.classList.contains('big'));
       const fresh = tmp.firstElementChild;
       box.replaceWith(fresh);
       tsBindCell(fresh);
-      const ni = fresh.querySelector('.ts-cell');
-      if (had) ni.focus();
-      if (flash) { ni.classList.add('saved'); setTimeout(() => ni.classList.remove('saved'), 900); }
+      if (active != null) fresh.querySelector(`.ts-cell[data-kind="${active}"]`)?.focus();
+      if (flash) fresh.querySelectorAll('.ts-cell').forEach(ni => { if (ni.value) { ni.classList.add('saved'); setTimeout(() => ni.classList.remove('saved'), 900); } });
     }
 
-    // Painel junto à célula: horas faturáveis e não faturáveis desse dia
-    function tsOpenSplit(cellbox) {
-      const input = cellbox.querySelector('.ts-cell');
-      const key = input.dataset.line, day = input.dataset.day;
-      const line = tsState.lines.find(l => l.key === key);
-      const nm = tsLineName(line);
-      const kinds = [[true, 'Faturável', 'billable'], [false, 'Não faturável', 'nonbillable']];
-      const rowHtml = () => {
-        const list = tsCell(key, day).list;
-        return kinds.map(([b, label, cls]) => {
-          const mine = list.filter(e => !!e.billable === b);
-          const tot = mine.reduce((t, e) => t + Number(e.hours || 0), 0);
-          const many = mine.length > 1;
-          const note = mine.length === 1 ? (mine[0].description || '') : '';
-          return `<label class="ts-split-row">
-              <span class="dot ${cls}" aria-hidden="true"></span>
-              <span class="ts-split-label">${label}${many ? `<small>${mine.length} registos · <button type="button" class="text-btn" data-ts-many>ver</button></small>` : note ? `<small>${escapeHtml(note)}</small>` : ''}</span>
-              <input class="ts-cell ts-split-in" data-kind="${b}" inputmode="decimal" autocomplete="off" placeholder="–" value="${fmtHoursInput(tot)}"${many ? ' readonly' : ''} aria-label="Horas ${label.toLowerCase()}">
-            </label>`;
-        }).join('');
-      };
-      const dayLabel = parseDateKey(day).toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'short' });
-      const el = mountCellPopover(cellbox, 'Horas faturáveis e não faturáveis',
-        `<b>${escapeHtml(nm.title)}</b><span>${escapeHtml(nm.sub)} · ${escapeHtml(dayLabel)}</span>`,
-        `<div class="ts-split-body">${rowHtml()}</div><div class="ts-split-foot"><span id="ts-split-total"></span><button type="button" class="text-btn" data-ts-split-done>Pronto</button></div>`);
-      if (!el) return;
-      el.classList.add('ts-split-pop');
-      // Telemóvel: a folha sobe com o teclado (o iOS não encolhe a página quando ele abre)
-      const vv = window.visualViewport;
-      if (vv && el.classList.contains('sheet')) {
-        const lift = () => {
-          if (!el.isConnected) { vv.removeEventListener('resize', lift); vv.removeEventListener('scroll', lift); return; }
-          const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-          el.style.bottom = kb > 80 ? (kb + 8) + 'px' : '';
-        };
-        vv.addEventListener('resize', lift); vv.addEventListener('scroll', lift);
-      }
-      const body = el.querySelector('.ts-split-body');
-      const paintTotal = () => { el.querySelector('#ts-split-total').textContent = 'Total ' + fmtHours(tsCell(key, day).total); };
-      paintTotal();
-      const save = async (inp) => {
-        if (inp.readOnly) return;
-        const b = inp.dataset.kind === 'true';
-        const cur = tsCell(key, day).list.filter(e => !!e.billable === b).reduce((t, e) => t + Number(e.hours || 0), 0);
-        const { v, note } = tsParseTyped(inp.value);
-        if (Number.isNaN(v) || v < 0 || v > 24) {
-          inp.value = fmtHoursInput(cur);
-          showToast('Valor inválido. Escreve horas, por exemplo 1,5 ou 1:30.', { type: 'error' });
-          return;
-        }
-        const other = tsCell(key, day).total - cur;
-        if (v + other > 24) {
-          inp.value = fmtHoursInput(cur);
-          showToast('Mais de 24 horas neste dia.', { type: 'error' });
-          return;
-        }
-        if (Math.abs(v - cur) < 0.001 && !note) { inp.value = fmtHoursInput(cur); return; }
-        inp.classList.add('saving');
-        try {
-          await tsWriteKind(line, day, b, v, note);
-          inp.value = fmtHoursInput(v);
-          inp.classList.add('saved'); setTimeout(() => inp.classList.remove('saved'), 900);
-          tsRefreshCell(key, day, { flash: false });
-          tsUpdateTotals();
-          paintTotal();
-        } catch (err) {
-          inp.value = fmtHoursInput(cur);
-          showToast('Não foi possível guardar: ' + (err.message || err), { type: 'error' });
-        } finally { inp.classList.remove('saving'); }
-      };
-      body.querySelectorAll('.ts-split-in').forEach(inp => {
-        inp.addEventListener('focus', () => { if (!inp.readOnly) inp.select(); });
-        inp.addEventListener('change', () => save(inp));
-        inp.addEventListener('keydown', e => {
-          if (e.key !== 'Enter') return;
-          e.preventDefault();
-          const all = [...body.querySelectorAll('.ts-split-in:not([readonly])')];
-          const next = all[all.indexOf(inp) + 1];
-          if (next) next.focus(); else { inp.blur(); closeAssignPopover(); }
-        });
-      });
-      body.querySelectorAll('[data-ts-many]').forEach(b => b.addEventListener('click', e => { e.preventDefault(); closeAssignPopover(); tsOpenMulti(key, day); }));
-      el.querySelector('[data-ts-split-done]').addEventListener('click', () => {
-        // grava o campo em edição antes de fechar
-        const act = document.activeElement;
-        if (act && act.classList?.contains('ts-split-in')) act.blur();
-        closeAssignPopover();
-      });
-      // começa no campo do tipo que falta (ex.: a célula já tem faturáveis → não faturável)
-      const list = tsCell(key, day).list;
-      const first = list.length && list.every(e => !!e.billable === !!list[0].billable) ? String(!list[0].billable) : String(!!line.billable);
-      (body.querySelector(`.ts-split-in[data-kind="${first}"]:not([readonly])`) || body.querySelector('.ts-split-in:not([readonly])'))?.focus();
-    }
 
     async function tsAddLineModal() {
       openQuickModal('Acrescentar linha', `
@@ -16234,7 +16129,6 @@
       }));
       box.querySelectorAll('[data-ts-add]').forEach(b => b.addEventListener('click', tsAddLineModal));
       box.querySelectorAll('[data-ts-list]').forEach(b => b.addEventListener('click', () => switchHorasTab('history')));
-      box.querySelectorAll('[data-ts-bill]').forEach(b => b.addEventListener('click', () => tsToggleBill(b.dataset.tsBill)));
       box.querySelectorAll('[data-ts-hide]').forEach(b => b.addEventListener('click', () => {
         (tsHidden[tsWeekStart] = tsHidden[tsWeekStart] || new Set()).add(b.dataset.tsHide);
         tsState.lines = tsState.lines.filter(l => l.key !== b.dataset.tsHide);
@@ -16244,32 +16138,24 @@
     }
     function tsBindCell(cellbox) {
       const box = document.getElementById('ts-box');
-      const input = cellbox.querySelector('.ts-cell');
-      cellbox.querySelector('[data-ts-split]').addEventListener('click', e => { e.preventDefault(); tsOpenSplit(cellbox); });
-      input.addEventListener('focus', () => { if (!input.readOnly) input.select(); });
-      // célula com os dois tipos (ou vários registos): abre o painel
-      input.addEventListener('click', () => { if (input.readOnly) tsOpenSplit(cellbox); });
-      input.addEventListener('change', () => tsSaveCell(input));
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && input.readOnly) { e.preventDefault(); tsOpenSplit(cellbox); }
-        else if (e.key === 'Enter') {
-          e.preventDefault();
-          // Enter desce para a linha seguinte (como numa folha de cálculo)
-          const cells = [...box.querySelectorAll(`.ts-cell[data-day="${input.dataset.day}"]`)];
-          const next = cells[cells.indexOf(input) + 1];
-          if (next) next.focus(); else input.blur();
-        } else if (e.key === 'ArrowDown' && e.altKey) {
-          // Alt+↓: grava o que está escrito e abre o painel faturável / não faturável
-          e.preventDefault();
-          const k = input.dataset.line, d = input.dataset.day;
-          (input.readOnly ? Promise.resolve() : tsSaveCell(input)).then(() => {
-            const cb = document.querySelector(`#ts-box .ts-cell[data-line="${CSS.escape(k)}"][data-day="${d}"]`)?.closest('.ts-cellbox');
-            if (cb) tsOpenSplit(cb);
-          });
-        } else if (e.key === 'Escape') {
-          input.value = fmtHoursInput(tsCell(input.dataset.line, input.dataset.day).total);
-          input.blur();
-        }
+      cellbox.querySelectorAll('.ts-cell').forEach(input => {
+        input.addEventListener('focus', () => { if (!input.readOnly) input.select(); });
+        // vários registos do mesmo tipo nesse dia: abre a lista para editar um a um
+        input.addEventListener('click', () => { if (input.readOnly) tsOpenMulti(input.dataset.line, input.dataset.day); });
+        input.addEventListener('change', () => tsSaveCell(input));
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && input.readOnly) { e.preventDefault(); tsOpenMulti(input.dataset.line, input.dataset.day); }
+          else if (e.key === 'Enter') {
+            e.preventDefault();
+            // Enter desce para a linha seguinte, no mesmo tipo (como numa folha de cálculo)
+            const cells = [...box.querySelectorAll(`.ts-cell[data-day="${input.dataset.day}"][data-kind="${input.dataset.kind}"]`)];
+            const next = cells[cells.indexOf(input) + 1];
+            if (next) next.focus(); else input.blur();
+          } else if (e.key === 'Escape') {
+            input.value = fmtHoursInput(tsKindOf(tsCell(input.dataset.line, input.dataset.day).list, input.dataset.kind === '1').tot);
+            input.blur();
+          }
+        });
       });
     }
     tsNarrow.addEventListener('change', () => {
