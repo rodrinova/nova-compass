@@ -13382,11 +13382,12 @@
     const PAYROLL_DEFAULT = {
       law: PAYROLL_LAW_2026,
       calendar: { vacation_days: 22, municipal_holiday: '06-24', hours_week: 30 },
-      at_insurance_year: null,             // seguro de acidentes de trabalho: prémio anual da apólice
+      at_insurance_year: null,             // seguro de acidentes de trabalho: prémio anual da apólice (vazio = estimativa)
+      at_estimate_pct: 1,                  // estimativa enquanto não há apólice: ~1% da massa salarial (trabalho de escritório)
       exclude_words: ['glenn'],            // despesas com estas palavras não contam para o custo de funcionamento
       people: []
     };
-    let mockPayrollCfg = { ...PAYROLL_DEFAULT, at_insurance_year: 450, people: [
+    let mockPayrollCfg = { ...PAYROLL_DEFAULT, people: [
       { id: 'pp-1', member_id: 'mock-member-1', name: 'Rodrigo Alves', regime: 'moe', gross: 1800, duodecimos: false, meal_daily: 10.46, meal_mode: 'card', irs_table: 'I', dependents: 0, hours_week: 30, start: '2026-10-01', extras: [], active: true },
       { id: 'pp-2', member_id: 'm2', name: 'Nuno', regime: 'moe', gross: 1800, duodecimos: false, meal_daily: 10.46, meal_mode: 'card', irs_table: 'III', dependents: 1, hours_week: 30, start: '2026-10-01', extras: [{ name: 'Compensação de teletrabalho', monthly: 30, taxable: false }], active: true },
       { id: 'pp-3', member_id: 'm3', name: 'Rute', regime: 'moe', gross: 1800, duodecimos: false, meal_daily: 6.15, meal_mode: 'cash', irs_table: 'I', dependents: 0, hours_week: 30, start: '2026-10-01', extras: [], active: true }
@@ -13478,11 +13479,15 @@
       const people = cfg.people.filter(p => p.active !== false);
       const pays = people.map(p => ({ p, pay: personPay(p, cfg, year) }));
       const hours = pays.reduce((t, x) => t + x.pay.wy.hours, 0);
-      const salaries = pays.reduce((t, x) => t + x.pay.costYear, 0) + (Number(cfg.at_insurance_year) || 0);
+      // Seguro de acidentes de trabalho: o prémio da apólice ou, sem ele, ~1% das remunerações seguras
+      const insured = pays.reduce((t, x) => t + x.pay.salaryYear + x.pay.mealYear + x.pay.extrasTaxed, 0);
+      const atEstimated = cfg.at_insurance_year == null || cfg.at_insurance_year === '';
+      const atYear = atEstimated ? insured * (Number(cfg.at_estimate_pct ?? 1) / 100) : Number(cfg.at_insurance_year) || 0;
+      const salaries = pays.reduce((t, x) => t + x.pay.costYear, 0) + atYear;
       let ops = null;
       try { ops = await operatingCosts(cfg, base); } catch (e) { console.error('Custos de funcionamento:', e); }
       const opsHour = ops && hours ? ops.annual / hours : null, salHour = hours ? salaries / hours : null;
-      return { year, people: pays, hours, salaries, ops, opsHour, salHour,
+      return { year, people: pays, hours, salaries, atYear, atEstimated, ops, opsHour, salHour,
         total: hours ? (opsHour || 0) + (salHour || 0) : null, lawOutdated: (cfg.law?.year || 0) < year };
     }
     // Aviso na Hoje (sócios): ano novo → atualizar as tabelas de IRS e os valores legais
@@ -13535,7 +13540,7 @@
                 <span><b class="bl-title">${escapeHtml(p.name || 'Sem nome')}</b><br><small>${escapeHtml([r.reg.label, eur(p.gross) + ' brutos × 14', p.meal_daily ? `alimentação ${fmtEUR(p.meal_daily)}/dia (${p.meal_mode === 'cash' ? 'dinheiro' : 'cartão'})` : null, `${p.hours_week ?? cfg.calendar.hours_week} h/semana`].filter(Boolean).join(' · '))}</small></span>
                 <span class="pay-figs"><b>${eur(r.costYear)}</b><small>por ano · ${r.perHour != null ? eur(r.perHour) + '/h' : '—'}</small><small>líquido ≈ ${eur(r.netMonth)}/mês</small></span>
               </div>`; }).join('') : '<div class="gantt-empty">Ainda sem pessoas. Toca em <b>+ Pessoa</b>: salário, subsídio de alimentação e outras remunerações — a app calcula o custo para a empresa.</div>'}
-            ${cfg.at_insurance_year ? `<div class="invoice-row"><span>Seguro de acidentes de trabalho</span><span class="amount">${eur(cfg.at_insurance_year)}/ano</span></div>` : ''}
+            ${hc.atYear ? `<div class="invoice-row"><span>Seguro de acidentes de trabalho${hc.atEstimated ? `<br><small class="muted">estimativa: ${escapeHtml(fmtNum(cfg.at_estimate_pct ?? 1))}% das remunerações — escreve o valor da apólice em «Horário e seguro»</small>` : ''}</span><span class="amount">${hc.atEstimated ? '≈ ' : ''}${eur(hc.atYear)}/ano</span></div>` : ''}
           </div>
 
           <div class="gantt-wrap">
@@ -13557,7 +13562,7 @@
               <div><label class="field-label" style="margin-top:0;">Horas por semana (por omissão)</label><input type="text" inputmode="decimal" id="pay-hw" class="form-input" value="${escapeHtml(cfg.calendar.hours_week)}"></div>
               <div><label class="field-label" style="margin-top:0;">Dias de férias por ano</label><input type="text" inputmode="numeric" id="pay-vac" class="form-input" value="${escapeHtml(cfg.calendar.vacation_days)}"></div>
               <div><label class="field-label">Feriado municipal (dia-mês)</label><input type="text" id="pay-muni" class="form-input" placeholder="24-06" value="${escapeHtml(cfg.calendar.municipal_holiday ? cfg.calendar.municipal_holiday.split('-').reverse().join('-') : '')}"></div>
-              <div><label class="field-label">Seguro de acidentes de trabalho (€/ano)</label><input type="text" inputmode="decimal" id="pay-at" class="form-input" value="${escapeHtml(cfg.at_insurance_year ?? '')}"></div>
+              <div><label class="field-label">Seguro de acidentes de trabalho (€/ano)</label><input type="text" inputmode="decimal" id="pay-at" class="form-input" value="${escapeHtml(cfg.at_insurance_year ?? '')}" placeholder="${hc.atEstimated && hc.atYear ? 'estimativa: ' + escapeHtml(fmtEUR(hc.atYear)) : 'valor da apólice'}"></div>
             </div>
             <div class="field-hint">${(() => { const w = workYear(y, cfg.calendar, cfg.calendar.hours_week); return `${y}: ${w.workdays} dias úteis − ${cfg.calendar.vacation_days} de férias = ${w.worked} dias de trabalho → ${fmtNum(Math.round(w.hours))} h por pessoa a ${cfg.calendar.hours_week} h/semana.`; })()}</div>
             <button type="button" class="primary-btn" id="pay-save">Guardar</button>
