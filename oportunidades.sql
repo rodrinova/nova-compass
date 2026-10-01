@@ -150,3 +150,12 @@ insert into public.app_settings (key, value, updated_at) values ('proposals', js
     jsonb_build_object('name', 'Segurança contra incêndio', 'mode', 'm2', 'value', 0)
   ))
 ), now()) on conflict (key) do nothing;
+
+-- Viabilidade do terreno (estudo para o investidor) e perfil mais rico do investidor (matchmaker)
+alter table public.land_plots add column if not exists feasibility jsonb;
+alter table public.investors
+  add column if not exists strategy text not null default 'sale',
+  add column if not exists min_roi numeric,
+  add column if not exists min_yield numeric,
+  add column if not exists segment text,
+  add column if not exists tags text[] not null default '{}';
