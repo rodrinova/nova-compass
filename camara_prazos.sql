@@ -43,3 +43,7 @@ alter table project_stages add constraint project_stages_waiting_on_check check 
 alter table project_stages add column if not exists revision_cause text;
 alter table project_stages drop constraint if exists project_stages_revision_cause_check;
 alter table project_stages add constraint project_stages_revision_cause_check check (revision_cause is null or revision_cause in ('cliente', 'nova', 'camara'));
+
+-- Antes do início da obra (RJUE art. 78.º e 80.º-A, até 5 dias antes): aviso de execução em obra + comunicação de início
+alter table public.project_stages add column if not exists works_start date;       -- início da obra (previsto)
+alter table public.project_stages add column if not exists aviso_obra_sent date;   -- aviso em obra atualizado e início comunicado a
