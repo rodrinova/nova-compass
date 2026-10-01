@@ -10072,7 +10072,7 @@
           <div class="gantt-wrap chart-card"><div class="card-head"><h2>Faturação acumulada</h2><span class="chart-legend"><i class="cur"></i>${y}${revPrev.some(v => v) ? `<i class="prev"></i>${y - 1}` : ''}${revGoal ? '<i class="goal"></i>objetivo' : ''}</span></div>${cumulativeSvg(revCur, revPrev, revGoal, upto, window.innerWidth >= 1000 ? 1040 : 640)}</div>
           </div>
           <details class="fin-more" id="fin-more">
-            <summary>Ver mais: objetivos, tesouraria e custos</summary>
+            <summary>Ver mais: objetivos, tesouraria, custos e custo/hora</summary>
             <div class="section-label" id="fin-more-goals">Objetivos ${y}</div>
             <div class="gantt-wrap goal-list">${GOAL_METRICS.map(goalRow).join('')}
               <div class="goal-foot"><button type="button" class="text-btn" data-fin-goals>Editar objetivos</button>${m.uncategorized ? `<span class="fin-note">${m.uncategorized} despesa(s) de ${y} sem categoria contam com IVA incluído.</span>` : ''}</div>
@@ -10087,6 +10087,7 @@
         <div class="gantt-wrap"><div class="card-head"><h2>Entradas e saídas por mês</h2><span>do banco</span></div>${flows}</div>
 
             <div class="section-label" id="fin-more-costs">Custos ${y}</div>
+            <div class="gantt-wrap pay-hero" id="fin-hourcost"><div class="detail-loading">A calcular o custo/hora…</div></div>
             <div class="fin-charts one">
           <div class="gantt-wrap chart-card"><div class="card-head"><h2>Faturação e custos por mês</h2><span class="chart-legend"><i class="rev"></i>faturação<i class="cost"></i>custos</span></div>${monthBarsSvg(revCur, costM, upto)}</div>
             </div>
@@ -10129,6 +10130,20 @@
         <div class="fin-note">Estimativas a partir das faturas (SAF-T) e das despesas registadas; o valor final é o da declaração da contabilidade. Regime de IVA: <b>${b.settings.vat_regime === 'monthly' ? 'mensal' : b.settings.vat_regime === 'cash' ? 'trimestral, IVA de caixa' : 'trimestral'}</b> · <button type="button" class="text-btn" data-fin-settings>mudar</button></div>
 
         </section>`;
+      // Custo/hora da NOVA (funcionamento + salários ÷ horas úteis) — calculado em Pessoas, salários e custo/hora
+      computeHourCost(undefined, b).then(hc => {
+        const el = document.getElementById('fin-hourcost');
+        if (!el) return;
+        const eur = n => n != null ? escapeHtml(fmtEUR(n)) : '—';
+        el.innerHTML = `
+          <div class="pay-hero-main"><span>Custo/hora da NOVA</span><b>${hc.total != null ? eur(hc.total) + '/h' : '—'}</b>
+            <small>${hc.hours ? `${escapeHtml(fmtNum(Math.round(hc.hours)))} horas úteis em ${hc.year} · <button type="button" class="text-btn" id="fin-hc-go">ver as contas</button>` : 'Preenche o quadro de pessoas em <button type="button" class="text-btn" id="fin-hc-go">Definições → Pessoas, salários e custo/hora</button>.'}</small></div>
+          <div class="pay-hero-parts">
+            <div><span>Funcionamento</span><b>${hc.opsHour != null ? eur(hc.opsHour) + '/h' : '—'}</b><small>${hc.ops ? eur(hc.ops.annual) + ' por ano' : ''}</small></div>
+            <div><span>Salários</span><b>${hc.salHour != null ? eur(hc.salHour) + '/h' : '—'}</b><small>${hc.salaries ? eur(hc.salaries) + ' por ano' : ''}</small></div>
+          </div>`;
+        document.getElementById('fin-hc-go')?.addEventListener('click', () => { openSettingsModule(); showSettingsSection('payroll'); });
+      }).catch(() => { const el = document.getElementById('fin-hourcost'); if (el) el.remove(); });
 
       // Separadores (sem voltar a desenhar a página)
       const showFinTab = (t, anim = true) => {
