@@ -1877,6 +1877,11 @@
   .pay-taxed { font-size: var(--fs-sm); color: var(--text-2); display: flex; align-items: center; gap: var(--sp-1); white-space: nowrap; }
   @media (max-width: 480px) { .pay-extra { grid-template-columns: minmax(0, 1fr) 80px 32px; } .pay-extra [data-k="name"] { grid-column: 1 / -1; } .pay-taxed { grid-column: 1 / 2; } }
   /* ---- Viabilidade de terrenos ---- */
+  .fz-defaults { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-2) var(--sp-3); background: var(--warning-soft); color: var(--text); border-radius: var(--r-md); padding: var(--sp-2-5) var(--sp-3); margin: 0 0 var(--sp-3); font-size: var(--fs-sm); }
+  .fz-defaults[hidden] { display: none; }
+  .form-input.fz-changed { border-color: var(--warning); box-shadow: 0 0 0 2px var(--warning-soft); }
+  .fz-reset1 { border: none; background: none; padding: 2px 0 0; color: var(--warning); font-size: var(--fs-xs); font-weight: var(--fw-medium); cursor: pointer; text-align: left; }
+  .fz-reset1:hover { text-decoration: underline; }
   .fz-layout { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, 1fr); gap: var(--sp-4); align-items: start; }
   @media (max-width: 1000px) { .fz-layout { grid-template-columns: 1fr; } }
   .fz-sticky { position: sticky; top: 64px; }
@@ -8764,7 +8769,7 @@
       }
     }
     // ================= PONTUALIDADE: entradas, saídas e reuniões =================
-    // Um toque em "Cheguei" / "Arrumar o estirador" (página Hoje). Dias fora (obra, Câmara, cliente) contam como a horas;
+    // Um toque em "Cheguei" / "Fechar o tasco" (página Hoje). Dias fora (obra, Câmara, cliente) contam como a horas;
     // folgas não contam. Minutos de atraso (e saídas antes da hora, e chegadas tarde às reuniões) vão para a
     // jarra: à sexta, quem tem mais minutos na semana paga os copos; no fim do mês, quem tem mais minutos no mês
     // (a partir de dinner_minutes) paga o jantar de deboche. Regras em app_settings 'attendance'.
@@ -8889,7 +8894,7 @@
         const today = dateKey(new Date()), mon = mondayOf(today), fri = addDaysKey(mon, 4);
         if (today < cfg.from && fri < cfg.from) {
           box.hidden = false;
-          box.innerHTML = `<div class="punch-soon"><b>Pontualidade a partir de ${escapeHtml(fmtDayMonth(cfg.from))}</b><span>Horário ${escapeHtml(cfg.start)}–${escapeHtml(cfg.end)}, com ${cfg.tolerance} min de tolerância. Um toque em "Cheguei" ao chegar e em "Arrumar o estirador" ao sair.</span></div>`;
+          box.innerHTML = `<div class="punch-soon"><b>Pontualidade a partir de ${escapeHtml(fmtDayMonth(cfg.from))}</b><span>Horário ${escapeHtml(cfg.start)}–${escapeHtml(cfg.end)}, com ${cfg.tolerance} min de tolerância. Um toque em "Cheguei" ao chegar e em "Fechar o tasco" ao sair.</span></div>`;
           return;
         }
         const monthStart = today.slice(0, 8) + '01', monthEnd = addDaysKey(addMonthsKey(monthStart, 1), -1);
@@ -8920,7 +8925,7 @@
           main = `<div class="punch-state ${st.late || st.early ? 'late' : 'ok'}"><b>${row.check_out ? `Hoje: ${hhmm(row.check_in)} → ${hhmm(row.check_out)}` : `Entraste às ${hhmm(row.check_in)}`}${row.edited ? ' <i title="Hora corrigida à mão">✎</i>' : ''}</b>
               <span>${st.late ? `${fmtMin(st.late)} de atraso` : 'entrada a horas'}${st.early ? ` · saíste ${fmtMin(st.early)} mais cedo` : st.late ? '' : ' ✓'}</span></div>
             <div class="punch-day"><div class="punch-bar"><span style="width:${pct}%"></span></div><small>${fmtHours(done / 60)} de ${fmtHours(total / 60, 0)}${row.check_out ? '' : ` · saída às ${escapeHtml(s.end)}`}</small></div>
-            ${row.check_out ? '<button type="button" class="text-btn" data-punch="fix">Corrigir</button>' : `<button type="button" class="secondary-btn punch-leave" data-punch="leave">Arrumar o estirador</button><button type="button" class="text-btn" data-punch="fix">Corrigir</button>`}`;
+            ${row.check_out ? '<button type="button" class="text-btn" data-punch="fix">Corrigir</button>' : `<button type="button" class="secondary-btn punch-leave" data-punch="leave">Fechar o tasco</button><button type="button" class="text-btn" data-punch="fix">Corrigir</button>`}`;
         }
         // Ontem sem saída
         const yRow = rows.filter(r => r.member_id === me && r.day < today && r.kind === 'office' && r.check_in && !r.check_out).sort((a, b) => b.day.localeCompare(a.day))[0];
@@ -8989,7 +8994,7 @@
           showToast(late > cfg.tolerance ? `Registado: ${fmtMin(late)} de atraso. Amanhã é que é!` : 'Bom dia! Entrada a horas ✓');
         } else if (kind === 'leave') {
           await saveAttendance({ member_id: me, day, kind: 'office', check_in: row.check_in, check_out: nowIso, edited: row.edited || false });
-          showToast('Estirador arrumado. Até amanhã!');
+          showToast('Tasco fechado. Até amanhã! 🍷');
           renderAttendance(me);
           checkDayHours(me, day, row.check_in, nowIso);
           return;
@@ -9018,7 +9023,7 @@
       if (Math.abs(gap) <= slack) return;
       const h = n => fmtHours(Math.round(n * 4) / 4, 2);
       const short = gap > 0;
-      openQuickModal(short ? 'Antes de arrumar o estirador…' : 'Horas a mais?', `
+      openQuickModal(short ? 'Antes de fechar o tasco…' : 'Horas a mais?', `
         <div class="hours-check">
           <div><span>Estiveste cá</span><b>${escapeHtml(h(present))}</b><small>${escapeHtml(hhmm(checkIn))} → ${escapeHtml(hhmm(checkOut))}</small></div>
           <div><span>Registaste</span><b class="${short ? 'warn-text' : ''}">${escapeHtml(h(logged))}</b><small>em ${escapeHtml(fmtDayMonth(day))}</small></div>
@@ -12929,10 +12934,10 @@
         tour: [{ go: 'nav:horas', sel: '#ts-box .ts-cell', text: 'Escreve aqui as horas do dia. Grava sozinho.' }, { sel: '[data-ts-add]', text: 'Falta um projeto ou categoria? Acrescenta aqui.' }] },
       { id: 'ponto', cat: 'horas', ctx: ['home'],
         q: 'marco a entrada e a saída (ponto)',
-        a: 'Na página Hoje, cartão Ponto: «Cheguei» ao chegar e «Arrumar o estirador» ao sair. Dias fora e folgas também se marcam lá.',
-        steps: ['Ao chegar, abre [[Hoje]] e toca em [[Cheguei]]. O horário é das 8h às 14h, com 5 minutos de tolerância.', 'Ao sair, toca em [[Arrumar o estirador]].', 'Dia em obra, na Câmara ou no cliente? Toca em **Hoje estou fora** e escreve onde: conta como a horas.', 'Folga ou férias? Toca em **Folga / férias**: esse dia não conta.', 'Esqueceste-te de marcar? Toca em [[Corrigir]] e põe a hora certa. Fica assinalado com ✎.', 'Nas reuniões e visitas em que estás, aparece **Estou cá** 10 minutos antes; no fim, toca em **Acabou**.'],
+        a: 'Na página Hoje, cartão Ponto: «Cheguei» ao chegar e «Fechar o tasco» ao sair. Dias fora e folgas também se marcam lá.',
+        steps: ['Ao chegar, abre [[Hoje]] e toca em [[Cheguei]]. O horário é das 8h às 14h, com 5 minutos de tolerância.', 'Ao sair, toca em [[Fechar o tasco]].', 'Dia em obra, na Câmara ou no cliente? Toca em **Hoje estou fora** e escreve onde: conta como a horas.', 'Folga ou férias? Toca em **Folga / férias**: esse dia não conta.', 'Esqueceste-te de marcar? Toca em [[Corrigir]] e põe a hora certa. Fica assinalado com ✎.', 'Nas reuniões e visitas em que estás, aparece **Estou cá** 10 minutos antes; no fim, toca em **Acabou**.'],
         kw: 'ponto entrada saida chegar cheguei sair picar pontualidade horario presenca atraso reuniao',
-        tour: [{ go: 'nav:home', sel: '#today-punch .punch, #today-punch', text: 'Toca em «Cheguei» ao chegar e em «Arrumar o estirador» ao sair.' }] },
+        tour: [{ go: 'nav:home', sel: '#today-punch .punch, #today-punch', text: 'Toca em «Cheguei» ao chegar e em «Fechar o tasco» ao sair.' }] },
       { id: 'jarra', cat: 'horas', ctx: ['home', 'finance:time'],
         q: 'funciona o placar, os copos e o jantar de deboche',
         a: 'Cada minuto de atraso vai para a jarra de quem se atrasou. À sexta, quem tem mais minutos paga os copos; no fim do mês, o pior paga o jantar de deboche.',
@@ -13967,6 +13972,7 @@
           <div class="titles"><h2>Viabilidade</h2><div class="sub">${escapeHtml([p.name, p.municipality, p.land_area ? fmtNum(p.land_area) + ' m² de terreno' : null].filter(Boolean).join(' · '))}</div></div>
           <button type="button" class="secondary-btn" id="fz-print">Resumo para o investidor</button>
         </div>
+        <div class="fz-defaults" id="fz-defaults" hidden></div>
         <div class="fz-layout">
           <div class="fz-form">
             <div class="gantt-wrap">
@@ -14135,7 +14141,32 @@
             </div>` : ''}
           </div>`;
       };
-      drawTyp(); drawResult();
+      // Valores diferentes dos por omissão (Definições → Viabilidade de terrenos): assinalados, com ↺ para repor
+      const DEF_PATHS = ['sellable_pct', 'cost.housing', 'cost.common', 'cost.parking', 'cost.commerce', 'cost.green', 'cost.infra', 'lic_pct', 'proj_pct', 'cont_pct', 'mgmt_pct', 'vat_pct', 'comm_pct', 'occupancy', 'rent_opex_pct', 'delta_pct'];
+      const getPath = (o, path) => path.split('.').reduce((x, k) => x?.[k], o);
+      const markDefaults = () => {
+        let n = 0;
+        DEF_PATHS.forEach(path => {
+          const el = view.querySelector(`.fz-form [data-f="${path}"]`); if (!el) return;
+          const def = getPath(S.cfg, path), cur = getPath(f, path);
+          const diff = cur != null && def != null && Math.abs(Number(cur) - Number(def)) > 1e-9;
+          el.classList.toggle('fz-changed', diff);
+          let r = el.parentElement.querySelector('.fz-reset1');
+          if (diff) {
+            n++;
+            if (!r) { r = document.createElement('button'); r.type = 'button'; r.className = 'fz-reset1'; el.after(r);
+              r.addEventListener('click', () => { setPath(path, getPath(S.cfg, path)); el.value = getPath(S.cfg, path); S.dirty = true; drawResult(); markDefaults(); }); }
+            r.textContent = `↺ por omissão: ${fmtNum(def)}`;
+            r.title = 'Repor o valor por omissão (Definições → Viabilidade de terrenos)';
+          } else if (r) r.remove();
+        });
+        const banner = document.getElementById('fz-defaults');
+        banner.hidden = !n;
+        banner.innerHTML = n ? `<span>⚠ ${n} ${n === 1 ? 'valor diferente' : 'valores diferentes'} dos por omissão neste terreno (assinalados).</span><button type="button" class="text-btn" id="fz-reset-all">Repor todos</button>` : '';
+        document.getElementById('fz-reset-all')?.addEventListener('click', () => document.getElementById('fz-reset').click());
+      };
+      view.querySelectorAll('.fz-form [data-f]').forEach(el => el.addEventListener('input', markDefaults));
+      drawTyp(); drawResult(); markDefaults();
       // Guardar só o que é diferente do por omissão (e as áreas)
       const diff = () => {
         const out = {};
@@ -14431,11 +14462,11 @@
       });
       const wsum = parts.reduce((t, x) => t + x.w, 0);
       const base = wsum ? parts.reduce((t, x) => t + x.w * x.s, 0) / wsum * 100 : 0;
-      // Pouca informação = menos confiança: puxa para o meio
-      const conf = Math.min(1, wsum / 60);
-      const score = Math.max(0, Math.min(cap, capInv, 100, Math.round(base * conf + 50 * (1 - conf) + Math.max(-15, Math.min(15, hist)))));
+      // Campos em branco no perfil não foram referidos pelo investidor: não contam (nem a favor nem contra)
+      const conf = 1;
+      const score = Math.max(0, Math.min(cap, capInv, 100, Math.round(base + Math.max(-15, Math.min(15, hist)))));
       const label = !wsum ? 'Sem dados' : score >= 80 ? 'Excelente' : score >= 65 ? 'Bom' : score >= 50 ? 'Possível' : 'Fraco';
-      return { score, label, parts, pitch, hist: histText, conf, known: wsum > 0 };
+      return { score, label, parts, pitch, hist: histText, conf, known: wsum > 0, criteria: parts.length };
     }
     // Preço máximo do terreno para chegar a um ROI (resolve a equação do estudo para o preço)
     function maxLandPrice(p, f, roi) {
@@ -14451,8 +14482,8 @@
       const m = investorMatch(inv, p, { typeById, plots: oppsCache?.plots, presentations: oppsCache?.presentations });
       return { ...m, checks: m.parts.map(x => ({ ok: x.s >= 0.99, label: x.text })), fails: m.parts.filter(x => x.s < 0.5), fit: m.known && m.score >= 65, near: m.known && m.score >= 50 && m.score < 65 };
     }
-    const matchBadge = m => `<span class="mm-badge ${m.score >= 80 ? 'top' : m.score >= 65 ? 'good' : m.score >= 50 ? 'mid' : 'low'}" title="Pontuação ${m.score}/100">${m.known ? m.score : '—'}</span>`;
-    const matchWhyHtml = m => `<div class="mm-why">${m.parts.map(x => `<span class="op-check ${x.s >= 0.99 ? 'ok' : x.s >= 0.5 ? 'half' : 'no'}">${x.s >= 0.99 ? '✓' : x.s >= 0.5 ? '≈' : '✗'} ${escapeHtml(x.text)}</span>`).join('')}${m.hist.map(h => `<span class="op-check hist">↺ ${escapeHtml(h)}</span>`).join('')}</div>
+    const matchBadge = m => `<span class="mm-badge ${m.score >= 80 ? 'top' : m.score >= 65 ? 'good' : m.score >= 50 ? 'mid' : 'low'}" title="Pontuação ${m.score}/100, com base em ${m.criteria} ${m.criteria === 1 ? 'critério' : 'critérios'} do perfil (os campos em branco não contam)">${m.known ? m.score : '—'}</span>`;
+    const matchWhyHtml = m => `<div class="mm-why">${m.criteria < 3 ? `<span class="op-check half">ⓘ só ${m.criteria} ${m.criteria === 1 ? 'critério' : 'critérios'} no perfil — completa-o para uma pontuação mais segura</span>` : ''}${m.parts.map(x => `<span class="op-check ${x.s >= 0.99 ? 'ok' : x.s >= 0.5 ? 'half' : 'no'}">${x.s >= 0.99 ? '✓' : x.s >= 0.5 ? '≈' : '✗'} ${escapeHtml(x.text)}</span>`).join('')}${m.hist.map(h => `<span class="op-check hist">↺ ${escapeHtml(h)}</span>`).join('')}</div>
       ${m.pitch.length ? `<div class="mm-pitch"><b>Como apresentar:</b> ${escapeHtml(m.pitch.slice(0, 3).join(' · '))}</div>` : ''}`;
 
     // ================= OPORTUNIDADES: terrenos, investidores e propostas de honorários =================
@@ -15082,7 +15113,7 @@
             language: d.clients.find(x => x.id === (plot?.client_id || inv?.client_id))?.language === 'en' ? 'en' : 'pt', valid_days: 30, notes: null
           };
         } else pp = JSON.parse(JSON.stringify(pp));
-        proposalState = { pp, d, cfg, modelData, hist, typeById, dirty: false, estimate: null };
+        proposalState = { pp, d, cfg, modelData, hist, typeById, dirty: false, estimate: null, autoCph };
         renderProposalEditor();
       } catch (err) {
         view.innerHTML = /fee_proposals/.test(err.message || '') ? '<div class="error-box">Para usar as propostas, corre oportunidades.sql no Supabase.</div>'
@@ -15136,6 +15167,7 @@
             <div class="section-label op-form-sec">Especialidades e outros custos de projeto</div>
             <div id="pp-specs"></div>
             <button type="button" class="text-btn" id="pp-spec-add">+ Acrescentar linha</button>
+            <div class="fz-defaults" id="pp-defaults" hidden></div>
             <div class="op-sum" id="pp-cost-sum"></div>
           </div>
 
@@ -15303,7 +15335,28 @@
         const sumEl = document.getElementById('pp-pct-sum');
         if (sumEl) { const sum = pp.phases.reduce((t, x) => t + (Number(x.pct) || 0), 0), off = Math.abs(sum - 100) > 0.01; sumEl.className = off ? 'warn-text' : ''; sumEl.textContent = fmtNum(sum) + '%' + (off ? ' — devia dar 100%' : ''); }
       };
-      drawSpecs(); drawMethod();
+      // Valores por omissão (custo/hora calculado, objetivo €/h, especialidades-modelo da tipologia): avisa e deixa repor
+      const ppDefaults = () => {
+        const out = [];
+        const defCph = S.cfg.cost_per_hour ?? S.autoCph, defRate = S.cfg.target_rate;
+        const preset = specialtyPreset(S.cfg, pp.project_type_id);
+        const norm = l => JSON.stringify((l || []).filter(x => (x.name || '').trim()).map(x => [x.name.trim(), x.mode === 'm2' ? 'm2' : 'fixed', Number(x.value) || 0]));
+        if (defCph != null && pp.cost_per_hour != null && Math.abs(Number(pp.cost_per_hour) - Number(defCph)) > 0.005) out.push(['cph', `custo/hora ${fmtEUR(pp.cost_per_hour)} (por omissão ${fmtEUR(defCph)})`, () => { pp.cost_per_hour = defCph; document.getElementById('pp-cph').value = defCph; }]);
+        if (defRate != null && pp.target_rate != null && Math.abs(Number(pp.target_rate) - Number(defRate)) > 0.005) out.push(['rate', `objetivo ${fmtEUR(pp.target_rate)}/h (por omissão ${fmtEUR(defRate)}/h)`, () => { pp.target_rate = defRate; }]);
+        if (norm(pp.specialties) !== norm(preset)) out.push(['spec', 'especialidades diferentes da lista-modelo da tipologia', () => { pp.specialties = preset; drawSpecs(); }]);
+        const box = document.getElementById('pp-defaults');
+        box.hidden = !out.length || locked;
+        box.innerHTML = out.length ? `<span>⚠ Diferente dos valores por omissão: ${out.map(([k, t]) => `${escapeHtml(t)} <button type="button" class="fz-reset1" data-ppreset="${k}">↺ repor</button>`).join(' · ')}</span>${out.length > 1 ? '<button type="button" class="text-btn" data-ppreset="all">Repor todos</button>' : ''}` : '';
+        box.querySelectorAll('[data-ppreset]').forEach(b => b.addEventListener('click', () => {
+          out.filter(([k]) => b.dataset.ppreset === 'all' || k === b.dataset.ppreset).forEach(([, , fn]) => fn());
+          S.dirty = true; recalc(); ppDefaults();
+        }));
+      };
+      view.querySelectorAll('#pp-cph, #pp-specs, #pp-type').forEach(el => el.addEventListener('input', ppDefaults));
+      view.querySelector('#pp-type').addEventListener('change', () => setTimeout(ppDefaults, 0));
+      view.querySelector('#pp-spec-add').addEventListener('click', () => setTimeout(ppDefaults, 0));
+      view.querySelector('#pp-specs').addEventListener('click', e => { if (e.target.closest('[data-del]')) setTimeout(ppDefaults, 0); });
+      drawSpecs(); drawMethod(); ppDefaults();
       (async () => { if (!pp.phases?.length) await refreshPhasesFromModel(false); drawPhases(); recalc(); })();
       if (locked) view.querySelectorAll('.op-prop input, .op-prop select, .op-prop textarea, .op-prop button').forEach(el => { el.disabled = true; });
       view.querySelectorAll('[data-open-project]').forEach(b => b.addEventListener('click', () => openDetail(b.dataset.openProject)));
