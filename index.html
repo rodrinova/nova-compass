@@ -2651,6 +2651,12 @@
   .hours-goal { height: 6px; border-radius: var(--r-xs); background: var(--track); overflow: hidden; margin: var(--sp-2) 0 var(--sp-1); }
   .hours-goal span { display: block; height: 100%; border-radius: var(--r-xs); background: var(--accent); transition: width var(--t-slow) var(--ease); }
   .hours-goal span.ok { background: var(--success, #2E7D4F); }
+  .hours-goal, .punch-bar { display: flex; }
+  .hours-goal span.upto, .punch-bar span.upto { border-radius: var(--r-xs) 0 0 var(--r-xs); }
+  .hours-goal span.over, .punch-bar span.over { border-radius: 0 var(--r-xs) var(--r-xs) 0; margin-left: 2px;
+    background: repeating-linear-gradient(135deg, var(--success, #2E7D4F), var(--success, #2E7D4F) 4px, color-mix(in srgb, var(--success, #2E7D4F) 45%, transparent) 4px, color-mix(in srgb, var(--success, #2E7D4F) 45%, transparent) 8px); }
+  .punch-bar span.over { background: repeating-linear-gradient(135deg, var(--accent), var(--accent) 4px, color-mix(in srgb, var(--accent) 40%, transparent) 4px, color-mix(in srgb, var(--accent) 40%, transparent) 8px); }
+  .hours-over { color: var(--success, #2E7D4F); font-weight: var(--fw-semibold); }
   .hours-miss { font-size: var(--fs-sm); color: var(--warning, #9A6A12); margin-top: var(--sp-1); }
   .hours-day.miss .hours-col { box-shadow: inset 0 0 0 1.5px var(--warning, #B8842A); }
   .alert-row.team .alert-icon { background: var(--accent-soft); color: var(--accent); }
@@ -4073,7 +4079,8 @@
           ${st.members.map(m => `<tr><td>${escapeHtml(m.name)}</td><td class="col-value">${m.written ?? '—'}</td><td class="col-value">${m.deleted ?? '—'}</td><td class="col-value">${m.read ?? '—'}</td><td>${m.error ? `<span class="warn-text">${escapeHtml(m.error)}</span>` : '✓'}</td></tr>`).join('')}
         </tbody></table></div>` : ''}
         <div class="section-label op-form-sec">Transcrições das reuniões Teams → atas</div>
-        <div class="field-hint" style="margin-top:0;">Depois de cada reunião Teams organizada por alguém da equipa, se a transcrição foi ligada, a app arquiva-a como ata do projeto: o do marco, ou o projeto cujo código ou nome está no assunto. Sem projeto, aparece um aviso na Hoje de quem organizou para o escolher. Sem IA e sem custos.</div>
+        <div class="field-hint" style="margin-top:0;">Nas reuniões Teams organizadas pela equipa, a app liga <b>Gravar e transcrever automaticamente</b> (nos próximos 14 dias); o vídeo fica no OneDrive de quem organiza. Depois de cada reunião, a app arquiva a transcrição como ata do projeto: o do marco, ou o projeto cujo código ou nome está no assunto. Sem projeto, aparece um aviso na Hoje de quem organizou para o escolher. Sem IA e sem custos.</div>
+        ${st.autorecord ? `<div class="field-hint">${st.autorecord.error ? `<span class="warn-text">${escapeHtml(st.autorecord.error)}</span>` : `Gravação automática ligada em ${Number(st.autorecord.set) || 0} reuniões nesta verificação`}</div>` : ''}
         ${st.transcripts ? `<div class="field-hint">${st.transcripts.error ? `<span class="warn-text">${escapeHtml(st.transcripts.error)}</span>` : `Última verificação: ${Number(st.transcripts.saved) || 0} arquivadas · ${Number(st.transcripts.waiting) || 0} à espera da transcrição`}</div>` : ''}
         <details class="more-opts"><summary>Como ligar as transcrições (administrador, ~10 min)</summary>
         <ol class="ms-steps">
@@ -4085,7 +4092,9 @@ Connect-MicrosoftTeams
 New-CsApplicationAccessPolicy -Identity "NOVA-Compass" -AppIds "ID-DA-APLICACAO" -Description "NOVA Compass - transcricoes"
 Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             Pode levar até 30 minutos a ficar ativo.</li>
-          <li>Em cada reunião: <b>Mais → Gravar e transcrever → Iniciar transcrição</b> (ou, nas opções da reunião, <b>Gravar e transcrever automaticamente</b>). Sem transcrição, não há ata.</li>
+          <li><b>Teams</b> → <b>Meetings → Meeting settings</b> → <b>Transcript API access</b>: <b>Microsoft Graph access</b> e <b>Include speaker attribution</b> em <b>On</b>.</li>
+          <li>Para a gravação e transcrição arrancarem sozinhas: no <b>Entra</b>, juntar <b>OnlineMeetings.ReadWrite.All</b> (permissão de aplicação) e conceder consentimento; no PowerShell (depois de <i>Connect-MicrosoftTeams</i>):
+            <pre class="ms-code">Set-CsTeamsMeetingPolicy -Identity Global -AutoRecording Enabled</pre></li>
         </ol></details>
         <div class="section-label op-form-sec">O que vai para o calendário de cada pessoa</div>
         <div class="field-hint" style="margin-top:0;">No calendário principal (o que o Teams, o Outlook e o iPhone mostram), com a categoria <b>NOVA Compass</b>: marcos e entregas de que é responsável, marcos com várias pessoas como um só evento partilhado (organiza quem criou o marco na app; os outros são convidados), com link Teams quando o marco tem a opção "Reunião online" e lembretes do Investment Intelligence (7 dias sem resposta). <b>Não vão</b>: fases de projeto, ausências e férias, prazos da Câmara e respostas a ofícios. A app manda nestes eventos: alterações feitas no Teams são repostas. As reuniões Teams e os eventos do Outlook de cada pessoa aparecem na Agenda e na Hoje; os privados só como "Ocupado".</div>
@@ -4103,7 +4112,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const b = document.getElementById('ms-sync'); b.disabled = true; b.textContent = 'A sincronizar…';
         try {
           if (devMode) await new Promise(r => setTimeout(r, 400));
-          else { const r = await supabase.functions.invoke('ms365-sync', { body: {} }); if (r.error) throw r.error; }
+          else {
+            const r = await supabase.functions.invoke('ms365-sync', { body: {} }); if (r.error) throw r.error;
+            if (r.data?.busy) { formError('ms-msg', 'Já está a sincronizar (alguém gravou um marco agora). Volta a tentar daqui a um minuto.'); b.disabled = false; b.textContent = 'Sincronizar agora'; return; }
+          }
           showToast('Sincronização feita'); loadMs365Settings();
         } catch (err) { formError('ms-msg', 'Não foi possível sincronizar: ' + err.message); b.disabled = false; b.textContent = 'Sincronizar agora'; }
       });
@@ -6504,11 +6516,24 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     }
 
     // ---------- Nova ata / editar ata ----------
+    let atasCatCol = null;
+    async function atasHaveCategory() {
+      if (devMode) return true;
+      if (atasCatCol === null) { const r = await supabase.from('meeting_notes').select('category_id').limit(1); atasCatCol = !r.error; }
+      return atasCatCol;
+    }
     async function openNewAtaModal(lockedProjectId, preselectMilestoneId = null, existing = null, onSaved = null) {
       const isEdit = !!existing;
       const bodyHtml = `
-        <label class="field-label" style="margin-top:0;">Projeto (opcional)</label>
-        <select id="ata-project" class="form-input" ${lockedProjectId ? 'disabled' : ''}>
+        <label class="field-label" style="margin-top:0;">Associada a</label>
+        <div class="segmented" id="ata-link-toggle" style="margin-bottom:8px;${lockedProjectId ? ' display:none;' : ''}">
+          <button type="button" data-link="project" class="active">Projeto</button>
+          <button type="button" data-link="category">Categoria</button>
+        </div>
+        <select id="ata-project" class="form-input" aria-label="Projeto" ${lockedProjectId ? 'disabled' : ''}>
+          <option value="">A carregar...</option>
+        </select>
+        <select id="ata-category" class="form-input" aria-label="Categoria" style="display:none;">
           <option value="">A carregar...</option>
         </select>
         <label class="field-label">Marco associado (opcional)</label>
@@ -6547,20 +6572,38 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const r = await supabase.from('projects').select('id, name').order('name');
         projects = r.data || [];
       }
-      projSelect.innerHTML = '<option value="">Sem projeto</option>' + projects.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('');
+      projSelect.innerHTML = '<option value="">Escolhe o projeto</option>' + projects.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('');
       if (lockedProjectId) projSelect.value = lockedProjectId;
       else if (isEdit) projSelect.value = existing.project_id ?? '';
+      // Categoria de horas (atas de reuniões internas, angariação, etc.): a alternativa ao projeto
+      const catSelect = document.getElementById('ata-category');
+      const cats = await loadTimeCategories();
+      catSelect.innerHTML = '<option value="">Escolhe a categoria</option>' + cats.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
+      if (isEdit) catSelect.value = existing.category_id ?? '';
+      let ataLink = lockedProjectId || !isEdit || existing.project_id || !existing.category_id ? 'project' : 'category';
+      const syncAtaLink = () => {
+        document.querySelectorAll('#ata-link-toggle button').forEach(b => b.classList.toggle('active', b.dataset.link === ataLink));
+        projSelect.style.display = ataLink === 'project' ? '' : 'none';
+        catSelect.style.display = ataLink === 'category' ? '' : 'none';
+      };
+      syncAtaLink();
+      document.getElementById('ata-link-toggle').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-link]'); if (!b) return;
+        ataLink = b.dataset.link; syncAtaLink(); refreshAtaMilestones();
+      });
 
-      // Marcos do projeto escolhido, para associar a ata
+      // Marcos do projeto (ou da categoria) escolhido, para associar a ata
       const mkSelect = document.getElementById('ata-milestone');
-      async function refreshAtaMilestones(projectId) {
-        if (!projectId) {
-          mkSelect.innerHTML = '<option value="">Escolhe primeiro o projeto</option>';
+      async function refreshAtaMilestones() {
+        const projectId = ataLink === 'project' ? projSelect.value : '', categoryId = ataLink === 'category' ? catSelect.value : '';
+        if (!projectId && !categoryId) {
+          mkSelect.innerHTML = `<option value="">Escolhe primeiro ${ataLink === 'project' ? 'o projeto' : 'a categoria'}</option>`;
           return;
         }
         mkSelect.innerHTML = '<option value="">A carregar…</option>';
         try {
-          const list = await fetchMilestones({ projectId });
+          const list = projectId ? await fetchMilestones({ projectId })
+            : (await fetchMilestones({ from: addDaysKey(dateKey(new Date()), -365), to: addDaysKey(dateKey(new Date()), 90) })).filter(m => m.category_id === categoryId);
           mkSelect.innerHTML = '<option value="">Sem marco associado</option>' +
             list.sort((a, b) => b.event_date.localeCompare(a.event_date))
                 .map(m => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.title)} · ${escapeHtml(m.event_date)}</option>`).join('');
@@ -6568,8 +6611,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           mkSelect.innerHTML = '<option value="">Sem marco associado</option>';
         }
       }
-      projSelect.addEventListener('change', () => refreshAtaMilestones(projSelect.value));
-      await refreshAtaMilestones(projSelect.value);
+      projSelect.addEventListener('change', () => refreshAtaMilestones());
+      catSelect.addEventListener('change', () => refreshAtaMilestones());
+      await refreshAtaMilestones();
       if (preselectMilestoneId) mkSelect.value = preselectMilestoneId;
       else if (isEdit) mkSelect.value = existing.milestone_id ?? '';
 
@@ -6584,9 +6628,16 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           msgEl.className = 'form-msg error';
           return;
         }
+        const projectV = ataLink === 'project' ? (lockedProjectId || projSelect.value || null) : null;
+        const categoryV = ataLink === 'category' ? (catSelect.value || null) : null;
+        if (!projectV && !categoryV) {
+          msgEl.textContent = ataLink === 'project' ? 'Escolhe o projeto (ou associa a uma categoria).' : 'Escolhe a categoria.';
+          msgEl.className = 'form-msg error';
+          return;
+        }
         if (isEdit) {
           const unchanged = title === (existing.title ?? '') && body === (existing.body ?? '').trim() &&
-            date === existing.meeting_date && (projSelect.value || null) === (existing.project_id ?? null) &&
+            date === existing.meeting_date && projectV === (existing.project_id ?? null) && categoryV === (existing.category_id ?? null) &&
             (mkSelect.value || null) === (existing.milestone_id ?? null);
           if (unchanged) {
             msgEl.textContent = 'Não há alterações para guardar.';
@@ -6602,12 +6653,14 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         try {
           const member = await getCurrentMember();
           const payload = {
-            project_id: projSelect.value || null,
+            project_id: projectV,
             milestone_id: mkSelect.value || null,
             title,
             body: body || null,
             meeting_date: date
           };
+          if (await atasHaveCategory()) payload.category_id = categoryV;
+          else if (!projectV) throw new Error('falta preparar a base de dados para atas por categoria.');
           if (isEdit) {
             // A versão, quem editou e quando são definidos pela base de dados (trigger);
             // updated_by segue só como indicação caso a sessão não identifique o membro.
@@ -6851,7 +6904,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             <span class="ata-entry-title">${escapeHtml(n.title)}</span>
             <span class="ata-entry-date">${fmtDateShort(new Date(n.meeting_date + 'T00:00:00'))}</span>
           </div>
-          <div class="ata-entry-project">${escapeHtml(n.projectName ?? 'Sem projeto')}</div>
+          <div class="ata-entry-project${n.projectName || n.categoryName ? '' : ' warn-text'}">${escapeHtml(n.projectName ?? n.categoryName ?? 'Sem projeto nem categoria')}</div>
           ${ataMetaHtml(n)}
           <div class="ata-entry-body">${renderAtaBody(n.body)}</div>
           ${ataActionsHtml(n)}
@@ -6877,16 +6930,17 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         if (devMode) {
           notes = mockMeetingNotes.map(n => ({
             ...n,
-            projectName: n.project_id ? (MOCK_PROJECTS.find(p => p.id === n.project_id)?.name ?? 'Projeto') : null
+            projectName: n.project_id ? (MOCK_PROJECTS.find(p => p.id === n.project_id)?.name ?? 'Projeto') : null,
+            categoryName: n.category_id ? (MOCK_CATEGORIES.find(c => c.id === n.category_id)?.name ?? null) : null
           }));
         } else {
           const versionCols = (await atasHaveVersioning()) ? ', revision, created_by, created_at, updated_by, updated_at' : '';
           const res = await supabase
             .from('meeting_notes')
-            .select('id, project_id, milestone_id, title, body, meeting_date' + versionCols + ', projects(name)')
+            .select('id, project_id, category_id, milestone_id, title, body, meeting_date' + versionCols + ', projects(name), time_categories(name)')
             .order('meeting_date', { ascending: false });
           if (res.error) throw res.error;
-          notes = (res.data || []).map(n => ({ ...n, projectName: n.projects?.name ?? null }));
+          notes = (res.data || []).map(n => ({ ...n, projectName: n.projects?.name ?? null, categoryName: n.time_categories?.name ?? null }));
         }
         await loadMemberNames(notes.flatMap(n => [n.created_by, n.updated_by]));
 
@@ -9381,7 +9435,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       return { state: late || early ? 'late' : row.check_out || day === today ? 'on' : 'on', late, early, open: !row.check_out };
     }
     // Reuniões e visitas: marcos com hora, não "prazo", em que a pessoa está
-    const isMeeting = (m, types) => m.start_time && !m.all_day && !m.auto_kind && !types[m.type_id]?.is_deadline;
+    // Entrada e saída nas reuniões ("Estou cá" / "Acabou"): desligado por agora; voltar a true para reativar
+    const ATT_MEETINGS = false;
+    const isMeeting = (m, types) => ATT_MEETINGS && m.start_time && !m.all_day && !m.auto_kind && !types[m.type_id]?.is_deadline;
     function attMeetingScore(m, memberId, checkins, cfg) {
       const c = checkins.find(x => x.milestone_id === m.id && x.member_id === memberId);
       if (!c) return null;
@@ -9455,10 +9511,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           const startT = atTime(today, s.start), endT = atTime(today, s.end);
           const total = Math.max(1, minsBetween(endT, startT));
           const done = row.check_out ? minsBetween(row.check_out, row.check_in) : Math.max(0, minsBetween(now, row.check_in));
-          const pct = Math.min(100, Math.round(done / total * 100));
           main = `<div class="punch-state ${st.late || st.early ? 'late' : 'ok'}"><b>${row.check_out ? `Hoje: ${hhmm(row.check_in)} → ${hhmm(row.check_out)}` : `Entraste às ${hhmm(row.check_in)}`}${row.edited ? ' <i title="Hora corrigida à mão">✎</i>' : ''}</b>
               <span>${st.late ? `${fmtMin(st.late)} de atraso` : 'entrada a horas'}${st.early ? ` · saíste ${fmtMin(st.early)} mais cedo` : st.late ? '' : ' ✓'}</span></div>
-            <div class="punch-day"><div class="punch-bar"><span style="width:${pct}%"></span></div><small>${fmtHours(done / 60)} de ${fmtHours(total / 60, 0)}${row.check_out ? '' : ` · saída às ${escapeHtml(s.end)}`}</small></div>
+            <div class="punch-day"><div class="punch-bar">${progressSpans(done, total, '')}</div><small>${fmtHours(done / 60)} de ${fmtHours(total / 60, 0)}${done - total >= 3 ? ` · <b class="hours-over">+${escapeHtml(fmtHours((done - total) / 60))}</b>` : ''}${row.check_out ? '' : ` · saída às ${escapeHtml(s.end)}`}</small></div>
             ${row.check_out ? '<button type="button" class="text-btn" data-punch="fix">Corrigir</button>' : `<button type="button" class="secondary-btn punch-leave" data-punch="leave">Fechar o tasco</button><button type="button" class="text-btn" data-punch="fix">Corrigir</button>`}`;
         }
         // Ontem sem saída
@@ -9677,13 +9732,13 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       return `
         <div class="gantt-wrap">
           <div class="card-head"><h2>Pontualidade</h2><span>${escapeHtml(r.label)} · jarra: 1 copo a cada ${cfg.minutes_per_drink} min</span></div>
-          <div class="table-scroll"><table class="mini-table mc-table"><thead><tr><th>Pessoa</th><th class="col-value">Dias a horas</th><th class="col-value">Atrasos</th><th class="col-value">Atraso médio</th><th class="col-value">Saídas antes</th><th class="col-value">Reuniões a horas</th><th class="col-value">Jarra</th></tr></thead><tbody>
+          <div class="table-scroll"><table class="mini-table mc-table"><thead><tr><th>Pessoa</th><th class="col-value">Dias a horas</th><th class="col-value">Atrasos</th><th class="col-value">Atraso médio</th><th class="col-value">Saídas antes</th>${ATT_MEETINGS ? '<th class="col-value">Reuniões a horas</th>' : ''}<th class="col-value">Jarra</th></tr></thead><tbody>
             ${board.map(b => `<tr><td>${escapeHtml(b.m.name)}${b.edited ? ` <small title="Dias com horas postas à mão">✎ ${b.edited}</small>` : ''}</td>
               <td class="col-value${b.counted && b.onTime / b.counted < 0.8 ? ' warn-text' : ''}">${b.counted ? mcPct(b.onTime, b.counted) + '%' : '—'}</td>
               <td class="col-value">${b.lateDays || '—'}</td><td class="col-value">${b.lateAvg ? b.lateAvg + ' min' : '—'}</td><td class="col-value">${b.earlyDays || '—'}</td>
-              <td class="col-value">${b.meetings ? `${b.meetOnTime}/${b.meetings}` : '—'}</td><td class="col-value">${b.jar ? `${b.jar} min · ☕ ${drinks(b.jar, cfg)}` : '—'}</td></tr>`).join('')}
+              ${ATT_MEETINGS ? `<td class="col-value">${b.meetings ? `${b.meetOnTime}/${b.meetings}` : '—'}</td>` : ''}<td class="col-value">${b.jar ? `${b.jar} min · ☕ ${drinks(b.jar, cfg)}` : '—'}</td></tr>`).join('')}
           </tbody></table></div>
-          <div class="field-hint">${ended.length ? `Reuniões com fim registado: ${ended.length}. Passaram da hora: ${overN.length}${overN.length ? `, em média ${Math.round(overN.reduce((t, x) => t + x, 0) / overN.length)} min a mais` : ''}.` : 'Carrega em "Acabou" no fim das reuniões para ver as que passam da hora.'}</div>
+          ${!ATT_MEETINGS ? '' : `<div class="field-hint">${ended.length ? `Reuniões com fim registado: ${ended.length}. Passaram da hora: ${overN.length}${overN.length ? `, em média ${Math.round(overN.reduce((t, x) => t + x, 0) / overN.length)} min a mais` : ''}.` : 'Carrega em "Acabou" no fim das reuniões para ver as que passam da hora.'}</div>`}
         </div>`;
     }
 
@@ -12917,17 +12972,24 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const today = dateKey(new Date());
       return tg.days.filter(k => k < today && !h.byDay[diffDays(h.mondayKey, k)]);
     }
+    // Barra de progresso que mostra o excesso: até ao alvo na cor normal, o que passa do alvo a riscas
+    function progressSpans(done, target, okCls = 'ok') {
+      if (!(target > 0)) return '';
+      if (done <= target) { const p = Math.round(done / target * 100); return `<span class="${p >= 100 ? okCls : ''}" style="width:${p}%"></span>`; }
+      const base = target / done * 100;
+      return `<span class="${okCls} upto" style="width:${base.toFixed(1)}%"></span><span class="over" style="width:${(100 - base).toFixed(1)}%"></span>`;
+    }
     function renderWeekHours(el, h, tg) {
       const todayIdx = diffDays(h.mondayKey, dateKey(new Date()));
       const max = Math.max(8, ...h.byDay);
       const letters = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
       const miss = new Set(missingHourDays(h, tg));
-      const pct = tg && tg.expected ? Math.min(100, Math.round(h.total / tg.expected * 100)) : 0;
+      const extra = tg && tg.expected ? h.total - tg.expected : 0;
       const goal = tg && tg.expected
-        ? `<div class="hours-goal" title="${escapeHtml(fmtHours(h.total))} de ${escapeHtml(fmtHours(tg.expected, 0))} esperadas"><span class="${pct >= 100 ? 'ok' : ''}" style="width:${pct}%"></span></div>`
+        ? `<div class="hours-goal" title="${escapeHtml(fmtHours(h.total))} de ${escapeHtml(fmtHours(tg.expected, 0))} esperadas">${progressSpans(h.total, tg.expected)}</div>`
         : '';
       const sub = tg && tg.expected
-        ? `<span class="hours-of">de ${escapeHtml(fmtHours(tg.expected, 0))}</span>`
+        ? `<span class="hours-of">de ${escapeHtml(fmtHours(tg.expected, 0))}${extra > 0.05 ? ` · <b class="hours-over">+${escapeHtml(fmtHours(extra))}</b>` : ''}</span>`
         : tg && tg.from && tg.from > h.mondayKey ? `<span class="hours-of">alvo de ${escapeHtml(fmtHours(tg.weekly, 0))} a partir de ${escapeHtml(fmtDayMonth(tg.from))}</span>` : '';
       el.innerHTML = `
         <div class="hours-total num">${fmtHours(h.total)} ${sub}</div>
@@ -12963,10 +13025,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     // Transcrições de reuniões Teams arquivadas sem projeto (o organizador escolhe o projeto)
     async function transcriptAlerts(me) {
       if (devMode || !me) return [];
-      const r = await supabase.from('meeting_notes').select('id, project_id, milestone_id, title, body, meeting_date')
-        .is('project_id', null).like('title', 'Transcrição — %').eq('created_by', me).gte('meeting_date', addDaysKey(dateKey(new Date()), -30));
-      return (r.data || []).map(n => ({ kind: 'transcript', note: n, title: n.title.replace(/^Transcrição — /, 'Transcrição sem projeto: '),
-        sub: fmtDayMonthYear(n.meeting_date) + ' · escolhe o projeto para a arquivar no histórico', when: 'Arquivar' }));
+      const r = await supabase.from('meeting_notes').select('id, project_id, category_id, milestone_id, title, body, meeting_date')
+        .is('project_id', null).is('category_id', null).like('title', 'Transcrição — %').eq('created_by', me).gte('meeting_date', addDaysKey(dateKey(new Date()), -30));
+      return (r.data || []).map(n => ({ kind: 'transcript', note: n, title: n.title.replace(/^Transcrição — /, 'Transcrição por arquivar: '),
+        sub: fmtDayMonthYear(n.meeting_date) + ' · escolhe o projeto ou a categoria', when: 'Arquivar' }));
     }
 
     async function renderToday() {
@@ -13751,7 +13813,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { id: 'ponto', cat: 'horas', ctx: ['home'],
         q: 'marco a entrada e a saída (ponto)',
         a: 'Na página Hoje, cartão Ponto: «Cheguei» ao chegar e «Fechar o tasco» ao sair. Dias fora e folgas também se marcam lá.',
-        steps: ['Ao chegar, abre [[Hoje]] e toca em [[Cheguei]]. O horário é das 8h às 14h, com 5 minutos de tolerância.', 'Ao sair, toca em [[Fechar o tasco]].', 'Dia em obra, na Câmara ou no cliente? Toca em **Hoje estou fora** e escreve onde: conta como a horas.', 'Folga ou férias? Toca em **Folga / férias**: esse dia não conta.', 'Esqueceste-te de marcar? Toca em [[Corrigir]] e põe a hora certa. Fica assinalado com ✎.', 'Nas reuniões e visitas em que estás, aparece **Estou cá** 10 minutos antes; no fim, toca em **Acabou**.'],
+        steps: ['Ao chegar, abre [[Hoje]] e toca em [[Cheguei]]. O horário é das 8h às 14h, com 5 minutos de tolerância.', 'Ao sair, toca em [[Fechar o tasco]].', 'Dia em obra, na Câmara ou no cliente? Toca em **Hoje estou fora** e escreve onde: conta como a horas.', 'Folga ou férias? Toca em **Folga / férias**: esse dia não conta.', 'Esqueceste-te de marcar? Toca em [[Corrigir]] e põe a hora certa. Fica assinalado com ✎.'],
         kw: 'ponto entrada saida chegar cheguei sair picar pontualidade horario presenca atraso reuniao',
         tour: [{ go: 'nav:home', sel: '#today-punch .punch, #today-punch', text: 'Toca em «Cheguei» ao chegar e em «Fechar o tasco» ao sair.' }] },
       { id: 'jarra', cat: 'horas', ctx: ['home', 'finance:time'],
@@ -18347,6 +18409,16 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     }
 
     // ---------- Criar / editar marco ----------
+    // Marco gravado ou apagado: pede já a sincronização com o Office 365 (a reunião Teams fica pronta em segundos,
+    // já a gravar e transcrever), sem esperar pelos 10 minutos; se estiver a meio de outra, tenta daqui a 1 minuto
+    let ms365KickTimer = null;
+    function kickMs365Sync(retry = 0) {
+      if (devMode) return;
+      clearTimeout(ms365KickTimer);
+      supabase.functions.invoke('ms365-sync', { body: {} }).then(r => {
+        if (r.data?.busy && retry < 2) ms365KickTimer = setTimeout(() => kickMs365Sync(retry + 1), 60000);
+      }).catch(() => {});
+    }
     async function openMarcoModal({ milestoneId = null, lockedProjectId = null, onSuccess = null, asDeadline = false } = {}) {
       if (String(milestoneId || '').startsWith('ms:')) return openMsEventModal(milestoneId, msShown);
       const isEdit = !!milestoneId;
@@ -18713,6 +18785,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             else {
               const res = await supabase.from('project_milestones').delete().eq('id', milestoneId);
               if (res.error) throw res.error;
+              kickMs365Sync();
             }
             closeQuickModal();
             if (onSuccess) onSuccess(); else loadAgenda();
@@ -18842,6 +18915,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               if (r.error) throw r.error;
             }
           }
+          kickMs365Sync();
           closeQuickModal();
           if (syncDelivery) showToast('Marco e data de entrega da fase atualizados');
           if (onSuccess) onSuccess();

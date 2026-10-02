@@ -110,3 +110,24 @@ do $$ begin
     create policy "Só a equipa" on public.meeting_transcripts for select using (private.is_team_member());
   end if;
 end $$;
+
+-- Gravação e transcrição automáticas: reuniões Teams futuras da equipa em que a app já ligou "recordAutomatically"
+create table if not exists public.ms_autorecord (
+  ical_uid text primary key,
+  subject text,
+  start_at timestamptz,
+  status text not null default 'ok',   -- ok | error
+  error text,
+  set_at timestamptz not null default now()
+);
+alter table public.ms_autorecord enable row level security;
+do $$ begin
+  if not exists (select 1 from pg_policies where tablename = 'ms_autorecord' and policyname = 'Só a equipa') then
+    create policy "Só a equipa" on public.ms_autorecord for select using (private.is_team_member());
+  end if;
+end $$;
+
+-- Atas: sempre associadas a um projeto ou a uma categoria de horas (reuniões internas)
+alter table public.meeting_notes add column if not exists category_id uuid references public.time_categories(id) on delete set null;
+update public.meeting_notes n set project_id = coalesce(n.project_id, m.project_id), category_id = coalesce(n.category_id, m.category_id)
+  from public.project_milestones m where n.milestone_id = m.id and n.project_id is null and n.category_id is null;
