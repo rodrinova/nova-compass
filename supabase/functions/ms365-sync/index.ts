@@ -270,13 +270,15 @@ function vttToText(vtt: string) {
 }
 async function syncTranscripts(members: any[], links: any[]) {
   const res = { saved: 0, waiting: 0, none: 0, error: null as string | null };
+  // Procura a partir de 5 min depois do início (a chamada pode acabar antes da hora marcada) e repete até haver transcrição
   const now = Date.now(), since = new Date(now - TRANSCRIPT_DAYS * 864e5).toISOString(), nowIso = new Date(now).toISOString();
+  const startedIso = new Date(now - 5 * 6e4).toISOString();
   const byEmail = Object.fromEntries(members.map((m) => [String(m.email).toLowerCase(), m]));
   const byId = Object.fromEntries(members.map((m) => [m.id, m]));
   const cand = new Map<string, any>();
   // Reuniões Teams lidas dos calendários, organizadas por alguém da equipa
   const ev = await db.from("ms_events").select("ical_uid, subject, start_at, end_at, join_url, organizer_email, organizer")
-    .eq("is_online", true).not("join_url", "is", null).gte("end_at", since).lte("end_at", nowIso);
+    .eq("is_online", true).not("join_url", "is", null).gte("end_at", since).lte("start_at", startedIso);
   for (const e of ev.data || []) {
     const org = byEmail[e.organizer_email || ""];
     if (org && e.ical_uid && !cand.has(e.ical_uid)) cand.set(e.ical_uid, { ...e, org, project_id: null, milestone_id: null });
@@ -292,7 +294,7 @@ async function syncTranscripts(members: any[], links: any[]) {
       if (!m || m.all_day || !m.start_time || !byId[l.member_id]) continue;
       const st = lisbonToUtc(m.event_date, String(m.start_time));
       const en = m.end_time ? lisbonToUtc(m.event_date, String(m.end_time)) : new Date(st.getTime() + 36e5);
-      if (en.toISOString() < since || en.getTime() > now) continue;
+      if (en.toISOString() < since || st.toISOString() > startedIso) continue;
       cand.set(l.ical_uid, { ical_uid: l.ical_uid, subject: m.title, start_at: st.toISOString(), end_at: en.toISOString(), join_url: l.join_url,
         org: byId[l.member_id], organizer: byId[l.member_id].name, project_id: m.project_id, milestone_id: m.id });
     }
