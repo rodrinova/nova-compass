@@ -53,3 +53,7 @@ do $$ declare auth text; begin
     headers := jsonb_build_object('Content-Type', 'application/json', 'Authorization', 'Bearer %s'),
     body := '{}'::jsonb)$c$, auth));
 end $$;
+
+-- Marcos: opção "link Teams" (reunião online) e o link guardado para abrir na app
+alter table public.project_milestones add column if not exists teams_link boolean not null default false;
+alter table public.ms_event_links add column if not exists join_url text;
