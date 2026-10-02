@@ -2011,6 +2011,11 @@
   .fz-mix-scale { display: flex; justify-content: space-between; font-size: var(--fs-xs); color: var(--text-3); margin-top: -6px; }
   .fz-mix-res { margin-top: var(--sp-2); font-size: var(--fs-md); }
   .fz-size-l { margin-top: var(--sp-3); }
+  .mx-ticks { margin: var(--sp-1) 0 var(--sp-2); }
+  .mx-row { margin-top: var(--sp-1); }
+  .mx-lab { display: flex; justify-content: space-between; gap: var(--sp-2); font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
+  .mx-lab span { color: var(--text-2); }
+  .mx-sliders input[type="range"] { width: 100%; accent-color: var(--accent); margin: 0; height: 32px; }
   .fz-sizes { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-3); font-size: var(--fs-xs); color: var(--text-2); margin-top: var(--sp-1); font-variant-numeric: tabular-nums; }
   .fz-sizes b { color: var(--text); font-weight: var(--fw-semibold); }
   .fz-mix-list { display: flex; flex-wrap: wrap; gap: var(--sp-1-5); margin-top: var(--sp-1-5); }
@@ -10817,6 +10822,7 @@
     }
     const sizeUnit = m => m === 'fractions' ? 'frações' : 'm²';
     const fmtNum = n => Number(n).toLocaleString('pt-PT', { maximumFractionDigits: 2 });
+    const fmtM2 = n => Number(n).toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     function bandLabel(b, measure) {
       const u = sizeUnit(measure);
       if (b.max_value == null) return `mais de ${fmtNum(b.min_value)} ${u}`;
@@ -13162,7 +13168,7 @@
       { id: 'terreno-analise', cat: 'opps', ctx: ['plot'],
         q: 'faço a análise de um terreno (PDM e viabilidade)',
         a: 'Abre o terreno: a folha de viabilidade é como o Excel — valor unitário × quantidade = valor global. Grava sozinha.',
-        steps: ['Abre o terreno. A folha tem grupos: **Áreas**, **Frações**, **Custos de aquisição do terreno**, **Custos de construção e outros custos**, **Receitas de venda**, **Resultado** e **Arrendamento** (opcional).', 'Em **Áreas**: índice × área do terreno dá a área de construção (ou escreve-a). A área vendável é uma % dessa área.', 'Em **Frações**: os sliders dão o número e o tamanho das frações. Se mudares unidades ou áreas à mão, a tabela passa a ser tua (↺ volta ao automático).', 'Em **Receitas de venda** escolhe **Preço por m²** ou **Intervalo por tipologia** (mínimo a máximo por fração) — com intervalo, o resultado mostra o lucro e o ROI no mínimo e no máximo.', 'Os valores diferentes dos de referência ficam assinalados, com ↺ para repor. O resumo à direita (ou em cima, no telemóvel) mostra o lucro e o ROI ao vivo.'],
+        steps: ['Abre o terreno. A folha tem grupos: **Áreas**, **Frações**, **Custos de aquisição do terreno**, **Custos de construção e outros custos**, **Receitas de venda**, **Resultado** e **Arrendamento** (opcional).', 'Em **Áreas**: índice × área do terreno dá a área de construção (ou escreve-a). A área vendável é uma % dessa área.', 'Em **Frações**: marca as tipologias que o projeto vai ter e ajusta o peso de cada uma (% das frações); o slider de baixo aumenta ou reduz o tamanho de todas. Se mudares unidades ou áreas à mão, a tabela passa a ser tua (↺ volta ao automático).', 'Em **Receitas de venda** escolhe **Preço por m²** ou **Intervalo por tipologia** (mínimo a máximo por fração) — com intervalo, o resultado mostra o lucro e o ROI no mínimo e no máximo.', 'Os valores diferentes dos de referência ficam assinalados, com ↺ para repor. O resumo à direita (ou em cima, no telemóvel) mostra o lucro e o ROI ao vivo.'],
         kw: 'pdm indice viabilidade margem rentabilidade construcao venda analise area de construcao',
         tour: [{ go: 'nav:opps', sel: '[data-plot]', text: 'Abre um terreno.' }] },
       { id: 'investidor', cat: 'opps', ctx: ['opps', 'plot'],
@@ -14053,31 +14059,33 @@
       typologies: [{ name: 'T0', units: null, area: 35, price: null, rent: null }, { name: 'T1', units: null, area: 55, price: null, rent: null },
         { name: 'T2', units: null, area: 75, price: null, rent: null }, { name: 'T3', units: null, area: 100, price: null, rent: null }],
       rent_on: false, rent_m2: null, occupancy: 90, rent_opex_pct: 20,
-      avg_unit_area: 75, typ_markup: 15,
+      mix: { T1: 35, T2: 45, T3: 20 },     // tipologias escolhidas e peso (%) de cada uma no total de frações
+      typ_markup: 15,
       delta_pct: 10
     };
     // Áreas brutas mínimas por tipologia (RGEU, art. 67.º); a média estimada = mínimo + uma margem (15% por referência)
     const RGEU_MIN = [['T0', 35], ['T1', 52], ['T2', 72], ['T3', 91], ['T4', 105], ['T5', 122]];
     // Frações e distribuição de tipologias a partir da área vendável e da área média escolhida.
     // A mistura usa as duas tipologias à volta da área média, nas proporções que dão exatamente essa média.
-    function unitMix(sellable, avg, markupPct = 15) {
-      const typ = RGEU_MIN.map(([name, min]) => ({ name, min, area: Math.round(min * (1 + (Number(markupPct) || 0) / 100)) }));
-      avg = Math.max(35, Math.min(150, Number(avg) || 75));
-      const n = sellable > 0 ? Math.max(1, Math.floor(sellable / avg)) : 0;
-      let w;
-      if (avg <= typ[0].area) w = [[0, 1]];
-      else if (avg >= typ[typ.length - 1].area) w = [[typ.length - 1, 1]];
-      else {
-        const i = typ.findIndex((t, k) => k < typ.length - 1 && avg >= t.area && avg <= typ[k + 1].area);
-        const lo = typ[i], hi = typ[i + 1], wHi = (avg - lo.area) / (hi.area - lo.area);
-        w = [[i, 1 - wHi], [i + 1, wHi]];
-      }
+    // Frações a partir das tipologias escolhidas e do peso de cada uma (% do número de frações).
+    // Área de cada tipologia = mínimo RGEU × (1 + margem); n = área vendável ÷ área média ponderada.
+    const r2 = n => Math.round(n * 100) / 100;
+    function mixShares(mix) {
+      const e = Object.entries(mix || {}).filter(([k, w]) => RGEU_MIN.some(([n]) => n === k) && Number(w) > 0);
+      const tot = e.reduce((t, [, w]) => t + Number(w), 0);
+      return tot ? RGEU_MIN.filter(([n]) => e.some(([k]) => k === n)).map(([n]) => [n, Number(mix[n]) / tot]) : [];
+    }
+    function unitMix(sellable, mix, markupPct = 15) {
+      const typ = RGEU_MIN.map(([name, min]) => ({ name, min, area: r2(min * (1 + (Number(markupPct) || 0) / 100)) }));
+      const shares = mixShares(mix);
+      const avg = shares.reduce((t, [n, sh]) => t + sh * typ.find(x => x.name === n).area, 0);
+      const n = sellable > 0 && avg > 0 ? Math.max(1, Math.floor(sellable / avg)) : 0;
       // unidades por tipologia (arredondadas a somar n)
-      const raw = w.map(([i, x]) => ({ ...typ[i], exact: n * x }));
+      const raw = shares.map(([name, sh]) => ({ ...typ.find(x => x.name === name), share: sh, exact: n * sh }));
       raw.forEach(r => { r.units = Math.floor(r.exact); });
       let left = n - raw.reduce((t, r) => t + r.units, 0);
-      [...raw].sort((a, b) => (b.exact - b.units) - (a.exact - a.units)).forEach(r => { if (left > 0) { r.units++; left--; } });
-      return { n, avg, mix: raw.filter(r => r.units > 0).map(({ name, area, min, units }) => ({ name, area, min, units })), typ };
+      [...raw].sort((x, y) => (y.exact - y.units) - (x.exact - x.units)).forEach(r => { if (left > 0) { r.units++; left--; } });
+      return { n, avg: r2(avg), mix: raw.filter(r => r.units > 0).map(({ name, area, min, units, share }) => ({ name, area, min, units, share })), all: raw, typ };
     }
     const IMT_TYPES = [['urban', 'Terreno para construção / prédio urbano', 6.5], ['rustic', 'Prédio rústico', 5], ['custom', 'Outra taxa', null]];
     let feasCfgCache = null, mockFeasCfg = null;
@@ -14123,16 +14131,17 @@
         ['Áreas verdes', green, N(f.cost.green)], ['Infraestruturas', infra, N(f.cost.infra)]
       ].map(([label, area, unit]) => ({ label, area, unit: unit * s.build, value: area * unit * s.build }));
       const construction = lines.reduce((t, l) => t + l.value, 0);
-      const licences = construction * N(f.lic_pct) / 100, projects = construction * N(f.proj_pct) / 100, muni = N(f.muni_fees);
+      const licences = construction * N(f.lic_pct) / 100, projects = f.proj_value != null && f.proj_value !== '' ? N(f.proj_value) : construction * N(f.proj_pct) / 100, muni = N(f.muni_fees);
       const indirect = licences + projects + muni;
       // sem custos de gestão de projeto (decisão da NOVA, out. 2026): a reserva é só a contingência
-      const contingency = (construction + indirect) * N(f.cont_pct) / 100, management = 0;
+      // contingência sobre construção + projetos e taxas (as licenças não entram)
+      const contingency = (construction + projects + muni) * N(f.cont_pct) / 100, management = 0;
       const reserves = contingency;
       const vat = construction * N(f.vat_pct) / 100;
       const costGlobal = acquisition + construction + indirect + reserves + vat;
       // Vendas: tipologias (unidades × preço médio) ou €/m² × área vendável; + comércio
       const manual = (f.typologies || []).filter(t => N(t.units) > 0);
-      const autoMix = unitMix(sellable, f.avg_unit_area, f.typ_markup);
+      const autoMix = unitMix(sellable, f.mix, f.typ_markup);
       const byName = Object.fromEntries((f.typologies || []).map(t => [t.name, t]));
       // tabela ajustada à mão, ou o mix automático dos sliders (com os preços/rendas escritos por tipologia)
       const typ = manual.length ? manual : autoMix.mix.map(m => ({ name: m.name, units: m.units, area: m.area, price: byName[m.name]?.price ?? null, price_max: byName[m.name]?.price_max ?? null, rent: byName[m.name]?.rent ?? null }));
@@ -14175,7 +14184,7 @@
       const en = o.lang === 'en', T = (a, b) => en ? b : a, loc = en ? 'en-GB' : 'pt-PT';
       const eur = n => n == null || !Number.isFinite(n) ? '—' : Number(Math.round(n)).toLocaleString(loc, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
       const nf = n => Number(n || 0).toLocaleString(loc, { maximumFractionDigits: 1 });
-      const m2 = n => n ? nf(Math.round(n)) + ' m²' : '—';
+      const m2 = n => n ? Number(n).toLocaleString(loc, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' m²' : '—';
       const pc = (v, d = 1) => v == null || !Number.isFinite(v) ? '—' : (v * 100).toLocaleString(loc, { maximumFractionDigits: d }) + '%';
       const c = feasCalc(p, f), sc = feasScenarios(p, f), e = escapeHtml, N = v => Number(v) || 0;
       const R = c.hasRange ? [feasCalc(p, f, { sales: 1, build: 1, price: 'min' }), feasCalc(p, f, { sales: 1, build: 1, price: 'max' })] : null;
@@ -14273,7 +14282,7 @@
             : row(e(T('Habitação', 'Residential')), e(eur(f.sale_m2)) + '/m²', e(m2(c.sellable)), e(eur(c.housingSales)))}
           ${c.commerce && N(f.commerce_sale_m2) ? row(e(T('Comércio', 'Retail')), e(eur(f.commerce_sale_m2)) + '/m²', e(m2(c.commerce)), e(eur(c.commerce * N(f.commerce_sale_m2)))) : ''}
           ${row(e(T('Vendas', 'Sales')), '', '', e(eur(c.salesGross)) + (R ? `<span class="rng">${e(eur(R[0].salesGross))} – ${e(eur(R[1].salesGross))}</span>` : ''), 'sub')}
-          ${row(e(T('Comissão imobiliária', 'Agency commission')) + `<small>${e(T('paga por quem vende, + IVA', 'paid by the seller, + VAT'))}</small>`, e(nf(f.comm_pct)) + '% + ' + e(nf(f.comm_vat)) + '%', e(eur(c.salesGross)), neg(c.commission))}
+          ${row(e(T('Comissão imobiliária', 'Agency commission')), e(nf(f.comm_pct)) + '% + ' + e(nf(f.comm_vat)) + '%', e(eur(c.salesGross)), neg(c.commission))}
           ${row(e(T('Receita líquida', 'Net revenue')), '', '', e(eur(c.salesNet)), 'sub big')}`,
           '')}
         <section><h2>${e(T('Resultado da venda', 'Sale result'))}</h2><table>
@@ -14296,7 +14305,7 @@
           ${row(e(T('Terreno / custo global', 'Land / total cost')), '', '', e(pc(c.ratios.cost)))}
           ${c.ratios.unit ? row(e(T('Terreno por fração', 'Land per unit')), '', '', e(eur(c.ratios.unit))) : ''}
         </table></section>
-        <footer><span>${e(T('Estudo indicativo, sem financiamento nem impostos sobre o lucro. Valores sem IVA salvo indicação. Os preços de mercado e as áreas devem ser confirmados.', 'Indicative study, excluding financing and taxes on profit. Figures exclude VAT unless stated. Market prices and areas are to be confirmed.'))}</span><span>NOVA Associates</span></footer>
+        <footer><span>${e(T('Estudo indicativo, sem financiamento nem impostos sobre o lucro. Os preços de mercado e as áreas devem ser confirmados.', 'Indicative study, excluding financing and taxes on profit. Market prices and areas are to be confirmed.'))}</span><span>NOVA Associates</span></footer>
         </body></html>`;
       const w = window.open('', '_blank');
       if (!w) { showToast('O navegador bloqueou a janela. Permite janelas deste site e tenta outra vez.', { type: 'error', ms: 7000 }); return; }
@@ -14321,7 +14330,7 @@
             ${num('sellable_pct', 'Área vendável (%)', cfg.sellable_pct)}${num('lic_pct', 'Licenças (%)', cfg.lic_pct)}${num('proj_pct', 'Projetos (%)', cfg.proj_pct)}
             ${num('cont_pct', 'Contingência (%)', cfg.cont_pct)}${num('vat_pct', 'IVA da construção (%)', cfg.vat_pct)}
             ${num('comm_pct', 'Comissão imobiliária (%)', cfg.comm_pct)}${num('comm_vat', 'IVA da comissão (%)', cfg.comm_vat)}${num('stamp_pct', 'Imposto do Selo (%)', cfg.stamp_pct)}
-            ${num('avg_unit_area', 'Área média por fração (m²)', cfg.avg_unit_area)}${num('typ_markup', 'Margem sobre o mínimo RGEU (%)', cfg.typ_markup)}
+            ${num('typ_markup', 'Margem sobre o mínimo RGEU (%)', cfg.typ_markup)}
             ${num('occupancy', 'Ocupação no arrendamento (%)', cfg.occupancy)}${num('rent_opex_pct', 'Despesas do arrendamento (%)', cfg.rent_opex_pct)}${num('delta_pct', 'Variação dos cenários (%)', cfg.delta_pct)}
           </div>
           <div class="field-hint">IMT: 6,5% em terrenos para construção e prédios urbanos, 5% em rústicos (2026). Escolhe-se em cada terreno.</div>
@@ -14842,10 +14851,10 @@
               ${vrow('Áreas verdes', '', '', fIn('green_area', f.green_area, 'm²', '0'))}
               ${vrow('Infraestruturas', '', '', fIn('infra_area', f.infra_area, 'm²', '0'))}`)}
             ${grp('vt-frac', 'Frações', 'quantas e de que tamanho', `<div class="fz-mix">
-                <label class="field-label" for="fz-avg">Área média por fração <b id="fz-avg-v">${escapeHtml(fmtNum(f.avg_unit_area))} m²</b></label>
-                <input type="range" id="fz-avg" min="35" max="150" step="1" data-f="avg_unit_area" value="${escapeHtml(f.avg_unit_area)}">
-                <div class="fz-mix-scale"><span>35 m² · T0</span><span>150 m² · T5</span></div>
-                <label class="field-label fz-size-l" for="fz-size">Tamanho dentro de cada tipologia <b id="fz-size-v"></b></label>
+                <label class="field-label">Tipologias do projeto <small class="muted">marca as que vai ter</small></label>
+                <div class="op-chips mx-ticks" id="mx-ticks">${RGEU_MIN.map(([n]) => `<label class="op-chip"><input type="checkbox" value="${n}"${Number((f.mix || {})[n]) > 0 ? ' checked' : ''}><span>${n}</span></label>`).join('')}</div>
+                <div id="mx-sliders" class="mx-sliders"></div>
+                <label class="field-label fz-size-l" for="fz-size">Tamanho de todas as tipologias <b id="fz-size-v"></b></label>
                 <input type="range" id="fz-size" min="0" max="35" step="1" data-f="typ_markup" value="${escapeHtml(f.typ_markup)}">
                 <div class="fz-mix-scale"><span>Compacto · mínimo RGEU</span><span>Generoso · +35%</span></div>
                 <div class="fz-sizes" id="fz-sizes"></div>
@@ -14863,9 +14872,9 @@
               ${COST_LINES.map(([k, l, h], i) => vrow(l + (h ? `<small>${h}</small>` : ''), fIn('cost.' + k, f.cost[k], '€/m²'), o('lq' + i), o('lv' + i))).join('')}
               ${vrow('Construção', '', '', o('construction'), 'vt-sub')}
               ${vrow('Licenças', fIn('lic_pct', f.lic_pct, '%'), o('constr'), o('licences'))}
-              ${vrow('Projetos', fIn('proj_pct', f.proj_pct, '%'), o('constr'), o('projects'))}
+              ${vrow('Projetos<small>% da construção — ou escreve o valor</small>', fIn('proj_pct', f.proj_value != null ? '' : f.proj_pct, '%'), o('constr'), `<span class="vt-in"><input type="text" inputmode="decimal" class="form-input" id="vt-proj-v" value="${escapeHtml(f.proj_value ?? '')}" aria-label="Valor dos projetos (€)">${sfx('€')}</span>`)}
               ${vrow('Taxas municipais<small>TMU e outras</small>', '', '', fIn('muni_fees', f.muni_fees, '€', '0'))}
-              ${vrow('Contingência<small>sobre construção + licenças, projetos e taxas</small>', fIn('cont_pct', f.cont_pct, '%'), o('indBase'), o('contingency'))}
+              ${vrow('Contingência<small>sobre construção + projetos e taxas</small>', fIn('cont_pct', f.cont_pct, '%'), o('indBase'), o('contingency'))}
               ${vrow('IVA da construção', fIn('vat_pct', f.vat_pct, '%'), o('constr'), o('vat'))}
               ${vrow('Total construção e outros custos', '', '', o('buildTotal'), 'vt-sub')}
               ${vrow('Custo global<small>aquisição + construção e outros custos</small>', '', '', o('costGlobal'), 'vt-sub vt-big')}`)}
@@ -14992,8 +15001,50 @@
         setPath(k, val);
         if (k === 'acq_type') document.getElementById('fz-imt-custom').hidden = val !== 'custom';
         if (k === 'rent_on') document.getElementById('vt-rent-body').hidden = !val;
+        if (k === 'proj_pct') { f.proj_value = null; document.getElementById('vt-proj-v').value = ''; }
         saveFeas(); if (!typManual()) drawTyp(); drawResult(); drawInvestors(); markDefaults();
       }));
+      // Tipologias do projeto: tick + peso (%) de cada uma; os pesos somam sempre 100
+      const mixKeys = () => RGEU_MIN.map(([n]) => n).filter(n => Number((f.mix || {})[n]) > 0);
+      const balance = (keys, fixed, val) => {
+        // mantém a tipologia mexida no valor escolhido e reparte o resto pelas outras, na proporção que tinham
+        const others = keys.filter(k => k !== fixed), cur = f.mix || {};
+        const rest = Math.max(0, 100 - val), sum = others.reduce((t, k) => t + Number(cur[k] || 0), 0);
+        const out = fixed ? { [fixed]: val } : {};
+        others.forEach(k => { out[k] = sum ? Number(cur[k] || 0) / sum * rest : rest / others.length; });
+        // arredonda a inteiros sem perder o total
+        const ks = Object.keys(out), fl = ks.map(k => Math.floor(out[k])); let left = 100 - fl.reduce((t, x) => t + x, 0);
+        ks.map((k, i) => [i, out[k] - fl[i]]).sort((x, y) => y[1] - x[1]).forEach(([i]) => { if (left > 0 && ks[i] !== fixed) { fl[i]++; left--; } });
+        if (left > 0 && fixed) fl[ks.indexOf(fixed)] += left;
+        return Object.fromEntries(ks.map((k, i) => [k, Math.max(fl[i], ks.length > 1 ? 1 : 100)]));
+      };
+      const drawMix = () => {
+        const keys = mixKeys();
+        document.getElementById('mx-sliders').innerHTML = keys.length ? keys.map(k => `<div class="mx-row">
+            <div class="mx-lab"><b>${k}</b><span data-mxv="${k}"></span></div>
+            <input type="range" min="1" max="100" step="1" data-mx="${k}" value="${escapeHtml(f.mix[k])}" aria-label="Peso de ${k} no total de frações"${keys.length === 1 ? ' disabled' : ''}>
+          </div>`).join('') : '<div class="field-hint" style="margin:0;">Marca pelo menos uma tipologia.</div>';
+        document.querySelectorAll('#mx-sliders [data-mx]').forEach(sl => sl.addEventListener('input', () => {
+          f.mix = balance(mixKeys(), sl.dataset.mx, Number(sl.value));
+          document.querySelectorAll('#mx-sliders [data-mx]').forEach(x => { if (x !== sl) x.value = f.mix[x.dataset.mx]; });
+          saveFeas(); if (!typManual()) drawTyp(); else drawResult(); drawInvestors();
+        }));
+      };
+      document.getElementById('mx-ticks').addEventListener('change', e => {
+        const k = e.target.value, on = e.target.checked, keys = mixKeys();
+        if (on) { const share = Math.round(100 / (keys.length + 1)); f.mix = balance([...keys, k], k, share); }
+        else { if (keys.length <= 1) { e.target.checked = true; showToast('O projeto precisa de pelo menos uma tipologia'); return; }
+          const { [k]: _, ...restMix } = f.mix; f.mix = restMix; f.mix = balance(mixKeys(), null, 0); }
+        drawMix(); saveFeas(); if (!typManual()) drawTyp(); else drawResult(); drawInvestors();
+      });
+      drawMix();
+      // Projetos: valor escrito à mão (a % mostra-se arredondada às unidades)
+      document.getElementById('vt-proj-v').addEventListener('input', e => {
+        const v = numOrNull(e.target.value);
+        if (typeof v === 'number' && Number.isNaN(v)) { e.target.classList.add('fz-bad'); return; }
+        e.target.classList.remove('fz-bad'); f.proj_value = v;
+        saveFeas(); drawResult(); drawInvestors();
+      });
       // Venda: preço por m² ou intervalo por tipologia
       const applyMode = () => {
         view.querySelectorAll('.vt-sheet [data-mode]').forEach(el => { el.hidden = el.dataset.mode !== f.sale_mode; });
@@ -15018,7 +15069,7 @@
           ${vrow('Total', '', o('fracN'), o('fracM2'), 'vt-sub')}
           <div class="vt-note" data-o="fracCmp"></div>
           ${manual ? '<button type="button" class="text-btn" id="fz-typ-add">+ Tipologia</button>' : ''}`;
-        document.getElementById('vt-sales-typ').innerHTML = T.length ? `${T.map((t, i) => vrow(`<b>${nm(t)}</b><small>${escapeHtml(fmtNum(t.area))} m² · preço por fração</small>`,
+        document.getElementById('vt-sales-typ').innerHTML = T.length ? `${T.map((t, i) => vrow(`<b>${nm(t)}</b><small>${escapeHtml(fmtM2(t.area))} m² · preço por fração</small>`,
             `<div class="vt-range">${tIn('price', t.price, 'mín.', 'Preço mínimo de ' + t.name)}<span>a</span>${tIn('price_max', t.price_max, 'máx.', 'Preço máximo de ' + t.name)}</div>`, o('tq' + i), o('ts' + i), 'vt-trow', ` data-i="${i}"`)).join('')}` : '<div class="field-hint" style="margin:0;">Sem frações ainda — vê o grupo Frações.</div>';
         document.getElementById('vt-rent-typ').innerHTML = T.map((t, i) => vrow(`<b>${nm(t)}</b>`, tIn('rent', t.rent, 'renda', 'Renda de ' + t.name, '€/mês'), o('tq' + i), o('tr' + i), 'vt-trow', ` data-i="${i}"`)).join('');
         if (focus) { const el = document.querySelector(`#${focus.box} .vt-trow[data-i="${focus.i}"] [data-k="${focus.k}"]`); if (el) { el.focus(); el.setSelectionRange?.(el.value.length, el.value.length); } }
@@ -15067,14 +15118,14 @@
         const c = feasCalc(p, f), mx = c.autoMix, sc = feasScenarios(p, f), Nn = v => Number(v) || 0;
         const R = c.hasRange ? [feasCalc(p, f, { sales: 1, build: 1, price: 'min' }), feasCalc(p, f, { sales: 1, build: 1, price: 'max' })] : null;
         const E = n => n == null || !Number.isFinite(n) ? '—' : escapeHtml(Math.round(n).toLocaleString('pt-PT') + ' €');
-        const M = n => n ? escapeHtml(fmtNum(Math.round(n)) + ' m²') : '—';
+        const M = n => n ? escapeHtml(fmtM2(n) + ' m²') : '—';
         const rng = (k, fm = E) => R ? `<small class="vt-rng">${fm(R[0][k])} a ${fm(R[1][k])}</small>` : '';
         const ok = c.hasSales && c.hasCosts;
         const fracN = c.typs.reduce((t, x) => t + Nn(x.units), 0), fracM2 = c.typs.reduce((t, x) => t + Nn(x.units) * Nn(x.area), 0), over = c.sellable > 0 && fracM2 > c.sellable * 1.02;
         const vals = {
           housingQ: M(c.housing), sellable: M(c.sellable), common: M(c.common),
           price: E(c.price), imt: E(c.imt) + `<small class="vt-rng">${escapeHtml(fmtNum(c.imtRate))}%</small>`, stamp: E(c.stamp), acquisition: E(c.acquisition),
-          construction: E(c.construction), constr: E(c.construction), licences: E(c.licences), projects: E(c.projects), indBase: E(c.construction + c.indirect),
+          construction: E(c.construction), constr: E(c.construction), licences: E(c.licences), projects: E(c.projects), indBase: E(c.construction + c.projects + c.muni),
           contingency: E(c.contingency), vat: E(c.vat), buildTotal: E(c.construction + c.indirect + c.reserves + c.vat),
           costGlobal: E(c.costGlobal), costGlobalNeg: c.costGlobal ? '− ' + E(c.costGlobal) : E(0),
           housingSales: E(c.housingSales), commerceQ: M(c.commerce), commerceSales: E(c.commerce * Nn(f.commerce_sale_m2)),
@@ -15095,10 +15146,13 @@
           vals['tr' + i] = E(u * Nn(t.rent)) + '<small class="vt-rng">por mês</small>';
         });
         view.querySelectorAll('.vt-sheet [data-o]').forEach(el => { if (el.dataset.o in vals) el.innerHTML = vals[el.dataset.o]; });
-        document.getElementById('fz-avg-v').textContent = fmtNum(f.avg_unit_area) + ' m²';
+        const pv = document.getElementById('vt-proj-v'), pp = view.querySelector('[data-f="proj_pct"]');
+        if (pv) pv.placeholder = Math.round(c.projects).toLocaleString('pt-PT');
+        if (pp && f.proj_value != null && document.activeElement !== pp) pp.value = c.construction ? Math.round(c.projects / c.construction * 100) : '';
         const mk = Number(f.typ_markup) || 0;
         document.getElementById('fz-size-v').textContent = (mk <= 5 ? 'compacto' : mk <= 22 ? 'médio' : 'generoso') + ` · +${fmtNum(mk)}%`;
-        document.getElementById('fz-sizes').innerHTML = mx.typ.map(t => `<span><b>${t.name}</b> ${t.area} m²</span>`).join('');
+        document.getElementById('fz-sizes').innerHTML = mx.typ.filter(t => Number((f.mix || {})[t.name]) > 0).map(t => `<span><b>${t.name}</b> ${escapeHtml(fmtM2(t.area))} m²</span>`).join('') + (mx.avg ? `<span>média <b>${escapeHtml(fmtM2(mx.avg))} m²</b></span>` : '');
+        mx.all.forEach(r => { const el = document.querySelector(`#mx-sliders [data-mxv="${r.name}"]`); if (el) el.textContent = `${Math.round(r.share * 100)}% · ${r.units} ${r.units === 1 ? 'fração' : 'frações'} · ${fmtM2(r.area)} m²`; });
         const row = (l, val, cls = '') => `<div class="${cls}"><span>${l}</span><b>${val}</b></div>`;
         // Só as métricas do Excel: custo global, receita, lucro e ROI; renda anual e yield; rácios do terreno
         const rentOk = f.rent_on && c.rentYear > 0 && c.hasCosts;
@@ -15184,7 +15238,7 @@
         });
       };
       // ---- Valores diferentes dos de referência ----
-      const DEF_PATHS = ['avg_unit_area', 'typ_markup', 'sellable_pct', 'stamp_pct', 'comm_vat', 'cost.housing', 'cost.common', 'cost.parking', 'cost.commerce', 'cost.green', 'cost.infra', 'lic_pct', 'proj_pct', 'cont_pct', 'vat_pct', 'comm_pct', 'occupancy', 'rent_opex_pct', 'delta_pct'];
+      const DEF_PATHS = ['typ_markup', 'sellable_pct', 'stamp_pct', 'comm_vat', 'cost.housing', 'cost.common', 'cost.parking', 'cost.commerce', 'cost.green', 'cost.infra', 'lic_pct', 'proj_pct', 'cont_pct', 'vat_pct', 'comm_pct', 'occupancy', 'rent_opex_pct', 'delta_pct'];
       const markDefaults = () => {
         let n = 0;
         DEF_PATHS.forEach(path => {
