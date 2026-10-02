@@ -1296,6 +1296,9 @@
   .ts-kbox { display: flex; flex-direction: column; gap: 2px; white-space: nowrap; font-size: var(--fs-xs); font-weight: var(--fw-semibold); }
   .ts-kbox.ts-f span { color: var(--accent); } .ts-kbox.ts-nf span { color: var(--text-3); }
   .ts-pair.big .ts-cell { width: 76px; height: 40px; font-size: var(--fs-base); }
+  .ms-steps { margin: 0 0 var(--sp-2); padding-left: 1.2em; display: grid; gap: var(--sp-1-5); font-size: var(--fs-sm); color: var(--text-2); }
+  .ms-steps b { color: var(--text); }
+  .ms-join { display: flex; align-items: center; justify-content: center; text-decoration: none; margin: var(--sp-2) 0; }
   .ts-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--sp-1-5); padding: var(--sp-6) var(--sp-4); }
   .ts-empty b { font-size: var(--fs-lg); } .ts-empty span { color: var(--text-2); max-width: 420px; }
   .ts-add-first { width: auto; margin-top: var(--sp-2); padding: 0 var(--sp-5); }
@@ -2925,6 +2928,7 @@
             <div class="settings-group">Equipa e agenda</div>
             <button type="button" class="settings-link" data-sec="categories"><span>Horário, horas e categorias</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button type="button" class="settings-link" data-sec="mtypes"><span>Tipos de marco</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+            <button type="button" class="settings-link" data-sec="ms365"><span>Office 365 (calendário Teams)</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <div class="settings-group">Finanças</div>
             <button type="button" class="settings-link" data-sec="payroll"><span>Pessoas, salários e custo/hora</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button type="button" class="settings-link" data-sec="finance"><span>Impostos e categorias de despesa</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
@@ -2969,6 +2973,10 @@
           <section class="settings-sec" data-sec-panel="finance" hidden>
             <h2 class="settings-title">Impostos e categorias de despesa</h2>
             <div class="gantt-wrap" id="settings-finance-container"><div class="detail-loading">A carregar...</div></div>
+          </section>
+          <section class="settings-sec" data-sec-panel="ms365" hidden>
+            <h2 class="settings-title">Office 365 (calendário Teams)</h2>
+            <div class="gantt-wrap" id="settings-ms365-container"><div class="detail-loading">A carregar...</div></div>
           </section>
           <section class="settings-sec" data-sec-panel="nps" hidden>
             <h2 class="settings-title">Satisfação dos clientes (NPS)</h2>
@@ -3971,9 +3979,43 @@
       checklists: () => loadChecklistTemplateSettings(), categories: () => loadCategories(),
       mtypes: () => loadMilestoneTypeSettings(), clientscore: () => loadClientScoreSettings(),
       finance: () => loadFinanceSettingsPanel(), camara: () => loadCamaraSettings(),
-      nps: () => loadNpsSettings(), proposals: () => loadProposalSettings(), payroll: () => loadPayrollSettings(), feas: () => loadFeasSettings()
+      nps: () => loadNpsSettings(), ms365: () => loadMs365Settings(), proposals: () => loadProposalSettings(), payroll: () => loadPayrollSettings(), feas: () => loadFeasSettings()
     };
     let settingsSection = 'models';
+    async function loadMs365Settings() {
+      const box = document.getElementById('settings-ms365-container');
+      let st = {};
+      if (!devMode) { const r = await supabase.from('app_settings').select('value').eq('key', 'ms365').maybeSingle(); st = r.data?.value || {}; }
+      const when = st.at ? new Date(st.at).toLocaleString('pt-PT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+      const state = !st.configured ? '<span class="invoice-status neutral">Por ligar</span>' : st.ok ? '<span class="invoice-status paid">Ligado</span>' : '<span class="invoice-status overdue">Com erro</span>';
+      box.innerHTML = `
+        <div class="card-head"><h2>Estado ${state}</h2><button type="button" class="secondary-btn toolbar-btn" id="ms-sync">Sincronizar agora</button></div>
+        <div class="field-hint" style="margin-top:0;">Última verificação: ${escapeHtml(when)} · sincroniza sozinho de 10 em 10 minutos.</div>
+        ${st.error ? `<div class="error-box">${escapeHtml(st.error)}</div>` : ''}
+        ${(st.members || []).length ? `<div class="table-scroll"><table class="mini-table"><thead><tr><th>Pessoa</th><th class="col-value">Escritos</th><th class="col-value">Apagados</th><th class="col-value">Lidos</th><th>Estado</th></tr></thead><tbody>
+          ${st.members.map(m => `<tr><td>${escapeHtml(m.name)}</td><td class="col-value">${m.written ?? '—'}</td><td class="col-value">${m.deleted ?? '—'}</td><td class="col-value">${m.read ?? '—'}</td><td>${m.error ? `<span class="warn-text">${escapeHtml(m.error)}</span>` : '✓'}</td></tr>`).join('')}
+        </tbody></table></div>` : ''}
+        <div class="section-label op-form-sec">O que vai para o calendário de cada pessoa</div>
+        <div class="field-hint" style="margin-top:0;">No calendário principal (o que o Teams, o Outlook e o iPhone mostram), com a categoria <b>NOVA Compass</b>: marcos e entregas de que é responsável, reuniões marcadas na app (como reunião Teams, com os outros responsáveis convidados) e lembretes do NOVA Radar (7 dias sem resposta). <b>Não vão</b>: fases de projeto, ausências e férias, prazos da Câmara e respostas a ofícios. A app manda nestes eventos: alterações feitas no Teams são repostas. As reuniões Teams e os eventos do Outlook de cada pessoa aparecem na Agenda e na Hoje; os privados só como "Ocupado".</div>
+        ${st.configured ? '' : `<div class="section-label op-form-sec">Como ligar (administrador do Office 365, ~15 min)</div>
+        <ol class="ms-steps">
+          <li>Entrar em <b>entra.microsoft.com</b> com a conta de administrador → <b>Aplicações → Registos de aplicações → Novo registo</b>. Nome: <b>NOVA Compass</b>; tipo de conta: <b>só esta organização</b>. Registar.</li>
+          <li>Na aplicação criada: <b>Permissões de API → Adicionar → Microsoft Graph → Permissões de aplicação</b>: <b>Calendars.ReadWrite</b> e <b>MailboxSettings.ReadWrite</b>. Depois <b>Conceder consentimento de administrador</b>.</li>
+          <li><b>Certificados e segredos → Novo segredo do cliente</b> (validade 24 meses). Copiar o <b>Valor</b> (só aparece uma vez).</li>
+          <li>No <b>Supabase</b> (projeto NOVA Compass) → <b>Edge Functions → Secrets</b>, criar três segredos: <b>MS_TENANT_ID</b> (ID do diretório), <b>MS_CLIENT_ID</b> (ID da aplicação) e <b>MS_CLIENT_SECRET</b> (o valor do passo 3). Os IDs estão na página <b>Descrição geral</b> da aplicação.</li>
+          <li>Voltar aqui e tocar em <b>Sincronizar agora</b>.</li>
+        </ol>
+        <div class="field-hint">Opcional, para limitar o acesso só às caixas da equipa: uma <i>Application Access Policy</i> no Exchange Online restrita a um grupo com Nuno, Rodrigo e Rute. Os segredos nunca são colados na app nem enviados por mensagem.</div>`}
+        <div id="ms-msg" class="form-msg"></div>`;
+      document.getElementById('ms-sync').addEventListener('click', async () => {
+        const b = document.getElementById('ms-sync'); b.disabled = true; b.textContent = 'A sincronizar…';
+        try {
+          if (devMode) await new Promise(r => setTimeout(r, 400));
+          else { const r = await supabase.functions.invoke('ms365-sync', { body: {} }); if (r.error) throw r.error; }
+          showToast('Sincronização feita'); loadMs365Settings();
+        } catch (err) { formError('ms-msg', 'Não foi possível sincronizar: ' + err.message); b.disabled = false; b.textContent = 'Sincronizar agora'; }
+      });
+    }
     const settingsNarrow = window.matchMedia('(max-width: 759px)');
     function showSettingsSection(key) {
       const layout = document.getElementById('settings-layout');
@@ -7191,6 +7233,42 @@
     }
 
     // Carrega marcos de um intervalo de datas, já com owners resolvidos.
+    // ---------- Office 365: reuniões Teams e eventos do Outlook de cada pessoa (lidos pela função ms365-sync) ----------
+    // Entram na Agenda e na Hoje como "marcos" só de leitura (id 'ms:…'); tocar abre os detalhes e o botão Entrar.
+    const MS_TYPE = { id: '__ms', name: 'Teams / Outlook', color: '#5B5FC7' };
+    let mockMsEvents = null, msShown = [];
+    async function fetchMsEvents(from, to) {
+      let rows;
+      if (devMode) {
+        const t = dateKey(new Date());
+        rows = mockMsEvents || (mockMsEvents = [
+          { id: 'e1', member_id: 'mock-member-1', subject: 'Reunião com o cliente — revisão do anteprojeto', start_at: `${t}T15:00:00`, end_at: `${t}T16:00:00`, all_day: false, is_online: true, join_url: 'https://teams.microsoft.com/l/meetup-join/exemplo', organizer: 'Rodrigo Alves', location: 'Microsoft Teams', is_private: false },
+          { id: 'e2', member_id: 'mock-member-1', subject: null, start_at: `${addDaysKey(t, 1)}T10:00:00`, end_at: `${addDaysKey(t, 1)}T11:00:00`, all_day: false, is_online: false, join_url: null, organizer: null, location: null, is_private: true }
+        ]).map(e => ({ ...e, start_at: new Date(e.start_at).toISOString(), end_at: new Date(e.end_at).toISOString() }));
+      } else {
+        const r = await supabase.from('ms_events').select('id, member_id, subject, start_at, end_at, all_day, location, is_online, join_url, organizer, is_private, web_link')
+          .gte('start_at', new Date(from + 'T00:00:00').toISOString()).lte('start_at', new Date(addDaysKey(to, 1) + 'T00:00:00').toISOString()).order('start_at');
+        if (r.error) return [];   // tabela ainda não criada ou sem acesso: a app funciona sem isto
+        rows = r.data || [];
+      }
+      const hm = d => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ':00';
+      return rows.map(e => {
+        const st = new Date(e.start_at), en = e.end_at ? new Date(e.end_at) : null;
+        return { id: 'ms:' + e.id, ms: e, external: true, type_id: MS_TYPE.id, title: e.is_private ? 'Ocupado (privado)' : (e.subject || 'Sem assunto'),
+          event_date: e.all_day ? e.start_at.slice(0, 10) : dateKey(st), all_day: !!e.all_day, start_time: e.all_day ? null : hm(st), end_time: e.all_day || !en ? null : hm(en),
+          location: e.is_online ? 'Teams' : e.location, owner_ids: [e.member_id], done: false, project_id: null };
+      });
+    }
+    function openMsEventModal(id, list) {
+      const m = list.find(x => x.id === id); if (!m) return;
+      const e = m.ms;
+      openQuickModal(m.title, `
+        <div class="field-hint" style="margin:0 0 10px;">${escapeHtml(fmtDayMonthYear(m.event_date))} · ${escapeHtml(fmtTimeRange(m))}${e.organizer ? ' · organizada por ' + escapeHtml(e.organizer) : ''}</div>
+        ${e.location && !e.is_online ? `<div class="invoice-row"><span>Local</span><span>${escapeHtml(e.location)}</span></div>` : ''}
+        ${e.join_url && /^https:\/\//.test(e.join_url) ? `<a class="primary-btn ms-join" href="${escapeHtml(e.join_url)}" target="_blank" rel="noopener">Entrar na reunião Teams</a>` : ''}
+        <div class="field-hint">Vem do calendário Outlook/Teams. Para mudar, muda no Outlook ou no Teams.</div>`);
+    }
+
     async function fetchMilestones({ from, to, projectId }) {
       if (devMode) {
         return mockMilestones.filter(m =>
@@ -12693,7 +12771,7 @@
         renderAttendance(me);
 
         const [milestones, phases, types, hours, alerts, breakAlerts, importAlerts, target, noOwner, camaraAlerts, npsAlerts, debtAlerts, lawAlerts, radarAlerts] = await Promise.all([
-          fetchMilestones({ from: todayKey, to: lastKey }),
+          Promise.all([fetchMilestones({ from: todayKey, to: lastKey }), fetchMsEvents(todayKey, lastKey).catch(() => [])]).then(([a, b]) => { msShown = b; return [...a, ...b]; }),
           fetchActivePhases(),
           loadMilestoneTypes(),
           loadWeekHours(me),
@@ -12729,7 +12807,7 @@
           sub: [list[0].projects?.name || MOCK_PROJECTS.find(x => x.id === pid)?.name || '', list.map(phaseName).join(', ')].filter(Boolean).join(' · '), when: 'Atribuir' }));
         renderDeadlineAlerts(document.getElementById('today-alerts'), alerts, breakAlerts, importAlerts, teamAlerts);
 
-        const typeMap = Object.fromEntries(types.map(t => [t.id, t]));
+        const typeMap = Object.fromEntries([...types, MS_TYPE].map(t => [t.id, t]));
         const myMarcos = milestones.filter(m => !m.done && (m.owner_ids || []).includes(me));
         const myPhases = phases.filter(p => (p.assignee_ids || []).includes(me));
         const [, ckItems] = await Promise.all([
@@ -12897,7 +12975,7 @@
         const to = dateKey(new Date(agendaMonth.getFullYear(), agendaMonth.getMonth() + 2, 0));
 
         const [milestones, types, members, categories, phases] = await Promise.all([
-          fetchMilestones({ from, to }),
+          Promise.all([fetchMilestones({ from, to }), fetchMsEvents(from, to).catch(() => [])]).then(([a, b]) => { msShown = b; return [...a, ...b]; }),
           loadMilestoneTypes(),
           loadAllMembers(),
           loadTimeCategories(),
@@ -12918,7 +12996,7 @@
         agendaData = {
           milestones,
           phases,
-          types: Object.fromEntries(types.map(t => [t.id, t])),
+          types: Object.fromEntries([...types, MS_TYPE].map(t => [t.id, t])),
           members: Object.fromEntries(members.map(m => [m.id, m.name])),
           projects: projMap,
           categories: Object.fromEntries(categories.map(c => [c.id, c.name])),
@@ -17811,6 +17889,7 @@
 
     // ---------- Criar / editar marco ----------
     async function openMarcoModal({ milestoneId = null, lockedProjectId = null, onSuccess = null, asDeadline = false } = {}) {
+      if (String(milestoneId || '').startsWith('ms:')) return openMsEventModal(milestoneId, msShown);
       const isEdit = !!milestoneId;
       const member = await getCurrentMember();
 
