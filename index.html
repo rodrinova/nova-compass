@@ -11443,10 +11443,10 @@
           invoices: MOCK_INVOICES.map((i, k) => ({ ...i, project_id: ['mock-1', 'mock-1', 'mock-2'][k] })),
           hours: [{ project_id: 'mock-1', hours: 90 }, { project_id: 'mock-2', hours: 60 }, { project_id: 'mock-3', hours: 12 }],
           open: MOCK_INVOICES.map((i, k) => ({ ...i, project_id: ['mock-1', 'mock-1', 'mock-2'][k] })),
-          weights: await loadClientScoreWeights()
+          weights: await loadClientScoreWeights(), investors: mockInvestors
         };
       }
-      const [c, e, p, inv, ex, t, w, op] = await Promise.all([
+      const [c, e, p, inv, ex, t, w, op, ivs] = await Promise.all([
         supabase.from('clients').select('id, name, email, phone, address, notes, nif, language, nps_opt_out').order('name'),
         supabase.from('client_entities').select('*').order('created_at'),
         supabase.from('projects').select('id, name, code, status, awarding_date, client_id, client_entity_id, archived_at, commission_value'),
@@ -11455,7 +11455,8 @@
         selectAll(() => supabase.from('time_entries').select('project_id, stage_id, hours').gte('date', from).not('project_id', 'is', null).order('id')),
         loadClientScoreWeights(),
         // Em dívida: faturas (de qualquer ano) ainda não pagas por inteiro
-        selectAll(() => supabase.from('invoices').select('project_id, amount, amount_paid, issue_date, status, archived_at').is('archived_at', null).order('id'))
+        selectAll(() => supabase.from('invoices').select('project_id, amount, amount_paid, issue_date, status, archived_at').is('archived_at', null).order('id')),
+        supabase.from('investors').select('*')
       ]);
       for (const r of [c, e, p, inv, t]) if (r.error) throw r.error;
       const excluded = new Set((ex.data || []).map(s => s.id));
@@ -11464,7 +11465,7 @@
         invoices: (inv.data || []).filter(i => !excluded.has(i.stage_id)),
         hours: (t.data || []).filter(h => !excluded.has(h.stage_id)),
         open: op.error ? [] : (op.data || []),
-        weights: w
+        weights: w, investors: ivs.error ? [] : (ivs.data || [])
       };
     }
 
@@ -11566,7 +11567,8 @@
       const sub = c => {
         const es = entsBy[c.id] || [];
         const nC = es.filter(e => e.kind === 'company').length, nP = es.filter(e => e.kind === 'personal').length;
-        return [nP ? 'particular' : '', nC ? (nC === 1 ? '1 empresa' : `${nC} empresas`) : ''].filter(Boolean).join(' · ') || 'sem dados de faturação';
+        const iv = (data.investors || []).some(x => x.client_id === c.id && x.active !== false);
+        return [iv ? 'investidor' : '', nP ? 'particular' : '', nC ? (nC === 1 ? '1 empresa' : `${nC} empresas`) : ''].filter(Boolean).join(' · ') || 'sem dados de faturação';
       };
       box.innerHTML = `
         <div class="projects-table-wrap"><table class="projects-table clients-table">
@@ -11611,6 +11613,7 @@
         if (!c) { view.innerHTML = '<div class="error-box">Cliente não encontrado.</div>'; return; }
         document.getElementById('nav-title').textContent = c.name;
         const r = scores[c.id];
+        const civ = (data.investors || []).find(x => x.client_id === c.id) || null;
         const ents = data.entities.filter(e => e.client_id === c.id);
         const entById = Object.fromEntries(ents.map(e => [e.id, e]));
         const invByProject = {};
@@ -11636,6 +11639,10 @@
               <div class="cs-metric"><span>${escapeHtml(label)}</span><b>${escapeHtml(metricValueText(k, r))}</b>
                 ${scoreBarHtml(r.sub[k])}<i>${escapeHtml(hint)} · ${r.sub[k]}/100 · peso ${Number(data.weights[k]) || 0}</i></div>`).join('')}</div>
           </div>
+          ${civ ? `<div class="gantt-wrap click-row" id="cl-inv-card">
+            <div class="card-head"><h2>Investidor</h2><span>${civ.active !== false ? 'Ativo' : 'Inativo'}</span></div>
+            <div class="field-hint" style="margin:0">${escapeHtml([civ.company, civ.invest_max ? 'até ' + fmtEURShort(civ.invest_max) : '', (civ.zones || []).join(', ')].filter(Boolean).join(' · ') || 'Perfil de investimento')} · ver perfil e oportunidades que encaixam →</div>
+          </div>` : ''}
           <div class="gantt-wrap">
             <div class="card-head"><h2>Entidades de faturação</h2><button type="button" class="text-btn" id="cl-add-entity">+ Adicionar</button></div>
             ${ents.length ? ents.map(e => `
@@ -11663,6 +11670,7 @@
           </div>`;
         const reopen = () => { suppressNavPush = true; openClientDetail(c.id); };
         document.getElementById('cl-edit').addEventListener('click', () => openClientModal(c, reopen));
+        document.getElementById('cl-inv-card')?.addEventListener('click', async () => { await (oppsCache || loadOppsData()); openInvestorModal(civ, reopen); });
         document.getElementById('cl-add-entity').addEventListener('click', () => openEntityModal(c, null, reopen));
         view.querySelectorAll('[data-entity-id]').forEach(row => row.addEventListener('click', () =>
           openEntityModal(c, ents.find(e => String(e.id) === row.dataset.entityId), reopen)));
@@ -11691,10 +11699,28 @@
           <div><label class="field-label">Inquéritos de satisfação</label><label class="check-row" style="margin-top:0;min-height:40px"><input type="checkbox" id="cl-nps-off"${client?.nps_opt_out ? ' checked' : ''}> Não enviar</label></div>
         </div>
         <div class="field-hint">O inquérito de satisfação (NPS) vai para o email acima depois de cada entrega.</div>
+        <label class="check-row"><input type="checkbox" id="cl-inv"> Investidor — perfil de investimento para o Investment Intelligence</label>
+        <div id="cl-inv-wrap" hidden></div>
         ${isEdit ? '' : '<div class="field-hint">Depois de criar, acrescenta na ficha o NIF pessoal e/ou as empresas do cliente.</div>'}
         <button type="button" id="cl-save" class="primary-btn">${isEdit ? 'Guardar' : 'Criar cliente'}</button>
         ${isEdit ? '<button type="button" id="cl-delete" class="secondary-btn danger-btn">Eliminar cliente</button>' : ''}
         <div id="cl-msg" class="form-msg"></div>`);
+      // Tick "Investidor": abre o perfil de investimento (o mesmo do Investment Intelligence)
+      const civ = client ? (clientsCache?.data?.investors || []).find(x => x.client_id === client.id) || null : null;
+      const invCb = document.getElementById('cl-inv'), invWrap = document.getElementById('cl-inv-wrap');
+      let profileReady = false;
+      const showProfile = async () => {
+        invWrap.hidden = !invCb.checked;
+        if (!invCb.checked || profileReady) return;
+        invWrap.innerHTML = '<div class="field-hint">A carregar o perfil…</div>';
+        const d = oppsCache || await loadOppsData();
+        invWrap.innerHTML = investorProfileHtml(civ || { approved_pref: 'any', project_type_ids: [], zones: [] }, d);
+        bindInvestorProfile(Object.fromEntries(d.types.map(t => [t.id, t])));
+        profileReady = true;
+      };
+      invCb.checked = !!civ && civ.active !== false;
+      invCb.addEventListener('change', showProfile);
+      showProfile();
       document.getElementById('cl-save').addEventListener('click', async () => {
         const row = {
           name: document.getElementById('cl-name').value.trim(),
@@ -11706,6 +11732,14 @@
           nps_opt_out: document.getElementById('cl-nps-off').checked
         };
         if (!row.name) return formError('cl-msg', 'O nome é obrigatório.');
+        let prof = null;
+        if (invCb.checked) {
+          if (!profileReady) return formError('cl-msg', 'O perfil de investimento ainda está a carregar.');
+          const pr = readInvestorProfile();
+          if (pr.error) return formError('cl-msg', pr.error);
+          prof = pr.row;
+        }
+        if (!invCb.checked && civ && civ.active !== false && !window.confirm(`Deixar de tratar "${row.name}" como investidor? O perfil fica guardado, mas deixa de receber sugestões de oportunidades.`)) return;
         try {
           let id = client?.id;
           if (isEdit) {
@@ -11713,6 +11747,13 @@
             // O nome também fica em projects.client (usado por outras ferramentas)
             if (!devMode && row.name !== client.name) await supabase.from('projects').update({ client: row.name }).eq('client_id', id);
           } else id = (await dbInsert('clients', row, MOCK_CLIENT_ROWS)).id;
+          // Perfil de investidor: o contacto acompanha a ficha do cliente
+          const contact = { name: row.name, email: row.email, phone: row.phone };
+          if (prof) {
+            if (civ) await dbUpdate('investors', civ.id, { ...prof, ...contact, active: true, updated_at: new Date().toISOString() }, mockInvestors);
+            else await dbInsert('investors', { ...prof, ...contact, client_id: id, active: true, created_by: (await getCurrentMember())?.id ?? null }, mockInvestors);
+          } else if (civ) await dbUpdate('investors', civ.id, { ...contact, active: false, updated_at: new Date().toISOString() }, mockInvestors);
+          if (prof || civ) oppsCache = null;
           closeQuickModal(); showToast(isEdit ? 'Cliente guardado' : 'Cliente criado'); onSaved && onSaved(id);
         } catch (err) { formError('cl-msg', 'Não foi possível guardar: ' + err.message); }
       });
@@ -14773,6 +14814,20 @@
         if (got < want) cap = Math.min(cap, got < want * 0.75 ? 55 : 64);
         add(15, got >= want ? 1 : got / want, got >= want ? `yield bruto ${pct(got, 1)} ≥ ${pct(want, 1)}` : `yield bruto ${pct(got, 1)} abaixo de ${pct(want, 1)}`);
       } else if ((inv.min_roi != null || inv.min_yield != null) && !hasFeas) pitch.push('faz a viabilidade para confirmar se dá a rentabilidade que ele pede');
+      // Rácios do terreno: o máximo que o investidor aceita (o mesmo cálculo da viabilidade)
+      const R = c.ratios || {}, price = Number(p.asking_price) || 0;
+      [['max_land_abc', R.abc, 1, v => fmtEURShort(v) + '/m²', 'terreno por m² de construção', true],
+       ['max_land_revenue', c.hasSales ? R.revenue : null, 100, v => pct(v), 'terreno na receita', true],
+       ['max_land_cost', c.hasCosts ? R.cost : null, 100, v => pct(v), 'terreno no custo global', false],
+       ['max_land_unit', R.unit, 1, v => fmtEURShort(v), 'terreno por fração', true]].forEach(([k, got, div, fmt, label, linear]) => {
+        if (inv[k] == null || inv[k] === '' || !got) return;
+        const max = Number(inv[k]) / div;
+        if (!(max > 0)) return;
+        if (got <= max) { add(4, 1, `${label} ${fmt(got)} ≤ ${fmt(max)} que aceita`); return; }
+        const d = (got - max) / max;
+        add(4, 1 - d / 0.5, `${label} ${fmt(got)} — aceita até ${fmt(max)}`);
+        if (linear && price) pitch.push(`para ${label} até ${fmt(max)}, o terreno teria de custar até ${fmtEURShort(Math.floor(price * max / got / 1000) * 1000)} — argumento para negociar`);
+      });
       // Projeto aprovado
       if (inv.approved_pref && inv.approved_pref !== 'any') {
         const ok = inv.approved_pref === 'approved' ? !!p.has_approved_project : !p.has_approved_project;
@@ -14858,7 +14913,7 @@
     };
     let mockProposalCfg = { ...PROPOSAL_DEFAULT };
     let mockInvestors = [
-      { id: 'inv-a', name: 'Carlos Mendes', company: 'CM Invest', email: 'carlos@example.com', phone: '912 000 000', client_id: null, project_type_ids: ['pt-1'], fractions_min: 6, fractions_max: 20, invest_min: 1000000, invest_max: 4000000, zones: ['Porto', 'Gaia'], approved_pref: 'any', notes: 'Prefere zonas com metro.', active: true, strategy: 'sale', min_roi: 20, min_yield: null, segment: 'medio', tags: ['metro'] },
+      { id: 'inv-a', name: 'Carlos Mendes', company: 'CM Invest', email: 'carlos@example.com', phone: '912 000 000', client_id: 'cl-1', max_land_revenue: 20, max_land_abc: 300, project_type_ids: ['pt-1'], fractions_min: 6, fractions_max: 20, invest_min: 1000000, invest_max: 4000000, zones: ['Porto', 'Gaia'], approved_pref: 'any', notes: 'Prefere zonas com metro.', active: true, strategy: 'sale', min_roi: 20, min_yield: null, segment: 'medio', tags: ['metro'] },
       { id: 'inv-b', name: 'Ana Ribeiro', company: '', email: '', phone: '', client_id: null, project_type_ids: ['pt-2'], fractions_min: null, fractions_max: null, invest_min: 300000, invest_max: 900000, zones: ['Matosinhos', 'Maia'], approved_pref: 'approved', notes: '', active: true, strategy: 'both', min_roi: 15, min_yield: 5, segment: 'premium', tags: [] }
     ];
     let mockPlots = [
@@ -15759,24 +15814,13 @@
       if (opts.keepSaved) flagSaving();
     }
 
-    // ---------- Investidor: perfil de investimento ----------
-    async function openInvestorModal(inv, onSaved) {
-      const isEdit = !!inv, x = inv || { approved_pref: 'any', project_type_ids: [], zones: [], active: true };
-      const d = oppsCache || await loadOppsData();
-      const typeById = Object.fromEntries(d.types.map(t => [t.id, t]));
+    // Perfil de investimento: o mesmo bloco na ficha do cliente (tick "Investidor") e no Investment Intelligence
+    function investorProfileHtml(x, d) {
       const v = k => escapeHtml(x[k] ?? '');
-      const mctx = { typeById, plots: d.plots, presentations: d.presentations };
-      const fitting = isEdit ? d.plots.filter(p => PLOT_OPEN.includes(p.status)).map(p => ({ p, m: investorMatch(x, p, mctx) })).filter(r => r.m.known && r.m.score >= 50).sort((a, b) => b.m.score - a.m.score) : [];
-      openQuickModal(isEdit ? 'Investidor' : 'Novo investidor', `
-        <label class="field-label" style="margin-top:0;">Nome</label>
-        <input type="text" id="iv-name" class="form-input" value="${v('name')}">
-        <div class="form-grid">
-          <div><label class="field-label">Empresa</label><input type="text" id="iv-company" class="form-input" value="${v('company')}"></div>
-          <div><label class="field-label">Telefone</label><input type="tel" id="iv-phone" class="form-input" value="${v('phone')}"></div>
-        </div>
-        <label class="field-label">Email</label><input type="email" id="iv-email" class="form-input" value="${v('email')}">
+      return `
         <div class="section-label op-form-sec">Perfil de investimento</div>
-        <label class="field-label" style="margin-top:0;">Tipologias que procura</label>
+        <label class="field-label" style="margin-top:0;">Empresa ou veículo de investimento</label><input type="text" id="iv-company" class="form-input" value="${v('company')}">
+        <label class="field-label">Tipologias que procura</label>
         <div class="op-chips" id="iv-types">${d.types.map(t => `<label class="op-chip"><input type="checkbox" value="${escapeHtml(t.id)}"${(x.project_type_ids || []).includes(t.id) ? ' checked' : ''}><span>${escapeHtml(t.name)}</span></label>`).join('')}</div>
         <div class="form-grid" id="iv-fr-wrap">
           <div><label class="field-label">Frações (mín.)</label><input type="text" inputmode="numeric" id="iv-frmin" class="form-input" value="${v('fractions_min')}"></div>
@@ -15799,45 +15843,91 @@
         <select id="iv-approved" class="form-input">${APPROVED_PREFS.map(([k, l]) => `<option value="${k}"${k === (x.approved_pref || 'any') ? ' selected' : ''}>${l}</option>`).join('')}</select>
         <label class="field-label">Características que procura</label>
         <input type="text" id="iv-tags" class="form-input" placeholder="separadas por vírgulas: reabilitação, comércio, vista mar, ARU" value="${escapeHtml((x.tags || []).join(', '))}">
-        <label class="field-label">Notas</label><textarea id="iv-notes" class="form-input" rows="3">${v('notes')}</textarea>
-        ${isEdit ? `<label class="check-row"><input type="checkbox" id="iv-active"${x.active !== false ? ' checked' : ''}> Ativo (desliga para deixar de lhe sugerir oportunidades)</label>` : ''}
-        ${isEdit ? `<div class="section-label op-form-sec">Matchmaker — oportunidades em curso para ele</div>${fitting.length ? fitting.map(r => `<div class="mm-row click-row" data-iv-plot="${escapeHtml(r.p.id)}">${matchBadge(r.m)}<div class="mm-body"><div class="mm-head"><b>${escapeHtml(r.p.name)}</b> <small class="muted">${escapeHtml([r.p.municipality, optLabel(PLOT_STATUSES, r.p.status)].filter(Boolean).join(' · '))}</small></div>${matchWhyHtml(r.m)}</div></div>`).join('') : '<div class="gantt-empty">Nenhum, por agora.</div>'}` : ''}
-        <button type="button" class="primary-btn" id="iv-save">${isEdit ? 'Guardar' : 'Criar investidor'}</button>
-        ${isEdit ? '<button type="button" class="text-btn danger-text" id="iv-delete" style="margin-top:12px;">Eliminar investidor</button>' : ''}
-        <div id="iv-msg" class="form-msg"></div>`);
+        <div class="section-label op-form-sec">Rácios do terreno — máximos que aceita</div>
+        <div class="form-grid">
+          <div><label class="field-label">Terreno / m² de construção (€/m²)</label><input type="text" inputmode="decimal" id="iv-r-abc" class="form-input" placeholder="ex.: 400" value="${v('max_land_abc')}"></div>
+          <div><label class="field-label">Terreno / receita (%)</label><input type="text" inputmode="decimal" id="iv-r-rev" class="form-input" placeholder="ex.: 20" value="${v('max_land_revenue')}"></div>
+          <div><label class="field-label">Terreno / custo global (%)</label><input type="text" inputmode="decimal" id="iv-r-cost" class="form-input" placeholder="ex.: 30" value="${v('max_land_cost')}"></div>
+          <div><label class="field-label">Terreno por fração (€)</label><input type="text" inputmode="decimal" id="iv-r-unit" class="form-input" placeholder="ex.: 60000" value="${v('max_land_unit')}"></div>
+        </div>
+        <div class="field-hint">Os mesmos rácios da viabilidade. Em branco não conta para o matchmaker.</div>
+        <label class="field-label">Notas de investimento</label><textarea id="iv-notes" class="form-input" rows="3">${v('notes')}</textarea>`;
+    }
+    function bindInvestorProfile(typeById) {
       const syncFr = () => {
         const multi = [...document.querySelectorAll('#iv-types input:checked')].some(cb => typeById[cb.value]?.size_measure === 'fractions');
         document.getElementById('iv-fr-wrap').hidden = !multi;
       };
       document.getElementById('iv-types').addEventListener('change', syncFr); syncFr();
+    }
+    // Lê o perfil do formulário; devolve { row } ou { error }
+    function readInvestorProfile() {
+      const g = id => document.getElementById(id).value.trim();
+      const multi = !document.getElementById('iv-fr-wrap').hidden;
+      const row = {
+        company: valOrNull(g('iv-company')),
+        project_type_ids: [...document.querySelectorAll('#iv-types input:checked')].map(cb => cb.value),
+        fractions_min: multi ? numOrNull(g('iv-frmin')) : null, fractions_max: multi ? numOrNull(g('iv-frmax')) : null,
+        invest_min: numOrNull(g('iv-imin')), invest_max: numOrNull(g('iv-imax')),
+        zones: g('iv-zones').split(/[,;]/).map(s => s.trim()).filter(Boolean),
+        approved_pref: g('iv-approved'), notes: valOrNull(g('iv-notes')),
+        strategy: g('iv-strategy'), segment: g('iv-segment') || null, min_roi: numOrNull(g('iv-roi')), min_yield: numOrNull(g('iv-yield')),
+        max_land_abc: numOrNull(g('iv-r-abc')), max_land_revenue: numOrNull(g('iv-r-rev')), max_land_cost: numOrNull(g('iv-r-cost')), max_land_unit: numOrNull(g('iv-r-unit')),
+        tags: g('iv-tags').split(/[,;]/).map(t => t.trim()).filter(Boolean)
+      };
+      if ([row.fractions_min, row.fractions_max, row.invest_min, row.invest_max, row.min_roi, row.min_yield, row.max_land_abc, row.max_land_revenue, row.max_land_cost, row.max_land_unit].some(n => Number.isNaN(n))) return { error: 'Há um número inválido.' };
+      if (row.invest_min != null && row.invest_max != null && row.invest_max < row.invest_min) return { error: 'O investimento máximo é menor que o mínimo.' };
+      return { row };
+    }
+
+    // ---------- Investidor: perfil de investimento ----------
+    async function openInvestorModal(inv, onSaved) {
+      const isEdit = !!inv, x = inv || { approved_pref: 'any', project_type_ids: [], zones: [], active: true };
+      const d = oppsCache || await loadOppsData();
+      const typeById = Object.fromEntries(d.types.map(t => [t.id, t]));
+      const v = k => escapeHtml(x[k] ?? '');
+      const mctx = { typeById, plots: d.plots, presentations: d.presentations };
+      const fitting = isEdit ? d.plots.filter(p => PLOT_OPEN.includes(p.status)).map(p => ({ p, m: investorMatch(x, p, mctx) })).filter(r => r.m.known && r.m.score >= 50).sort((a, b) => b.m.score - a.m.score) : [];
+      openQuickModal(isEdit ? 'Investidor' : 'Novo investidor', `
+        <label class="field-label" style="margin-top:0;">Nome</label>
+        <input type="text" id="iv-name" class="form-input" value="${v('name')}">
+        <div class="form-grid">
+          <div><label class="field-label">Email</label><input type="email" id="iv-email" class="form-input" value="${v('email')}"></div>
+          <div><label class="field-label">Telefone</label><input type="tel" id="iv-phone" class="form-input" value="${v('phone')}"></div>
+        </div>
+        <div class="field-hint">Fica numa só ficha em Clientes, com o tick "Investidor".</div>
+        ${investorProfileHtml(x, d)}
+        ${isEdit ? `<label class="check-row"><input type="checkbox" id="iv-active"${x.active !== false ? ' checked' : ''}> Ativo (desliga para deixar de lhe sugerir oportunidades)</label>` : ''}
+        ${isEdit ? `<div class="section-label op-form-sec">Matchmaker — oportunidades em curso para ele</div>${fitting.length ? fitting.map(r => `<div class="mm-row click-row" data-iv-plot="${escapeHtml(r.p.id)}">${matchBadge(r.m)}<div class="mm-body"><div class="mm-head"><b>${escapeHtml(r.p.name)}</b> <small class="muted">${escapeHtml([r.p.municipality, optLabel(PLOT_STATUSES, r.p.status)].filter(Boolean).join(' · '))}</small></div>${matchWhyHtml(r.m)}</div></div>`).join('') : '<div class="gantt-empty">Nenhum, por agora.</div>'}` : ''}
+        <button type="button" class="primary-btn" id="iv-save">${isEdit ? 'Guardar' : 'Criar investidor'}</button>
+        ${isEdit ? '<button type="button" class="text-btn danger-text" id="iv-delete" style="margin-top:12px;">Retirar perfil de investidor</button>' : ''}
+        <div id="iv-msg" class="form-msg"></div>`);
+      bindInvestorProfile(typeById);
       document.querySelectorAll('[data-iv-plot]').forEach(r => r.addEventListener('click', () => { closeQuickModal(); openPlotView(r.dataset.ivPlot); }));
       document.getElementById('iv-save').addEventListener('click', async () => {
         const g = id => document.getElementById(id).value.trim();
         const name = g('iv-name');
         if (!name) return formError('iv-msg', 'Indica o nome.');
-        const multi = !document.getElementById('iv-fr-wrap').hidden;
-        const row = {
-          name, company: valOrNull(g('iv-company')), phone: valOrNull(g('iv-phone')), email: valOrNull(g('iv-email')),
-          project_type_ids: [...document.querySelectorAll('#iv-types input:checked')].map(cb => cb.value),
-          fractions_min: multi ? numOrNull(g('iv-frmin')) : null, fractions_max: multi ? numOrNull(g('iv-frmax')) : null,
-          invest_min: numOrNull(g('iv-imin')), invest_max: numOrNull(g('iv-imax')),
-          zones: g('iv-zones').split(/[,;]/).map(s => s.trim()).filter(Boolean),
-          approved_pref: g('iv-approved'), notes: valOrNull(g('iv-notes')),
-          strategy: g('iv-strategy'), segment: g('iv-segment') || null, min_roi: numOrNull(g('iv-roi')), min_yield: numOrNull(g('iv-yield')),
-          tags: g('iv-tags').split(/[,;]/).map(t => t.trim()).filter(Boolean),
-          active: isEdit ? document.getElementById('iv-active').checked : true
-        };
-        if ([row.fractions_min, row.fractions_max, row.invest_min, row.invest_max, row.min_roi, row.min_yield].some(n => Number.isNaN(n))) return formError('iv-msg', 'Há um número inválido.');
-        if (row.invest_min != null && row.invest_max != null && row.invest_max < row.invest_min) return formError('iv-msg', 'O investimento máximo é menor que o mínimo.');
+        const pr = readInvestorProfile();
+        if (pr.error) return formError('iv-msg', pr.error);
+        const contact = { name, phone: valOrNull(g('iv-phone')), email: valOrNull(g('iv-email')) };
+        const row = { ...pr.row, ...contact, active: isEdit ? document.getElementById('iv-active').checked : true };
         try {
+          // Uma só ficha: o contacto vive no cliente; o investidor é o perfil desse cliente
+          let clientId = x.client_id || null;
+          if (clientId) {
+            await dbUpdate('clients', clientId, contact, MOCK_CLIENT_ROWS);
+            if (!devMode && name !== x.name) await supabase.from('projects').update({ client: name }).eq('client_id', clientId);
+          } else clientId = (await dbInsert('clients', contact, MOCK_CLIENT_ROWS)).id;
+          row.client_id = clientId;
           if (isEdit) await dbUpdate('investors', x.id, { ...row, updated_at: new Date().toISOString() }, mockInvestors);
           else await dbInsert('investors', { ...row, created_by: (await getCurrentMember())?.id ?? null }, mockInvestors);
-          closeQuickModal(); showToast(isEdit ? 'Investidor guardado' : 'Investidor criado');
+          closeQuickModal(); showToast(isEdit ? 'Investidor guardado' : 'Investidor criado (também em Clientes)');
           onSaved && onSaved();
         } catch (err) { formError('iv-msg', 'Não foi possível guardar: ' + err.message); }
       });
       if (isEdit) document.getElementById('iv-delete').addEventListener('click', async () => {
-        if (!window.confirm(`Eliminar "${x.name}"? O registo das apresentações a este investidor também é apagado. Para só deixar de lhe sugerir oportunidades, desliga "Ativo".`)) return;
+        if (!window.confirm(`Retirar o perfil de investidor de "${x.name}"? A ficha de cliente fica; o registo das apresentações a este investidor é apagado. Para só deixar de lhe sugerir oportunidades, desliga "Ativo".`)) return;
         try { await dbDelete('investors', x.id, mockInvestors); closeQuickModal(); showToast('Investidor eliminado'); onSaved && onSaved(); }
         catch (err) { formError('iv-msg', 'Não foi possível eliminar: ' + err.message); }
       });

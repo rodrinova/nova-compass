@@ -171,3 +171,19 @@ alter table public.land_plots add column if not exists variant_of uuid reference
 alter table public.land_presentations add column if not exists contact_name text, add column if not exists commission_value numeric, add column if not exists responded_on date;
 alter table public.land_presentations alter column investor_id drop not null;
 alter table public.land_presentations add column if not exists deal_on date;   -- negócio fechado: só então a comissão conta como ganha
+
+-- Investidor = cliente com o tick "Investidor": uma só ficha (clients), o perfil de investimento fica em investors (1 por cliente)
+-- Rácios do terreno como critérios: o máximo que cada investidor aceita
+alter table public.investors
+  add column if not exists max_land_abc numeric,      -- € de terreno por m² de construção
+  add column if not exists max_land_revenue numeric,  -- % do terreno na receita
+  add column if not exists max_land_cost numeric,     -- % do terreno no custo global
+  add column if not exists max_land_unit numeric;     -- € de terreno por fração
+create unique index if not exists investors_client_uniq on public.investors (client_id) where client_id is not null;
+-- Investidores antigos sem ficha de cliente: cria a ficha e liga
+do $$ declare r record; cid uuid; begin
+  for r in select * from public.investors where client_id is null loop
+    insert into public.clients (name, email, phone) values (r.name, r.email, r.phone) returning id into cid;
+    update public.investors set client_id = cid where id = r.id;
+  end loop;
+end $$;
