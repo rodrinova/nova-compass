@@ -3,7 +3,8 @@
 // Para cada pessoa ativa da equipa (pelo email @novassociates.com):
 //   1. ESCREVE no calendário principal dela (o que o Teams e o iPhone mostram), com a categoria "NOVA Compass":
 //      - marcos e entregas de que é responsável (não as fases de projeto, nem prazos a controlar);
-//      - reuniões marcadas na app: uma reunião Teams, organizada pelo 1.º responsável, com os outros convidados;
+//      - marcos com várias pessoas: um só evento partilhado (o 1.º responsável organiza, os outros são convidados);
+//        se for do tipo Reunião, leva link Teams;
 //      - lembretes do Investment Intelligence: apresentação sem resposta ao fim de 7 dias (para o responsável da oportunidade).
 //      A app é a fonte: o que muda na app atualiza o evento; o que sai da app é apagado do calendário.
 //   2. LÊ o calendário dela (reuniões Teams e eventos do Outlook) para a Agenda e a Hoje da app.
@@ -113,13 +114,13 @@ async function desired(members: any[]) {
       location: m.location ? { displayName: m.location } : undefined, categories: [CATEGORY],
       showAs: timed ? "busy" : "free", isReminderOn: timed,
     };
+    // Com mais de uma pessoa: um só evento partilhado, organizado pelo 1.º responsável (por nome) e com os outros
+    // convidados — aparece no calendário de todos e as alterações chegam a todos. Reuniões levam link Teams.
     const meeting = timed && !m.auto_kind && /reuni/i.test(t?.name || "");
-    if (meeting) {
-      // uma só reunião Teams: organizada pelo 1.º responsável, os outros recebem o convite
-      const [org, ...rest] = owners;
-      out.push({ key: `m:${m.id}`, member: org, payload: { ...base, isOnlineMeeting: true, onlineMeetingProvider: "teamsForBusiness",
-        attendees: rest.map((id) => ({ emailAddress: { address: email[id].email, name: email[id].name }, type: "required" })) } });
-    } else owners.forEach((id) => out.push({ key: `m:${m.id}`, member: id, payload: base }));
+    const [org, ...rest] = [...owners].sort((a, b) => String(email[a].name).localeCompare(String(email[b].name), "pt"));
+    out.push({ key: `m:${m.id}`, member: org, payload: { ...base,
+      ...(meeting ? { isOnlineMeeting: true, onlineMeetingProvider: "teamsForBusiness" } : {}),
+      ...(rest.length ? { attendees: rest.map((id) => ({ emailAddress: { address: email[id].email, name: email[id].name }, type: "required" })), responseRequested: false } : {}) } });
   }
   // Lembretes do Investment Intelligence: 7 dias depois de uma apresentação ainda sem resposta
   const plotBy = Object.fromEntries((plots.data || []).map((p: any) => [p.id, p]));
