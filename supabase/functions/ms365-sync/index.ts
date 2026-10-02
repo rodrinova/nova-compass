@@ -4,7 +4,7 @@
 //   1. ESCREVE no calendário principal dela (o que o Teams e o iPhone mostram), com a categoria "NOVA Compass":
 //      - marcos e entregas de que é responsável (não as fases de projeto, nem prazos a controlar);
 //      - reuniões marcadas na app: uma reunião Teams, organizada pelo 1.º responsável, com os outros convidados;
-//      - lembretes do NOVA Radar: apresentação sem resposta ao fim de 7 dias (para o responsável da oportunidade).
+//      - lembretes do Investment Intelligence: apresentação sem resposta ao fim de 7 dias (para o responsável da oportunidade).
 //      A app é a fonte: o que muda na app atualiza o evento; o que sai da app é apagado do calendário.
 //   2. LÊ o calendário dela (reuniões Teams e eventos do Outlook) para a Agenda e a Hoje da app.
 //      Eventos privados ficam só como "Ocupado".
@@ -121,7 +121,7 @@ async function desired(members: any[]) {
         attendees: rest.map((id) => ({ emailAddress: { address: email[id].email, name: email[id].name }, type: "required" })) } });
     } else owners.forEach((id) => out.push({ key: `m:${m.id}`, member: id, payload: base }));
   }
-  // Lembretes do NOVA Radar: 7 dias depois de uma apresentação ainda sem resposta
+  // Lembretes do Investment Intelligence: 7 dias depois de uma apresentação ainda sem resposta
   const plotBy = Object.fromEntries((plots.data || []).map((p: any) => [p.id, p]));
   const invBy = Object.fromEntries((invs.data || []).map((i: any) => [i.id, i]));
   for (const x of pres.data || []) {
@@ -131,7 +131,7 @@ async function desired(members: any[]) {
     if (day < from || day > to) continue;
     const who = x.investor_id ? invBy[x.investor_id]?.name : x.contact_name;
     out.push({ key: `r:${x.id}`, member: pl.scout_id, payload: {
-      subject: `NOVA Radar · sem resposta — ${pl.name} → ${who || "contacto"}`,
+      subject: `Investment Intelligence · sem resposta — ${pl.name} → ${who || "contacto"}`,
       body: body([`Apresentada a ${esc(x.presented_on)}. Faz o seguimento e regista a resposta na app.`]),
       start: { dateTime: `${day}T00:00:00`, timeZone: TZ }, end: { dateTime: `${addDays(day, 1)}T00:00:00`, timeZone: TZ },
       isAllDay: true, categories: [CATEGORY], showAs: "free", isReminderOn: false } });
