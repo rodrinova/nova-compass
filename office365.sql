@@ -57,3 +57,5 @@ end $$;
 -- Marcos: opção "link Teams" (reunião online) e o link guardado para abrir na app
 alter table public.project_milestones add column if not exists teams_link boolean not null default false;
 alter table public.ms_event_links add column if not exists join_url text;
+-- Convidados de cada evento lido (para a reunião aparecer a todos os da equipa que estão nela)
+alter table public.ms_events add column if not exists attendee_emails text[], add column if not exists organizer_email text;
