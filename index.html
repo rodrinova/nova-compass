@@ -4002,7 +4002,7 @@
           ${st.members.map(m => `<tr><td>${escapeHtml(m.name)}</td><td class="col-value">${m.written ?? '—'}</td><td class="col-value">${m.deleted ?? '—'}</td><td class="col-value">${m.read ?? '—'}</td><td>${m.error ? `<span class="warn-text">${escapeHtml(m.error)}</span>` : '✓'}</td></tr>`).join('')}
         </tbody></table></div>` : ''}
         <div class="section-label op-form-sec">O que vai para o calendário de cada pessoa</div>
-        <div class="field-hint" style="margin-top:0;">No calendário principal (o que o Teams, o Outlook e o iPhone mostram), com a categoria <b>NOVA Compass</b>: marcos e entregas de que é responsável, reuniões marcadas na app (como reunião Teams, com os outros responsáveis convidados) e lembretes do Investment Intelligence (7 dias sem resposta). <b>Não vão</b>: fases de projeto, ausências e férias, prazos da Câmara e respostas a ofícios. A app manda nestes eventos: alterações feitas no Teams são repostas. As reuniões Teams e os eventos do Outlook de cada pessoa aparecem na Agenda e na Hoje; os privados só como "Ocupado".</div>
+        <div class="field-hint" style="margin-top:0;">No calendário principal (o que o Teams, o Outlook e o iPhone mostram), com a categoria <b>NOVA Compass</b>: marcos e entregas de que é responsável, marcos com várias pessoas como um só evento partilhado (organiza quem criou o marco na app; os outros são convidados), com link Teams quando o marco tem a opção "Reunião online" e lembretes do Investment Intelligence (7 dias sem resposta). <b>Não vão</b>: fases de projeto, ausências e férias, prazos da Câmara e respostas a ofícios. A app manda nestes eventos: alterações feitas no Teams são repostas. As reuniões Teams e os eventos do Outlook de cada pessoa aparecem na Agenda e na Hoje; os privados só como "Ocupado".</div>
         ${st.configured ? '' : `<div class="section-label op-form-sec">Como ligar (administrador do Office 365, ~15 min)</div>
         <ol class="ms-steps">
           <li>Entrar em <b>entra.microsoft.com</b> com a conta de administrador → <b>Aplicações → Registos de aplicações → Novo registo</b>. Nome: <b>NOVA Compass</b>; tipo de conta: <b>só esta organização</b>. Registar.</li>
@@ -7275,6 +7275,12 @@
         <div class="field-hint">Vem do calendário Outlook/Teams. Para mudar, muda no Outlook ou no Teams.</div>`);
     }
 
+    let msTeamsCol = null;
+    async function milestonesHaveTeams() {
+      if (devMode) return true;
+      if (msTeamsCol === null) { const r = await supabase.from('project_milestones').select('teams_link').limit(1); msTeamsCol = !r.error; }
+      return msTeamsCol;
+    }
     async function fetchMilestones({ from, to, projectId }) {
       if (devMode) {
         return mockMilestones.filter(m =>
@@ -7282,7 +7288,7 @@
           (!from || m.event_date >= from) && (!to || m.event_date <= to));
       }
       const cols = 'id, project_id, type_id, title, event_date, all_day, start_time, end_time, location, notes, done, alert_days, stage_id, auto_kind' +
-        (await milestonesHaveCategory() ? ', category_id' : '');
+        (await milestonesHaveCategory() ? ', category_id' : '') + (await milestonesHaveTeams() ? ', teams_link' : '');
       let q = supabase.from('project_milestones').select(cols);
       if (projectId) q = q.eq('project_id', projectId);
       if (from) q = q.gte('event_date', from);
@@ -17949,6 +17955,8 @@
             <input type="time" id="mk-end" class="form-input">
           </div>
         </div>
+        <label class="check-row" id="mk-teams-row"><input type="checkbox" id="mk-teams"> Reunião online — adicionar link Teams</label>
+        <div id="mk-teams-join"></div>
         <div id="mk-deadline-block" class="deadline-block" hidden>
           <label class="field-label" style="margin-top:0;">Avisar na Home</label>
           <select id="mk-alert" class="form-input">
@@ -18068,7 +18076,7 @@
 
       let allDay = isEdit ? !!existing.all_day : false;
       const timeWrap = document.getElementById('mk-time-wrap');
-      const syncAllDay = () => { timeWrap.style.display = allDay ? 'none' : 'flex'; };
+      const syncAllDay = () => { timeWrap.style.display = allDay ? 'none' : 'flex'; document.getElementById('mk-teams-row').hidden = allDay; };
       document.querySelectorAll('#mk-allday-toggle button').forEach(b => b.classList.toggle('active', (b.dataset.allday === 'true') === allDay));
       syncAllDay();
       document.getElementById('mk-allday-toggle').addEventListener('click', (e) => {
@@ -18101,6 +18109,11 @@
         document.getElementById('mk-end').value = (existing.end_time || '').slice(0, 5);
         document.getElementById('mk-location').value = existing.location ?? '';
         document.getElementById('mk-notes').value = existing.notes ?? '';
+        document.getElementById('mk-teams').checked = !!existing.teams_link;
+        if (existing.teams_link && !devMode) supabase.from('ms_event_links').select('join_url').eq('source_key', 'm:' + existing.id).not('join_url', 'is', null).limit(1).then(r => {
+          const u = r.data?.[0]?.join_url, box = document.getElementById('mk-teams-join');
+          if (box) box.innerHTML = u && /^https:\/\//.test(u) ? `<a class="secondary-btn ms-join" href="${escapeHtml(u)}" target="_blank" rel="noopener">Entrar na reunião Teams</a>` : '<div class="field-hint" style="margin:0;">O link Teams aparece aqui depois da próxima sincronização com o Office 365 (até 10 minutos).</div>';
+        });
         document.getElementById('mk-alert').value = existing.alert_days != null && [7, 15, 30, 60, 90, 180].includes(existing.alert_days) ? String(existing.alert_days) : '';
         if (existing.alert_days != null && !document.getElementById('mk-alert').value) {
           document.getElementById('mk-alert').insertAdjacentHTML('beforeend', `<option value="${Number(existing.alert_days)}" selected>${Number(existing.alert_days)} dias antes</option>`);
@@ -18196,6 +18209,8 @@
           notes: document.getElementById('mk-notes').value.trim() || null,
           done
         };
+        // reunião online: a sincronização com o Office 365 cria a reunião Teams (organizada por quem criou o marco)
+        if (await milestonesHaveTeams()) payload.teams_link = !allDay && document.getElementById('mk-teams').checked;
         const alertV = document.getElementById('mk-alert').value;
         payload.alert_days = alertV ? Number(alertV) : null;
         if (hasCategory) payload.category_id = link === 'category' ? categoryValue : null;

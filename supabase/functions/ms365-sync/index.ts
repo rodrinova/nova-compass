@@ -3,7 +3,8 @@
 // Para cada pessoa ativa da equipa (pelo email @novassociates.com):
 //   1. ESCREVE no calendário principal dela (o que o Teams e o iPhone mostram), com a categoria "NOVA Compass":
 //      - marcos e entregas de que é responsável (não as fases de projeto, nem prazos a controlar);
-//      - reuniões marcadas na app: uma reunião Teams, organizada pelo 1.º responsável, com os outros convidados;
+//      - marcos com várias pessoas: um só evento partilhado (organiza quem criou o marco na app, os outros são
+//        convidados); com a opção "Reunião online" leva link Teams (guardado em ms_event_links.join_url);
 //      - lembretes do Investment Intelligence: apresentação sem resposta ao fim de 7 dias (para o responsável da oportunidade).
 //      A app é a fonte: o que muda na app atualiza o evento; o que sai da app é apagado do calendário.
 //   2. LÊ o calendário dela (reuniões Teams e eventos do Outlook) para a Agenda e a Hoje da app.
@@ -80,7 +81,7 @@ type Want = { key: string; member: string; payload: Record<string, unknown> };
 async function desired(members: any[]) {
   const from = addDays(todayKey(), -WRITE_BACK), to = addDays(todayKey(), WRITE_AHEAD);
   const [ms, ow, ty, pr, pres, plots, invs] = await Promise.all([
-    db.from("project_milestones").select("id, project_id, type_id, title, event_date, all_day, start_time, end_time, location, notes, done, auto_kind").gte("event_date", from).lte("event_date", to),
+    db.from("project_milestones").select("id, project_id, type_id, title, event_date, all_day, start_time, end_time, location, notes, done, auto_kind, created_by, teams_link").gte("event_date", from).lte("event_date", to),
     db.from("milestone_owners").select("milestone_id, member_id"),
     db.from("milestone_types").select("id, name, is_deadline"),
     db.from("projects").select("id, name, code"),
@@ -113,13 +114,16 @@ async function desired(members: any[]) {
       location: m.location ? { displayName: m.location } : undefined, categories: [CATEGORY],
       showAs: timed ? "busy" : "free", isReminderOn: timed,
     };
-    const meeting = timed && !m.auto_kind && /reuni/i.test(t?.name || "");
-    if (meeting) {
-      // uma só reunião Teams: organizada pelo 1.º responsável, os outros recebem o convite
-      const [org, ...rest] = owners;
-      out.push({ key: `m:${m.id}`, member: org, payload: { ...base, isOnlineMeeting: true, onlineMeetingProvider: "teamsForBusiness",
-        attendees: rest.map((id) => ({ emailAddress: { address: email[id].email, name: email[id].name }, type: "required" })) } });
-    } else owners.forEach((id) => out.push({ key: `m:${m.id}`, member: id, payload: base }));
+    // Um só evento partilhado: organiza quem criou o marco na app (se não estiver na equipa ligada, o 1.º responsável
+    // por nome); os outros responsáveis são convidados — aparece no calendário de todos e as alterações chegam a todos.
+    // Com a opção "Reunião online" (teams_link), leva link Teams.
+    const meeting = timed && !!m.teams_link;
+    const sorted = [...owners].sort((a, b) => String(email[a].name).localeCompare(String(email[b].name), "pt"));
+    const org = m.created_by && email[m.created_by] ? m.created_by : sorted[0];
+    const rest = sorted.filter((id) => id !== org);
+    out.push({ key: `m:${m.id}`, member: org, payload: { ...base,
+      ...(meeting ? { isOnlineMeeting: true, onlineMeetingProvider: "teamsForBusiness" } : {}),
+      ...(rest.length ? { attendees: rest.map((id) => ({ emailAddress: { address: email[id].email, name: email[id].name }, type: "required" })), responseRequested: false } : {}) } });
   }
   // Lembretes do Investment Intelligence: 7 dias depois de uma apresentação ainda sem resposta
   const plotBy = Object.fromEntries((plots.data || []).map((p: any) => [p.id, p]));
@@ -161,12 +165,13 @@ async function syncMember(m: any, wants: Want[], links: any[]) {
     try {
       if (l && l.hash === hash) continue;
       if (l) {
-        try { await g("PATCH", `/users/${upn}/events/${l.ms_event_id}`, w.payload); }
-        catch (e: any) { if (e.status !== 404) throw e; const c = await g("POST", `/users/${upn}/events`, w.payload); l.ms_event_id = c.id; l.ical_uid = c.iCalUId; }
-        await db.from("ms_event_links").update({ hash, ms_event_id: l.ms_event_id, ical_uid: l.ical_uid, updated_at: new Date().toISOString() }).eq("member_id", m.id).eq("source_key", w.key);
+        let c: any;
+        try { c = await g("PATCH", `/users/${upn}/events/${l.ms_event_id}`, w.payload); }
+        catch (e: any) { if (e.status !== 404) throw e; c = await g("POST", `/users/${upn}/events`, w.payload); l.ms_event_id = c.id; l.ical_uid = c.iCalUId; }
+        await db.from("ms_event_links").update({ hash, ms_event_id: l.ms_event_id, ical_uid: l.ical_uid, join_url: c?.onlineMeeting?.joinUrl || null, updated_at: new Date().toISOString() }).eq("member_id", m.id).eq("source_key", w.key);
       } else {
         const c = await g("POST", `/users/${upn}/events`, w.payload);
-        await db.from("ms_event_links").upsert({ member_id: m.id, source_key: w.key, ms_event_id: c.id, ical_uid: c.iCalUId, hash, updated_at: new Date().toISOString() });
+        await db.from("ms_event_links").upsert({ member_id: m.id, source_key: w.key, ms_event_id: c.id, ical_uid: c.iCalUId, join_url: c?.onlineMeeting?.joinUrl || null, hash, updated_at: new Date().toISOString() });
         links.push({ member_id: m.id, source_key: w.key, ms_event_id: c.id, ical_uid: c.iCalUId, hash });
       }
       res.written++;
