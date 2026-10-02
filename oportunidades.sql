@@ -166,3 +166,8 @@ update public.land_plots set project_type_ids = array[project_type_id] where pro
 
 -- Variantes de um terreno (outra densidade/preço sem mexer no original)
 alter table public.land_plots add column if not exists variant_of uuid references public.land_plots(id) on delete set null;
+
+-- Apresentações a pessoas fora da base de dados, comissões e data da resposta (out. 2026)
+alter table public.land_presentations add column if not exists contact_name text, add column if not exists commission_value numeric, add column if not exists responded_on date;
+alter table public.land_presentations alter column investor_id drop not null;
+alter table public.land_presentations add column if not exists deal_on date;   -- negócio fechado: só então a comissão conta como ganha
