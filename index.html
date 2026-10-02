@@ -1293,10 +1293,19 @@
   .ts-cell.ts-f:placeholder-shown::placeholder { color: var(--accent); opacity: .45; font-size: var(--fs-micro); font-weight: var(--fw-semibold); }
   .ts-cell.ts-nf:placeholder-shown::placeholder { color: var(--text-3); opacity: .7; font-size: var(--fs-micro); font-weight: var(--fw-semibold); }
   .ts-pair.big { flex-direction: row; max-width: none; gap: var(--sp-2); }
-  .ts-kbox { display: flex; flex-direction: column; gap: 2px; white-space: nowrap; font-size: var(--fs-micro); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: .03em; }
+  .ts-kbox { display: flex; flex-direction: column; gap: 2px; white-space: nowrap; font-size: var(--fs-xs); font-weight: var(--fw-semibold); }
   .ts-kbox.ts-f span { color: var(--accent); } .ts-kbox.ts-nf span { color: var(--text-3); }
   .ts-pair.big .ts-cell { width: 76px; height: 40px; font-size: var(--fs-base); }
-  .ts-leg { display: inline-block; font-size: var(--fs-micro); padding: 0 4px; border-radius: var(--r-xs); margin: 0 2px 0 6px; }
+  .ts-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--sp-1-5); padding: var(--sp-6) var(--sp-4); }
+  .ts-empty b { font-size: var(--fs-lg); } .ts-empty span { color: var(--text-2); max-width: 420px; }
+  .ts-add-first { width: auto; margin-top: var(--sp-2); padding: 0 var(--sp-5); }
+  .ts-sugg { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1-5); margin: var(--sp-2) 0; }
+  .ts-sugg > span { font-size: var(--fs-xs); color: var(--text-3); width: 100%; }
+  .ts-chip { border: 1px dashed var(--border-strong); background: var(--surface); border-radius: var(--r-full); padding: 5px var(--sp-3); font-size: var(--fs-sm); color: var(--text-2); cursor: pointer; text-align: left; }
+  .ts-chip b { color: var(--text); font-weight: var(--fw-semibold); } .ts-chip em { font-style: normal; color: var(--accent); font-size: var(--fs-xs); }
+  .ts-chip:hover { border-style: solid; border-color: var(--accent); }
+  .ts-leg s, .ts-kbox s, .ts-sub s { text-decoration-thickness: 2px; }
+  .ts-leg { display: inline-block; font-size: var(--fs-sm); font-weight: var(--fw-bold); line-height: 1.2; padding: 0 6px; border-radius: var(--r-xs); margin: 0 2px 0 6px; }
   .ts-leg.f { background: var(--accent-soft); color: var(--accent); border-left: 3px solid var(--accent); }
   .ts-leg.nf { background: var(--surface-2); color: var(--text-2); border-left: 3px solid var(--text-3); }
   .ts-legend { display: block; font-weight: var(--fw-regular); font-size: var(--fs-xs); color: var(--text-3); margin-top: 2px; text-transform: none; letter-spacing: 0; }
@@ -4258,7 +4267,7 @@
             <div class="horas-entry" data-id="${escapeHtml(e.id)}">
               <div class="horas-entry-main">
                 <span>${fmtDateShort(new Date(e.date + 'T00:00:00'))}</span>
-                <span class="invoice-status ${e.billable ? 'paid' : 'pending'}">${e.billable ? 'Faturável' : 'Não fat.'}</span>
+                <span class="invoice-status ${e.billable ? 'paid' : 'pending'}">${e.billable ? '€ faturável' : '<s>€</s> não faturável'}</span>
                 <span class="horas-entry-hours">${fmtHours(e.hours)}</span>
               </div>
               <div class="horas-entry-sub">${escapeHtml(label)}</div>
@@ -13267,7 +13276,7 @@
       { id: 'horas-nf', cat: 'horas', ctx: ['horas'],
         q: 'separo horas faturáveis e não faturáveis no mesmo dia',
         a: 'Cada dia tem dois campos: F (faturável, a cor) e NF (não faturável, cinzento). Escreves diretamente em cada um.',
-        steps: ['Em [[Horas]], cada dia de cada linha tem dois campos: **F** em cima (faturável) e **NF** em baixo (não faturável). No telemóvel aparecem lado a lado.', 'Escreve as horas no campo certo e sai da célula: fica gravado.', 'No total, a parte não faturável aparece à parte.'],
+        steps: ['Cada semana começa em branco: toca em [[+ Acrescentar linha]] (ou numa sugestão — as tuas fases e o que usaste há pouco) para cada projeto em que trabalhaste.', 'Cada dia de cada linha tem dois campos: **€** em cima (faturável) e **€ rasurado** em baixo (não faturável). No telemóvel aparecem lado a lado.', 'Escreve as horas no campo certo e sai da célula: fica gravado.', 'No total, a parte não faturável aparece à parte.'],
         kw: 'faturavel nao faturavel horas internas billable separar',
         tour: [{ go: 'nav:horas', sel: '#ts-box .ts-pair', text: 'F em cima: faturável. NF em baixo: não faturável.' }] },
       { id: 'alvo', cat: 'horas', ctx: ['home', 'horas'],
@@ -16482,7 +16491,8 @@
           (p.assignee_ids || []).includes(me) && p.start_date <= weekEnd &&
           maxKey(p.end_date || p.start_date, stageDeadline(p)) >= tsWeekStart);
 
-        // Linhas: as da semana, depois as minhas fases ativas, depois as recentes e as acrescentadas
+        // Linhas: só as que já têm horas nesta semana e as que o utilizador acrescentou (semana nova abre vazia).
+        // As minhas fases ativas e as linhas das últimas semanas ficam como sugestões de um toque.
         const lines = new Map();
         const addLine = (src, origin) => {
           const key = tsLineKey(src);
@@ -16502,12 +16512,13 @@
         phases.forEach(p => addLine({ project_id: p.project_id, stage_id: p.id, billable: true }, 'phase'));
         (tsExtraLines[tsWeekStart] || []).forEach(l => addLine(l, 'extra'));
         const hidden = tsHidden[tsWeekStart] || new Set();
-        const lineList = [...lines.values()].filter(l => l.origin === 'week' || !hidden.has(l.key));
+        const lineList = [...lines.values()].filter(l => l.origin === 'week' || (l.origin === 'extra' && !hidden.has(l.key)));
+        const suggest = [...lines.values()].filter(l => l.origin === 'phase' || l.origin === 'recent').sort((a, b) => (a.origin === 'phase' ? 0 : 1) - (b.origin === 'phase' ? 0 : 1)).slice(0, 8);
 
         // Nomes de projetos, fases e categorias
         const names = { projects: {}, stages: {}, cats: {} };
-        const projIds = [...new Set(lineList.map(l => l.project_id).filter(Boolean))];
-        const stageIds = [...new Set(lineList.map(l => l.stage_id).filter(Boolean))];
+        const projIds = [...new Set([...lineList, ...suggest].map(l => l.project_id).filter(Boolean))];
+        const stageIds = [...new Set([...lineList, ...suggest].map(l => l.stage_id).filter(Boolean))];
         if (devMode) {
           MOCK_PROJECTS.forEach(p => { names.projects[p.id] = p.name; });
           [...MOCK_STAGES, ...MOCK_AGENDA_PHASES].forEach(s => { names.stages[s.id] = s.stage_types?.name ?? 'Fase'; });
@@ -16526,7 +16537,7 @@
         const rank = { week: 0, extra: 1, phase: 2, recent: 3 };
         lineList.sort((a, b) => (rank[a.origin] - rank[b.origin]) || (weekTotal(b) - weekTotal(a)));
 
-        tsState = { entries, lines: lineList, names, me };
+        tsState = { entries, lines: lineList, suggest, names, me };
         renderTimesheet();
       } catch (err) {
         console.error(err);
@@ -16554,7 +16565,7 @@
       return { bill: sum(bill), non: sum(non), nBill: bill.length, nNon: non.length };
     }
     const tsSplitText = sp => [sp.bill ? fmtHours(sp.bill) + ' faturáve' + (sp.bill === 1 ? 'l' : 'is') : '', sp.non ? fmtHours(sp.non) + ' não faturáve' + (sp.non === 1 ? 'l' : 'is') : ''].filter(Boolean).join(' · ');
-    // Cada dia tem dois campos: horas faturáveis (F) e não faturáveis (NF). Um tipo com vários registos
+    // Cada dia tem dois campos: horas faturáveis (€) e não faturáveis (€ rasurado). Um tipo com vários registos
     // nesse dia fica só de leitura e abre a lista para os editar um a um.
     function tsKindOf(list, billable) {
       const mine = list.filter(e => !!e.billable === billable);
@@ -16565,10 +16576,10 @@
       const one = b => {
         const k = tsKindOf(c.list, b), lbl = b ? 'faturáveis' : 'não faturáveis';
         const tip = k.many ? `${k.mine.length} registos — tocar para ver` : k.note;
-        const input = `<input class="ts-cell ts-k ${b ? 'ts-f' : 'ts-nf'}${big ? ' big' : ''}${k.many ? ' multi' : ''}${k.note ? ' has-note' : ''}" inputmode="decimal" autocomplete="off" placeholder="${big ? '–' : b ? 'F' : 'NF'}"
+        const input = `<input class="ts-cell ts-k ${b ? 'ts-f' : 'ts-nf'}${big ? ' big' : ''}${k.many ? ' multi' : ''}${k.note ? ' has-note' : ''}" inputmode="decimal" autocomplete="off" placeholder="${big ? '–' : b ? '€' : '€\u0336'}"
           data-line="${escapeHtml(l.key)}" data-day="${day}" data-kind="${b ? 1 : 0}" value="${fmtHoursInput(k.tot)}"${k.many ? ' readonly' : ''}${tip ? ` title="${escapeHtml(tip)}"` : ''}
           aria-label="${escapeHtml(`${title} — ${fmtDayMonth(day)} — horas ${lbl}${tip ? ' — ' + tip : ''}`)}">`;
-        return big ? `<label class="ts-kbox ${b ? 'ts-f' : 'ts-nf'}"><span>${b ? 'Fat.' : 'Não fat.'}</span>${input}</label>` : input;
+        return big ? `<label class="ts-kbox ${b ? 'ts-f' : 'ts-nf'}"><span>${b ? '€ faturável' : '<s>€</s> não faturável'}</span>${input}</label>` : input;
       };
       return `<div class="ts-cellbox ts-pair${big ? ' big' : ''}">${one(true)}${one(false)}</div>`;
     }
@@ -16578,7 +16589,7 @@
       const tot = sp.bill + sp.non;
       const main = week ? fmtHours(tot) : (fmtHoursInput(tot) || '–');
       const show = sp.non > 0 && (always || sp.bill > 0);
-      return `${main}${show ? `<small class="ts-sub" title="${escapeHtml(tsSplitText(sp))}">${escapeHtml(fmtHoursInput(sp.non))} não fat.</small>` : ''}`;
+      return `${main}${show ? `<small class="ts-sub" title="${escapeHtml(tsSplitText(sp))}">${escapeHtml(fmtHoursInput(sp.non))} <s>€</s></small>` : ''}`;
     }
     function tsLineCellHtml(l) {
       const nm = tsLineName(l);
@@ -16589,7 +16600,7 @@
 
     function tsWeekSub() {
       const sp = tsSplitOf(tsState.entries);
-      return 'na semana' + (sp.non ? ` · ${escapeHtml(fmtHoursInput(sp.non))} não fat.` : '');
+      return 'na semana' + (sp.non ? ` · ${escapeHtml(fmtHoursInput(sp.non))} não faturáveis` : '');
     }
     function renderTimesheet() {
       const box = document.getElementById('ts-box');
@@ -16610,7 +16621,8 @@
         </div>`;
 
       if (tsState.lines.length === 0) {
-        html += '<div class="gantt-wrap"><div class="gantt-empty">Sem linhas nesta semana. Acrescenta um projeto ou uma categoria para começar.</div></div>';
+        html += `<div class="gantt-wrap ts-empty"><b>Semana nova, folha em branco.</b><span>Acrescenta uma linha por cada projeto (ou trabalho interno) em que trabalhaste.</span>
+          <button type="button" class="primary-btn ts-add-first" data-ts-add>+ Acrescentar linha</button></div>`;
       } else if (tsNarrow.matches) {
         // Telemóvel: escolhe o dia, escreve as horas de cada linha
         html += `<div class="ts-days">${days.map((d, i) => `
@@ -16626,7 +16638,7 @@
       } else {
         // Computador / iPad: grelha da semana
         html += `<div class="gantt-wrap ts-wrap"><div class="table-scroll"><table class="ts-table">
-          <thead><tr><th class="ts-line-h">Projeto · fase <span class="ts-legend"><b class="ts-leg f">F</b> faturável <b class="ts-leg nf">NF</b> não faturável</span></th>${days.map((d, i) => `<th class="${d === todayKey ? 'today' : ''}">${letters[i]} <span>${parseDateKey(d).getDate()}</span></th>`).join('')}<th class="col-value">Total</th></tr></thead>
+          <thead><tr><th class="ts-line-h">Projeto · fase <span class="ts-legend"><b class="ts-leg f">€</b> faturável <b class="ts-leg nf"><s>€</s></b> não faturável</span></th>${days.map((d, i) => `<th class="${d === todayKey ? 'today' : ''}">${letters[i]} <span>${parseDateKey(d).getDate()}</span></th>`).join('')}<th class="col-value">Total</th></tr></thead>
           <tbody>${tsState.lines.map(l => `
             <tr class="${l.origin !== 'week' && tsRowTotal(l.key) === 0 ? 'sugg' : ''}">
               <td class="ts-linecell"><div class="ts-line">${tsLineCellHtml(l)}</div></td>
@@ -16637,9 +16649,11 @@
           <tfoot><tr><td>Total</td>${days.map(d => `<td class="num ${d === todayKey ? 'today' : ''}" data-ts-daytotal="${d}">${tsTotalHtml(tsState.entries.filter(e => e.date === d), { always: true })}</td>`).join('')}<td class="col-value num" data-ts-weektotal>${tsTotalHtml(tsState.entries, { always: true, week: true })}</td></tr></tfoot>
         </table></div></div>`;
       }
+      const sugg = (tsState.suggest || []).filter(l => !tsState.lines.some(x => x.key === l.key));
+      if (sugg.length) html += `<div class="ts-sugg"><span>Sugestões — um toque acrescenta:</span>${sugg.map(l => { const nm = tsLineName(l); return `<button type="button" class="ts-chip" data-ts-sugg="${escapeHtml(l.key)}"><b>${escapeHtml(nm.title)}</b> ${escapeHtml(nm.sub)}${l.origin === 'phase' ? ' <em>atribuída</em>' : ''}</button>`; }).join('')}</div>`;
       html += `<div class="ts-foot">
-          <button type="button" class="secondary-btn ts-add" data-ts-add>+ Acrescentar linha</button>
-          <span class="field-hint"><b class="ts-leg f">F</b> faturável · <b class="ts-leg nf">NF</b> não faturável · grava ao sair da célula (ajuda no <b>?</b>)</span>
+          ${tsState.lines.length ? '<button type="button" class="secondary-btn ts-add" data-ts-add>+ Acrescentar linha</button>' : ''}
+          <span class="field-hint"><b class="ts-leg f">€</b> faturável · <b class="ts-leg nf"><s>€</s></b> não faturável · grava sozinho ao sair da célula</span>
           <button type="button" class="text-btn" data-ts-list>Ver registos</button>
         </div>`;
       box.innerHTML = html;
@@ -16813,7 +16827,7 @@
       ]);
       // Primeiro os projetos das minhas fases ativas, depois os usados há pouco, depois os outros
       const mine = [...new Set(myPhases.map(p => String(p.project_id)))];
-      const recentIds = [...new Set((tsState?.lines || []).map(l => l.project_id).filter(Boolean).map(String))].filter(id => !mine.includes(id));
+      const recentIds = [...new Set([...(tsState?.lines || []), ...(tsState?.suggest || [])].map(l => l.project_id).filter(Boolean).map(String))].filter(id => !mine.includes(id));
       const label = p => escapeHtml((p.code ? p.code + ' — ' : '') + p.name);
       const optP = p => `<option value="${escapeHtml(p.id)}">${label(p)}</option>`;
       const byId = id => projects.find(p => String(p.id) === id);
@@ -16879,6 +16893,14 @@
         tsDay = b.dataset.tsDay; renderTimesheet();
       }));
       box.querySelectorAll('[data-ts-add]').forEach(b => b.addEventListener('click', tsAddLineModal));
+      box.querySelectorAll('[data-ts-sugg]').forEach(b => b.addEventListener('click', () => {
+        const l = (tsState.suggest || []).find(x => x.key === b.dataset.tsSugg); if (!l) return;
+        (tsExtraLines[tsWeekStart] = tsExtraLines[tsWeekStart] || []).push({ project_id: l.project_id, stage_id: l.stage_id, category_id: l.category_id, billable: l.billable });
+        tsHidden[tsWeekStart]?.delete(l.key);
+        tsState.lines.push({ ...l, origin: 'extra' });
+        renderTimesheet();
+        setTimeout(() => document.querySelector(`.ts-cell[data-line="${CSS.escape(l.key)}"][data-day="${tsDay}"]`)?.focus(), 30);
+      }));
       box.querySelectorAll('[data-ts-list]').forEach(b => b.addEventListener('click', () => switchHorasTab('history')));
       box.querySelectorAll('[data-ts-hide]').forEach(b => b.addEventListener('click', () => {
         (tsHidden[tsWeekStart] = tsHidden[tsWeekStart] || new Set()).add(b.dataset.tsHide);
