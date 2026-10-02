@@ -14885,7 +14885,8 @@
           <div class="gantt-wrap vt-sheet">
             <div class="card-head"><h2>Viabilidade</h2><small class="muted">valor unitário × quantidade = valor global · grava sozinho</small></div>
             ${grp('vt-areas', 'Áreas', '', `${vhead('Índice / %', 'Base', 'Área')}
-              ${vrow('Área de construção<small>índice × área do terreno — ou escreve-a</small>', pIn('pdm_index', '', 'índice'), pIn('land_area', 'm²', 'terreno'), pIn('buildable_area', 'm²', areaHint()))}
+              ${vrow('Área do terreno', '', '', pIn('land_area', 'm²', 'ex.: 1200'))}
+              ${vrow('Área de construção<small>índice × área do terreno — ou escreve-a</small>', pIn('pdm_index', '', 'índice'), o('landQ'), pIn('buildable_area', 'm²', areaHint()))}
               ${vrow('Habitação acima do solo<small>só se for diferente da de construção</small>', '', '', fIn('housing_area', (p.feasibility || {}).housing_area ?? '', 'm²', housingHint()))}
               ${vrow('Área vendável', fIn('sellable_pct', f.sellable_pct, '%'), o('housingQ'), o('sellable'))}
               ${vrow('Áreas comuns<small>habitação − vendável</small>', '', '', o('common'))}
@@ -15168,7 +15169,7 @@
         const ok = c.hasSales && c.hasCosts;
         const fracN = c.typs.reduce((t, x) => t + Nn(x.units), 0), fracM2 = c.typs.reduce((t, x) => t + Nn(x.units) * Nn(x.area), 0), over = c.sellable > 0 && fracM2 > c.sellable * 1.02;
         const vals = {
-          housingQ: M(c.housing), sellable: M(c.sellable), common: M(c.common),
+          housingQ: M(c.housing), landQ: M(Nn(p.land_area)), sellable: M(c.sellable), common: M(c.common),
           price: E(c.price), imt: E(c.imt) + `<small class="vt-rng">${escapeHtml(fmtNum(c.imtRate))}%</small>`, stamp: E(c.stamp), acquisition: E(c.acquisition),
           construction: E(c.construction), constr: E(c.construction), vatConstruction: E(c.vatConstruction), constrTot: E(c.construction + c.vatConstruction),
           vatProjects: E(c.vatProjects), projTot: E(c.projects + c.vatProjects), fisc: E(c.fisc), vatFisc: E(c.vatFisc), fiscTot: E(c.fisc + c.vatFisc),
