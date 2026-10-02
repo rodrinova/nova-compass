@@ -617,6 +617,18 @@
   }
   .owner-chip:hover { border-color: var(--border-strong); }
   .owner-chip.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: var(--fw-semibold); }
+  /* Convidados de fora da equipa (marcos) */
+  .guest-list { display: flex; flex-direction: column; gap: var(--sp-1-5); }
+  .guest-item { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); border: 1px solid var(--border); border-radius: var(--r-md, 8px); background: var(--surface); min-width: 0; }
+  .guest-item .g-txt { flex: 1; min-width: 0; font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .guest-item .g-txt span { color: var(--text-3); }
+  .guest-item .g-new { font-size: var(--fs-micro); color: var(--accent); font-weight: var(--fw-semibold); flex-shrink: 0; }
+  .guest-item button { border: 0; background: none; color: var(--text-3); font-size: 18px; line-height: 1; cursor: pointer; padding: 0 var(--sp-1); flex-shrink: 0; }
+  .guest-sugg { display: flex; flex-wrap: wrap; gap: var(--sp-1-5); margin-top: var(--sp-2); }
+  .guest-sugg .owner-chip { border-style: dashed; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .guest-add { display: grid; grid-template-columns: 1fr 1.4fr auto; gap: var(--sp-2); margin-top: var(--sp-2); }
+  .guest-add .form-input { margin: 0; min-width: 0; }
+  @media (max-width: 560px) { .guest-add { grid-template-columns: 1fr; } }
 
   /* ---------- Horas ---------- */
   .horas-entry { padding: var(--sp-3) 0; border-top: 1px solid var(--border); }
@@ -7323,7 +7335,7 @@
 
     async function loadAllMembers() {
       if (devMode) return [MOCK_MEMBER, { id: 'm2', name: 'Nuno' }, { id: 'm3', name: 'Rute' }];
-      const res = await supabase.from('team_members').select('id, name').eq('active', true).order('name');
+      const res = await supabase.from('team_members').select('id, name, email').eq('active', true).order('name');
       return res.data || [];
     }
 
@@ -12380,10 +12392,10 @@
       const items = [];
       // pri: 0 atrasado/crítico · 1 esta semana · 2 resto · 3 fecho do mês (sobe a 1 depois do dia 10)
       teamRows.forEach(r => {
-        const urgent = r.late ? 'late' : (r.kind === 'camara' || r.kind === 'debt') ? 'soon' : '';
-        items.push({ pri: r.late ? 0 : urgent ? 1 : 2, date: r.due || '9999', html: `
-          <div class="alert-row team${urgent ? ' ' + urgent : ''}" data-alert-team="${r.kind}"${r.project ? ` data-project="${escapeHtml(r.project)}"` : ''}${r.nps ? ` data-nps="${escapeHtml(r.nps)}"` : ''}>
-            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : r.kind === 'nps' ? '★' : r.kind === 'debt' ? '€' : r.kind === 'law' ? '§' : r.kind === 'radar' ? '◎' : '+'}</span>
+        const urgent = r.late ? 'late' : (r.kind === 'camara' || r.kind === 'debt' || r.kind === 'meet') ? 'soon' : '';
+        items.push({ pri: r.late || r.kind === 'meet' ? 0 : urgent ? 1 : 2, date: r.due || '9999', html: `
+          <div class="alert-row team${urgent ? ' ' + urgent : ''}" data-alert-team="${r.kind}"${r.project ? ` data-project="${escapeHtml(r.project)}"` : ''}${r.nps ? ` data-nps="${escapeHtml(r.nps)}"` : ''}${r.url ? ` data-url="${escapeHtml(r.url)}" role="link" tabindex="0"` : ''}>
+            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : r.kind === 'nps' ? '★' : r.kind === 'debt' ? '€' : r.kind === 'law' ? '§' : r.kind === 'radar' ? '◎' : r.kind === 'meet' ? '▶' : '+'}</span>
             <span class="alert-text"><b>${escapeHtml(r.title)}</b><span>${escapeHtml(r.sub)}</span></span>
             <span class="alert-when">${escapeHtml(r.when)}</span>
           </div>` });
@@ -12432,7 +12444,8 @@
         openMarcoModal({ milestoneId: r.dataset.alertMarco, onSuccess: () => renderToday() })));
       el.querySelectorAll('[data-alert-team]').forEach(r => r.addEventListener('click', () => {
         const k = r.dataset.alertTeam;
-        if (k === 'hours') openHorasModule();
+        if (k === 'meet') window.open(r.dataset.url, '_blank', 'noopener');
+        else if (k === 'hours') openHorasModule();
         else if (k === 'owner') openProjectsModule();
         else if (k === 'debt') { navStack = []; openBillingModule('toreceive'); }
         else if (k === 'law') { navStack = []; openSettingsModule(); showSettingsSection('payroll'); }
@@ -12782,6 +12795,24 @@
         </div>`;
     }
 
+    // Reuniões de hoje com link (Teams/Outlook ou marcos com reunião online): aviso com acesso direto, até acabarem
+    async function meetingAlerts(list, me, todayKey) {
+      const now = new Date(), hhmm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+      const mine = list.filter(m => m.event_date === todayKey && !m.all_day && m.start_time && !m.done && (m.owner_ids || []).includes(me)
+        && String(m.end_time || m.start_time).slice(0, 5) >= hhmm && (m.external ? m.ms?.join_url : m.teams_link));
+      const appIds = mine.filter(m => !m.external).map(m => 'm:' + m.id);
+      const urls = {};
+      if (appIds.length && !devMode) {
+        const r = await supabase.from('ms_event_links').select('source_key, join_url').in('source_key', appIds).not('join_url', 'is', null);
+        (r.data || []).forEach(x => { urls[x.source_key.slice(2)] = x.join_url; });
+      }
+      return mine.map(m => ({ m, url: m.external ? m.ms.join_url : urls[m.id] }))
+        .filter(x => /^https:\/\//.test(x.url || ''))
+        .map(({ m, url }) => ({ kind: 'meet', url, due: todayKey + ' ' + m.start_time,
+          title: `Reunião hoje às ${String(m.start_time).slice(0, 5)}: ${m.title}`,
+          sub: [fmtTimeRange(m), 'Microsoft Teams'].join(' · '), when: 'Entrar' }));
+    }
+
     async function renderToday() {
       const weekEl = document.getElementById('today-week-list');
       const phasesEl = document.getElementById('today-phases');
@@ -12813,7 +12844,7 @@
         renderWeekHours(hoursEl, hours, tg);
         // Avisos de organização: horas em falta (a partir de sexta), projetos sem responsável,
         // fases em curso/seguintes sem ninguém nos projetos de que sou responsável
-        const teamAlerts = [...radarAlerts, ...lawAlerts, ...debtAlerts, ...npsAlerts, ...camaraAlerts];
+        const teamAlerts = [...await meetingAlerts(milestones, me, todayKey).catch(() => []), ...radarAlerts, ...lawAlerts, ...debtAlerts, ...npsAlerts, ...camaraAlerts];
         const wd = new Date().getDay();
         const missing = missingHourDays(hours, tg);
         if ((wd === 5 || wd === 6 || wd === 0) && missing.length)
@@ -17930,6 +17961,8 @@
           existing = res.data;
           const own = await supabase.from('milestone_owners').select('member_id').eq('milestone_id', milestoneId);
           existing.owner_ids = (own.data || []).map(o => o.member_id);
+          const gs = await supabase.from('milestone_guests').select('name, email').eq('milestone_id', milestoneId);
+          existing.guests = gs.error ? [] : (gs.data || []);
         }
         if (!existing) return;
       }
@@ -17989,6 +18022,16 @@
         <label class="field-label">Quem vai</label>
         <div class="owner-picker" id="mk-owners"></div>
         <div class="field-hint">Aparece na agenda de quem estiver escolhido.</div>
+        <label class="field-label">Convidados de fora da equipa</label>
+        <div class="guest-list" id="mk-guests"></div>
+        <div class="guest-sugg" id="mk-guest-sugg"></div>
+        <div class="guest-add">
+          <input type="text" id="mk-g-name" class="form-input" placeholder="Nome" aria-label="Nome do convidado">
+          <input type="email" id="mk-g-email" class="form-input" placeholder="email@exemplo.com" aria-label="Email do convidado">
+          <button type="button" class="secondary-btn" id="mk-g-add" style="margin:0;">Adicionar</button>
+        </div>
+        <label class="check-row" id="mk-g-save-row" style="margin-top:var(--sp-2);"><input type="checkbox" id="mk-g-save" checked> Guardar nos contactos do projeto</label>
+        <div class="field-hint">Recebem o convite do Outlook (com o aviso de proteção de dados) e as alterações de data e hora.</div>
         ${isEdit ? `
         <label class="field-label">Estado</label>
         <div class="segmented" id="mk-done-toggle">
@@ -18085,6 +18128,71 @@
         chip.classList.toggle('on');
       });
 
+      // Convidados de fora: cliente do projeto, contactos do projeto ou qualquer email
+      const isMail = (e) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e);
+      const teamMails = new Set(members.map(m => String(m.email || '').toLowerCase()).filter(Boolean));
+      const origGuests = new Set((existing?.guests || []).map(g => String(g.email).toLowerCase()));
+      let guests = (existing?.guests || []).map(g => ({ name: g.name || '', email: String(g.email).toLowerCase() }));
+      let guestSugg = [];       // { name, email, role, clientId }
+      let pendingClientId = null;  // cliente sem email: o email escrito fica na ficha
+      const curProject = () => link === 'project' ? (lockedProjectId || document.getElementById('mk-project').value) : '';
+      const renderGuests = () => {
+        document.getElementById('mk-guests').innerHTML = guests.map((g, i) => `<div class="guest-item"><div class="g-txt">${escapeHtml(g.name || g.email)}${g.name ? ` <span>· ${escapeHtml(g.email)}</span>` : ''}</div>${origGuests.has(g.email) ? '' : '<span class="g-new">novo convite</span>'}<button type="button" data-g="${i}" aria-label="Retirar ${escapeHtml(g.name || g.email)}">×</button></div>`).join('');
+        const have = new Set(guests.map(g => g.email));
+        document.getElementById('mk-guest-sugg').innerHTML = guestSugg.filter(x => !x.email || !have.has(x.email)).map((x, i) =>
+          `<button type="button" class="owner-chip" data-sg="${guestSugg.indexOf(x)}" title="${escapeHtml(x.email || 'Sem email — escreve-o abaixo')}">+ ${escapeHtml(x.role)}: ${escapeHtml(x.name || x.email)}${x.email ? '' : ' (sem email)'}</button>`).join('');
+        document.getElementById('mk-g-save-row').hidden = !curProject();
+      };
+      const loadGuestSugg = async () => {
+        guestSugg = [];
+        const pid = curProject();
+        if (pid && !devMode) {
+          const [pr, pc] = await Promise.all([
+            supabase.from('projects').select('client_id').eq('id', pid).single(),
+            supabase.from('project_contacts').select('name, email, role').eq('project_id', pid).order('name')
+          ]);
+          if (pr.data?.client_id) {
+            const c = await supabase.from('clients').select('id, name, email').eq('id', pr.data.client_id).single();
+            if (c.data) guestSugg.push({ name: c.data.name, email: String(c.data.email || '').trim().toLowerCase(), role: 'Cliente', clientId: c.data.id });
+          }
+          (pc.data || []).forEach(x => { const e = String(x.email).toLowerCase(); if (!guestSugg.some(y => y.email === e)) guestSugg.push({ name: x.name, email: e, role: x.role || 'Contacto' }); });
+        }
+        renderGuests();
+      };
+      const addGuest = (name, email) => {
+        email = String(email || '').trim().toLowerCase();
+        if (!isMail(email)) { showToast('Escreve um email válido.', { type: 'error' }); return false; }
+        if (teamMails.has(email)) { showToast('É da equipa: escolhe-o em "Quem vai".', { type: 'error' }); return false; }
+        if (guests.some(g => g.email === email)) return true;
+        guests.push({ name: String(name || '').trim(), email, save: document.getElementById('mk-g-save').checked && !!curProject(), clientId: pendingClientId });
+        pendingClientId = null;
+        renderGuests();
+        return true;
+      };
+      document.getElementById('mk-guests').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-g]'); if (!b) return;
+        guests.splice(Number(b.dataset.g), 1); renderGuests();
+      });
+      document.getElementById('mk-guest-sugg').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-sg]'); if (!b) return;
+        const x = guestSugg[Number(b.dataset.sg)];
+        if (x.email) { guests.push({ name: x.name || '', email: x.email }); renderGuests(); return; }
+        // Cliente sem email: pede-o aqui e grava-o na ficha do cliente
+        pendingClientId = x.clientId;
+        document.getElementById('mk-g-name').value = x.name || '';
+        const em = document.getElementById('mk-g-email');
+        em.placeholder = 'Email de ' + (x.name || 'cliente') + ' (fica na ficha)';
+        em.focus();
+      });
+      const addTyped = () => {
+        const n = document.getElementById('mk-g-name'), em = document.getElementById('mk-g-email');
+        if (addGuest(n.value, em.value)) { n.value = ''; em.value = ''; em.placeholder = 'email@exemplo.com'; }
+      };
+      document.getElementById('mk-g-add').addEventListener('click', addTyped);
+      document.getElementById('mk-g-email').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addTyped(); } });
+      document.getElementById('mk-project').addEventListener('change', loadGuestSugg);
+      document.getElementById('mk-link-toggle').addEventListener('click', () => setTimeout(loadGuestSugg));
+
       let allDay = isEdit ? !!existing.all_day : false;
       const timeWrap = document.getElementById('mk-time-wrap');
       const syncAllDay = () => { timeWrap.style.display = allDay ? 'none' : 'flex'; document.getElementById('mk-teams-row').hidden = allDay; };
@@ -18142,6 +18250,7 @@
           document.querySelector('#quick-modal-body .more-opts').open = true;
         }
       }
+      loadGuestSugg();
       syncDeadline();
       if (asDeadline || !dlBlock.hidden) {
         // O bloco do prazo sobe para junto da data, fora de "Mais opções"
@@ -18199,6 +18308,12 @@
           msgEl.className = 'form-msg error';
           return;
         }
+
+        // Email escrito mas não adicionado: junta-o
+        if (document.getElementById('mk-g-email').value.trim() && !addGuest(document.getElementById('mk-g-name').value, document.getElementById('mk-g-email').value)) return;
+        document.getElementById('mk-g-name').value = ''; document.getElementById('mk-g-email').value = '';
+        const newGuests = guests.filter(g => !origGuests.has(g.email));
+        if (newGuests.length && !window.confirm(`Vai ser enviado um convite do Outlook a ${newGuests.length === 1 ? '1 pessoa' : newGuests.length + ' pessoas'} de fora da equipa:\n\n${newGuests.map(g => '• ' + (g.name ? g.name + ' — ' : '') + g.email).join('\n')}\n\nO convite segue com o aviso de proteção de dados (RGPD) e sai na próxima sincronização com o Office 365 (até 10 minutos).`)) return;
 
         // Marco de entrega com data nova: pergunta se a entrega da fase acompanha
         const syncDelivery = isEdit && existing?.auto_kind === 'delivery' && existing.stage_id && eventDate && eventDate !== existing.event_date
@@ -18258,6 +18373,23 @@
               const ins = await supabase.from('milestone_owners')
                 .insert(ownerIds.map(mid => ({ milestone_id: id, member_id: mid })));
               if (ins.error) throw ins.error;
+            }
+            // Convidados de fora: substituir o conjunto; guardar contactos e o email do cliente
+            const gDel = await supabase.from('milestone_guests').delete().eq('milestone_id', id);
+            if (gDel.error) throw gDel.error;
+            if (guests.length) {
+              const gIns = await supabase.from('milestone_guests').insert(guests.map(g => ({ milestone_id: id, name: g.name || null, email: g.email })));
+              if (gIns.error) throw gIns.error;
+            }
+            const pid = payload.project_id;
+            const toSave = guests.filter(g => g.save && !g.clientId && pid && !guestSugg.some(x => x.email === g.email));
+            if (toSave.length) {
+              const r = await supabase.from('project_contacts').upsert(toSave.map(g => ({ project_id: pid, name: g.name || null, email: g.email, created_by: member?.id ?? null })), { onConflict: 'project_id,email', ignoreDuplicates: true });
+              if (r.error) throw r.error;
+            }
+            for (const g of guests.filter(g => g.clientId)) {
+              const r = await supabase.from('clients').update({ email: g.email }).eq('id', g.clientId);
+              if (r.error) throw r.error;
             }
           }
           closeQuickModal();

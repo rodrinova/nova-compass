@@ -67,7 +67,7 @@ async function g(method: string, path: string, body?: unknown, extra: Record<str
       body: body ? JSON.stringify(body) : undefined,
     });
     if (r.status === 429 || r.status === 503) { await new Promise((res) => setTimeout(res, 1000 * Number(r.headers.get("Retry-After") || 2 ** attempt))); continue; }
-    if (r.status === 204) return null;
+    if (r.status === 204 || r.status === 202) return null;
     const t = await r.text();
     const j = t ? JSON.parse(t) : null;
     if (!r.ok) { const e: any = new Error(j?.error?.message || `Graph ${r.status}`); e.status = r.status; throw e; }
@@ -80,7 +80,7 @@ async function g(method: string, path: string, body?: unknown, extra: Record<str
 type Want = { key: string; member: string; payload: Record<string, unknown> };
 async function desired(members: any[]) {
   const from = addDays(todayKey(), -WRITE_BACK), to = addDays(todayKey(), WRITE_AHEAD);
-  const [ms, ow, ty, pr, pres, plots, invs] = await Promise.all([
+  const [ms, ow, ty, pr, pres, plots, invs, gu] = await Promise.all([
     db.from("project_milestones").select("id, project_id, type_id, title, event_date, all_day, start_time, end_time, location, notes, done, auto_kind, created_by, teams_link").gte("event_date", from).lte("event_date", to),
     db.from("milestone_owners").select("milestone_id, member_id"),
     db.from("milestone_types").select("id, name, is_deadline"),
@@ -88,6 +88,7 @@ async function desired(members: any[]) {
     db.from("land_presentations").select("id, plot_id, investor_id, contact_name, presented_on, status"),
     db.from("land_plots").select("id, name, scout_id, status"),
     db.from("investors").select("id, name"),
+    db.from("milestone_guests").select("milestone_id, name, email"),
   ]);
   for (const r of [ms, ow, ty, pr]) if (r.error) throw r.error;
   const types = Object.fromEntries((ty.data || []).map((t: any) => [t.id, t]));
@@ -95,8 +96,12 @@ async function desired(members: any[]) {
   const byM: Record<string, string[]> = {};
   (ow.data || []).forEach((o: any) => (byM[o.milestone_id] = byM[o.milestone_id] || []).push(o.member_id));
   const email = Object.fromEntries(members.map((m) => [m.id, m]));
+  const teamMail = new Set(members.map((m) => String(m.email).toLowerCase()));
+  const guestsBy: Record<string, any[]> = {};
+  (gu.data || []).forEach((x: any) => { const e = String(x.email || "").trim().toLowerCase(); if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e) && !teamMail.has(e)) (guestsBy[x.milestone_id] = guestsBy[x.milestone_id] || []).push({ ...x, email: e }); });
   const out: Want[] = [];
-  const body = (lines: string[]) => ({ contentType: "HTML", content: lines.filter(Boolean).map((l) => `<p>${l}</p>`).join("") + `<p><a href="${APP_URL}">Abrir no NOVA Compass</a></p>` });
+  // Com convidados de fora, o link da app (só para a equipa) dá lugar ao aviso de proteção de dados
+  const body = (lines: string[], foot = "") => ({ contentType: "HTML", content: lines.filter(Boolean).map((l) => `<p>${l}</p>`).join("") + (foot || `<p><a href="${APP_URL}">Abrir no NOVA Compass</a></p>`) });
   for (const m of ms.data || []) {
     const t = types[m.type_id];
     if (m.done || t?.is_deadline) continue;                       // prazos a controlar ficam nos avisos da app
@@ -108,8 +113,10 @@ async function desired(members: any[]) {
     const start = timed ? `${m.event_date}T${String(m.start_time).slice(0, 5)}:00` : `${m.event_date}T00:00:00`;
     let end = timed ? (m.end_time ? `${m.event_date}T${String(m.end_time).slice(0, 5)}:00` : null) : `${addDays(m.event_date, 1)}T00:00:00`;
     if (timed && !end) { const [h, mi] = String(m.start_time).split(":").map(Number); const e = h * 60 + mi + 60; end = `${m.event_date}T${String(Math.min(23, Math.floor(e / 60))).padStart(2, "0")}:${String(e % 60).padStart(2, "0")}:00`; }
+    const meeting = timed && !!m.teams_link;
+    const guests = guestsBy[m.id] || [];
     const base = {
-      subject, body: body([esc(t?.name || (m.auto_kind === "delivery" ? "Entrega" : "Marco")), m.notes ? esc(m.notes) : ""]),
+      subject, body: body([esc(t?.name || (m.auto_kind === "delivery" ? "Entrega" : "Marco")), m.notes ? esc(m.notes) : ""], guests.length ? gdpr(meeting) : ""),
       start: { dateTime: start, timeZone: TZ }, end: { dateTime: end, timeZone: TZ }, isAllDay: !timed,
       location: m.location ? { displayName: m.location } : undefined, categories: [CATEGORY],
       showAs: timed ? "busy" : "free", isReminderOn: timed,
@@ -117,13 +124,17 @@ async function desired(members: any[]) {
     // Um só evento partilhado: organiza quem criou o marco na app (se não estiver na equipa ligada, o 1.º responsável
     // por nome); os outros responsáveis são convidados — aparece no calendário de todos e as alterações chegam a todos.
     // Com a opção "Reunião online" (teams_link), leva link Teams.
-    const meeting = timed && !!m.teams_link;
     const sorted = [...owners].sort((a, b) => String(email[a].name).localeCompare(String(email[b].name), "pt"));
     const org = m.created_by && email[m.created_by] ? m.created_by : sorted[0];
     const rest = sorted.filter((id) => id !== org);
+    // Convidados de fora (cliente, contactos, qualquer email) recebem o convite do Outlook e podem responder
+    const attendees = [
+      ...rest.map((id) => ({ emailAddress: { address: email[id].email, name: email[id].name }, type: "required" })),
+      ...guests.map((x) => ({ emailAddress: { address: x.email, ...(x.name ? { name: x.name } : {}) }, type: "required" })),
+    ];
     out.push({ key: `m:${m.id}`, member: org, payload: { ...base,
       ...(meeting ? { isOnlineMeeting: true, onlineMeetingProvider: "teamsForBusiness" } : {}),
-      ...(rest.length ? { attendees: rest.map((id) => ({ emailAddress: { address: email[id].email, name: email[id].name }, type: "required" })), responseRequested: false } : {}) } });
+      ...(attendees.length ? { attendees, responseRequested: guests.length > 0 } : {}) } });
   }
   // Lembretes do Investment Intelligence: 7 dias depois de uma apresentação ainda sem resposta
   const plotBy = Object.fromEntries((plots.data || []).map((p: any) => [p.id, p]));
@@ -143,6 +154,16 @@ async function desired(members: any[]) {
   return out;
 }
 
+// Aviso RGPD que segue no convite enviado a pessoas de fora da equipa
+function gdpr(meeting: boolean) {
+  return `<hr><p style="font-size:12px;color:#666">Proteção de dados: a NOVA Associates trata o seu nome e email apenas para organizar esta reunião e o acompanhamento do projeto, nos termos do RGPD.` +
+    (meeting ? ` A reunião poderá ser transcrita para a elaboração da ata, com aviso no início; pode opor-se a qualquer momento.` : ``) +
+    ` Para aceder, corrigir ou apagar os seus dados, responda a este convite.</p>` +
+    `<p style="font-size:12px;color:#666">Data protection: NOVA Associates processes your name and email only to organise this meeting and follow up on the project, under the GDPR.` +
+    (meeting ? ` The meeting may be transcribed to prepare the minutes, with notice at the start; you may object at any time.` : ``) +
+    ` To access, correct or delete your data, reply to this invitation.</p>`;
+}
+
 async function ensureCategory(upn: string) {
   try {
     const r = await g("GET", `/users/${encodeURIComponent(upn)}/outlook/masterCategories`);
@@ -152,7 +173,7 @@ async function ensureCategory(upn: string) {
 }
 
 // ---------- Uma pessoa ----------
-async function syncMember(m: any, wants: Want[], links: any[]) {
+async function syncMember(m: any, wants: Want[], links: any[], keep: Set<string>) {
   const upn = encodeURIComponent(m.email);
   const res = { name: m.name, written: 0, deleted: 0, read: 0, cancelled: 0, ours: 0, error: null as string | null };
   await ensureCategory(m.email);
@@ -177,8 +198,13 @@ async function syncMember(m: any, wants: Want[], links: any[]) {
       res.written++;
     } catch (e: any) { res.error = e.message; }
   }
-  for (const l of myLinks.filter((x) => !mine.some((w) => w.key === x.source_key))) {
-    try { await g("DELETE", `/users/${upn}/events/${l.ms_event_id}`); } catch (e: any) { if (e.status !== 404) { res.error = e.message; continue; } }
+  // O que saiu da app sai do calendário; marcos realizados ou já passados ficam como histórico (sem cancelar a quem foi).
+  // Primeiro tenta cancelar (os convidados recebem o aviso); se não houver convidados, apaga.
+  for (const l of myLinks.filter((x) => !mine.some((w) => w.key === x.source_key) && !keep.has(x.source_key))) {
+    try { await g("POST", `/users/${upn}/events/${l.ms_event_id}/cancel`, { comment: "Reunião cancelada." }); }
+    catch (_) {
+      try { await g("DELETE", `/users/${upn}/events/${l.ms_event_id}`); } catch (e: any) { if (e.status !== 404) { res.error = e.message; continue; } }
+    }
     await db.from("ms_event_links").delete().eq("member_id", m.id).eq("source_key", l.source_key);
     res.deleted++;
   }
@@ -219,9 +245,19 @@ Deno.serve(async (req) => {
     const members = (mr.data || []).filter((m: any) => /@/.test(m.email || ""));
     const [wants, lr] = await Promise.all([desired(members), db.from("ms_event_links").select("*")]);
     const links = lr.data || [];
+    // Marcos que ainda existem mas já foram realizados ou ficaram para trás: o evento fica no calendário
+    const keep = new Set<string>();
+    const wanted = new Set(wants.map((w) => w.key));
+    const gone = [...new Set(links.filter((l: any) => l.source_key.startsWith("m:") && !wanted.has(l.source_key)).map((l: any) => l.source_key.slice(2)))];
+    if (gone.length) {
+      const r = await db.from("project_milestones").select("id, done, event_date").in("id", gone);
+      if (r.error) throw r.error;
+      const from = addDays(todayKey(), -WRITE_BACK);
+      (r.data || []).forEach((x: any) => { if (x.done || x.event_date < from) keep.add("m:" + x.id); });
+    }
     const out = [];
     for (const m of members) {
-      try { out.push(await syncMember(m, wants, links)); }
+      try { out.push(await syncMember(m, wants, links, keep)); }
       catch (e: any) { out.push({ name: m.name, error: e.message }); }
     }
     const ok = out.every((x: any) => !x.error);
