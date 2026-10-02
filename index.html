@@ -562,6 +562,9 @@
   /* ---------- Agenda ---------- */
   .agenda-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); margin: 28px 0 var(--sp-2-5); }
   .agenda-head .segmented { margin: 0; }
+  .agenda-head { flex-wrap: wrap; }
+  .agenda-head .agenda-new { width: auto; margin: 0 0 0 auto; padding: 0 var(--sp-4); height: 36px; flex-shrink: 0; }
+  @media (max-width: 560px) { .agenda-head .agenda-new { order: -1; width: 100%; margin: 0; } }
   .cal-head { display: flex; align-items: center; gap: var(--sp-1); margin-bottom: var(--sp-2-5); }
   .cal-title { font-size: var(--fs-md); font-weight: var(--fw-semibold); flex: 1; text-align: center; }
   .cal-head .text-btn { flex-shrink: 0; margin-left: var(--sp-1-5); }
@@ -617,6 +620,18 @@
   }
   .owner-chip:hover { border-color: var(--border-strong); }
   .owner-chip.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: var(--fw-semibold); }
+  /* Convidados de fora da equipa (marcos) */
+  .guest-list { display: flex; flex-direction: column; gap: var(--sp-1-5); }
+  .guest-item { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); border: 1px solid var(--border); border-radius: var(--r-md, 8px); background: var(--surface); min-width: 0; }
+  .guest-item .g-txt { flex: 1; min-width: 0; font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .guest-item .g-txt span { color: var(--text-3); }
+  .guest-item .g-new { font-size: var(--fs-micro); color: var(--accent); font-weight: var(--fw-semibold); flex-shrink: 0; }
+  .guest-item button { border: 0; background: none; color: var(--text-3); font-size: 18px; line-height: 1; cursor: pointer; padding: 0 var(--sp-1); flex-shrink: 0; }
+  .guest-sugg { display: flex; flex-wrap: wrap; gap: var(--sp-1-5); margin-top: var(--sp-2); }
+  .guest-sugg .owner-chip { border-style: dashed; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .guest-add { display: grid; grid-template-columns: 1fr 1.4fr auto; gap: var(--sp-2); margin-top: var(--sp-2); }
+  .guest-add .form-input { margin: 0; min-width: 0; }
+  @media (max-width: 560px) { .guest-add { grid-template-columns: 1fr; } }
 
   /* ---------- Horas ---------- */
   .horas-entry { padding: var(--sp-3) 0; border-top: 1px solid var(--border); }
@@ -1304,6 +1319,7 @@
   @media (max-width: 560px) { .ii-tag { width: 100%; } }
   .ms-steps { margin: 0 0 var(--sp-2); padding-left: 1.2em; display: grid; gap: var(--sp-1-5); font-size: var(--fs-sm); color: var(--text-2); }
   .ms-steps b { color: var(--text); }
+  .ms-code { margin: var(--sp-1-5) 0; padding: var(--sp-2) var(--sp-3); background: var(--surface-2, var(--surface-3)); border: 1px solid var(--border); border-radius: 8px; font-size: 12px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; color: var(--text); user-select: all; }
   .ms-join { display: flex; align-items: center; justify-content: center; text-decoration: none; margin: var(--sp-2) 0; }
   .ts-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--sp-1-5); padding: var(--sp-6) var(--sp-4); }
   .ts-empty b { font-size: var(--fs-lg); } .ts-empty span { color: var(--text-2); max-width: 420px; }
@@ -2819,6 +2835,7 @@
             <button type="button" data-scope="mine" class="active">Meus</button>
             <button type="button" data-scope="all">Todos</button>
           </div>
+          <button type="button" class="primary-btn agenda-new" id="agenda-new">+ Novo evento</button>
         </div>
         <div id="agenda-month-panel">
         <div class="gantt-wrap" id="agenda-wrap">
@@ -4001,6 +4018,21 @@
         ${(st.members || []).length ? `<div class="table-scroll"><table class="mini-table"><thead><tr><th>Pessoa</th><th class="col-value">Escritos</th><th class="col-value">Apagados</th><th class="col-value">Lidos</th><th>Estado</th></tr></thead><tbody>
           ${st.members.map(m => `<tr><td>${escapeHtml(m.name)}</td><td class="col-value">${m.written ?? '—'}</td><td class="col-value">${m.deleted ?? '—'}</td><td class="col-value">${m.read ?? '—'}</td><td>${m.error ? `<span class="warn-text">${escapeHtml(m.error)}</span>` : '✓'}</td></tr>`).join('')}
         </tbody></table></div>` : ''}
+        <div class="section-label op-form-sec">Transcrições das reuniões Teams → atas</div>
+        <div class="field-hint" style="margin-top:0;">Depois de cada reunião Teams organizada por alguém da equipa, se a transcrição foi ligada, a app arquiva-a como ata do projeto: o do marco, ou o projeto cujo código ou nome está no assunto. Sem projeto, aparece um aviso na Hoje de quem organizou para o escolher. Sem IA e sem custos.</div>
+        ${st.transcripts ? `<div class="field-hint">${st.transcripts.error ? `<span class="warn-text">${escapeHtml(st.transcripts.error)}</span>` : `Última verificação: ${Number(st.transcripts.saved) || 0} arquivadas · ${Number(st.transcripts.waiting) || 0} à espera da transcrição`}</div>` : ''}
+        <details class="more-opts"><summary>Como ligar as transcrições (administrador, ~10 min)</summary>
+        <ol class="ms-steps">
+          <li><b>Teams</b> (admin.teams.microsoft.com) → <b>Reuniões → Políticas de reunião → Global</b> → <b>Gravação e transcrição</b>: <b>Transcrição</b> ligada. Guardar.</li>
+          <li><b>Entra</b> → aplicação <b>NOVA Compass</b> → <b>Permissões de API → Adicionar → Microsoft Graph → Permissões de aplicação</b>: <b>OnlineMeetings.Read.All</b>, <b>OnlineMeetingTranscript.Read.All</b> e <b>User.Read.All</b>. Depois <b>Conceder consentimento de administrador</b>.</li>
+          <li>Autorizar a app a ler as reuniões (PowerShell do Windows, como administrador), trocando o ID pelo <b>ID da aplicação</b> (Descrição geral, no Entra):
+            <pre class="ms-code">Install-Module MicrosoftTeams
+Connect-MicrosoftTeams
+New-CsApplicationAccessPolicy -Identity "NOVA-Compass" -AppIds "ID-DA-APLICACAO" -Description "NOVA Compass - transcricoes"
+Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
+            Pode levar até 30 minutos a ficar ativo.</li>
+          <li>Em cada reunião: <b>Mais → Gravar e transcrever → Iniciar transcrição</b> (ou, nas opções da reunião, <b>Gravar e transcrever automaticamente</b>). Sem transcrição, não há ata.</li>
+        </ol></details>
         <div class="section-label op-form-sec">O que vai para o calendário de cada pessoa</div>
         <div class="field-hint" style="margin-top:0;">No calendário principal (o que o Teams, o Outlook e o iPhone mostram), com a categoria <b>NOVA Compass</b>: marcos e entregas de que é responsável, marcos com várias pessoas como um só evento partilhado (organiza quem criou o marco na app; os outros são convidados), com link Teams quando o marco tem a opção "Reunião online" e lembretes do Investment Intelligence (7 dias sem resposta). <b>Não vão</b>: fases de projeto, ausências e férias, prazos da Câmara e respostas a ofícios. A app manda nestes eventos: alterações feitas no Teams são repostas. As reuniões Teams e os eventos do Outlook de cada pessoa aparecem na Agenda e na Hoje; os privados só como "Ocupado".</div>
         ${st.configured ? '' : `<div class="section-label op-form-sec">Como ligar (administrador do Office 365, ~15 min)</div>
@@ -7323,7 +7355,7 @@
 
     async function loadAllMembers() {
       if (devMode) return [MOCK_MEMBER, { id: 'm2', name: 'Nuno' }, { id: 'm3', name: 'Rute' }];
-      const res = await supabase.from('team_members').select('id, name').eq('active', true).order('name');
+      const res = await supabase.from('team_members').select('id, name, email').eq('active', true).order('name');
       return res.data || [];
     }
 
@@ -11431,10 +11463,10 @@
           invoices: MOCK_INVOICES.map((i, k) => ({ ...i, project_id: ['mock-1', 'mock-1', 'mock-2'][k] })),
           hours: [{ project_id: 'mock-1', hours: 90 }, { project_id: 'mock-2', hours: 60 }, { project_id: 'mock-3', hours: 12 }],
           open: MOCK_INVOICES.map((i, k) => ({ ...i, project_id: ['mock-1', 'mock-1', 'mock-2'][k] })),
-          weights: await loadClientScoreWeights()
+          weights: await loadClientScoreWeights(), investors: mockInvestors
         };
       }
-      const [c, e, p, inv, ex, t, w, op] = await Promise.all([
+      const [c, e, p, inv, ex, t, w, op, ivs] = await Promise.all([
         supabase.from('clients').select('id, name, email, phone, address, notes, nif, language, nps_opt_out').order('name'),
         supabase.from('client_entities').select('*').order('created_at'),
         supabase.from('projects').select('id, name, code, status, awarding_date, client_id, client_entity_id, archived_at, commission_value'),
@@ -11443,7 +11475,8 @@
         selectAll(() => supabase.from('time_entries').select('project_id, stage_id, hours').gte('date', from).not('project_id', 'is', null).order('id')),
         loadClientScoreWeights(),
         // Em dívida: faturas (de qualquer ano) ainda não pagas por inteiro
-        selectAll(() => supabase.from('invoices').select('project_id, amount, amount_paid, issue_date, status, archived_at').is('archived_at', null).order('id'))
+        selectAll(() => supabase.from('invoices').select('project_id, amount, amount_paid, issue_date, status, archived_at').is('archived_at', null).order('id')),
+        supabase.from('investors').select('*')
       ]);
       for (const r of [c, e, p, inv, t]) if (r.error) throw r.error;
       const excluded = new Set((ex.data || []).map(s => s.id));
@@ -11452,7 +11485,7 @@
         invoices: (inv.data || []).filter(i => !excluded.has(i.stage_id)),
         hours: (t.data || []).filter(h => !excluded.has(h.stage_id)),
         open: op.error ? [] : (op.data || []),
-        weights: w
+        weights: w, investors: ivs.error ? [] : (ivs.data || [])
       };
     }
 
@@ -11554,7 +11587,8 @@
       const sub = c => {
         const es = entsBy[c.id] || [];
         const nC = es.filter(e => e.kind === 'company').length, nP = es.filter(e => e.kind === 'personal').length;
-        return [nP ? 'particular' : '', nC ? (nC === 1 ? '1 empresa' : `${nC} empresas`) : ''].filter(Boolean).join(' · ') || 'sem dados de faturação';
+        const iv = (data.investors || []).some(x => x.client_id === c.id && x.active !== false);
+        return [iv ? 'investidor' : '', nP ? 'particular' : '', nC ? (nC === 1 ? '1 empresa' : `${nC} empresas`) : ''].filter(Boolean).join(' · ') || 'sem dados de faturação';
       };
       box.innerHTML = `
         <div class="projects-table-wrap"><table class="projects-table clients-table">
@@ -11599,6 +11633,7 @@
         if (!c) { view.innerHTML = '<div class="error-box">Cliente não encontrado.</div>'; return; }
         document.getElementById('nav-title').textContent = c.name;
         const r = scores[c.id];
+        const civ = (data.investors || []).find(x => x.client_id === c.id) || null;
         const ents = data.entities.filter(e => e.client_id === c.id);
         const entById = Object.fromEntries(ents.map(e => [e.id, e]));
         const invByProject = {};
@@ -11624,6 +11659,10 @@
               <div class="cs-metric"><span>${escapeHtml(label)}</span><b>${escapeHtml(metricValueText(k, r))}</b>
                 ${scoreBarHtml(r.sub[k])}<i>${escapeHtml(hint)} · ${r.sub[k]}/100 · peso ${Number(data.weights[k]) || 0}</i></div>`).join('')}</div>
           </div>
+          ${civ ? `<div class="gantt-wrap click-row" id="cl-inv-card">
+            <div class="card-head"><h2>Investidor</h2><span>${civ.active !== false ? 'Ativo' : 'Inativo'}</span></div>
+            <div class="field-hint" style="margin:0">${escapeHtml([civ.company, civ.invest_max ? 'até ' + fmtEURShort(civ.invest_max) : '', (civ.zones || []).join(', ')].filter(Boolean).join(' · ') || 'Perfil de investimento')} · ver perfil e oportunidades que encaixam →</div>
+          </div>` : ''}
           <div class="gantt-wrap">
             <div class="card-head"><h2>Entidades de faturação</h2><button type="button" class="text-btn" id="cl-add-entity">+ Adicionar</button></div>
             ${ents.length ? ents.map(e => `
@@ -11651,6 +11690,7 @@
           </div>`;
         const reopen = () => { suppressNavPush = true; openClientDetail(c.id); };
         document.getElementById('cl-edit').addEventListener('click', () => openClientModal(c, reopen));
+        document.getElementById('cl-inv-card')?.addEventListener('click', async () => { await (oppsCache || loadOppsData()); openInvestorModal(civ, reopen); });
         document.getElementById('cl-add-entity').addEventListener('click', () => openEntityModal(c, null, reopen));
         view.querySelectorAll('[data-entity-id]').forEach(row => row.addEventListener('click', () =>
           openEntityModal(c, ents.find(e => String(e.id) === row.dataset.entityId), reopen)));
@@ -11679,10 +11719,28 @@
           <div><label class="field-label">Inquéritos de satisfação</label><label class="check-row" style="margin-top:0;min-height:40px"><input type="checkbox" id="cl-nps-off"${client?.nps_opt_out ? ' checked' : ''}> Não enviar</label></div>
         </div>
         <div class="field-hint">O inquérito de satisfação (NPS) vai para o email acima depois de cada entrega.</div>
+        <label class="check-row"><input type="checkbox" id="cl-inv"> Investidor — perfil de investimento para o Investment Intelligence</label>
+        <div id="cl-inv-wrap" hidden></div>
         ${isEdit ? '' : '<div class="field-hint">Depois de criar, acrescenta na ficha o NIF pessoal e/ou as empresas do cliente.</div>'}
         <button type="button" id="cl-save" class="primary-btn">${isEdit ? 'Guardar' : 'Criar cliente'}</button>
         ${isEdit ? '<button type="button" id="cl-delete" class="secondary-btn danger-btn">Eliminar cliente</button>' : ''}
         <div id="cl-msg" class="form-msg"></div>`);
+      // Tick "Investidor": abre o perfil de investimento (o mesmo do Investment Intelligence)
+      const civ = client ? (clientsCache?.data?.investors || []).find(x => x.client_id === client.id) || null : null;
+      const invCb = document.getElementById('cl-inv'), invWrap = document.getElementById('cl-inv-wrap');
+      let profileReady = false;
+      const showProfile = async () => {
+        invWrap.hidden = !invCb.checked;
+        if (!invCb.checked || profileReady) return;
+        invWrap.innerHTML = '<div class="field-hint">A carregar o perfil…</div>';
+        const d = oppsCache || await loadOppsData();
+        invWrap.innerHTML = investorProfileHtml(civ || { approved_pref: 'any', project_type_ids: [], zones: [] }, d);
+        bindInvestorProfile(Object.fromEntries(d.types.map(t => [t.id, t])));
+        profileReady = true;
+      };
+      invCb.checked = !!civ && civ.active !== false;
+      invCb.addEventListener('change', showProfile);
+      showProfile();
       document.getElementById('cl-save').addEventListener('click', async () => {
         const row = {
           name: document.getElementById('cl-name').value.trim(),
@@ -11694,6 +11752,14 @@
           nps_opt_out: document.getElementById('cl-nps-off').checked
         };
         if (!row.name) return formError('cl-msg', 'O nome é obrigatório.');
+        let prof = null;
+        if (invCb.checked) {
+          if (!profileReady) return formError('cl-msg', 'O perfil de investimento ainda está a carregar.');
+          const pr = readInvestorProfile();
+          if (pr.error) return formError('cl-msg', pr.error);
+          prof = pr.row;
+        }
+        if (!invCb.checked && civ && civ.active !== false && !window.confirm(`Deixar de tratar "${row.name}" como investidor? O perfil fica guardado, mas deixa de receber sugestões de oportunidades.`)) return;
         try {
           let id = client?.id;
           if (isEdit) {
@@ -11701,6 +11767,13 @@
             // O nome também fica em projects.client (usado por outras ferramentas)
             if (!devMode && row.name !== client.name) await supabase.from('projects').update({ client: row.name }).eq('client_id', id);
           } else id = (await dbInsert('clients', row, MOCK_CLIENT_ROWS)).id;
+          // Perfil de investidor: o contacto acompanha a ficha do cliente
+          const contact = { name: row.name, email: row.email, phone: row.phone };
+          if (prof) {
+            if (civ) await dbUpdate('investors', civ.id, { ...prof, ...contact, active: true, updated_at: new Date().toISOString() }, mockInvestors);
+            else await dbInsert('investors', { ...prof, ...contact, client_id: id, active: true, created_by: (await getCurrentMember())?.id ?? null }, mockInvestors);
+          } else if (civ) await dbUpdate('investors', civ.id, { ...contact, active: false, updated_at: new Date().toISOString() }, mockInvestors);
+          if (prof || civ) oppsCache = null;
           closeQuickModal(); showToast(isEdit ? 'Cliente guardado' : 'Cliente criado'); onSaved && onSaved(id);
         } catch (err) { formError('cl-msg', 'Não foi possível guardar: ' + err.message); }
       });
@@ -12380,10 +12453,10 @@
       const items = [];
       // pri: 0 atrasado/crítico · 1 esta semana · 2 resto · 3 fecho do mês (sobe a 1 depois do dia 10)
       teamRows.forEach(r => {
-        const urgent = r.late ? 'late' : (r.kind === 'camara' || r.kind === 'debt') ? 'soon' : '';
-        items.push({ pri: r.late ? 0 : urgent ? 1 : 2, date: r.due || '9999', html: `
-          <div class="alert-row team${urgent ? ' ' + urgent : ''}" data-alert-team="${r.kind}"${r.project ? ` data-project="${escapeHtml(r.project)}"` : ''}${r.nps ? ` data-nps="${escapeHtml(r.nps)}"` : ''}>
-            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : r.kind === 'nps' ? '★' : r.kind === 'debt' ? '€' : r.kind === 'law' ? '§' : r.kind === 'radar' ? '◎' : '+'}</span>
+        const urgent = r.late ? 'late' : (r.kind === 'camara' || r.kind === 'debt' || r.kind === 'meet') ? 'soon' : '';
+        items.push({ pri: r.late || r.kind === 'meet' ? 0 : urgent ? 1 : 2, date: r.due || '9999', html: `
+          <div class="alert-row team${urgent ? ' ' + urgent : ''}" data-alert-team="${r.kind}"${r.note ? ` data-note="${escapeHtml(r.note.id)}"` : ''}${r.project ? ` data-project="${escapeHtml(r.project)}"` : ''}${r.nps ? ` data-nps="${escapeHtml(r.nps)}"` : ''}${r.url ? ` data-url="${escapeHtml(r.url)}" role="link" tabindex="0"` : ''}>
+            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : r.kind === 'nps' ? '★' : r.kind === 'debt' ? '€' : r.kind === 'law' ? '§' : r.kind === 'radar' ? '◎' : r.kind === 'meet' ? '▶' : r.kind === 'transcript' ? '≡' : '+'}</span>
             <span class="alert-text"><b>${escapeHtml(r.title)}</b><span>${escapeHtml(r.sub)}</span></span>
             <span class="alert-when">${escapeHtml(r.when)}</span>
           </div>` });
@@ -12432,7 +12505,9 @@
         openMarcoModal({ milestoneId: r.dataset.alertMarco, onSuccess: () => renderToday() })));
       el.querySelectorAll('[data-alert-team]').forEach(r => r.addEventListener('click', () => {
         const k = r.dataset.alertTeam;
-        if (k === 'hours') openHorasModule();
+        if (k === 'meet') window.open(r.dataset.url, '_blank', 'noopener');
+        else if (k === 'transcript') { const n = teamRows.find(x => x.note && String(x.note.id) === r.dataset.note)?.note; if (n) openNewAtaModal(null, null, n, () => renderToday()); }
+        else if (k === 'hours') openHorasModule();
         else if (k === 'owner') openProjectsModule();
         else if (k === 'debt') { navStack = []; openBillingModule('toreceive'); }
         else if (k === 'law') { navStack = []; openSettingsModule(); showSettingsSection('payroll'); }
@@ -12782,6 +12857,33 @@
         </div>`;
     }
 
+    // Reuniões de hoje com link (Teams/Outlook ou marcos com reunião online): aviso com acesso direto, até acabarem
+    async function meetingAlerts(list, me, todayKey) {
+      const now = new Date(), hhmm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+      const mine = list.filter(m => m.event_date === todayKey && !m.all_day && m.start_time && !m.done && (m.owner_ids || []).includes(me)
+        && String(m.end_time || m.start_time).slice(0, 5) >= hhmm && (m.external ? m.ms?.join_url : m.teams_link));
+      const appIds = mine.filter(m => !m.external).map(m => 'm:' + m.id);
+      const urls = {};
+      if (appIds.length && !devMode) {
+        const r = await supabase.from('ms_event_links').select('source_key, join_url').in('source_key', appIds).not('join_url', 'is', null);
+        (r.data || []).forEach(x => { urls[x.source_key.slice(2)] = x.join_url; });
+      }
+      return mine.map(m => ({ m, url: m.external ? m.ms.join_url : urls[m.id] }))
+        .filter(x => /^https:\/\//.test(x.url || ''))
+        .map(({ m, url }) => ({ kind: 'meet', url, due: todayKey + ' ' + m.start_time,
+          title: `Reunião hoje às ${String(m.start_time).slice(0, 5)}: ${m.title}`,
+          sub: [fmtTimeRange(m), 'Microsoft Teams'].join(' · '), when: 'Entrar' }));
+    }
+
+    // Transcrições de reuniões Teams arquivadas sem projeto (o organizador escolhe o projeto)
+    async function transcriptAlerts(me) {
+      if (devMode || !me) return [];
+      const r = await supabase.from('meeting_notes').select('id, project_id, milestone_id, title, body, meeting_date')
+        .is('project_id', null).like('title', 'Transcrição — %').eq('created_by', me).gte('meeting_date', addDaysKey(dateKey(new Date()), -30));
+      return (r.data || []).map(n => ({ kind: 'transcript', note: n, title: n.title.replace(/^Transcrição — /, 'Transcrição sem projeto: '),
+        sub: fmtDayMonthYear(n.meeting_date) + ' · escolhe o projeto para a arquivar no histórico', when: 'Arquivar' }));
+    }
+
     async function renderToday() {
       const weekEl = document.getElementById('today-week-list');
       const phasesEl = document.getElementById('today-phases');
@@ -12813,7 +12915,7 @@
         renderWeekHours(hoursEl, hours, tg);
         // Avisos de organização: horas em falta (a partir de sexta), projetos sem responsável,
         // fases em curso/seguintes sem ninguém nos projetos de que sou responsável
-        const teamAlerts = [...radarAlerts, ...lawAlerts, ...debtAlerts, ...npsAlerts, ...camaraAlerts];
+        const teamAlerts = [...await meetingAlerts(milestones, me, todayKey).catch(() => []), ...await transcriptAlerts(me).catch(() => []), ...radarAlerts, ...lawAlerts, ...debtAlerts, ...npsAlerts, ...camaraAlerts];
         const wd = new Date().getDay();
         const missing = missingHourDays(hours, tg);
         if ((wd === 5 || wd === 6 || wd === 0) && missing.length)
@@ -14742,6 +14844,20 @@
         if (got < want) cap = Math.min(cap, got < want * 0.75 ? 55 : 64);
         add(15, got >= want ? 1 : got / want, got >= want ? `yield bruto ${pct(got, 1)} ≥ ${pct(want, 1)}` : `yield bruto ${pct(got, 1)} abaixo de ${pct(want, 1)}`);
       } else if ((inv.min_roi != null || inv.min_yield != null) && !hasFeas) pitch.push('faz a viabilidade para confirmar se dá a rentabilidade que ele pede');
+      // Rácios do terreno: o máximo que o investidor aceita (o mesmo cálculo da viabilidade)
+      const R = c.ratios || {}, price = Number(p.asking_price) || 0;
+      [['max_land_abc', R.abc, 1, v => fmtEURShort(v) + '/m²', 'terreno por m² de construção', true],
+       ['max_land_revenue', c.hasSales ? R.revenue : null, 100, v => pct(v), 'terreno na receita', true],
+       ['max_land_cost', c.hasCosts ? R.cost : null, 100, v => pct(v), 'terreno no custo global', false],
+       ['max_land_unit', R.unit, 1, v => fmtEURShort(v), 'terreno por fração', true]].forEach(([k, got, div, fmt, label, linear]) => {
+        if (inv[k] == null || inv[k] === '' || !got) return;
+        const max = Number(inv[k]) / div;
+        if (!(max > 0)) return;
+        if (got <= max) { add(4, 1, `${label} ${fmt(got)} ≤ ${fmt(max)} que aceita`); return; }
+        const d = (got - max) / max;
+        add(4, 1 - d / 0.5, `${label} ${fmt(got)} — aceita até ${fmt(max)}`);
+        if (linear && price) pitch.push(`para ${label} até ${fmt(max)}, o terreno teria de custar até ${fmtEURShort(Math.floor(price * max / got / 1000) * 1000)} — argumento para negociar`);
+      });
       // Projeto aprovado
       if (inv.approved_pref && inv.approved_pref !== 'any') {
         const ok = inv.approved_pref === 'approved' ? !!p.has_approved_project : !p.has_approved_project;
@@ -14827,7 +14943,7 @@
     };
     let mockProposalCfg = { ...PROPOSAL_DEFAULT };
     let mockInvestors = [
-      { id: 'inv-a', name: 'Carlos Mendes', company: 'CM Invest', email: 'carlos@example.com', phone: '912 000 000', client_id: null, project_type_ids: ['pt-1'], fractions_min: 6, fractions_max: 20, invest_min: 1000000, invest_max: 4000000, zones: ['Porto', 'Gaia'], approved_pref: 'any', notes: 'Prefere zonas com metro.', active: true, strategy: 'sale', min_roi: 20, min_yield: null, segment: 'medio', tags: ['metro'] },
+      { id: 'inv-a', name: 'Carlos Mendes', company: 'CM Invest', email: 'carlos@example.com', phone: '912 000 000', client_id: 'cl-1', max_land_revenue: 20, max_land_abc: 300, project_type_ids: ['pt-1'], fractions_min: 6, fractions_max: 20, invest_min: 1000000, invest_max: 4000000, zones: ['Porto', 'Gaia'], approved_pref: 'any', notes: 'Prefere zonas com metro.', active: true, strategy: 'sale', min_roi: 20, min_yield: null, segment: 'medio', tags: ['metro'] },
       { id: 'inv-b', name: 'Ana Ribeiro', company: '', email: '', phone: '', client_id: null, project_type_ids: ['pt-2'], fractions_min: null, fractions_max: null, invest_min: 300000, invest_max: 900000, zones: ['Matosinhos', 'Maia'], approved_pref: 'approved', notes: '', active: true, strategy: 'both', min_roi: 15, min_yield: 5, segment: 'premium', tags: [] }
     ];
     let mockPlots = [
@@ -15728,24 +15844,13 @@
       if (opts.keepSaved) flagSaving();
     }
 
-    // ---------- Investidor: perfil de investimento ----------
-    async function openInvestorModal(inv, onSaved) {
-      const isEdit = !!inv, x = inv || { approved_pref: 'any', project_type_ids: [], zones: [], active: true };
-      const d = oppsCache || await loadOppsData();
-      const typeById = Object.fromEntries(d.types.map(t => [t.id, t]));
+    // Perfil de investimento: o mesmo bloco na ficha do cliente (tick "Investidor") e no Investment Intelligence
+    function investorProfileHtml(x, d) {
       const v = k => escapeHtml(x[k] ?? '');
-      const mctx = { typeById, plots: d.plots, presentations: d.presentations };
-      const fitting = isEdit ? d.plots.filter(p => PLOT_OPEN.includes(p.status)).map(p => ({ p, m: investorMatch(x, p, mctx) })).filter(r => r.m.known && r.m.score >= 50).sort((a, b) => b.m.score - a.m.score) : [];
-      openQuickModal(isEdit ? 'Investidor' : 'Novo investidor', `
-        <label class="field-label" style="margin-top:0;">Nome</label>
-        <input type="text" id="iv-name" class="form-input" value="${v('name')}">
-        <div class="form-grid">
-          <div><label class="field-label">Empresa</label><input type="text" id="iv-company" class="form-input" value="${v('company')}"></div>
-          <div><label class="field-label">Telefone</label><input type="tel" id="iv-phone" class="form-input" value="${v('phone')}"></div>
-        </div>
-        <label class="field-label">Email</label><input type="email" id="iv-email" class="form-input" value="${v('email')}">
+      return `
         <div class="section-label op-form-sec">Perfil de investimento</div>
-        <label class="field-label" style="margin-top:0;">Tipologias que procura</label>
+        <label class="field-label" style="margin-top:0;">Empresa ou veículo de investimento</label><input type="text" id="iv-company" class="form-input" value="${v('company')}">
+        <label class="field-label">Tipologias que procura</label>
         <div class="op-chips" id="iv-types">${d.types.map(t => `<label class="op-chip"><input type="checkbox" value="${escapeHtml(t.id)}"${(x.project_type_ids || []).includes(t.id) ? ' checked' : ''}><span>${escapeHtml(t.name)}</span></label>`).join('')}</div>
         <div class="form-grid" id="iv-fr-wrap">
           <div><label class="field-label">Frações (mín.)</label><input type="text" inputmode="numeric" id="iv-frmin" class="form-input" value="${v('fractions_min')}"></div>
@@ -15768,45 +15873,91 @@
         <select id="iv-approved" class="form-input">${APPROVED_PREFS.map(([k, l]) => `<option value="${k}"${k === (x.approved_pref || 'any') ? ' selected' : ''}>${l}</option>`).join('')}</select>
         <label class="field-label">Características que procura</label>
         <input type="text" id="iv-tags" class="form-input" placeholder="separadas por vírgulas: reabilitação, comércio, vista mar, ARU" value="${escapeHtml((x.tags || []).join(', '))}">
-        <label class="field-label">Notas</label><textarea id="iv-notes" class="form-input" rows="3">${v('notes')}</textarea>
-        ${isEdit ? `<label class="check-row"><input type="checkbox" id="iv-active"${x.active !== false ? ' checked' : ''}> Ativo (desliga para deixar de lhe sugerir oportunidades)</label>` : ''}
-        ${isEdit ? `<div class="section-label op-form-sec">Matchmaker — oportunidades em curso para ele</div>${fitting.length ? fitting.map(r => `<div class="mm-row click-row" data-iv-plot="${escapeHtml(r.p.id)}">${matchBadge(r.m)}<div class="mm-body"><div class="mm-head"><b>${escapeHtml(r.p.name)}</b> <small class="muted">${escapeHtml([r.p.municipality, optLabel(PLOT_STATUSES, r.p.status)].filter(Boolean).join(' · '))}</small></div>${matchWhyHtml(r.m)}</div></div>`).join('') : '<div class="gantt-empty">Nenhum, por agora.</div>'}` : ''}
-        <button type="button" class="primary-btn" id="iv-save">${isEdit ? 'Guardar' : 'Criar investidor'}</button>
-        ${isEdit ? '<button type="button" class="text-btn danger-text" id="iv-delete" style="margin-top:12px;">Eliminar investidor</button>' : ''}
-        <div id="iv-msg" class="form-msg"></div>`);
+        <div class="section-label op-form-sec">Rácios do terreno — máximos que aceita</div>
+        <div class="form-grid">
+          <div><label class="field-label">Terreno / m² de construção (€/m²)</label><input type="text" inputmode="decimal" id="iv-r-abc" class="form-input" placeholder="ex.: 400" value="${v('max_land_abc')}"></div>
+          <div><label class="field-label">Terreno / receita (%)</label><input type="text" inputmode="decimal" id="iv-r-rev" class="form-input" placeholder="ex.: 20" value="${v('max_land_revenue')}"></div>
+          <div><label class="field-label">Terreno / custo global (%)</label><input type="text" inputmode="decimal" id="iv-r-cost" class="form-input" placeholder="ex.: 30" value="${v('max_land_cost')}"></div>
+          <div><label class="field-label">Terreno por fração (€)</label><input type="text" inputmode="decimal" id="iv-r-unit" class="form-input" placeholder="ex.: 60000" value="${v('max_land_unit')}"></div>
+        </div>
+        <div class="field-hint">Os mesmos rácios da viabilidade. Em branco não conta para o matchmaker.</div>
+        <label class="field-label">Notas de investimento</label><textarea id="iv-notes" class="form-input" rows="3">${v('notes')}</textarea>`;
+    }
+    function bindInvestorProfile(typeById) {
       const syncFr = () => {
         const multi = [...document.querySelectorAll('#iv-types input:checked')].some(cb => typeById[cb.value]?.size_measure === 'fractions');
         document.getElementById('iv-fr-wrap').hidden = !multi;
       };
       document.getElementById('iv-types').addEventListener('change', syncFr); syncFr();
+    }
+    // Lê o perfil do formulário; devolve { row } ou { error }
+    function readInvestorProfile() {
+      const g = id => document.getElementById(id).value.trim();
+      const multi = !document.getElementById('iv-fr-wrap').hidden;
+      const row = {
+        company: valOrNull(g('iv-company')),
+        project_type_ids: [...document.querySelectorAll('#iv-types input:checked')].map(cb => cb.value),
+        fractions_min: multi ? numOrNull(g('iv-frmin')) : null, fractions_max: multi ? numOrNull(g('iv-frmax')) : null,
+        invest_min: numOrNull(g('iv-imin')), invest_max: numOrNull(g('iv-imax')),
+        zones: g('iv-zones').split(/[,;]/).map(s => s.trim()).filter(Boolean),
+        approved_pref: g('iv-approved'), notes: valOrNull(g('iv-notes')),
+        strategy: g('iv-strategy'), segment: g('iv-segment') || null, min_roi: numOrNull(g('iv-roi')), min_yield: numOrNull(g('iv-yield')),
+        max_land_abc: numOrNull(g('iv-r-abc')), max_land_revenue: numOrNull(g('iv-r-rev')), max_land_cost: numOrNull(g('iv-r-cost')), max_land_unit: numOrNull(g('iv-r-unit')),
+        tags: g('iv-tags').split(/[,;]/).map(t => t.trim()).filter(Boolean)
+      };
+      if ([row.fractions_min, row.fractions_max, row.invest_min, row.invest_max, row.min_roi, row.min_yield, row.max_land_abc, row.max_land_revenue, row.max_land_cost, row.max_land_unit].some(n => Number.isNaN(n))) return { error: 'Há um número inválido.' };
+      if (row.invest_min != null && row.invest_max != null && row.invest_max < row.invest_min) return { error: 'O investimento máximo é menor que o mínimo.' };
+      return { row };
+    }
+
+    // ---------- Investidor: perfil de investimento ----------
+    async function openInvestorModal(inv, onSaved) {
+      const isEdit = !!inv, x = inv || { approved_pref: 'any', project_type_ids: [], zones: [], active: true };
+      const d = oppsCache || await loadOppsData();
+      const typeById = Object.fromEntries(d.types.map(t => [t.id, t]));
+      const v = k => escapeHtml(x[k] ?? '');
+      const mctx = { typeById, plots: d.plots, presentations: d.presentations };
+      const fitting = isEdit ? d.plots.filter(p => PLOT_OPEN.includes(p.status)).map(p => ({ p, m: investorMatch(x, p, mctx) })).filter(r => r.m.known && r.m.score >= 50).sort((a, b) => b.m.score - a.m.score) : [];
+      openQuickModal(isEdit ? 'Investidor' : 'Novo investidor', `
+        <label class="field-label" style="margin-top:0;">Nome</label>
+        <input type="text" id="iv-name" class="form-input" value="${v('name')}">
+        <div class="form-grid">
+          <div><label class="field-label">Email</label><input type="email" id="iv-email" class="form-input" value="${v('email')}"></div>
+          <div><label class="field-label">Telefone</label><input type="tel" id="iv-phone" class="form-input" value="${v('phone')}"></div>
+        </div>
+        <div class="field-hint">Fica numa só ficha em Clientes, com o tick "Investidor".</div>
+        ${investorProfileHtml(x, d)}
+        ${isEdit ? `<label class="check-row"><input type="checkbox" id="iv-active"${x.active !== false ? ' checked' : ''}> Ativo (desliga para deixar de lhe sugerir oportunidades)</label>` : ''}
+        ${isEdit ? `<div class="section-label op-form-sec">Matchmaker — oportunidades em curso para ele</div>${fitting.length ? fitting.map(r => `<div class="mm-row click-row" data-iv-plot="${escapeHtml(r.p.id)}">${matchBadge(r.m)}<div class="mm-body"><div class="mm-head"><b>${escapeHtml(r.p.name)}</b> <small class="muted">${escapeHtml([r.p.municipality, optLabel(PLOT_STATUSES, r.p.status)].filter(Boolean).join(' · '))}</small></div>${matchWhyHtml(r.m)}</div></div>`).join('') : '<div class="gantt-empty">Nenhum, por agora.</div>'}` : ''}
+        <button type="button" class="primary-btn" id="iv-save">${isEdit ? 'Guardar' : 'Criar investidor'}</button>
+        ${isEdit ? '<button type="button" class="text-btn danger-text" id="iv-delete" style="margin-top:12px;">Retirar perfil de investidor</button>' : ''}
+        <div id="iv-msg" class="form-msg"></div>`);
+      bindInvestorProfile(typeById);
       document.querySelectorAll('[data-iv-plot]').forEach(r => r.addEventListener('click', () => { closeQuickModal(); openPlotView(r.dataset.ivPlot); }));
       document.getElementById('iv-save').addEventListener('click', async () => {
         const g = id => document.getElementById(id).value.trim();
         const name = g('iv-name');
         if (!name) return formError('iv-msg', 'Indica o nome.');
-        const multi = !document.getElementById('iv-fr-wrap').hidden;
-        const row = {
-          name, company: valOrNull(g('iv-company')), phone: valOrNull(g('iv-phone')), email: valOrNull(g('iv-email')),
-          project_type_ids: [...document.querySelectorAll('#iv-types input:checked')].map(cb => cb.value),
-          fractions_min: multi ? numOrNull(g('iv-frmin')) : null, fractions_max: multi ? numOrNull(g('iv-frmax')) : null,
-          invest_min: numOrNull(g('iv-imin')), invest_max: numOrNull(g('iv-imax')),
-          zones: g('iv-zones').split(/[,;]/).map(s => s.trim()).filter(Boolean),
-          approved_pref: g('iv-approved'), notes: valOrNull(g('iv-notes')),
-          strategy: g('iv-strategy'), segment: g('iv-segment') || null, min_roi: numOrNull(g('iv-roi')), min_yield: numOrNull(g('iv-yield')),
-          tags: g('iv-tags').split(/[,;]/).map(t => t.trim()).filter(Boolean),
-          active: isEdit ? document.getElementById('iv-active').checked : true
-        };
-        if ([row.fractions_min, row.fractions_max, row.invest_min, row.invest_max, row.min_roi, row.min_yield].some(n => Number.isNaN(n))) return formError('iv-msg', 'Há um número inválido.');
-        if (row.invest_min != null && row.invest_max != null && row.invest_max < row.invest_min) return formError('iv-msg', 'O investimento máximo é menor que o mínimo.');
+        const pr = readInvestorProfile();
+        if (pr.error) return formError('iv-msg', pr.error);
+        const contact = { name, phone: valOrNull(g('iv-phone')), email: valOrNull(g('iv-email')) };
+        const row = { ...pr.row, ...contact, active: isEdit ? document.getElementById('iv-active').checked : true };
         try {
+          // Uma só ficha: o contacto vive no cliente; o investidor é o perfil desse cliente
+          let clientId = x.client_id || null;
+          if (clientId) {
+            await dbUpdate('clients', clientId, contact, MOCK_CLIENT_ROWS);
+            if (!devMode && name !== x.name) await supabase.from('projects').update({ client: name }).eq('client_id', clientId);
+          } else clientId = (await dbInsert('clients', contact, MOCK_CLIENT_ROWS)).id;
+          row.client_id = clientId;
           if (isEdit) await dbUpdate('investors', x.id, { ...row, updated_at: new Date().toISOString() }, mockInvestors);
           else await dbInsert('investors', { ...row, created_by: (await getCurrentMember())?.id ?? null }, mockInvestors);
-          closeQuickModal(); showToast(isEdit ? 'Investidor guardado' : 'Investidor criado');
+          closeQuickModal(); showToast(isEdit ? 'Investidor guardado' : 'Investidor criado (também em Clientes)');
           onSaved && onSaved();
         } catch (err) { formError('iv-msg', 'Não foi possível guardar: ' + err.message); }
       });
       if (isEdit) document.getElementById('iv-delete').addEventListener('click', async () => {
-        if (!window.confirm(`Eliminar "${x.name}"? O registo das apresentações a este investidor também é apagado. Para só deixar de lhe sugerir oportunidades, desliga "Ativo".`)) return;
+        if (!window.confirm(`Retirar o perfil de investidor de "${x.name}"? A ficha de cliente fica; o registo das apresentações a este investidor é apagado. Para só deixar de lhe sugerir oportunidades, desliga "Ativo".`)) return;
         try { await dbDelete('investors', x.id, mockInvestors); closeQuickModal(); showToast('Investidor eliminado'); onSaved && onSaved(); }
         catch (err) { formError('iv-msg', 'Não foi possível eliminar: ' + err.message); }
       });
@@ -17930,6 +18081,8 @@
           existing = res.data;
           const own = await supabase.from('milestone_owners').select('member_id').eq('milestone_id', milestoneId);
           existing.owner_ids = (own.data || []).map(o => o.member_id);
+          const gs = await supabase.from('milestone_guests').select('name, email').eq('milestone_id', milestoneId);
+          existing.guests = gs.error ? [] : (gs.data || []);
         }
         if (!existing) return;
       }
@@ -17989,6 +18142,16 @@
         <label class="field-label">Quem vai</label>
         <div class="owner-picker" id="mk-owners"></div>
         <div class="field-hint">Aparece na agenda de quem estiver escolhido.</div>
+        <label class="field-label">Convidados de fora da equipa</label>
+        <div class="guest-list" id="mk-guests"></div>
+        <div class="guest-sugg" id="mk-guest-sugg"></div>
+        <div class="guest-add">
+          <input type="text" id="mk-g-name" class="form-input" placeholder="Nome" aria-label="Nome do convidado">
+          <input type="email" id="mk-g-email" class="form-input" placeholder="email@exemplo.com" aria-label="Email do convidado">
+          <button type="button" class="secondary-btn" id="mk-g-add" style="margin:0;">Adicionar</button>
+        </div>
+        <label class="check-row" id="mk-g-save-row" style="margin-top:var(--sp-2);"><input type="checkbox" id="mk-g-save" checked> Guardar nos contactos do projeto</label>
+        <div class="field-hint">Recebem o convite do Outlook (com o aviso de proteção de dados) e as alterações de data e hora.</div>
         ${isEdit ? `
         <label class="field-label">Estado</label>
         <div class="segmented" id="mk-done-toggle">
@@ -18085,6 +18248,71 @@
         chip.classList.toggle('on');
       });
 
+      // Convidados de fora: cliente do projeto, contactos do projeto ou qualquer email
+      const isMail = (e) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e);
+      const teamMails = new Set(members.map(m => String(m.email || '').toLowerCase()).filter(Boolean));
+      const origGuests = new Set((existing?.guests || []).map(g => String(g.email).toLowerCase()));
+      let guests = (existing?.guests || []).map(g => ({ name: g.name || '', email: String(g.email).toLowerCase() }));
+      let guestSugg = [];       // { name, email, role, clientId }
+      let pendingClientId = null;  // cliente sem email: o email escrito fica na ficha
+      const curProject = () => link === 'project' ? (lockedProjectId || document.getElementById('mk-project').value) : '';
+      const renderGuests = () => {
+        document.getElementById('mk-guests').innerHTML = guests.map((g, i) => `<div class="guest-item"><div class="g-txt">${escapeHtml(g.name || g.email)}${g.name ? ` <span>· ${escapeHtml(g.email)}</span>` : ''}</div>${origGuests.has(g.email) ? '' : '<span class="g-new">novo convite</span>'}<button type="button" data-g="${i}" aria-label="Retirar ${escapeHtml(g.name || g.email)}">×</button></div>`).join('');
+        const have = new Set(guests.map(g => g.email));
+        document.getElementById('mk-guest-sugg').innerHTML = guestSugg.filter(x => !x.email || !have.has(x.email)).map((x, i) =>
+          `<button type="button" class="owner-chip" data-sg="${guestSugg.indexOf(x)}" title="${escapeHtml(x.email || 'Sem email — escreve-o abaixo')}">+ ${escapeHtml(x.role)}: ${escapeHtml(x.name || x.email)}${x.email ? '' : ' (sem email)'}</button>`).join('');
+        document.getElementById('mk-g-save-row').hidden = !curProject();
+      };
+      const loadGuestSugg = async () => {
+        guestSugg = [];
+        const pid = curProject();
+        if (pid && !devMode) {
+          const [pr, pc] = await Promise.all([
+            supabase.from('projects').select('client_id').eq('id', pid).single(),
+            supabase.from('project_contacts').select('name, email, role').eq('project_id', pid).order('name')
+          ]);
+          if (pr.data?.client_id) {
+            const c = await supabase.from('clients').select('id, name, email').eq('id', pr.data.client_id).single();
+            if (c.data) guestSugg.push({ name: c.data.name, email: String(c.data.email || '').trim().toLowerCase(), role: 'Cliente', clientId: c.data.id });
+          }
+          (pc.data || []).forEach(x => { const e = String(x.email).toLowerCase(); if (!guestSugg.some(y => y.email === e)) guestSugg.push({ name: x.name, email: e, role: x.role || 'Contacto' }); });
+        }
+        renderGuests();
+      };
+      const addGuest = (name, email) => {
+        email = String(email || '').trim().toLowerCase();
+        if (!isMail(email)) { showToast('Escreve um email válido.', { type: 'error' }); return false; }
+        if (teamMails.has(email)) { showToast('É da equipa: escolhe-o em "Quem vai".', { type: 'error' }); return false; }
+        if (guests.some(g => g.email === email)) return true;
+        guests.push({ name: String(name || '').trim(), email, save: document.getElementById('mk-g-save').checked && !!curProject(), clientId: pendingClientId });
+        pendingClientId = null;
+        renderGuests();
+        return true;
+      };
+      document.getElementById('mk-guests').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-g]'); if (!b) return;
+        guests.splice(Number(b.dataset.g), 1); renderGuests();
+      });
+      document.getElementById('mk-guest-sugg').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-sg]'); if (!b) return;
+        const x = guestSugg[Number(b.dataset.sg)];
+        if (x.email) { guests.push({ name: x.name || '', email: x.email }); renderGuests(); return; }
+        // Cliente sem email: pede-o aqui e grava-o na ficha do cliente
+        pendingClientId = x.clientId;
+        document.getElementById('mk-g-name').value = x.name || '';
+        const em = document.getElementById('mk-g-email');
+        em.placeholder = 'Email de ' + (x.name || 'cliente') + ' (fica na ficha)';
+        em.focus();
+      });
+      const addTyped = () => {
+        const n = document.getElementById('mk-g-name'), em = document.getElementById('mk-g-email');
+        if (addGuest(n.value, em.value)) { n.value = ''; em.value = ''; em.placeholder = 'email@exemplo.com'; }
+      };
+      document.getElementById('mk-g-add').addEventListener('click', addTyped);
+      document.getElementById('mk-g-email').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addTyped(); } });
+      document.getElementById('mk-project').addEventListener('change', loadGuestSugg);
+      document.getElementById('mk-link-toggle').addEventListener('click', () => setTimeout(loadGuestSugg));
+
       let allDay = isEdit ? !!existing.all_day : false;
       const timeWrap = document.getElementById('mk-time-wrap');
       const syncAllDay = () => { timeWrap.style.display = allDay ? 'none' : 'flex'; document.getElementById('mk-teams-row').hidden = allDay; };
@@ -18142,6 +18370,7 @@
           document.querySelector('#quick-modal-body .more-opts').open = true;
         }
       }
+      loadGuestSugg();
       syncDeadline();
       if (asDeadline || !dlBlock.hidden) {
         // O bloco do prazo sobe para junto da data, fora de "Mais opções"
@@ -18199,6 +18428,12 @@
           msgEl.className = 'form-msg error';
           return;
         }
+
+        // Email escrito mas não adicionado: junta-o
+        if (document.getElementById('mk-g-email').value.trim() && !addGuest(document.getElementById('mk-g-name').value, document.getElementById('mk-g-email').value)) return;
+        document.getElementById('mk-g-name').value = ''; document.getElementById('mk-g-email').value = '';
+        const newGuests = guests.filter(g => !origGuests.has(g.email));
+        if (newGuests.length && !window.confirm(`Vai ser enviado um convite do Outlook a ${newGuests.length === 1 ? '1 pessoa' : newGuests.length + ' pessoas'} de fora da equipa:\n\n${newGuests.map(g => '• ' + (g.name ? g.name + ' — ' : '') + g.email).join('\n')}\n\nO convite segue com o aviso de proteção de dados (RGPD) e sai na próxima sincronização com o Office 365 (até 10 minutos).`)) return;
 
         // Marco de entrega com data nova: pergunta se a entrega da fase acompanha
         const syncDelivery = isEdit && existing?.auto_kind === 'delivery' && existing.stage_id && eventDate && eventDate !== existing.event_date
@@ -18259,6 +18494,23 @@
                 .insert(ownerIds.map(mid => ({ milestone_id: id, member_id: mid })));
               if (ins.error) throw ins.error;
             }
+            // Convidados de fora: substituir o conjunto; guardar contactos e o email do cliente
+            const gDel = await supabase.from('milestone_guests').delete().eq('milestone_id', id);
+            if (gDel.error) throw gDel.error;
+            if (guests.length) {
+              const gIns = await supabase.from('milestone_guests').insert(guests.map(g => ({ milestone_id: id, name: g.name || null, email: g.email })));
+              if (gIns.error) throw gIns.error;
+            }
+            const pid = payload.project_id;
+            const toSave = guests.filter(g => g.save && !g.clientId && pid && !guestSugg.some(x => x.email === g.email));
+            if (toSave.length) {
+              const r = await supabase.from('project_contacts').upsert(toSave.map(g => ({ project_id: pid, name: g.name || null, email: g.email, created_by: member?.id ?? null })), { onConflict: 'project_id,email', ignoreDuplicates: true });
+              if (r.error) throw r.error;
+            }
+            for (const g of guests.filter(g => g.clientId)) {
+              const r = await supabase.from('clients').update({ email: g.email }).eq('id', g.clientId);
+              if (r.error) throw r.error;
+            }
           }
           closeQuickModal();
           if (syncDelivery) showToast('Marco e data de entrega da fase atualizados');
@@ -18274,6 +18526,8 @@
       });
     }
 
+    // Novo evento a partir da Agenda: o dia escolhido no calendário já vem preenchido
+    document.getElementById('agenda-new').addEventListener('click', () => openMarcoModal({ onSuccess: () => loadAgenda() }));
     document.getElementById('agenda-scope').addEventListener('click', (e) => {
       const btn = e.target.closest('[data-scope]');
       if (!btn) return;

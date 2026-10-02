@@ -9,6 +9,10 @@
 //      A app é a fonte: o que muda na app atualiza o evento; o que sai da app é apagado do calendário.
 //   2. LÊ o calendário dela (reuniões Teams e eventos do Outlook) para a Agenda e a Hoje da app.
 //      Eventos privados ficam só como "Ocupado".
+//   3. TRANSCRIÇÕES: depois de cada reunião Teams organizada por alguém da equipa, lê a transcrição (se houve) e
+//      arquiva-a como ata do projeto (o do marco, ou o projeto cujo código/nome está no assunto; senão fica sem projeto).
+//      Precisa ainda das permissões OnlineMeetings.Read.All, OnlineMeetingTranscript.Read.All e User.Read.All e de uma
+//      Application Access Policy do Teams (ver Definições → Office 365). Sem elas, o calendário continua a funcionar.
 // Precisa (Edge Functions → Secrets): MS_TENANT_ID, MS_CLIENT_ID, MS_CLIENT_SECRET — uma aplicação registada
 // no Entra ID com as permissões de aplicação Calendars.ReadWrite e MailboxSettings.ReadWrite (consentimento do
 // administrador). Sem estes segredos, só regista "por configurar" e sai.
@@ -24,6 +28,7 @@ const CATEGORY = "NOVA Compass";
 const TZ = "Europe/Lisbon";
 const GRAPH = "https://graph.microsoft.com/v1.0";
 const READ_BACK = 30, READ_AHEAD = 120, WRITE_BACK = 7, WRITE_AHEAD = 180, RADAR_DAYS = 7;
+const TRANSCRIPT_DAYS = 3, TRANSCRIPT_WAIT_H = 24;   // procura nos 3 dias seguintes; sem transcrição ao fim de 24 h, desiste
 
 const db = createClient(SB_URL, SB_SERVICE, { auth: { persistSession: false } });
 const cors = {
@@ -67,9 +72,11 @@ async function g(method: string, path: string, body?: unknown, extra: Record<str
       body: body ? JSON.stringify(body) : undefined,
     });
     if (r.status === 429 || r.status === 503) { await new Promise((res) => setTimeout(res, 1000 * Number(r.headers.get("Retry-After") || 2 ** attempt))); continue; }
-    if (r.status === 204) return null;
+    if (r.status === 204 || r.status === 202) return null;
     const t = await r.text();
-    const j = t ? JSON.parse(t) : null;
+    if (r.ok && !(r.headers.get("content-type") || "").includes("json")) return t;   // ex.: transcrição em text/vtt
+    let j: any = null;
+    try { j = t ? JSON.parse(t) : null; } catch (_) { /* resposta sem JSON */ }
     if (!r.ok) { const e: any = new Error(j?.error?.message || `Graph ${r.status}`); e.status = r.status; throw e; }
     return j;
   }
@@ -80,7 +87,7 @@ async function g(method: string, path: string, body?: unknown, extra: Record<str
 type Want = { key: string; member: string; payload: Record<string, unknown> };
 async function desired(members: any[]) {
   const from = addDays(todayKey(), -WRITE_BACK), to = addDays(todayKey(), WRITE_AHEAD);
-  const [ms, ow, ty, pr, pres, plots, invs] = await Promise.all([
+  const [ms, ow, ty, pr, pres, plots, invs, gu] = await Promise.all([
     db.from("project_milestones").select("id, project_id, type_id, title, event_date, all_day, start_time, end_time, location, notes, done, auto_kind, created_by, teams_link").gte("event_date", from).lte("event_date", to),
     db.from("milestone_owners").select("milestone_id, member_id"),
     db.from("milestone_types").select("id, name, is_deadline"),
@@ -88,6 +95,7 @@ async function desired(members: any[]) {
     db.from("land_presentations").select("id, plot_id, investor_id, contact_name, presented_on, status"),
     db.from("land_plots").select("id, name, scout_id, status"),
     db.from("investors").select("id, name"),
+    db.from("milestone_guests").select("milestone_id, name, email"),
   ]);
   for (const r of [ms, ow, ty, pr]) if (r.error) throw r.error;
   const types = Object.fromEntries((ty.data || []).map((t: any) => [t.id, t]));
@@ -95,8 +103,12 @@ async function desired(members: any[]) {
   const byM: Record<string, string[]> = {};
   (ow.data || []).forEach((o: any) => (byM[o.milestone_id] = byM[o.milestone_id] || []).push(o.member_id));
   const email = Object.fromEntries(members.map((m) => [m.id, m]));
+  const teamMail = new Set(members.map((m) => String(m.email).toLowerCase()));
+  const guestsBy: Record<string, any[]> = {};
+  (gu.data || []).forEach((x: any) => { const e = String(x.email || "").trim().toLowerCase(); if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e) && !teamMail.has(e)) (guestsBy[x.milestone_id] = guestsBy[x.milestone_id] || []).push({ ...x, email: e }); });
   const out: Want[] = [];
-  const body = (lines: string[]) => ({ contentType: "HTML", content: lines.filter(Boolean).map((l) => `<p>${l}</p>`).join("") + `<p><a href="${APP_URL}">Abrir no NOVA Compass</a></p>` });
+  // Com convidados de fora, o link da app (só para a equipa) dá lugar ao aviso de proteção de dados
+  const body = (lines: string[], foot = "") => ({ contentType: "HTML", content: lines.filter(Boolean).map((l) => `<p>${l}</p>`).join("") + (foot || `<p><a href="${APP_URL}">Abrir no NOVA Compass</a></p>`) });
   for (const m of ms.data || []) {
     const t = types[m.type_id];
     if (m.done || t?.is_deadline) continue;                       // prazos a controlar ficam nos avisos da app
@@ -108,8 +120,10 @@ async function desired(members: any[]) {
     const start = timed ? `${m.event_date}T${String(m.start_time).slice(0, 5)}:00` : `${m.event_date}T00:00:00`;
     let end = timed ? (m.end_time ? `${m.event_date}T${String(m.end_time).slice(0, 5)}:00` : null) : `${addDays(m.event_date, 1)}T00:00:00`;
     if (timed && !end) { const [h, mi] = String(m.start_time).split(":").map(Number); const e = h * 60 + mi + 60; end = `${m.event_date}T${String(Math.min(23, Math.floor(e / 60))).padStart(2, "0")}:${String(e % 60).padStart(2, "0")}:00`; }
+    const meeting = timed && !!m.teams_link;
+    const guests = guestsBy[m.id] || [];
     const base = {
-      subject, body: body([esc(t?.name || (m.auto_kind === "delivery" ? "Entrega" : "Marco")), m.notes ? esc(m.notes) : ""]),
+      subject, body: body([esc(t?.name || (m.auto_kind === "delivery" ? "Entrega" : "Marco")), m.notes ? esc(m.notes) : ""], guests.length ? gdpr(meeting) : ""),
       start: { dateTime: start, timeZone: TZ }, end: { dateTime: end, timeZone: TZ }, isAllDay: !timed,
       location: m.location ? { displayName: m.location } : undefined, categories: [CATEGORY],
       showAs: timed ? "busy" : "free", isReminderOn: timed,
@@ -117,13 +131,17 @@ async function desired(members: any[]) {
     // Um só evento partilhado: organiza quem criou o marco na app (se não estiver na equipa ligada, o 1.º responsável
     // por nome); os outros responsáveis são convidados — aparece no calendário de todos e as alterações chegam a todos.
     // Com a opção "Reunião online" (teams_link), leva link Teams.
-    const meeting = timed && !!m.teams_link;
     const sorted = [...owners].sort((a, b) => String(email[a].name).localeCompare(String(email[b].name), "pt"));
     const org = m.created_by && email[m.created_by] ? m.created_by : sorted[0];
     const rest = sorted.filter((id) => id !== org);
+    // Convidados de fora (cliente, contactos, qualquer email) recebem o convite do Outlook e podem responder
+    const attendees = [
+      ...rest.map((id) => ({ emailAddress: { address: email[id].email, name: email[id].name }, type: "required" })),
+      ...guests.map((x) => ({ emailAddress: { address: x.email, ...(x.name ? { name: x.name } : {}) }, type: "required" })),
+    ];
     out.push({ key: `m:${m.id}`, member: org, payload: { ...base,
       ...(meeting ? { isOnlineMeeting: true, onlineMeetingProvider: "teamsForBusiness" } : {}),
-      ...(rest.length ? { attendees: rest.map((id) => ({ emailAddress: { address: email[id].email, name: email[id].name }, type: "required" })), responseRequested: false } : {}) } });
+      ...(attendees.length ? { attendees, responseRequested: guests.length > 0 } : {}) } });
   }
   // Lembretes do Investment Intelligence: 7 dias depois de uma apresentação ainda sem resposta
   const plotBy = Object.fromEntries((plots.data || []).map((p: any) => [p.id, p]));
@@ -143,6 +161,16 @@ async function desired(members: any[]) {
   return out;
 }
 
+// Aviso RGPD que segue no convite enviado a pessoas de fora da equipa
+function gdpr(meeting: boolean) {
+  return `<hr><p style="font-size:12px;color:#666">Proteção de dados: a NOVA Associates trata o seu nome e email apenas para organizar esta reunião e o acompanhamento do projeto, nos termos do RGPD.` +
+    (meeting ? ` A reunião poderá ser transcrita para a elaboração da ata, com aviso no início; pode opor-se a qualquer momento.` : ``) +
+    ` Para aceder, corrigir ou apagar os seus dados, responda a este convite.</p>` +
+    `<p style="font-size:12px;color:#666">Data protection: NOVA Associates processes your name and email only to organise this meeting and follow up on the project, under the GDPR.` +
+    (meeting ? ` The meeting may be transcribed to prepare the minutes, with notice at the start; you may object at any time.` : ``) +
+    ` To access, correct or delete your data, reply to this invitation.</p>`;
+}
+
 async function ensureCategory(upn: string) {
   try {
     const r = await g("GET", `/users/${encodeURIComponent(upn)}/outlook/masterCategories`);
@@ -152,7 +180,7 @@ async function ensureCategory(upn: string) {
 }
 
 // ---------- Uma pessoa ----------
-async function syncMember(m: any, wants: Want[], links: any[]) {
+async function syncMember(m: any, wants: Want[], links: any[], keep: Set<string>) {
   const upn = encodeURIComponent(m.email);
   const res = { name: m.name, written: 0, deleted: 0, read: 0, cancelled: 0, ours: 0, error: null as string | null };
   await ensureCategory(m.email);
@@ -177,8 +205,13 @@ async function syncMember(m: any, wants: Want[], links: any[]) {
       res.written++;
     } catch (e: any) { res.error = e.message; }
   }
-  for (const l of myLinks.filter((x) => !mine.some((w) => w.key === x.source_key))) {
-    try { await g("DELETE", `/users/${upn}/events/${l.ms_event_id}`); } catch (e: any) { if (e.status !== 404) { res.error = e.message; continue; } }
+  // O que saiu da app sai do calendário; marcos realizados ou já passados ficam como histórico (sem cancelar a quem foi).
+  // Primeiro tenta cancelar (os convidados recebem o aviso); se não houver convidados, apaga.
+  for (const l of myLinks.filter((x) => !mine.some((w) => w.key === x.source_key) && !keep.has(x.source_key))) {
+    try { await g("POST", `/users/${upn}/events/${l.ms_event_id}/cancel`, { comment: "Reunião cancelada." }); }
+    catch (_) {
+      try { await g("DELETE", `/users/${upn}/events/${l.ms_event_id}`); } catch (e: any) { if (e.status !== 404) { res.error = e.message; continue; } }
+    }
     await db.from("ms_event_links").delete().eq("member_id", m.id).eq("source_key", l.source_key);
     res.deleted++;
   }
@@ -209,6 +242,125 @@ async function syncMember(m: any, wants: Want[], links: any[]) {
   return res;
 }
 
+// ---------- Transcrições → atas ----------
+// Hora de Lisboa (data + HH:MM) → instante UTC
+function lisbonToUtc(date: string, time: string) {
+  const guess = new Date(`${date}T${time.slice(0, 5)}:00Z`);
+  const local = new Date(guess.toLocaleString("sv-SE", { timeZone: TZ }).replace(" ", "T") + "Z");
+  return new Date(guess.getTime() - (local.getTime() - guess.getTime()));
+}
+const lisbon = (iso: string, o: Intl.DateTimeFormatOptions) => new Date(iso).toLocaleString("pt-PT", { timeZone: TZ, ...o });
+// WebVTT do Teams (<v Nome>texto</v>) → "[mm:ss] Nome: texto", juntando falas seguidas da mesma pessoa
+function vttToText(vtt: string) {
+  const out: { who: string; ts: string; txt: string }[] = [];
+  let last: { who: string; ts: string; txt: string } | null = null;
+  for (const block of String(vtt).replace(/\r/g, "").split(/\n\n+/)) {
+    const lines = block.split("\n"), ti = lines.findIndex((l) => l.includes("-->"));
+    if (ti < 0) continue;
+    const ts = lines[ti].split("-->")[0].trim().replace(/\.\d+$/, "");
+    const raw = lines.slice(ti + 1).join(" ");
+    const who = (raw.match(/<v\s+([^>]+)>/)?.[1] || "").trim();
+    const txt = raw.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+    if (!txt) continue;
+    if (last && last.who === who) last.txt += " " + txt;
+    else { last = { who, ts, txt }; out.push(last); }
+  }
+  const fmt = (ts: string) => { const [h, m, s] = ts.split(":"); return h === "00" ? `${m}:${s}` : `${Number(h)}:${m}:${s}`; };
+  return { text: out.map((x) => `[${fmt(x.ts)}] ${x.who || "?"}: ${x.txt}`).join("\n\n"), speakers: [...new Set(out.map((x) => x.who).filter(Boolean))] };
+}
+async function syncTranscripts(members: any[], links: any[]) {
+  const res = { saved: 0, waiting: 0, none: 0, error: null as string | null };
+  const now = Date.now(), since = new Date(now - TRANSCRIPT_DAYS * 864e5).toISOString(), nowIso = new Date(now).toISOString();
+  const byEmail = Object.fromEntries(members.map((m) => [String(m.email).toLowerCase(), m]));
+  const byId = Object.fromEntries(members.map((m) => [m.id, m]));
+  const cand = new Map<string, any>();
+  // Reuniões Teams lidas dos calendários, organizadas por alguém da equipa
+  const ev = await db.from("ms_events").select("ical_uid, subject, start_at, end_at, join_url, organizer_email, organizer")
+    .eq("is_online", true).not("join_url", "is", null).gte("end_at", since).lte("end_at", nowIso);
+  for (const e of ev.data || []) {
+    const org = byEmail[e.organizer_email || ""];
+    if (org && e.ical_uid && !cand.has(e.ical_uid)) cand.set(e.ical_uid, { ...e, org, project_id: null, milestone_id: null });
+  }
+  // Marcos da app com reunião online (o evento foi criado pela app no calendário do organizador)
+  const ml = links.filter((l: any) => l.source_key?.startsWith("m:") && l.join_url && l.ical_uid);
+  if (ml.length) {
+    const mr = await db.from("project_milestones").select("id, project_id, title, event_date, start_time, end_time, all_day")
+      .in("id", ml.map((l: any) => l.source_key.slice(2)));
+    const mBy = Object.fromEntries((mr.data || []).map((m: any) => [m.id, m]));
+    for (const l of ml) {
+      const m = mBy[l.source_key.slice(2)];
+      if (!m || m.all_day || !m.start_time || !byId[l.member_id]) continue;
+      const st = lisbonToUtc(m.event_date, String(m.start_time));
+      const en = m.end_time ? lisbonToUtc(m.event_date, String(m.end_time)) : new Date(st.getTime() + 36e5);
+      if (en.toISOString() < since || en.getTime() > now) continue;
+      cand.set(l.ical_uid, { ical_uid: l.ical_uid, subject: m.title, start_at: st.toISOString(), end_at: en.toISOString(), join_url: l.join_url,
+        org: byId[l.member_id], organizer: byId[l.member_id].name, project_id: m.project_id, milestone_id: m.id });
+    }
+  }
+  if (!cand.size) return res;
+  const seen = await db.from("meeting_transcripts").select("ical_uid, status, attempts").in("ical_uid", [...cand.keys()]);
+  const prev = Object.fromEntries((seen.data || []).map((x: any) => [x.ical_uid, x]));
+  const pr = await db.from("projects").select("id, name, code").is("archived_at", null);
+  const norm = (x: string) => String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const guessProject = (subject: string) => {
+    const s = norm(subject);
+    return (pr.data || []).find((p: any) => (p.code && s.includes(norm(p.code))) || (p.name && norm(p.name).length >= 4 && s.includes(norm(p.name))))?.id || null;
+  };
+  const uidCache: Record<string, string> = {};
+  const userId = async (email: string) => {
+    if (uidCache[email]) return uidCache[email];
+    try { uidCache[email] = (await g("GET", `/users/${encodeURIComponent(email)}?$select=id`))?.id || email; } catch (_) { uidCache[email] = email; }
+    return uidCache[email];
+  };
+  for (const c of cand.values()) {
+    const p = prev[c.ical_uid];
+    if (p && (p.status === "done" || p.status === "none")) continue;
+    const row: any = { ical_uid: c.ical_uid, subject: c.subject, start_at: c.start_at, end_at: c.end_at, organizer_id: c.org.id,
+      attempts: (p?.attempts || 0) + 1, checked_at: nowIso, error: null };
+    const late = now - new Date(c.end_at).getTime() > TRANSCRIPT_WAIT_H * 36e5;
+    try {
+      const uid = await userId(c.org.email);
+      const f = encodeURIComponent(`JoinWebUrl eq '${c.join_url}'`);
+      const om = (await g("GET", `/users/${uid}/onlineMeetings?$filter=${f}`))?.value?.[0];
+      const tr = om ? ((await g("GET", `/users/${uid}/onlineMeetings/${om.id}/transcripts`))?.value || []) : [];
+      if (!tr.length) {
+        row.status = late ? "none" : "waiting";
+        late ? res.none++ : res.waiting++;
+      } else {
+        const parts = [], speakers = new Set<string>();
+        for (const t of [...tr].sort((a: any, b: any) => String(a.createdDateTime).localeCompare(String(b.createdDateTime)))) {
+          const vtt = await g("GET", `/users/${uid}/onlineMeetings/${om.id}/transcripts/${t.id}/content?$format=text/vtt`);
+          const x = vttToText(typeof vtt === "string" ? vtt : "");
+          if (x.text) parts.push(x.text);
+          x.speakers.forEach((s) => speakers.add(s));
+        }
+        const head = [
+          "Transcrição automática da reunião Teams (sem edição).",
+          `${lisbon(c.start_at, { day: "numeric", month: "long", year: "numeric" })}, ${lisbon(c.start_at, { hour: "2-digit", minute: "2-digit" })}–${lisbon(c.end_at, { hour: "2-digit", minute: "2-digit" })} · organizada por ${c.organizer || c.org.name}`,
+          speakers.size ? "Participantes que falaram: " + [...speakers].join(", ") : "",
+        ].filter(Boolean).join("\n");
+        const ins = await db.from("meeting_notes").insert({
+          title: `Transcrição — ${c.subject || "Reunião Teams"}`, body: head + "\n\n" + (parts.join("\n\n— nova sessão —\n\n") || "(transcrição vazia)"),
+          meeting_date: new Date(c.start_at).toLocaleDateString("sv-SE", { timeZone: TZ }),
+          project_id: c.project_id || guessProject(c.subject), milestone_id: c.milestone_id, created_by: c.org.id,
+        }).select("id").single();
+        if (ins.error) throw ins.error;
+        row.status = "done"; row.note_id = ins.data.id; res.saved++;
+      }
+    } catch (e: any) {
+      row.status = late ? "none" : "error"; row.error = e.message;
+      if (e.status === 403 || e.status === 401) {
+        res.error = "Sem permissão para ler reuniões/transcrições: faltam as permissões no Entra ou a política do Teams (Definições → Office 365).";
+        await db.from("meeting_transcripts").upsert({ ...row, status: "error" });
+        break;
+      }
+      res.error = e.message;
+    }
+    await db.from("meeting_transcripts").upsert(row);
+  }
+  return res;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (!TENANT || !CLIENT || !SECRET) { await saveStatus({ configured: false }); return json({ configured: false }); }
@@ -219,14 +371,26 @@ Deno.serve(async (req) => {
     const members = (mr.data || []).filter((m: any) => /@/.test(m.email || ""));
     const [wants, lr] = await Promise.all([desired(members), db.from("ms_event_links").select("*")]);
     const links = lr.data || [];
+    // Marcos que ainda existem mas já foram realizados ou ficaram para trás: o evento fica no calendário
+    const keep = new Set<string>();
+    const wanted = new Set(wants.map((w) => w.key));
+    const gone = [...new Set(links.filter((l: any) => l.source_key.startsWith("m:") && !wanted.has(l.source_key)).map((l: any) => l.source_key.slice(2)))];
+    if (gone.length) {
+      const r = await db.from("project_milestones").select("id, done, event_date").in("id", gone);
+      if (r.error) throw r.error;
+      const from = addDays(todayKey(), -WRITE_BACK);
+      (r.data || []).forEach((x: any) => { if (x.done || x.event_date < from) keep.add("m:" + x.id); });
+    }
     const out = [];
     for (const m of members) {
-      try { out.push(await syncMember(m, wants, links)); }
+      try { out.push(await syncMember(m, wants, links, keep)); }
       catch (e: any) { out.push({ name: m.name, error: e.message }); }
     }
     const ok = out.every((x: any) => !x.error);
-    await saveStatus({ configured: true, ok, members: out });
-    return json({ configured: true, ok, members: out });
+    let transcripts: any = null;
+    try { transcripts = await syncTranscripts(members, links); } catch (e: any) { transcripts = { error: e.message }; }
+    await saveStatus({ configured: true, ok, members: out, transcripts });
+    return json({ configured: true, ok, members: out, transcripts });
   } catch (e: any) {
     await saveStatus({ configured: true, ok: false, error: e.message });
     return json({ configured: true, ok: false, error: e.message }, 200);
