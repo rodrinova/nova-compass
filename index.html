@@ -562,6 +562,9 @@
   /* ---------- Agenda ---------- */
   .agenda-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); margin: 28px 0 var(--sp-2-5); }
   .agenda-head .segmented { margin: 0; }
+  .agenda-head { flex-wrap: wrap; }
+  .agenda-head .agenda-new { width: auto; margin: 0 0 0 auto; padding: 0 var(--sp-4); height: 36px; flex-shrink: 0; }
+  @media (max-width: 560px) { .agenda-head .agenda-new { order: -1; width: 100%; margin: 0; } }
   .cal-head { display: flex; align-items: center; gap: var(--sp-1); margin-bottom: var(--sp-2-5); }
   .cal-title { font-size: var(--fs-md); font-weight: var(--fw-semibold); flex: 1; text-align: center; }
   .cal-head .text-btn { flex-shrink: 0; margin-left: var(--sp-1-5); }
@@ -1316,6 +1319,7 @@
   @media (max-width: 560px) { .ii-tag { width: 100%; } }
   .ms-steps { margin: 0 0 var(--sp-2); padding-left: 1.2em; display: grid; gap: var(--sp-1-5); font-size: var(--fs-sm); color: var(--text-2); }
   .ms-steps b { color: var(--text); }
+  .ms-code { margin: var(--sp-1-5) 0; padding: var(--sp-2) var(--sp-3); background: var(--surface-2, var(--surface-3)); border: 1px solid var(--border); border-radius: 8px; font-size: 12px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; color: var(--text); user-select: all; }
   .ms-join { display: flex; align-items: center; justify-content: center; text-decoration: none; margin: var(--sp-2) 0; }
   .ts-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--sp-1-5); padding: var(--sp-6) var(--sp-4); }
   .ts-empty b { font-size: var(--fs-lg); } .ts-empty span { color: var(--text-2); max-width: 420px; }
@@ -2831,6 +2835,7 @@
             <button type="button" data-scope="mine" class="active">Meus</button>
             <button type="button" data-scope="all">Todos</button>
           </div>
+          <button type="button" class="primary-btn agenda-new" id="agenda-new">+ Novo evento</button>
         </div>
         <div id="agenda-month-panel">
         <div class="gantt-wrap" id="agenda-wrap">
@@ -4013,6 +4018,21 @@
         ${(st.members || []).length ? `<div class="table-scroll"><table class="mini-table"><thead><tr><th>Pessoa</th><th class="col-value">Escritos</th><th class="col-value">Apagados</th><th class="col-value">Lidos</th><th>Estado</th></tr></thead><tbody>
           ${st.members.map(m => `<tr><td>${escapeHtml(m.name)}</td><td class="col-value">${m.written ?? '—'}</td><td class="col-value">${m.deleted ?? '—'}</td><td class="col-value">${m.read ?? '—'}</td><td>${m.error ? `<span class="warn-text">${escapeHtml(m.error)}</span>` : '✓'}</td></tr>`).join('')}
         </tbody></table></div>` : ''}
+        <div class="section-label op-form-sec">Transcrições das reuniões Teams → atas</div>
+        <div class="field-hint" style="margin-top:0;">Depois de cada reunião Teams organizada por alguém da equipa, se a transcrição foi ligada, a app arquiva-a como ata do projeto: o do marco, ou o projeto cujo código ou nome está no assunto. Sem projeto, aparece um aviso na Hoje de quem organizou para o escolher. Sem IA e sem custos.</div>
+        ${st.transcripts ? `<div class="field-hint">${st.transcripts.error ? `<span class="warn-text">${escapeHtml(st.transcripts.error)}</span>` : `Última verificação: ${Number(st.transcripts.saved) || 0} arquivadas · ${Number(st.transcripts.waiting) || 0} à espera da transcrição`}</div>` : ''}
+        <details class="more-opts"><summary>Como ligar as transcrições (administrador, ~10 min)</summary>
+        <ol class="ms-steps">
+          <li><b>Teams</b> (admin.teams.microsoft.com) → <b>Reuniões → Políticas de reunião → Global</b> → <b>Gravação e transcrição</b>: <b>Transcrição</b> ligada. Guardar.</li>
+          <li><b>Entra</b> → aplicação <b>NOVA Compass</b> → <b>Permissões de API → Adicionar → Microsoft Graph → Permissões de aplicação</b>: <b>OnlineMeetings.Read.All</b>, <b>OnlineMeetingTranscript.Read.All</b> e <b>User.Read.All</b>. Depois <b>Conceder consentimento de administrador</b>.</li>
+          <li>Autorizar a app a ler as reuniões (PowerShell do Windows, como administrador), trocando o ID pelo <b>ID da aplicação</b> (Descrição geral, no Entra):
+            <pre class="ms-code">Install-Module MicrosoftTeams
+Connect-MicrosoftTeams
+New-CsApplicationAccessPolicy -Identity "NOVA-Compass" -AppIds "ID-DA-APLICACAO" -Description "NOVA Compass - transcricoes"
+Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
+            Pode levar até 30 minutos a ficar ativo.</li>
+          <li>Em cada reunião: <b>Mais → Gravar e transcrever → Iniciar transcrição</b> (ou, nas opções da reunião, <b>Gravar e transcrever automaticamente</b>). Sem transcrição, não há ata.</li>
+        </ol></details>
         <div class="section-label op-form-sec">O que vai para o calendário de cada pessoa</div>
         <div class="field-hint" style="margin-top:0;">No calendário principal (o que o Teams, o Outlook e o iPhone mostram), com a categoria <b>NOVA Compass</b>: marcos e entregas de que é responsável, marcos com várias pessoas como um só evento partilhado (organiza quem criou o marco na app; os outros são convidados), com link Teams quando o marco tem a opção "Reunião online" e lembretes do Investment Intelligence (7 dias sem resposta). <b>Não vão</b>: fases de projeto, ausências e férias, prazos da Câmara e respostas a ofícios. A app manda nestes eventos: alterações feitas no Teams são repostas. As reuniões Teams e os eventos do Outlook de cada pessoa aparecem na Agenda e na Hoje; os privados só como "Ocupado".</div>
         ${st.configured ? '' : `<div class="section-label op-form-sec">Como ligar (administrador do Office 365, ~15 min)</div>
@@ -12435,8 +12455,8 @@
       teamRows.forEach(r => {
         const urgent = r.late ? 'late' : (r.kind === 'camara' || r.kind === 'debt' || r.kind === 'meet') ? 'soon' : '';
         items.push({ pri: r.late || r.kind === 'meet' ? 0 : urgent ? 1 : 2, date: r.due || '9999', html: `
-          <div class="alert-row team${urgent ? ' ' + urgent : ''}" data-alert-team="${r.kind}"${r.project ? ` data-project="${escapeHtml(r.project)}"` : ''}${r.nps ? ` data-nps="${escapeHtml(r.nps)}"` : ''}${r.url ? ` data-url="${escapeHtml(r.url)}" role="link" tabindex="0"` : ''}>
-            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : r.kind === 'nps' ? '★' : r.kind === 'debt' ? '€' : r.kind === 'law' ? '§' : r.kind === 'radar' ? '◎' : r.kind === 'meet' ? '▶' : '+'}</span>
+          <div class="alert-row team${urgent ? ' ' + urgent : ''}" data-alert-team="${r.kind}"${r.note ? ` data-note="${escapeHtml(r.note.id)}"` : ''}${r.project ? ` data-project="${escapeHtml(r.project)}"` : ''}${r.nps ? ` data-nps="${escapeHtml(r.nps)}"` : ''}${r.url ? ` data-url="${escapeHtml(r.url)}" role="link" tabindex="0"` : ''}>
+            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : r.kind === 'nps' ? '★' : r.kind === 'debt' ? '€' : r.kind === 'law' ? '§' : r.kind === 'radar' ? '◎' : r.kind === 'meet' ? '▶' : r.kind === 'transcript' ? '≡' : '+'}</span>
             <span class="alert-text"><b>${escapeHtml(r.title)}</b><span>${escapeHtml(r.sub)}</span></span>
             <span class="alert-when">${escapeHtml(r.when)}</span>
           </div>` });
@@ -12486,6 +12506,7 @@
       el.querySelectorAll('[data-alert-team]').forEach(r => r.addEventListener('click', () => {
         const k = r.dataset.alertTeam;
         if (k === 'meet') window.open(r.dataset.url, '_blank', 'noopener');
+        else if (k === 'transcript') { const n = teamRows.find(x => x.note && String(x.note.id) === r.dataset.note)?.note; if (n) openNewAtaModal(null, null, n, () => renderToday()); }
         else if (k === 'hours') openHorasModule();
         else if (k === 'owner') openProjectsModule();
         else if (k === 'debt') { navStack = []; openBillingModule('toreceive'); }
@@ -12854,6 +12875,15 @@
           sub: [fmtTimeRange(m), 'Microsoft Teams'].join(' · '), when: 'Entrar' }));
     }
 
+    // Transcrições de reuniões Teams arquivadas sem projeto (o organizador escolhe o projeto)
+    async function transcriptAlerts(me) {
+      if (devMode || !me) return [];
+      const r = await supabase.from('meeting_notes').select('id, project_id, milestone_id, title, body, meeting_date')
+        .is('project_id', null).like('title', 'Transcrição — %').eq('created_by', me).gte('meeting_date', addDaysKey(dateKey(new Date()), -30));
+      return (r.data || []).map(n => ({ kind: 'transcript', note: n, title: n.title.replace(/^Transcrição — /, 'Transcrição sem projeto: '),
+        sub: fmtDayMonthYear(n.meeting_date) + ' · escolhe o projeto para a arquivar no histórico', when: 'Arquivar' }));
+    }
+
     async function renderToday() {
       const weekEl = document.getElementById('today-week-list');
       const phasesEl = document.getElementById('today-phases');
@@ -12885,7 +12915,7 @@
         renderWeekHours(hoursEl, hours, tg);
         // Avisos de organização: horas em falta (a partir de sexta), projetos sem responsável,
         // fases em curso/seguintes sem ninguém nos projetos de que sou responsável
-        const teamAlerts = [...await meetingAlerts(milestones, me, todayKey).catch(() => []), ...radarAlerts, ...lawAlerts, ...debtAlerts, ...npsAlerts, ...camaraAlerts];
+        const teamAlerts = [...await meetingAlerts(milestones, me, todayKey).catch(() => []), ...await transcriptAlerts(me).catch(() => []), ...radarAlerts, ...lawAlerts, ...debtAlerts, ...npsAlerts, ...camaraAlerts];
         const wd = new Date().getDay();
         const missing = missingHourDays(hours, tg);
         if ((wd === 5 || wd === 6 || wd === 0) && missing.length)
@@ -18496,6 +18526,8 @@
       });
     }
 
+    // Novo evento a partir da Agenda: o dia escolhido no calendário já vem preenchido
+    document.getElementById('agenda-new').addEventListener('click', () => openMarcoModal({ onSuccess: () => loadAgenda() }));
     document.getElementById('agenda-scope').addEventListener('click', (e) => {
       const btn = e.target.closest('[data-scope]');
       if (!btn) return;

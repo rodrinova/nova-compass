@@ -89,3 +89,24 @@ do $$ begin
     create policy "Só a equipa" on public.milestone_guests for all to authenticated using (private.is_team_member()) with check (private.is_team_member());
   end if;
 end $$;
+
+-- Transcrições das reuniões Teams: a sincronização lê-as e arquiva cada uma como ata do projeto (meeting_notes)
+create table if not exists public.meeting_transcripts (
+  ical_uid text primary key,
+  subject text,
+  start_at timestamptz,
+  end_at timestamptz,
+  organizer_id uuid references public.team_members(id) on delete set null,
+  status text not null default 'waiting',   -- waiting | done | none (sem transcrição) | error
+  note_id uuid references public.meeting_notes(id) on delete set null,
+  attempts int not null default 0,
+  error text,
+  checked_at timestamptz,
+  created_at timestamptz not null default now()
+);
+alter table public.meeting_transcripts enable row level security;
+do $$ begin
+  if not exists (select 1 from pg_policies where tablename = 'meeting_transcripts' and policyname = 'Só a equipa') then
+    create policy "Só a equipa" on public.meeting_transcripts for select using (private.is_team_member());
+  end if;
+end $$;
