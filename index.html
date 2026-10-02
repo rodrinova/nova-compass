@@ -2026,6 +2026,9 @@
   .op-row .op-roi { flex-shrink: 0; text-align: right; min-width: 64px; display: flex; flex-direction: column; }
   .op-row .op-roi b { font-variant-numeric: tabular-nums; font-size: var(--fs-md); }
   .op-row .op-roi small { font-size: var(--fs-xs); color: var(--text-3); }
+  .op-kpis { display: flex; gap: var(--sp-2); justify-content: flex-end; }
+  .op-kpi { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .op-kpi small { font-size: 11px !important; white-space: nowrap; }
   .op-row.op-variant { padding-left: var(--sp-6); }
   .op-row.op-variant .bl-title::before { content: '↳ '; color: var(--text-3); }
   /* ---- Viabilidade de terrenos ---- */
@@ -14686,7 +14689,7 @@
           return `<div class="invoice-row click-row op-row${p.variant_of ? ' op-variant' : ''}" data-plot="${escapeHtml(p.id)}">
             <span><b class="bl-title">${escapeHtml(p.name)}</b><br><small>${escapeHtml(sub)}</small></span>
             <span class="op-fit">${nPres ? `<em>apresentado a ${nPres}</em>` : best && best.m.score >= 50 ? `<em class="hi">${escapeHtml(best.i.name)} · ${best.m.score}</em>` : ''}</span>
-            <span class="op-roi">${ok ? `<b class="perf-pill ${perf(v.roi, ROI_GOAL)}">${escapeHtml(pct(v.roi, 0))}</b><small>${escapeHtml(fmtEURShort(v.costGlobal))}</small>` : '<small class="muted">sem estudo</small>'}</span>
+            <span class="op-roi">${ok ? `<span class="op-kpis"><span class="op-kpi"><small>ROI</small><b class="perf-pill ${perf(v.roi, ROI_GOAL)}">${escapeHtml(pct(v.roi, 0))}</b></span>${feasInputs(p).rent_on && v.rentYear > 0 ? `<span class="op-kpi"><small>Yield</small><b class="perf-pill ${perf(v.yieldGross, YIELD_GOAL)}">${escapeHtml(pct(v.yieldGross, 1))}</b></span>` : ''}</span><small>${escapeHtml(fmtEURShort(v.costGlobal))}</small>` : '<small class="muted">sem estudo</small>'}</span>
           </div>`;
         };
         const filters = [['open', 'Em curso'], ['won', 'Ganhos'], ['closed', 'Perdidos e descartados']];
