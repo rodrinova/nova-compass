@@ -1,5 +1,6 @@
 // NOVA Compass — sincronização com o Office 365 (calendários Outlook/Teams)
-// Corre de 10 em 10 minutos (pg_cron, ver office365.sql) e com "Sincronizar agora" (Definições → Office 365).
+// Corre de 10 em 10 minutos (pg_cron, ver office365.sql), com "Sincronizar agora" (Definições → Office 365) e logo
+// que se grava ou apaga um marco na app (reuniões online ficam prontas em segundos, já a gravar e transcrever).
 // Para cada pessoa ativa da equipa (pelo email @novassociates.com):
 //   1. ESCREVE no calendário principal dela (o que o Teams e o iPhone mostram), com a categoria "NOVA Compass":
 //      - marcos e entregas de que é responsável (não as fases de projeto, nem prazos a controlar);
@@ -10,7 +11,8 @@
 //   2. LÊ o calendário dela (reuniões Teams e eventos do Outlook) para a Agenda e a Hoje da app.
 //      Eventos privados ficam só como "Ocupado".
 //   3. TRANSCRIÇÕES: depois de cada reunião Teams organizada por alguém da equipa, lê a transcrição (se houve) e
-//      arquiva-a como ata do projeto (o do marco, ou o projeto cujo código/nome está no assunto; senão fica sem projeto).
+//      arquiva-a como ata do projeto ou da categoria do marco (reuniões do Outlook: projeto cujo código/nome está no
+//      assunto; senão fica por arquivar e a Hoje de quem organizou pede o projeto ou a categoria).
 //      Precisa ainda das permissões OnlineMeetings.Read.All, OnlineMeetingTranscript.Read.All e User.Read.All e de uma
 //      Application Access Policy do Teams (ver Definições → Office 365). Sem elas, o calendário continua a funcionar.
 //   4. GRAVAÇÃO AUTOMÁTICA: nas reuniões Teams futuras organizadas pela equipa (14 dias), liga "Gravar e transcrever
@@ -30,6 +32,7 @@ const CATEGORY = "NOVA Compass";
 const TZ = "Europe/Lisbon";
 const GRAPH = "https://graph.microsoft.com/v1.0";
 const READ_BACK = 30, READ_AHEAD = 120, WRITE_BACK = 7, WRITE_AHEAD = 180, RADAR_DAYS = 7;
+const LOCK_KEY = "ms365_lock", LOCK_MS = 120e3;   // uma sincronização de cada vez (cron + "ao gravar" na app)
 const TRANSCRIPT_DAYS = 3, TRANSCRIPT_WAIT_H = 24;   // procura nos 3 dias seguintes; sem transcrição ao fim de 24 h, desiste
 
 const db = createClient(SB_URL, SB_SERVICE, { auth: { persistSession: false } });
@@ -198,11 +201,12 @@ async function syncMember(m: any, wants: Want[], links: any[], keep: Set<string>
         let c: any;
         try { c = await g("PATCH", `/users/${upn}/events/${l.ms_event_id}`, w.payload); }
         catch (e: any) { if (e.status !== 404) throw e; c = await g("POST", `/users/${upn}/events`, w.payload); l.ms_event_id = c.id; l.ical_uid = c.iCalUId; }
-        await db.from("ms_event_links").update({ hash, ms_event_id: l.ms_event_id, ical_uid: l.ical_uid, join_url: c?.onlineMeeting?.joinUrl || null, updated_at: new Date().toISOString() }).eq("member_id", m.id).eq("source_key", w.key);
+        l.join_url = c?.onlineMeeting?.joinUrl || null;
+        await db.from("ms_event_links").update({ hash, ms_event_id: l.ms_event_id, ical_uid: l.ical_uid, join_url: l.join_url, updated_at: new Date().toISOString() }).eq("member_id", m.id).eq("source_key", w.key);
       } else {
         const c = await g("POST", `/users/${upn}/events`, w.payload);
         await db.from("ms_event_links").upsert({ member_id: m.id, source_key: w.key, ms_event_id: c.id, ical_uid: c.iCalUId, join_url: c?.onlineMeeting?.joinUrl || null, hash, updated_at: new Date().toISOString() });
-        links.push({ member_id: m.id, source_key: w.key, ms_event_id: c.id, ical_uid: c.iCalUId, hash });
+        links.push({ member_id: m.id, source_key: w.key, ms_event_id: c.id, ical_uid: c.iCalUId, join_url: c?.onlineMeeting?.joinUrl || null, hash });
       }
       res.written++;
     } catch (e: any) { res.error = e.message; }
@@ -342,7 +346,7 @@ async function syncTranscripts(members: any[], links: any[]) {
   // Marcos da app com reunião online (o evento foi criado pela app no calendário do organizador)
   const ml = links.filter((l: any) => l.source_key?.startsWith("m:") && l.join_url && l.ical_uid);
   if (ml.length) {
-    const mr = await db.from("project_milestones").select("id, project_id, title, event_date, start_time, end_time, all_day")
+    const mr = await db.from("project_milestones").select("id, project_id, category_id, title, event_date, start_time, end_time, all_day")
       .in("id", ml.map((l: any) => l.source_key.slice(2)));
     const mBy = Object.fromEntries((mr.data || []).map((m: any) => [m.id, m]));
     for (const l of ml) {
@@ -352,7 +356,7 @@ async function syncTranscripts(members: any[], links: any[]) {
       const en = m.end_time ? lisbonToUtc(m.event_date, String(m.end_time)) : new Date(st.getTime() + 36e5);
       if (en.toISOString() < since || st.toISOString() > startedIso) continue;
       cand.set(l.ical_uid, { ical_uid: l.ical_uid, subject: m.title, start_at: st.toISOString(), end_at: en.toISOString(), join_url: l.join_url,
-        org: byId[l.member_id], organizer: byId[l.member_id].name, project_id: m.project_id, milestone_id: m.id });
+        org: byId[l.member_id], organizer: byId[l.member_id].name, project_id: m.project_id, category_id: m.category_id, milestone_id: m.id });
     }
   }
   if (!cand.size) return res;
@@ -394,7 +398,9 @@ async function syncTranscripts(members: any[], links: any[]) {
         const ins = await db.from("meeting_notes").insert({
           title: `Transcrição — ${c.subject || "Reunião Teams"}`, body: head + "\n\n" + (parts.join("\n\n— nova sessão —\n\n") || "(transcrição vazia)"),
           meeting_date: new Date(c.start_at).toLocaleDateString("sv-SE", { timeZone: TZ }),
-          project_id: c.project_id || guessProject(c.subject), milestone_id: c.milestone_id, created_by: c.org.id,
+          // a ata fica no projeto do marco, ou na categoria do marco; reuniões do Outlook: projeto pelo assunto
+          ...(() => { const pid = c.project_id || (c.category_id ? null : guessProject(c.subject)); return { project_id: pid, category_id: pid ? null : (c.category_id || null) }; })(),
+          milestone_id: c.milestone_id, created_by: c.org.id,
         }).select("id").single();
         if (ins.error) throw ins.error;
         row.status = "done"; row.note_id = ins.data.id; res.saved++;
@@ -416,6 +422,10 @@ async function syncTranscripts(members: any[], links: any[]) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (!TENANT || !CLIENT || !SECRET) { await saveStatus({ configured: false }); return json({ configured: false }); }
+  const lk = await db.from("app_settings").select("value").eq("key", LOCK_KEY).maybeSingle();
+  const lockedAt = Date.parse(lk.data?.value?.at || "");
+  if (lockedAt && Date.now() - lockedAt < LOCK_MS) return json({ configured: true, busy: true });
+  await db.from("app_settings").upsert({ key: LOCK_KEY, value: { at: new Date().toISOString() }, updated_at: new Date().toISOString() });
   try {
     await getToken();
     const mr = await db.from("team_members").select("id, name, email, active").eq("active", true);
@@ -447,5 +457,7 @@ Deno.serve(async (req) => {
   } catch (e: any) {
     await saveStatus({ configured: true, ok: false, error: e.message });
     return json({ configured: true, ok: false, error: e.message }, 200);
+  } finally {
+    await db.from("app_settings").upsert({ key: LOCK_KEY, value: { at: null }, updated_at: new Date().toISOString() });
   }
 });
