@@ -14174,7 +14174,7 @@
       const autoMix = unitMix(sellable, f.mix, f.typ_markup);
       const byName = Object.fromEntries((f.typologies || []).map(t => [t.name, t]));
       // tabela ajustada à mão, ou o mix automático dos sliders (com os preços/rendas escritos por tipologia)
-      const typ = manual.length ? manual : autoMix.mix.map(m => ({ name: m.name, units: m.units, area: m.area, price: byName[m.name]?.price ?? null, price_max: byName[m.name]?.price_max ?? null, rent: byName[m.name]?.rent ?? null }));
+      const typ = manual.length ? manual : autoMix.mix.map(m => ({ name: m.name, units: m.units, area: m.area, price: byName[m.name]?.price ?? null, price_max: byName[m.name]?.price_max ?? null, rent: byName[m.name]?.rent ?? null, rent_max: byName[m.name]?.rent_max ?? null }));
       // preço por tipologia: intervalo [mínimo, máximo]; um só valor escrito vale para os dois
       const unitPrice = t => { const lo = N(t.price) || N(t.price_max), hi = N(t.price_max) || lo; return s.price === 'min' ? Math.min(lo, hi) : s.price === 'max' ? Math.max(lo, hi) : (lo + hi) / 2; };
       const units = typ.length ? typ.reduce((t, x) => t + N(x.units), 0) : N(p.fractions_est);
@@ -14187,7 +14187,9 @@
       const costNoRes = costGlobal - reserves;
       const roiNoRes = costNoRes ? (salesNet - costNoRes) / costNoRes : null;
       // Arrendamento (alternativa à venda): renda × 12 × ocupação; líquida sem IMI, condomínio, gestão, manutenção
-      const rentMonth = f.sale_mode === 'typology' && typ.some(t => N(t.rent)) ? typ.reduce((t, x) => t + N(x.units) * N(x.rent), 0) : sellable * N(f.rent_m2);
+      // Renda mensal por tipologia: intervalo [mínimo, máximo] por fração (o meio do intervalo, salvo cenário)
+      const unitRent = t => { const lo = N(t.rent) || N(t.rent_max), hi = N(t.rent_max) || lo; return s.price === 'min' ? Math.min(lo, hi) : s.price === 'max' ? Math.max(lo, hi) : (lo + hi) / 2; };
+      const rentMonth = typ.reduce((t, x) => t + N(x.units) * unitRent(x), 0);
       const rentYear = rentMonth * 12 * N(f.occupancy) / 100, rentNet = rentYear * (1 - N(f.rent_opex_pct) / 100);
       const abc = sellable + common + commerce;
       return {
@@ -14330,8 +14332,8 @@
           <p class="note">${e(T(`Conservador: vendas −${nf(f.delta_pct)}% e construção +${nf(f.delta_pct)}%. Otimista: o inverso.`, `Conservative: sales −${nf(f.delta_pct)}% and construction +${nf(f.delta_pct)}%. Optimistic: the reverse.`))}</p>` : ''}
         </section>
         ${rentOk ? sec(T('Resultado do arrendamento', 'Rental result'), `
-          ${f.sale_mode === 'typology' && typ.some(t => N(t.rent)) ? typ.map(t => row(`${e(String(t.units))} × ${e(t.name)}`, '', '', e(eur(N(t.units) * N(t.rent))) + e(T('/mês', '/month')))).join('')
-            : row(e(T('Renda mensal', 'Monthly rent')), e(eur(f.rent_m2)) + e(T('/m²/mês', '/m²/month')), e(m2(c.sellable)), e(eur(c.rentMonth)) + e(T('/mês', '/month')))}
+          ${typ.map(t => row(`${e(String(t.units))} × ${e(t.name)}`, '', '', e(eur(N(t.units) * ((N(t.rent) || N(t.rent_max)) + (N(t.rent_max) || N(t.rent))) / 2)) + e(T('/mês', '/month')))).join('')}
+          ${row(e(T('Renda mensal', 'Monthly rent')), '', '', e(eur(c.rentMonth)) + e(T('/mês', '/month')), 'sub')}
           ${row(e(T('Renda anual', 'Annual rent')) + `<small>${e(T('12 meses × ocupação', '12 months × occupancy'))}</small>`, e(nf(f.occupancy)) + '%', e(eur(c.rentMonth * 12)), e(eur(c.rentYear)), 'sub')}
           ${row(e(T('Yield bruto', 'Gross rental yield')) + `<small>${e(T('renda anual ÷ custo global', 'annual rent ÷ total cost'))}</small>`, '', '', e(pc(c.yieldGross)), 'sub big')}`) : ''}
         <section><h2>${e(T('Rácios do terreno', 'Land ratios'))}</h2><table>
@@ -14931,9 +14933,9 @@
               ${vrow('ROI<small>lucro ÷ custo global</small>', '', '', o('roi'))}
               ${vrow('Cenários<small>vendas e construção ± esta variação</small>', fIn('delta_pct', f.delta_pct, '± %'), '', o('scen'))}`)}
             ${grp('vt-rent', `Arrendamento <label class="vt-chk"><input type="checkbox" data-f="rent_on"${f.rent_on ? ' checked' : ''}> calcular</label>`, 'alternativa à venda', `<div id="vt-rent-body"${f.rent_on ? '' : ' hidden'}>${vhead()}
-              ${vrow('Renda mensal', fIn('rent_m2', f.rent_m2, '€/m²/mês'), o('sellable'), o('rentM2Month'), '', ' data-mode="m2"')}
-              <div id="vt-rent-typ" class="vt-typ" data-mode="typology"></div>
-              ${vrow('Renda anual<small>× 12 meses × ocupação</small>', fIn('occupancy', f.occupancy, '%'), o('rentMonth12'), o('rentYear'), 'vt-sub')}
+              <div id="vt-rent-typ" class="vt-typ"></div>
+              ${vrow('Renda mensal', '', '', o('rentMonth'), 'vt-sub')}
+              ${vrow('Renda anual<small>× 12 meses × ocupação</small>', fIn('occupancy', f.occupancy, '%'), o('rentMonth12'), o('rentYear'))}
               ${vrow('Yield bruto<small>renda anual ÷ custo global</small>', '', '', o('yield'), 'vt-sub')}</div>`)}
             <div class="vt-foot"><button type="button" class="text-btn" id="fz-reset">Repor os valores de referência</button></div>
           </div>
@@ -15109,7 +15111,8 @@
           ${manual ? '<button type="button" class="text-btn" id="fz-typ-add">+ Tipologia</button>' : ''}`;
         document.getElementById('vt-sales-typ').innerHTML = T.length ? `${T.map((t, i) => vrow(`<b>${nm(t)}</b><small>${escapeHtml(fmtM2(t.area))} m² · preço por fração</small>`,
             `<div class="vt-range">${tIn('price', t.price, 'mín.', 'Preço mínimo de ' + t.name)}<span>a</span>${tIn('price_max', t.price_max, 'máx.', 'Preço máximo de ' + t.name)}</div>`, o('tq' + i), o('ts' + i), 'vt-trow', ` data-i="${i}"`)).join('')}` : '<div class="field-hint" style="margin:0;">Sem frações ainda — vê o grupo Frações.</div>';
-        document.getElementById('vt-rent-typ').innerHTML = T.map((t, i) => vrow(`<b>${nm(t)}</b>`, tIn('rent', t.rent, 'renda', 'Renda de ' + t.name, '€/mês'), o('tq' + i), o('tr' + i), 'vt-trow', ` data-i="${i}"`)).join('');
+        document.getElementById('vt-rent-typ').innerHTML = T.length ? T.map((t, i) => vrow(`<b>${nm(t)}</b><small>renda mensal por fração</small>`,
+            `<div class="vt-range">${tIn('rent', t.rent, 'mín.', 'Renda mínima de ' + t.name)}<span>a</span>${tIn('rent_max', t.rent_max, 'máx.', 'Renda máxima de ' + t.name)}</div>`, o('tq' + i), o('tr' + i), 'vt-trow', ` data-i="${i}"`)).join('') : '<div class="field-hint" style="margin:0;">Sem frações ainda — vê o grupo Frações.</div>';
         if (focus) { const el = document.querySelector(`#${focus.box} .vt-trow[data-i="${focus.i}"] [data-k="${focus.k}"]`); if (el) { el.focus(); el.setSelectionRange?.(el.value.length, el.value.length); } }
         applyMode(); drawResult();
       };
@@ -15120,10 +15123,10 @@
         el.classList.remove('fz-bad');
         const rows = feasCalc(p, f).typs;
         if (typManual()) f.typologies = (f.typologies || []).filter(t => Number(t.units) > 0).map((x, j) => j === i ? { ...x, [k]: v } : x);
-        else if (k === 'price' || k === 'price_max' || k === 'rent') {
+        else if (k === 'price' || k === 'price_max' || k === 'rent' || k === 'rent_max') {
           // preço/renda no automático: guarda por tipologia, o mix continua a seguir os sliders
           const name = rows[i].name, list = [...(f.typologies || [])], j = list.findIndex(t => t.name === name);
-          if (j >= 0) list[j] = { ...list[j], [k]: v }; else list.push({ name, units: null, area: null, price: null, price_max: null, rent: null, [k]: v });
+          if (j >= 0) list[j] = { ...list[j], [k]: v }; else list.push({ name, units: null, area: null, price: null, price_max: null, rent: null, rent_max: null, [k]: v });
           f.typologies = list;
         } else {
           // mexer em unidades ou áreas: a tabela passa a ser tua (os preços ficam)
@@ -15155,6 +15158,7 @@
       const drawResult = () => {
         const c = feasCalc(p, f), mx = c.autoMix, sc = feasScenarios(p, f), Nn = v => Number(v) || 0;
         const R = c.hasRange ? [feasCalc(p, f, { sales: 1, build: 1, price: 'min' }), feasCalc(p, f, { sales: 1, build: 1, price: 'max' })] : null;
+        const R2 = c.typs.some(t => Nn(t.rent) && Nn(t.rent_max) && Nn(t.rent) !== Nn(t.rent_max)) ? [feasCalc(p, f, { sales: 1, build: 1, price: 'min' }), feasCalc(p, f, { sales: 1, build: 1, price: 'max' })] : null;
         const E = n => n == null || !Number.isFinite(n) ? '—' : escapeHtml(Math.round(n).toLocaleString('pt-PT') + ' €');
         const M = n => n ? escapeHtml(fmtM2(n) + ' m²') : '—';
         const rng = (k, fm = E) => R ? `<small class="vt-rng">${fm(R[0][k])} a ${fm(R[1][k])}</small>` : '';
@@ -15174,7 +15178,7 @@
           profit: ok ? `<b class="${c.profit < 0 ? 'late' : ''}">${E(c.profit)}</b>${rng('profit')}` : '—',
           roi: ok ? `<b class="perf-pill ${perf(c.roi, ROI_GOAL)}">${pct(c.roi)}</b>` + rng('roi', x => pct(x)) : '—',
           scen: ok ? sc.map(([l, x]) => `<span class="vt-sc"><small>${l}</small> <b class="${perf(x.roi, ROI_GOAL)}">${pct(x.roi)}</b></span>`).join('') : '—',
-          rentM2Month: E(c.sellable * Nn(f.rent_m2)) + '<small class="vt-rng">por mês</small>', rentMonth12: E(c.rentMonth * 12), rentYear: E(c.rentYear),
+          rentMonth: E(c.rentMonth) + (R2 ? `<small class="vt-rng">${E(R2[0].rentMonth)} a ${E(R2[1].rentMonth)}</small>` : ''), rentMonth12: E(c.rentMonth * 12), rentYear: E(c.rentYear),
           yield: c.yieldGross ? `<b class="perf-pill ${perf(c.yieldGross, YIELD_GOAL)}">${pct(c.yieldGross, 1)}</b>` : '—',
           fracN: `${fracN} ${fracN === 1 ? 'fração' : 'frações'}`, fracM2: `<b class="${over ? 'late' : ''}">${M(fracM2)}</b>`,
           fracCmp: `de ${M(c.sellable)} vendáveis${over ? ' — <b class="late">passa da área vendável</b>' : ''}`
@@ -15184,7 +15188,8 @@
           const u = Nn(t.units), lo = Nn(t.price) || Nn(t.price_max), hi = Nn(t.price_max) || lo;
           vals['tm' + i] = M(u * Nn(t.area)); vals['tq' + i] = `${u} un.`;
           vals['ts' + i] = E(u * (lo + hi) / 2) + (hi !== lo ? `<small class="vt-rng">${E(u * Math.min(lo, hi))} a ${E(u * Math.max(lo, hi))}</small>` : '');
-          vals['tr' + i] = E(u * Nn(t.rent)) + '<small class="vt-rng">por mês</small>';
+          const rl = Nn(t.rent) || Nn(t.rent_max), rh = Nn(t.rent_max) || rl;
+          vals['tr' + i] = E(u * (rl + rh) / 2) + `<small class="vt-rng">${rh !== rl ? `${E(u * Math.min(rl, rh))} a ${E(u * Math.max(rl, rh))} · ` : ''}por mês</small>`;
         });
         view.querySelectorAll('.vt-sheet [data-o]').forEach(el => { if (el.dataset.o in vals) el.innerHTML = vals[el.dataset.o]; });
         const pv = document.getElementById('vt-proj-v'), pp = view.querySelector('[data-f="proj_pct"]');
