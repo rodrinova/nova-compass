@@ -13,6 +13,8 @@
 //      arquiva-a como ata do projeto (o do marco, ou o projeto cujo código/nome está no assunto; senão fica sem projeto).
 //      Precisa ainda das permissões OnlineMeetings.Read.All, OnlineMeetingTranscript.Read.All e User.Read.All e de uma
 //      Application Access Policy do Teams (ver Definições → Office 365). Sem elas, o calendário continua a funcionar.
+//   4. GRAVAÇÃO AUTOMÁTICA: nas reuniões Teams futuras organizadas pela equipa (14 dias), liga "Gravar e transcrever
+//      automaticamente" (recordAutomatically), para a transcrição arrancar sozinha. Precisa de OnlineMeetings.ReadWrite.All.
 // Precisa (Edge Functions → Secrets): MS_TENANT_ID, MS_CLIENT_ID, MS_CLIENT_SECRET — uma aplicação registada
 // no Entra ID com as permissões de aplicação Calendars.ReadWrite e MailboxSettings.ReadWrite (consentimento do
 // administrador). Sem estes segredos, só regista "por configurar" e sai.
@@ -164,10 +166,10 @@ async function desired(members: any[]) {
 // Aviso RGPD que segue no convite enviado a pessoas de fora da equipa
 function gdpr(meeting: boolean) {
   return `<hr><p style="font-size:12px;color:#666">Proteção de dados: a NOVA Associates trata o seu nome e email apenas para organizar esta reunião e o acompanhamento do projeto, nos termos do RGPD.` +
-    (meeting ? ` A reunião poderá ser transcrita para a elaboração da ata, com aviso no início; pode opor-se a qualquer momento.` : ``) +
+    (meeting ? ` A reunião será gravada e transcrita automaticamente para a elaboração da ata; o Teams avisa no início e pode opor-se a qualquer momento.` : ``) +
     ` Para aceder, corrigir ou apagar os seus dados, responda a este convite.</p>` +
     `<p style="font-size:12px;color:#666">Data protection: NOVA Associates processes your name and email only to organise this meeting and follow up on the project, under the GDPR.` +
-    (meeting ? ` The meeting may be transcribed to prepare the minutes, with notice at the start; you may object at any time.` : ``) +
+    (meeting ? ` The meeting will be recorded and transcribed automatically to prepare the minutes; Teams notifies at the start and you may object at any time.` : ``) +
     ` To access, correct or delete your data, reply to this invitation.</p>`;
 }
 
@@ -191,7 +193,7 @@ async function syncMember(m: any, wants: Want[], links: any[], keep: Set<string>
     const hash = await sha(JSON.stringify(w.payload));
     const l = myLinks.find((x) => x.source_key === w.key);
     try {
-      if (l && l.hash === hash) continue;
+      if (l && l.hash === hash && !((w.payload as any).isOnlineMeeting && !l.join_url)) continue;   // reunião sem link guardado: volta a escrever
       if (l) {
         let c: any;
         try { c = await g("PATCH", `/users/${upn}/events/${l.ms_event_id}`, w.payload); }
@@ -243,6 +245,60 @@ async function syncMember(m: any, wants: Want[], links: any[], keep: Set<string>
 }
 
 // ---------- Transcrições → atas ----------
+// ID do utilizador no Entra (as reuniões online pedem-no); sem User.Read.All, tenta com o email
+const uidCache: Record<string, string> = {};
+async function userId(email: string) {
+  if (uidCache[email]) return uidCache[email];
+  try { uidCache[email] = (await g("GET", `/users/${encodeURIComponent(email)}?$select=id`))?.id || email; } catch (_) { uidCache[email] = email; }
+  return uidCache[email];
+}
+// Gravação e transcrição automáticas nas reuniões Teams futuras organizadas pela equipa
+const AUTOREC_DAYS = 14;
+async function syncAutoRecord(members: any[], links: any[]) {
+  const res = { set: 0, error: null as string | null };
+  const now = Date.now(), nowIso = new Date(now).toISOString(), until = new Date(now + AUTOREC_DAYS * 864e5).toISOString();
+  const byEmail = Object.fromEntries(members.map((m) => [String(m.email).toLowerCase(), m]));
+  const byId = Object.fromEntries(members.map((m) => [m.id, m]));
+  const cand = new Map<string, any>();
+  const ev = await db.from("ms_events").select("ical_uid, subject, start_at, join_url, organizer_email")
+    .eq("is_online", true).not("join_url", "is", null).gte("start_at", nowIso).lte("start_at", until);
+  for (const e of ev.data || []) { const org = byEmail[e.organizer_email || ""]; if (org && e.ical_uid) cand.set(e.ical_uid, { ...e, org }); }
+  const ml = links.filter((l: any) => l.source_key?.startsWith("m:") && l.join_url && l.ical_uid && byId[l.member_id]);
+  if (ml.length) {
+    const mr = await db.from("project_milestones").select("id, title, event_date, start_time").in("id", ml.map((l: any) => l.source_key.slice(2)));
+    const mBy = Object.fromEntries((mr.data || []).map((m: any) => [m.id, m]));
+    for (const l of ml) {
+      const m = mBy[l.source_key.slice(2)];
+      if (!m?.start_time) continue;
+      const st = lisbonToUtc(m.event_date, String(m.start_time)).toISOString();
+      if (st >= nowIso && st <= until) cand.set(l.ical_uid, { ical_uid: l.ical_uid, subject: m.title, start_at: st, join_url: l.join_url, org: byId[l.member_id] });
+    }
+  }
+  if (!cand.size) return res;
+  const seen = await db.from("ms_autorecord").select("ical_uid, status").in("ical_uid", [...cand.keys()]);
+  const done = new Set((seen.data || []).filter((x: any) => x.status === "ok").map((x: any) => x.ical_uid));
+  for (const c of cand.values()) {
+    if (done.has(c.ical_uid)) continue;
+    const row: any = { ical_uid: c.ical_uid, subject: c.subject, start_at: c.start_at, status: "ok", error: null, set_at: nowIso };
+    try {
+      const uid = await userId(c.org.email);
+      const om = (await g("GET", `/users/${uid}/onlineMeetings?$filter=${encodeURIComponent(`JoinWebUrl eq '${c.join_url}'`)}`))?.value?.[0];
+      if (!om) throw new Error("Reunião não encontrada no Teams");
+      if (!om.recordAutomatically) await g("PATCH", `/users/${uid}/onlineMeetings/${om.id}`, { recordAutomatically: true });
+      res.set++;
+    } catch (e: any) {
+      row.status = "error"; row.error = e.message;
+      res.error = e.status === 403 || e.status === 401
+        ? "Sem permissão para ligar a gravação automática: falta OnlineMeetings.ReadWrite.All no Entra (Definições → Office 365)."
+        : e.message;
+      await db.from("ms_autorecord").upsert(row);
+      if (e.status === 403 || e.status === 401) break;
+      continue;
+    }
+    await db.from("ms_autorecord").upsert(row);
+  }
+  return res;
+}
 // Hora de Lisboa (data + HH:MM) → instante UTC
 function lisbonToUtc(date: string, time: string) {
   const guess = new Date(`${date}T${time.slice(0, 5)}:00Z`);
@@ -307,12 +363,6 @@ async function syncTranscripts(members: any[], links: any[]) {
   const guessProject = (subject: string) => {
     const s = norm(subject);
     return (pr.data || []).find((p: any) => (p.code && s.includes(norm(p.code))) || (p.name && norm(p.name).length >= 4 && s.includes(norm(p.name))))?.id || null;
-  };
-  const uidCache: Record<string, string> = {};
-  const userId = async (email: string) => {
-    if (uidCache[email]) return uidCache[email];
-    try { uidCache[email] = (await g("GET", `/users/${encodeURIComponent(email)}?$select=id`))?.id || email; } catch (_) { uidCache[email] = email; }
-    return uidCache[email];
   };
   for (const c of cand.values()) {
     const p = prev[c.ical_uid];
@@ -389,10 +439,11 @@ Deno.serve(async (req) => {
       catch (e: any) { out.push({ name: m.name, error: e.message }); }
     }
     const ok = out.every((x: any) => !x.error);
-    let transcripts: any = null;
+    let transcripts: any = null, autorecord: any = null;
+    try { autorecord = await syncAutoRecord(members, links); } catch (e: any) { autorecord = { error: e.message }; }
     try { transcripts = await syncTranscripts(members, links); } catch (e: any) { transcripts = { error: e.message }; }
-    await saveStatus({ configured: true, ok, members: out, transcripts });
-    return json({ configured: true, ok, members: out, transcripts });
+    await saveStatus({ configured: true, ok, members: out, transcripts, autorecord });
+    return json({ configured: true, ok, members: out, transcripts, autorecord });
   } catch (e: any) {
     await saveStatus({ configured: true, ok: false, error: e.message });
     return json({ configured: true, ok: false, error: e.message }, 200);

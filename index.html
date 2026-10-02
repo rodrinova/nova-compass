@@ -4073,7 +4073,8 @@
           ${st.members.map(m => `<tr><td>${escapeHtml(m.name)}</td><td class="col-value">${m.written ?? '—'}</td><td class="col-value">${m.deleted ?? '—'}</td><td class="col-value">${m.read ?? '—'}</td><td>${m.error ? `<span class="warn-text">${escapeHtml(m.error)}</span>` : '✓'}</td></tr>`).join('')}
         </tbody></table></div>` : ''}
         <div class="section-label op-form-sec">Transcrições das reuniões Teams → atas</div>
-        <div class="field-hint" style="margin-top:0;">Depois de cada reunião Teams organizada por alguém da equipa, se a transcrição foi ligada, a app arquiva-a como ata do projeto: o do marco, ou o projeto cujo código ou nome está no assunto. Sem projeto, aparece um aviso na Hoje de quem organizou para o escolher. Sem IA e sem custos.</div>
+        <div class="field-hint" style="margin-top:0;">Nas reuniões Teams organizadas pela equipa, a app liga <b>Gravar e transcrever automaticamente</b> (nos próximos 14 dias); o vídeo fica no OneDrive de quem organiza. Depois de cada reunião, a app arquiva a transcrição como ata do projeto: o do marco, ou o projeto cujo código ou nome está no assunto. Sem projeto, aparece um aviso na Hoje de quem organizou para o escolher. Sem IA e sem custos.</div>
+        ${st.autorecord ? `<div class="field-hint">${st.autorecord.error ? `<span class="warn-text">${escapeHtml(st.autorecord.error)}</span>` : `Gravação automática ligada em ${Number(st.autorecord.set) || 0} reuniões nesta verificação`}</div>` : ''}
         ${st.transcripts ? `<div class="field-hint">${st.transcripts.error ? `<span class="warn-text">${escapeHtml(st.transcripts.error)}</span>` : `Última verificação: ${Number(st.transcripts.saved) || 0} arquivadas · ${Number(st.transcripts.waiting) || 0} à espera da transcrição`}</div>` : ''}
         <details class="more-opts"><summary>Como ligar as transcrições (administrador, ~10 min)</summary>
         <ol class="ms-steps">
@@ -4085,7 +4086,9 @@ Connect-MicrosoftTeams
 New-CsApplicationAccessPolicy -Identity "NOVA-Compass" -AppIds "ID-DA-APLICACAO" -Description "NOVA Compass - transcricoes"
 Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             Pode levar até 30 minutos a ficar ativo.</li>
-          <li>Em cada reunião: <b>Mais → Gravar e transcrever → Iniciar transcrição</b> (ou, nas opções da reunião, <b>Gravar e transcrever automaticamente</b>). Sem transcrição, não há ata.</li>
+          <li><b>Teams</b> → <b>Meetings → Meeting settings</b> → <b>Transcript API access</b>: <b>Microsoft Graph access</b> e <b>Include speaker attribution</b> em <b>On</b>.</li>
+          <li>Para a gravação e transcrição arrancarem sozinhas: no <b>Entra</b>, juntar <b>OnlineMeetings.ReadWrite.All</b> (permissão de aplicação) e conceder consentimento; no PowerShell (depois de <i>Connect-MicrosoftTeams</i>):
+            <pre class="ms-code">Set-CsTeamsMeetingPolicy -Identity Global -AutoRecording Enabled</pre></li>
         </ol></details>
         <div class="section-label op-form-sec">O que vai para o calendário de cada pessoa</div>
         <div class="field-hint" style="margin-top:0;">No calendário principal (o que o Teams, o Outlook e o iPhone mostram), com a categoria <b>NOVA Compass</b>: marcos e entregas de que é responsável, marcos com várias pessoas como um só evento partilhado (organiza quem criou o marco na app; os outros são convidados), com link Teams quando o marco tem a opção "Reunião online" e lembretes do Investment Intelligence (7 dias sem resposta). <b>Não vão</b>: fases de projeto, ausências e férias, prazos da Câmara e respostas a ofícios. A app manda nestes eventos: alterações feitas no Teams são repostas. As reuniões Teams e os eventos do Outlook de cada pessoa aparecem na Agenda e na Hoje; os privados só como "Ocupado".</div>
