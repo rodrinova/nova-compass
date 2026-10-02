@@ -154,7 +154,7 @@ async function ensureCategory(upn: string) {
 // ---------- Uma pessoa ----------
 async function syncMember(m: any, wants: Want[], links: any[]) {
   const upn = encodeURIComponent(m.email);
-  const res = { name: m.name, written: 0, deleted: 0, read: 0, error: null as string | null };
+  const res = { name: m.name, written: 0, deleted: 0, read: 0, cancelled: 0, ours: 0, error: null as string | null };
   await ensureCategory(m.email);
   // 1. Escrever
   const mine = wants.filter((w) => w.member === m.id);
@@ -187,16 +187,19 @@ async function syncMember(m: any, wants: Want[], links: any[]) {
   const end = new Date(addDays(todayKey(), READ_AHEAD) + "T00:00:00Z").toISOString();
   const ours = new Set(links.map((l) => l.ical_uid).filter(Boolean));
   const rows: any[] = [];
-  let url: string | null = `/users/${upn}/calendarView?startDateTime=${start}&endDateTime=${end}&$top=200&$select=id,iCalUId,subject,start,end,isAllDay,location,isOnlineMeeting,onlineMeeting,showAs,sensitivity,organizer,webLink,categories,isCancelled`;
+  let url: string | null = `/users/${upn}/calendarView?startDateTime=${start}&endDateTime=${end}&$top=200&$select=id,iCalUId,subject,start,end,isAllDay,location,isOnlineMeeting,onlineMeeting,showAs,sensitivity,organizer,attendees,webLink,categories,isCancelled`;
   while (url) {
     const r: any = await g("GET", url, undefined, { Prefer: `outlook.timezone="UTC"` });
     for (const e of r.value || []) {
-      if (e.isCancelled || (e.categories || []).includes(CATEGORY) || ours.has(e.iCalUId)) continue;   // o que a app escreveu não volta a entrar
+      if (e.isCancelled) { res.cancelled++; continue; }
+      if ((e.categories || []).includes(CATEGORY) || ours.has(e.iCalUId)) { res.ours++; continue; }   // o que a app escreveu não volta a entrar
       const priv = e.sensitivity === "private" || e.sensitivity === "confidential";
       rows.push({ member_id: m.id, ms_id: e.id, ical_uid: e.iCalUId, subject: priv ? null : e.subject,
         start_at: e.start.dateTime + "Z", end_at: e.end?.dateTime ? e.end.dateTime + "Z" : null, all_day: !!e.isAllDay,
         location: priv ? null : (e.location?.displayName || null), is_online: !!e.isOnlineMeeting, join_url: priv ? null : (e.onlineMeeting?.joinUrl || null),
-        show_as: e.showAs, is_private: priv, organizer: priv ? null : (e.organizer?.emailAddress?.name || null), web_link: e.webLink, synced_at: new Date().toISOString() });
+        show_as: e.showAs, is_private: priv, organizer: priv ? null : (e.organizer?.emailAddress?.name || null), web_link: e.webLink, synced_at: new Date().toISOString(),
+        organizer_email: (e.organizer?.emailAddress?.address || "").toLowerCase() || null,
+        attendee_emails: priv ? [] : (e.attendees || []).map((a: any) => String(a.emailAddress?.address || "").toLowerCase()).filter(Boolean) });
     }
     url = r["@odata.nextLink"] || null;
   }

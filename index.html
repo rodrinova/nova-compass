@@ -7252,17 +7252,28 @@
           { id: 'e2', member_id: 'mock-member-1', subject: null, start_at: `${addDaysKey(t, 1)}T10:00:00`, end_at: `${addDaysKey(t, 1)}T11:00:00`, all_day: false, is_online: false, join_url: null, organizer: null, location: null, is_private: true }
         ]).map(e => ({ ...e, start_at: new Date(e.start_at).toISOString(), end_at: new Date(e.end_at).toISOString() }));
       } else {
-        const r = await supabase.from('ms_events').select('id, member_id, subject, start_at, end_at, all_day, location, is_online, join_url, organizer, is_private, web_link')
+        const r = await supabase.from('ms_events').select('*')
           .gte('start_at', new Date(from + 'T00:00:00').toISOString()).lte('start_at', new Date(addDaysKey(to, 1) + 'T00:00:00').toISOString()).order('start_at');
         if (r.error) return [];   // tabela ainda não criada ou sem acesso: a app funciona sem isto
         rows = r.data || [];
       }
       const hm = d => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ':00';
+      // a mesma reunião lida em vários calendários (organizador + convidados) aparece uma vez, para todos os da equipa nela
+      const tm = devMode ? { data: [] } : await supabase.from('team_members').select('id, email');
+      const byEmail = Object.fromEntries((tm.data || []).filter(m => m.email).map(m => [String(m.email).toLowerCase(), m.id]));
+      const groups = new Map();
+      rows.forEach(e => {
+        const k = e.ical_uid || e.id, g = groups.get(k);
+        const ids = [e.member_id, byEmail[e.organizer_email], ...(e.attendee_emails || []).map(x => byEmail[x])].filter(Boolean);
+        if (g) { ids.forEach(id => g.ids.add(id)); if (g.e.is_private && !e.is_private) g.e = e; }
+        else groups.set(k, { e, ids: new Set(ids) });
+      });
+      rows = [...groups.values()].map(g => ({ ...g.e, _owners: [...g.ids] }));
       return rows.map(e => {
         const st = new Date(e.start_at), en = e.end_at ? new Date(e.end_at) : null;
         return { id: 'ms:' + e.id, ms: e, external: true, type_id: MS_TYPE.id, title: e.is_private ? 'Ocupado (privado)' : (e.subject || 'Sem assunto'),
           event_date: e.all_day ? e.start_at.slice(0, 10) : dateKey(st), all_day: !!e.all_day, start_time: e.all_day ? null : hm(st), end_time: e.all_day || !en ? null : hm(en),
-          location: e.is_online ? 'Teams' : e.location, owner_ids: [e.member_id], done: false, project_id: null };
+          location: e.is_online ? 'Teams' : e.location, owner_ids: e._owners || [e.member_id], done: false, project_id: null };
       });
     }
     function openMsEventModal(id, list) {
