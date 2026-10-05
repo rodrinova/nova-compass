@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#F7F7F5" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#111113" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F5F5F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Compass">
@@ -2731,6 +2731,171 @@
     #top-progress::before { animation: none; transform: none; opacity: .6; }
   }
 
+  /* =====================================================================
+     KEYNOTE — a mesma linguagem da apresentação em toda a app
+     Claro e escuro (o escuro é preto puro), tipografia grande e apertada, vidro nas barras,
+     cartões com profundidade e tudo em movimento: páginas, títulos, cartões, números, toques.
+     Rápido (até ~0,5 s) para nunca atrasar o trabalho. "Reduzir movimento" desliga tudo.
+     ===================================================================== */
+  :root {
+    --bg: #F5F5F7; --bg-side: #F0F0F3;
+    --surface: #FFFFFF; --surface-2: #F5F5F7; --surface-3: #E8E8ED;
+    --border: #E3E3E8; --border-strong: #D2D2D7;
+    --text: #1D1D1F; --text-2: #636366; --text-3: #636366;
+    --track: rgba(29, 29, 31, 0.07);
+    --radius: 10px; --radius-lg: 16px; --r-lg: 14px; --r-xl: 22px;
+    --shadow-card: 0 1px 1px rgba(0,0,0,.02), 0 2px 6px rgba(0,0,0,.03), 0 10px 30px -12px rgba(0,0,0,.08);
+    --shadow-lift: 0 2px 4px rgba(0,0,0,.04), 0 18px 40px -14px rgba(0,0,0,.18);
+    --shadow-pop: 0 2px 6px rgba(0,0,0,.06), 0 24px 60px -12px rgba(0,0,0,.22);
+    --glass: rgba(245, 245, 247, 0.72); --glass-2: rgba(255, 255, 255, 0.72);
+    --spring: cubic-bezier(.34, 1.56, .64, 1); --expo: cubic-bezier(.16, 1, .3, 1); --sheet: cubic-bezier(.32, .72, 0, 1);
+    --ease: cubic-bezier(.16, 1, .3, 1); --t: 220ms; --t-slow: 420ms;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000; --bg-side: #0A0A0B;
+      --surface: #121214; --surface-2: #1A1A1D; --surface-3: #242428;
+      --border: rgba(255,255,255,.08); --border-strong: rgba(255,255,255,.15);
+      --text: #F5F5F7; --text-2: #A1A1A6; --text-3: #8E8E93;
+      --accent: #C9A7D1; --accent-hover: #D9BEDF; --accent-soft: rgba(201,167,209,.13); --accent-muted: rgba(201,167,209,.38);
+      --on-accent: #17121A; --track: rgba(255,255,255,.08);
+      --shadow-card: 0 0 0 0 transparent; --shadow-lift: 0 18px 50px -16px rgba(0,0,0,.9);
+      --shadow-pop: 0 0 0 1px rgba(255,255,255,.08), 0 30px 80px -10px rgba(0,0,0,.9);
+      --glass: rgba(0, 0, 0, 0.66); --glass-2: rgba(22, 22, 24, 0.72);
+    }
+    /* luz suave no topo, como na apresentação */
+    body::before { content: ''; position: fixed; inset: 0 0 auto 0; height: 60vh; pointer-events: none; z-index: -1;
+      background: radial-gradient(1000px 420px at 60% -10%, rgba(201,167,209,.07), transparent 70%); }
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  h1, h2, h3, .home-greeting, .card-head h2, .kpi b, .hero-card b, .stat-value { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+
+  /* ---- barras em vidro ---- */
+  .nav-bar { background: var(--glass); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); border-bottom-color: transparent; box-shadow: 0 1px 0 var(--border); }
+  .nav-bar h1 { font-size: 15px; font-weight: 650; letter-spacing: -.015em; }
+  @media (max-width: 899px) {
+    .tabbar { background: var(--glass-2); -webkit-backdrop-filter: saturate(180%) blur(22px); backdrop-filter: saturate(180%) blur(22px); border-top-color: var(--border); }
+    .more-sheet { background: var(--glass-2); -webkit-backdrop-filter: saturate(180%) blur(24px); backdrop-filter: saturate(180%) blur(24px); }
+  }
+  .sidebar { border-right-color: var(--border); }
+  .side-new { border-radius: 10px; box-shadow: var(--shadow-card); }
+
+  /* ---- títulos grandes, letra apertada ---- */
+  .home-greeting { font-size: clamp(30px, 4.6vw, 52px); font-weight: 700; letter-spacing: -.04em; line-height: 1.05; }
+  .home-date { font-size: clamp(15px, 1.5vw, 19px); color: var(--text-2); font-weight: 500; letter-spacing: -.01em; margin-top: 6px; }
+  .home-head { margin: 4px 0 26px; }
+  .card-head h2 { font-size: 15px; font-weight: 650; letter-spacing: -.015em; }
+  .section-label { letter-spacing: .06em; }
+  .kw { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: .08em; margin-bottom: -.08em; }
+  .kw > i { display: inline-block; font-style: normal; animation: kwUp .7s var(--expo) both; animation-delay: calc(var(--i) * 45ms); }
+  @keyframes kwUp { from { transform: translateY(105%); } to { transform: none; } }
+  .home-greeting .kw > i { animation-duration: .9s; animation-delay: calc(var(--i) * 70ms + 60ms); }
+
+  /* ---- título grande de cada área ---- */
+  .k-large { margin: 2px 0 24px; }
+  .k-l1 { font-size: clamp(30px, 4.2vw, 46px); font-weight: 700; letter-spacing: -.04em; line-height: 1.05; }
+  .k-l2 { font-size: clamp(15px, 1.5vw, 19px); color: var(--text-2); margin-top: 6px; font-weight: 500; letter-spacing: -.01em; }
+  .k-large.k-in .k-l2 { animation: kItem .6s var(--expo) both .18s; }
+  #nav-title.k-hide { opacity: 0; }
+  @media (max-width: 899px) { .k-large { margin: 0 0 18px; } }
+  .detail-header h2 { font-size: clamp(26px, 3.4vw, 40px); font-weight: 700; letter-spacing: -.035em; line-height: 1.08; }
+  .detail-header { border-bottom-color: transparent; }
+  /* ---- cartões com profundidade ---- */
+  .gantt-wrap, .ring-row, .stat-tile, .team-card, .projects-table-wrap, .kpi-strip { border-radius: var(--radius-lg); box-shadow: var(--shadow-card); }
+  :is(.client-card, .opp-card, .plot-card, .iv-card, .proj-card):hover { translate: 0 -2px; box-shadow: var(--shadow-lift); }
+  :is(.client-card, .opp-card, .plot-card, .iv-card, .proj-card) { transition: translate .35s var(--expo), box-shadow .35s var(--expo), background-color var(--t-fast); }
+
+  /* ---- páginas: entram a subir e a focar ---- */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  @keyframes kPage { from { opacity: 0; transform: translateY(16px) scale(.995); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+  #home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #feas-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view, #help-view {
+    animation: kPage .5s var(--expo) both; }
+  .anim-in :is(.gantt-wrap, .hero-card, .fg, .tax-card, .stat-tile, .hs-tile, .kpi, .project-row, .tx-row, .rec-row, .ata-entry, .client-card, .hrow) { animation-duration: .55s; animation-timing-function: var(--expo); }
+  .anim-in :is(.gantt-wrap, .hero-card, .fg, .tax-card, .stat-tile, .hs-tile, .kpi, .project-row, .tx-row, .rec-row, .ata-entry, .hrow):nth-child(n+7) { animation-delay: 200ms; }
+  [data-dpanel].tab-in { animation: kPage .4s var(--expo); }
+
+  /* ---- revelar ao fazer scroll ---- */
+  .rv { opacity: 0; transform: translateY(26px) scale(.985); }
+  .rv.rv-in { opacity: 1; transform: none; transition: opacity .6s var(--expo), transform .8s var(--expo); }
+
+  /* ---- toque: tudo afunda e salta com mola ---- */
+  :where(.client-card, .opp-card, .plot-card, .iv-card, .proj-card, .alert-row, .settings-link, .click-row, .project-row, .hi, .rec-row, .tx-line) { transition: background-color var(--t-fast) var(--ease-io), box-shadow .35s var(--expo), scale .4s var(--spring), translate .35s var(--expo); }
+  :where(button:not(:disabled), .click-row, .client-card, .opp-card, .plot-card, .iv-card, .proj-card, .alert-row, .settings-link):active { scale: .965; }
+  :where(.project-row, .hi, .rec-row, .tx-line):active { scale: .99; }
+  .primary-btn:active:not(:disabled), .secondary-btn:active:not(:disabled), .owner-chip:active, .tx-month:active, .nav-icon-btn:active, .segmented button:active { transform: none; }
+  .primary-btn { border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,.08), inset 0 1px 0 rgba(255,255,255,.12); }
+  .primary-btn:hover:not(:disabled) { box-shadow: 0 8px 22px -8px var(--accent-muted), inset 0 1px 0 rgba(255,255,255,.12); }
+
+  /* ---- menu lateral e barra de separadores: o destaque desliza ---- */
+  .nav-ind { position: absolute; left: 10px; right: 10px; top: 0; height: 32px; border-radius: 9px; background: var(--surface); box-shadow: 0 0 0 1px var(--border), var(--shadow-card);
+    transform: translateY(var(--y, 0)); transition: transform .5s var(--spring), height .3s var(--expo), opacity .2s; pointer-events: none; z-index: 0; opacity: 0; }
+  .nav-ind.on { opacity: 1; }
+  .sidebar.has-ind .nav-item { position: relative; z-index: 1; }
+  .sidebar.has-ind .nav-item.active { background: transparent; box-shadow: none; }
+  .sidebar .nav-item:hover:not(.active) { background: color-mix(in srgb, var(--surface-2) 70%, transparent); }
+  .tab-ind { display: none; }
+  @media (max-width: 899px) {
+    .tab-ind { display: block; position: absolute; top: 7px; left: 0; width: 56px; height: 30px; margin-left: -28px; border-radius: 15px; background: var(--accent-soft);
+      transform: translateX(var(--x, 0)); transition: transform .5s var(--spring), opacity .2s; opacity: 0; pointer-events: none; }
+    .tab-ind.on { opacity: 1; }
+    .tabbar .nav-item { position: relative; z-index: 1; }
+    .tabbar .nav-item.active svg { animation: kTabPop .5s var(--spring); }
+  }
+  @keyframes kTabPop { 0% { transform: scale(.8); } 60% { transform: scale(1.12); } 100% { transform: none; } }
+
+  /* ---- segmentados e separadores: a pastilha desliza ---- */
+  .seg-thumb { position: absolute; top: 0; left: 0; border-radius: 8px; background: var(--surface); box-shadow: 0 0 0 1px var(--border), 0 2px 6px rgba(0,0,0,.08);
+    transition: transform .45s var(--spring), width .45s var(--spring), height .2s; pointer-events: none; z-index: 0; }
+  .has-thumb > button { position: relative; z-index: 1; }
+  .has-thumb > button.active { background: transparent !important; box-shadow: none !important; }
+  @media (prefers-color-scheme: dark) { .seg-thumb { background: var(--surface-3); } }
+
+  /* ---- janelas: vidro por trás, entram com mola ---- */
+  #quick-modal-overlay { background: rgba(0, 0, 0, 0.28); -webkit-backdrop-filter: blur(8px) saturate(140%); backdrop-filter: blur(8px) saturate(140%); }
+  #quick-modal { border-radius: 20px; border-color: var(--border); box-shadow: var(--shadow-pop); animation: kModal .42s var(--expo); }
+  @keyframes kModal { from { opacity: 0; transform: translate(-50%, -47%) scale(.94); filter: blur(4px); } to { opacity: 1; transform: translate(-50%, -50%); filter: none; } }
+  .quick-modal-header h3 { font-size: 17px; font-weight: 650; letter-spacing: -.02em; }
+  .quick-modal-body.k-in > * { animation: kItem .45s var(--expo) both; }
+  .quick-modal-body.k-in > :nth-child(2) { animation-delay: 30ms; } .quick-modal-body.k-in > :nth-child(3) { animation-delay: 60ms; } .quick-modal-body.k-in > :nth-child(4) { animation-delay: 90ms; } .quick-modal-body.k-in > :nth-child(n+5) { animation-delay: 120ms; }
+  @keyframes kItem { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @media (max-width: 560px) {
+    #quick-modal { animation: sheetUp .48s var(--sheet); border-radius: 22px 22px 0 0; }
+    #quick-modal::before { content: ''; display: block; width: 36px; height: 5px; border-radius: 3px; background: var(--border-strong); margin: 7px auto 0; flex-shrink: 0; }
+  }
+  .more-sheet.open { animation: sheetUp .45s var(--sheet); }
+  .more-sheet.open .nav-item { animation: kItem .4s var(--expo) both; }
+  .more-sheet.open .nav-item:nth-child(n+2) { animation-delay: 25ms; } .more-sheet.open .nav-item:nth-child(n+4) { animation-delay: 50ms; } .more-sheet.open .nav-item:nth-child(n+7) { animation-delay: 75ms; } .more-sheet.open .nav-item:nth-child(n+10) { animation-delay: 100ms; }
+
+  /* ---- avisos: pastilha de vidro que salta ---- */
+  .toast { border-radius: 16px; background: color-mix(in srgb, var(--text) 90%, transparent); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+    transform: translateY(18px) scale(.92); transition: opacity .25s ease, transform .5s var(--spring); box-shadow: 0 18px 40px -12px rgba(0,0,0,.35); }
+  .toast.show { transform: none; }
+
+  /* ---- menus, ⌘K ---- */
+  #cmdk { border-radius: 18px; box-shadow: var(--shadow-pop); animation: kModal2 .38s var(--expo); }
+  @keyframes kModal2 { from { opacity: 0; transform: translateY(-10px) scale(.96); filter: blur(4px); } }
+  #cmdk-overlay { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .fab-btn { transition: scale .45s var(--spring), rotate .45s var(--spring), box-shadow .2s; }
+  .fab-btn:active { scale: .9; }
+
+  /* ---- campos ---- */
+  .form-input, .field-group { border-radius: 10px; }
+  .form-input:focus, .field-group:focus-within { box-shadow: 0 0 0 4px var(--accent-soft); border-color: var(--accent); }
+
+  /* ---- login: entra como a capa da apresentação ---- */
+  .login-card { border-radius: 24px; box-shadow: var(--shadow-pop); animation: kPage .8s var(--expo) both .1s; }
+  .login-card > * { animation: kItem .6s var(--expo) both; }
+  .login-card > :nth-child(1) { animation-delay: .25s; } .login-card > :nth-child(2) { animation-delay: .32s; } .login-card > :nth-child(3) { animation-delay: .39s; }
+  .login-card > :nth-child(4) { animation-delay: .46s; } .login-card > :nth-child(n+5) { animation-delay: .53s; }
+
+  /* ---- números que mudam: piscam e assentam ---- */
+  @keyframes kTick { 0% { opacity: .2; transform: translateY(6px); } 100% { opacity: 1; transform: none; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rv { opacity: 1 !important; transform: none !important; }
+    .kw > i { animation: none !important; transform: none !important; }
+  }
+
   /* ---------- Modo apresentação (keynote: preto, sóbrio, sempre em movimento) ---------- */
   #pres { --mx: 50%; --my: 30%; --rx: 0deg; --ry: 0deg; --ac: #c9a7d1; --t2: #86868b; --t3: #6e6e73; --hl: #ffffff1a;
     position: fixed; inset: 0; z-index: 2000; background: #000; color: #f5f5f7; overflow: hidden; opacity: 0; transition: opacity .5s ease;
@@ -3167,6 +3332,7 @@
       <button type="button" class="nav-icon-btn" id="top-search-btn" data-open-cmdk aria-label="Pesquisar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg></button></div>
     </header>
     <div class="content-area">
+      <div id="k-large" class="k-large" hidden><h2 class="k-l1"></h2><p class="k-l2"></p></div>
       <div id="home-view">
         <div class="home-head"><div id="home-greeting" class="home-greeting">—</div><div class="home-date" id="home-date"></div></div>
         <section class="gantt-wrap punch-card" id="today-punch" hidden></section>
@@ -3921,6 +4087,8 @@
       document.querySelectorAll('[data-nav]').forEach(el => el.classList.toggle('active', el.dataset.nav === navKey));
       document.getElementById('more-sheet').classList.remove('open');
       document.getElementById('tab-more').classList.toggle('active', ['clients', 'opps', 'billing', 'finance', 'atas', 'despesas', 'settings', 'help'].includes(navKey));
+      requestAnimationFrame(() => syncNavInd());
+      syncLargeTitle(newState.name);
       if (!sameView) window.scrollTo(0, 0);   // voltar a carregar a mesma página não salta para o topo
     }
 
@@ -3959,7 +4127,7 @@
     function animateNumbers(root) {
       if (reduceMotion.matches) return;
       root.querySelectorAll('.ind-main b, .hero-card b, .stat-value, .fg > b, .kpi b, .hours-total, .hs-tile b').forEach(el => {
-        if (el.children.length || el.dataset.counted) return;
+        if (el.children.length || el.dataset.counted || el.closest('.rv:not(.rv-in)')) return;
         const txt = el.textContent, m = txt.match(/-?\d{1,3}(?:[\s\u00a0\u202f]\d{3})*(?:,\d+)?|-?\d+(?:,\d+)?/);
         if (!m) return;
         const numTxt = m[0], dec = (numTxt.split(',')[1] || '').length;
@@ -3968,9 +4136,9 @@
         const pre = txt.slice(0, m.index), post = txt.slice(m.index + numTxt.length);
         const fmt = v => pre + v.toLocaleString('pt-PT', { minimumFractionDigits: dec, maximumFractionDigits: dec }) + post;
         el.dataset.counted = '1';
-        const t0 = performance.now(), dur = 650;
+        const t0 = performance.now(), dur = 950;
         const step = now => {
-          const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+          const k = Math.min(1, (now - t0) / dur), e = k === 1 ? 1 : 1 - Math.pow(2, -10 * k);
           el.textContent = k < 1 ? fmt(target * e) : txt;
           if (k < 1) requestAnimationFrame(step);
         };
@@ -6580,7 +6748,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       quickModalCloseHook = null;
       quickModalDirty = false;
       document.getElementById('quick-modal-title').textContent = title;
-      document.getElementById('quick-modal-body').innerHTML = bodyHtml;
+      const qb = document.getElementById('quick-modal-body');
+      qb.innerHTML = bodyHtml;
+      qb.classList.add('k-in'); clearTimeout(qb.__kT); qb.__kT = setTimeout(() => qb.classList.remove('k-in'), 700);
       document.getElementById('quick-modal-overlay').style.display = 'block';
       document.getElementById('quick-modal').style.display = 'flex';
       document.body.style.overflow = 'hidden';
@@ -17634,6 +17804,202 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       }
     }
 
+    // ================= KEYNOTE: movimento em toda a app =================
+    // Títulos palavra a palavra, cartões que entram ao fazer scroll (e só então desenham os gráficos e contam os
+    // números), destaque que desliza no menu e nos segmentados, toques com mola e vibração subtil.
+    // Tudo desliga com "reduzir movimento".
+
+    // Vibração subtil: Android usa vibrate(); no iPhone (iOS 18+) o interruptor nativo dá um toque.
+    let hapEl = null;
+    function haptic() {
+      if (reduceMotion.matches) return;
+      try {
+        if (navigator.vibrate) { navigator.vibrate(8); return; }
+        if (!/iPhone|iPad|iPod/.test(navigator.userAgent)) return;
+        if (!hapEl) {
+          hapEl = document.createElement('label');
+          hapEl.setAttribute('aria-hidden', 'true');
+          hapEl.style.cssText = 'position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;';
+          hapEl.innerHTML = '<input type="checkbox" switch tabindex="-1">';
+          document.body.appendChild(hapEl);
+        }
+        hapEl.click();
+      } catch (_) { /* sem vibração neste aparelho */ }
+    }
+    const HAPTIC_SEL = '.primary-btn, .punch-btn, .punch-leave, .nav-item, .segmented button, .detail-tabs button, .band-chip, .fab-btn, .owner-chip, .toast-undo, [data-haptic], input[type="checkbox"]:not([switch])';
+    document.addEventListener('click', e => { if (e.isTrusted && e.target.closest?.(HAPTIC_SEL)) haptic(); }, true);
+
+    // Título que entra palavra a palavra (e volta a texto simples no fim, para não estragar reticências)
+    function kwReveal(el) {
+      if (!el || reduceMotion.matches) return;
+      const txt = el.textContent;
+      if (!txt.trim() || el.dataset.kw === txt) return;
+      el.dataset.kw = txt;
+      let i = 0;
+      el.innerHTML = txt.split(/(\s+)/).map(w => /^\s*$/.test(w) ? w : `<span class="kw"><i style="--i:${i++}">${escapeHtml(w)}</i></span>`).join('');
+      clearTimeout(el.__kwT);
+      el.__kwT = setTimeout(() => { if (el.dataset.kw === txt && el.textContent === txt) el.textContent = txt; }, 700 + i * 70);
+    }
+
+    // Título grande de cada área (como a saudação da Hoje); encolhe para a barra de cima ao fazer scroll
+    const K_TITLES = {
+      projects: ['Projetos', 'Fases, prazos e o estado de cada um.'], clients: ['Clientes', 'Uma ficha por pessoa, tudo ligado.'],
+      opps: ['Investment Intelligence', 'Do terreno ao investidor certo.'], billing: ['Faturação', 'O que faturámos, o que falta faturar e receber.'],
+      finance: ['Mission Control', 'A empresa inteira, num relance.'], horas: ['Horas', 'Para onde vai o nosso tempo.'],
+      agenda: ['Agenda', 'Reuniões, prazos e fases da equipa.'], atas: ['Atas', 'O que ficou dito em cada reunião.'],
+      despesas: ['Despesas', 'Gastos, recibos e reembolsos.'], settings: ['Definições', 'Como a app trabalha para a NOVA.'], help: ['Ajuda', 'Como é que…']
+    };
+    const kLargeIO = typeof IntersectionObserver === 'function' ? new IntersectionObserver(([en]) => {
+      const box = document.getElementById('k-large');
+      document.getElementById('nav-title').classList.toggle('k-hide', !box.hidden && en.isIntersecting);
+    }, { rootMargin: '-60px 0px 0px 0px' }) : null;
+    function syncLargeTitle(name) {
+      const box = document.getElementById('k-large'), nav = document.getElementById('nav-title');
+      if (!box) return;
+      const t = K_TITLES[name];
+      if (!t) { box.hidden = true; box.dataset.v = ''; nav.classList.remove('k-hide'); return; }
+      box.hidden = false;
+      nav.classList.add('k-hide');
+      if (box.dataset.v !== name) {
+        box.dataset.v = name;
+        const l1 = box.querySelector('.k-l1');
+        l1.textContent = t[0]; delete l1.dataset.kw; kwReveal(l1);
+        box.querySelector('.k-l2').textContent = t[1];
+        box.classList.remove('k-in'); void box.offsetWidth; box.classList.add('k-in');
+      }
+      if (kLargeIO && !box.__obs) { box.__obs = true; kLargeIO.observe(box); }
+    }
+
+    // Destaque que desliza no menu lateral e na barra de separadores
+    function syncNavInd(anim = true) {
+      const place = (box, ind, item, vertical) => {
+        if (!item || !item.offsetParent) { ind.classList.remove('on'); return; }
+        const br = box.getBoundingClientRect(), r = item.getBoundingClientRect();
+        if (!anim || !ind.classList.contains('on')) ind.style.transition = 'none';
+        if (vertical) {
+          ind.style.setProperty('--y', (r.top - br.top) + 'px');
+          ind.style.height = r.height + 'px'; ind.style.left = (r.left - br.left) + 'px'; ind.style.width = r.width + 'px'; ind.style.right = 'auto';
+        } else ind.style.setProperty('--x', (r.left - br.left + r.width / 2) + 'px');
+        ind.classList.add('on');
+        if (ind.style.transition === 'none') { void ind.offsetWidth; ind.style.transition = ''; }
+      };
+      const side = document.querySelector('.sidebar');
+      if (side) {
+        let ind = side.querySelector(':scope > .nav-ind');
+        if (!ind) { ind = document.createElement('span'); ind.className = 'nav-ind'; side.prepend(ind); side.classList.add('has-ind'); }
+        place(side, ind, side.querySelector('.nav-item.active'), true);
+      }
+      const tab = document.querySelector('.tabbar');
+      if (tab) {
+        let ind = tab.querySelector(':scope > .tab-ind');
+        if (!ind) { ind = document.createElement('span'); ind.className = 'tab-ind'; tab.prepend(ind); }
+        place(tab, ind, tab.querySelector('.nav-item.active'), false);
+      }
+    }
+    window.addEventListener('resize', () => { syncNavInd(false); document.querySelectorAll('.has-thumb').forEach(s => syncSeg(s, false)); });
+
+    // Segmentados e separadores: a pastilha desliza para o botão ativo
+    const SEG_SEL = '.segmented, .detail-tabs';
+    const segRO = typeof ResizeObserver === 'function' ? new ResizeObserver(es => es.forEach(e => syncSeg(e.target, false))) : null;
+    const segSeen = new WeakSet();
+    function syncSeg(seg, anim = true) {
+      if (!seg?.isConnected) return;
+      if (segRO && !segSeen.has(seg)) { segSeen.add(seg); segRO.observe(seg); }
+      const act = seg.querySelector(':scope > button.active');
+      let th = seg.querySelector(':scope > .seg-thumb');
+      if (!act || !act.offsetWidth) { if (th) th.remove(); seg.classList.remove('has-thumb'); return; }
+      seg.classList.add('has-thumb');
+      if (getComputedStyle(seg).position === 'static') seg.style.position = 'relative';   // separadores fixos (sticky) mantêm-se
+      if (!th) { th = document.createElement('span'); th.className = 'seg-thumb'; seg.prepend(th); anim = false; }
+      if (!anim) th.style.transition = 'none';
+      th.style.width = act.offsetWidth + 'px'; th.style.height = act.offsetHeight + 'px';
+      th.style.transform = `translate(${act.offsetLeft}px, ${act.offsetTop}px)`;
+      if (!anim) { void th.offsetWidth; th.style.transition = ''; }
+    }
+    document.addEventListener('click', e => { const seg = e.target.closest?.(SEG_SEL); if (seg) requestAnimationFrame(() => syncSeg(seg)); });
+
+    // Cartões abaixo do ecrã: ficam à espera e entram quando aparecem (aí desenham gráficos e contam números)
+    const RV_SEL = '.gantt-wrap, .stat-tile, .hero-card, .kpi-strip, .client-card, .ring-row, .team-card, .projects-table-wrap, .tax-card, .iv-card, .plot-card, .opp-card';
+    const rvIO = typeof IntersectionObserver === 'function' ? new IntersectionObserver(es => es.forEach(en => {
+      if (!en.isIntersecting) return;
+      const el = en.target;
+      rvIO.unobserve(el);
+      el.classList.add('anim-in', 'rv-in');
+      animateNumbers(el);
+      setTimeout(() => el.classList.remove('anim-in', 'rv', 'rv-in'), 1600);
+    }), { rootMargin: '0px 0px -6% 0px', threshold: 0.06 }) : null;
+    function rvCandidate(el) {
+      if (!rvIO || reduceMotion.matches || el.classList.contains('rv') || el.closest('.is-refreshing, #pres, #quick-modal, #cmdk, .rv, .more-sheet')) return;
+      const r = el.getBoundingClientRect();
+      if (!r.height || r.top < window.innerHeight * 0.94) return;
+      el.classList.add('rv');
+      rvIO.observe(el);
+    }
+
+    // Um só observador para a app inteira (em lote, uma vez por fotograma)
+    (() => {
+      let pendNodes = new Set(), pendSegs = new Set(), titles = new Set(), queued = false;
+      const flush = () => {
+        queued = false;
+        const nodes = pendNodes, segs = pendSegs, tts = titles;
+        pendNodes = new Set(); pendSegs = new Set(); titles = new Set();
+        nodes.forEach(n => {
+          if (!n.isConnected) return;
+          if (n.matches(RV_SEL)) rvCandidate(n);
+          n.querySelectorAll(RV_SEL).forEach(rvCandidate);
+          if (n.matches(SEG_SEL)) segs.add(n);
+          n.querySelectorAll(SEG_SEL).forEach(s => segs.add(s));
+        });
+        segs.forEach(s => syncSeg(s, false));
+        tts.forEach(kwReveal);
+      };
+      const queue = () => { if (!queued) { queued = true; queueMicrotask(flush); } };
+      const isTitle = n => n && (n.id === 'nav-title' || n.id === 'home-greeting' || n.id === 'detail-name' || n.classList?.contains('settings-title'));
+      new MutationObserver(muts => {
+        for (const m of muts) {
+          if (m.type === 'attributes') {
+            const seg = m.target.parentElement;
+            if (seg && seg.matches?.(SEG_SEL)) { pendSegs.add(seg); queue(); }
+            continue;
+          }
+          const host = m.target.nodeType === 1 ? m.target : m.target.parentElement;
+          const t = isTitle(host) ? host : host?.closest?.('#nav-title, #home-greeting, #detail-name, .settings-title');
+          if (t && !t.querySelector('.kw')) { titles.add(t); queue(); }
+          m.addedNodes.forEach(n => { if (n.nodeType === 1 && !n.classList.contains('kw') && !n.classList.contains('seg-thumb')) { pendNodes.add(n); queue(); } });
+        }
+      }).observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['class'] });
+    })();
+
+    // A app atualiza-se sozinha: ao voltar a ela (ou de 15 em 15 min) vê se há versão nova e recarrega.
+    // No telemóvel (app no ecrã principal) evita ficar presa a uma cópia antiga.
+    (() => {
+      if (!/^https?:$/.test(location.protocol)) return;
+      const hash = s => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return h; };
+      const biggest = list => list.sort((a, b) => b.length - a.length)[0] || '';
+      const mine = hash(biggest([...document.scripts].filter(s => !s.src).map(s => s.textContent)));
+      let busy = false, last = 0, offered = false;
+      const reload = () => location.replace(location.pathname + '?v=' + Date.now() + location.hash);
+      async function check() {
+        if (busy || offered || Date.now() - last < 60000) return;
+        busy = true; last = Date.now();
+        try {
+          const r = await fetch(location.pathname + '?check=' + Date.now(), { cache: 'no-store' });
+          if (!r.ok) return;
+          const html = await r.text();
+          const theirs = hash(biggest([...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1])));
+          if (theirs === mine) return;
+          const busyUser = document.querySelector('#quick-modal[style*="flex"]') || !document.getElementById('pres')?.hidden || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || '');
+          if (!busyUser) return reload();
+          offered = true;
+          showToast('Há uma versão nova da app', { undo: reload, undoLabel: 'Atualizar', ms: 15000 });
+        } catch (_) { /* sem rede: tenta mais tarde */ } finally { busy = false; }
+      }
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
+      window.addEventListener('focus', check);
+      setTimeout(check, 5000);
+      setInterval(check, 15 * 60000);
+    })();
+
     // ---------- Modo apresentação (keynote): o que faz, como faz e benefícios, com números reais ----------
     const PRES_ICON = {
       home: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/>',
@@ -18231,12 +18597,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     function showError(action, err) {
       showToast(`Não foi possível ${action}. ${plainError(err?.message || err)}`, { type: 'error', ms: 6000 });
     }
-    function showToast(message, { type = 'info', undo = null, ms = 3800 } = {}) {
+    function showToast(message, { type = 'info', undo = null, undoLabel = 'Anular', ms = 3800 } = {}) {
       if (type === 'error') message = String(message).replace(/(:\s*)(.+)$/, (all, sep, tail) => { const p = plainError(tail); return p === tail ? all : sep + p; });
       const root = document.getElementById('toast-root');
       const el = document.createElement('div');
       el.className = 'toast' + (type === 'error' ? ' error' : '');
-      el.innerHTML = `<span>${escapeHtml(message)}</span>${undo ? '<button type="button" class="toast-undo">Anular</button>' : ''}`;
+      el.innerHTML = `<span>${escapeHtml(message)}</span>${undo ? `<button type="button" class="toast-undo">${escapeHtml(undoLabel)}</button>` : ''}`;
       root.appendChild(el);
       requestAnimationFrame(() => el.classList.add('show'));
       const close = () => { el.classList.remove('show'); setTimeout(() => el.remove(), 200); };
