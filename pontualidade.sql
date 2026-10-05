@@ -51,3 +51,47 @@ insert into public.app_settings (key, value, updated_at) values ('attendance', j
   'dinner_minutes', 30,
   'members', '{}'::jsonb
 ), now()) on conflict (key) do nothing;
+
+-- Chegada mais tarde combinada + banco de horas
+--  * late_until: hora a que a pessoa combinou chegar nesse dia. O tempo entre a entrada normal e essa hora
+--    vai para o banco de horas (compensa-se a ficar depois da saída noutros dias) e não conta como atraso.
+--  * Só se pode marcar, mudar ou cancelar ANTES da hora de entrada desse dia (hora de Lisboa) — nunca depois
+--    de já se ter chegado atrasado. Depois dessa hora, só um colega (outra pessoa da equipa) o pode corrigir.
+alter table public.attendance add column if not exists late_until time;
+alter table public.attendance add column if not exists late_set_at timestamptz;
+
+create or replace function private.current_member_id() returns uuid
+language sql stable security definer set search_path = public as $$
+  select id from public.team_members
+  where active and lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))
+  limit 1
+$$;
+revoke all on function private.current_member_id() from public, anon;
+grant execute on function private.current_member_id() to authenticated;
+
+create or replace function private.attendance_late_guard() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare
+  cfg jsonb;
+  st text;
+begin
+  if (tg_op = 'INSERT' and new.late_until is null)
+     or (tg_op = 'UPDATE' and new.late_until is not distinct from old.late_until) then
+    return new;
+  end if;
+  select value into cfg from public.app_settings where key = 'attendance';
+  st := coalesce(cfg -> 'members' -> (new.member_id::text) ->> 'start', cfg ->> 'start', '08:00');
+  if new.late_until is not null and new.late_until <= st::time then
+    raise exception 'A chegada combinada tem de ser depois das %.', st;
+  end if;
+  if private.current_member_id() is not distinct from new.member_id
+     and now() >= ((new.day::text || ' ' || st)::timestamp at time zone 'Europe/Lisbon') then
+    raise exception 'A chegada mais tarde só se pode combinar antes das % desse dia.', st;
+  end if;
+  new.late_set_at := now();
+  return new;
+end $$;
+revoke all on function private.attendance_late_guard() from public, anon, authenticated;
+drop trigger if exists attendance_late_guard on public.attendance;
+create trigger attendance_late_guard before insert or update on public.attendance
+  for each row execute function private.attendance_late_guard();
