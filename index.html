@@ -11578,7 +11578,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     // Um cliente tem várias entidades de faturação: a título pessoal (NIF pessoal) e/ou empresas.
     // Cada projeto aponta para o cliente e para a entidade usada (clientes.sql).
     const MOCK_CLIENT_ROWS = [
-      { id: 'cl-1', name: 'Promotora Atlântico', email: 'geral@atlantico.pt', phone: '+351 220 000 000', address: 'Porto', notes: null },
+      { id: 'cl-1', name: 'Promotora Atlântico', email: 'geral@atlantico.pt', phone: '+351 220 000 000', address: 'Porto', notes: null, birthday: (() => { const d = new Date(); d.setDate(d.getDate() + 3); return '1972-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); })() },
       { id: 'cl-2', name: 'Família Sousa', email: null, phone: '+351 910 000 000', address: null, notes: 'Contacto preferencial: Ana Sousa' },
       { id: 'cl-3', name: 'Município de Gaia', email: null, phone: null, address: null, notes: null }
     ];
@@ -11634,7 +11634,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         };
       }
       const [c, e, p, inv, ex, t, w, op, ivs] = await Promise.all([
-        supabase.from('clients').select('id, name, email, phone, address, notes, nif, language, nps_opt_out').order('name'),
+        supabase.from('clients').select('id, name, email, phone, address, notes, nif, language, nps_opt_out, birthday').order('name'),
         supabase.from('client_entities').select('*').order('created_at'),
         supabase.from('projects').select('id, name, code, status, awarding_date, client_id, client_entity_id, archived_at, commission_value'),
         selectAll(() => supabase.from('invoices').select('project_id, stage_id, amount, issue_date').gte('issue_date', from).order('id')),
@@ -11852,6 +11852,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             <div class="invoice-row"><span>Email</span><span>${c.email ? `<a class="text-btn" href="mailto:${escapeHtml(c.email)}">${escapeHtml(c.email)}</a>` : '—'}</span></div>
             <div class="invoice-row"><span>Telefone</span><span>${c.phone ? `<a class="text-btn" href="tel:${escapeHtml(c.phone.replace(/[^\d+]/g, ''))}">${escapeHtml(c.phone)}</a>` : '—'}</span></div>
             <div class="invoice-row"><span>Morada</span><span>${escapeHtml(c.address || '—')}</span></div>
+            <div class="invoice-row"><span>Aniversário</span><span>${c.birthday ? escapeHtml(parseDateKey(c.birthday).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long' })) : '—'}</span></div>
             <div class="invoice-row"><span>Inquéritos de satisfação</span><span>${c.nps_opt_out ? 'Não enviar' : c.email ? 'Sim, em ' + (c.language === 'en' ? 'inglês' : 'português') : '<span class="warn-text">Falta o email</span>'}</span></div>
             ${c.notes ? `<div class="invoice-row"><span>Notas</span><span style="white-space:pre-wrap;text-align:right">${escapeHtml(c.notes)}</span></div>` : ''}
           </div>`;
@@ -11877,8 +11878,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <div><label class="field-label">Email</label><input type="email" id="cl-email" class="form-input" value="${escapeHtml(client?.email ?? '')}"></div>
           <div><label class="field-label">Telefone</label><input type="tel" id="cl-phone" class="form-input" value="${escapeHtml(client?.phone ?? '')}"></div>
         </div>
-        <label class="field-label">Morada</label>
-        <input type="text" id="cl-address" class="form-input" value="${escapeHtml(client?.address ?? '')}">
+        <div class="form-grid">
+          <div><label class="field-label">Morada</label><input type="text" id="cl-address" class="form-input" value="${escapeHtml(client?.address ?? '')}"></div>
+          <div><label class="field-label">Aniversário</label><input type="date" id="cl-birthday" class="form-input" value="${escapeHtml(client?.birthday ?? '')}"></div>
+        </div>
+        <div class="field-hint">Aniversário: a Hoje avisa 7 dias antes e no dia. Sem saber o ano, usa 1900 (a idade não aparece).</div>
         <label class="field-label">Notas</label>
         <textarea id="cl-notes" class="form-input" rows="2">${escapeHtml(client?.notes ?? '')}</textarea>
         <div class="form-grid">
@@ -11914,6 +11918,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           email: valOrNull(document.getElementById('cl-email').value.trim()),
           phone: valOrNull(document.getElementById('cl-phone').value.trim()),
           address: valOrNull(document.getElementById('cl-address').value.trim()),
+          birthday: document.getElementById('cl-birthday').value || null,
           notes: valOrNull(document.getElementById('cl-notes').value.trim()),
           language: document.getElementById('cl-lang').value,
           nps_opt_out: document.getElementById('cl-nps-off').checked
@@ -12620,10 +12625,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const items = [];
       // pri: 0 atrasado/crítico · 1 esta semana · 2 resto · 3 fecho do mês (sobe a 1 depois do dia 10)
       teamRows.forEach(r => {
-        const urgent = r.late ? 'late' : (r.kind === 'camara' || r.kind === 'debt' || r.kind === 'meet') ? 'soon' : '';
+        const urgent = r.late ? 'late' : (r.kind === 'camara' || r.kind === 'debt' || r.kind === 'meet' || (r.kind === 'bday' && r.today)) ? 'soon' : '';
         items.push({ pri: r.late || r.kind === 'meet' ? 0 : urgent ? 1 : 2, date: r.due || '9999', html: `
-          <div class="alert-row team${urgent ? ' ' + urgent : ''}" data-alert-team="${r.kind}"${r.note ? ` data-note="${escapeHtml(r.note.id)}"` : ''}${r.project ? ` data-project="${escapeHtml(r.project)}"` : ''}${r.nps ? ` data-nps="${escapeHtml(r.nps)}"` : ''}${r.url ? ` data-url="${escapeHtml(r.url)}" role="link" tabindex="0"` : ''}>
-            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : r.kind === 'nps' ? '★' : r.kind === 'debt' ? '€' : r.kind === 'law' ? '§' : r.kind === 'radar' ? '◎' : r.kind === 'meet' ? '▶' : r.kind === 'transcript' ? '≡' : '+'}</span>
+          <div class="alert-row team${urgent ? ' ' + urgent : ''}" data-alert-team="${r.kind}"${r.note ? ` data-note="${escapeHtml(r.note.id)}"` : ''}${r.project ? ` data-project="${escapeHtml(r.project)}"` : ''}${r.nps ? ` data-nps="${escapeHtml(r.nps)}"` : ''}${r.client ? ` data-client="${escapeHtml(r.client)}"` : ''}${r.url ? ` data-url="${escapeHtml(r.url)}" role="link" tabindex="0"` : ''}>
+            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : r.kind === 'nps' ? '★' : r.kind === 'debt' ? '€' : r.kind === 'law' ? '§' : r.kind === 'radar' ? '◎' : r.kind === 'meet' ? '▶' : r.kind === 'transcript' ? '≡' : r.kind === 'bday' ? '✦' : '+'}</span>
             <span class="alert-text"><b>${escapeHtml(r.title)}</b><span>${escapeHtml(r.sub)}</span></span>
             <span class="alert-when">${escapeHtml(r.when)}</span>
           </div>` });
@@ -12673,6 +12678,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       el.querySelectorAll('[data-alert-team]').forEach(r => r.addEventListener('click', () => {
         const k = r.dataset.alertTeam;
         if (k === 'meet') window.open(r.dataset.url, '_blank', 'noopener');
+        else if (k === 'bday') openClientDetail(r.dataset.client);
         else if (k === 'transcript') { const n = teamRows.find(x => x.note && String(x.note.id) === r.dataset.note)?.note; if (n) openNewAtaModal(null, null, n, () => renderToday()); }
         else if (k === 'hours') openHorasModule();
         else if (k === 'owner') openProjectsModule();
@@ -13058,6 +13064,26 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         sub: fmtDayMonthYear(n.meeting_date) + ' · escolhe o projeto ou a categoria', when: 'Arquivar' }));
     }
 
+    // Aniversários dos clientes: aviso na Hoje 7 dias antes e no dia (29/2 conta a 28/2 nos anos comuns)
+    async function birthdayAlerts() {
+      let rows = [];
+      if (devMode) rows = MOCK_CLIENT_ROWS.filter(c => c.birthday);
+      else { const r = await supabase.from('clients').select('id, name, email, phone, birthday').not('birthday', 'is', null); rows = r.error ? [] : (r.data || []); }
+      const today = dateKey(new Date()), y = Number(today.slice(0, 4));
+      const next = b => {
+        const md = String(b).slice(5, 10);
+        const on = yy => { const leap = (yy % 4 === 0 && yy % 100 !== 0) || yy % 400 === 0; return `${yy}-${md === '02-29' && !leap ? '02-28' : md}`; };
+        const k = on(y); return k >= today ? k : on(y + 1);
+      };
+      return rows.map(c => ({ c, day: next(c.birthday) })).map(x => ({ ...x, d: diffDays(today, x.day) })).filter(x => x.d >= 0 && x.d <= 7)
+        .sort((a, b) => a.d - b.d).map(({ c, day, d }) => {
+          const by = Number(String(c.birthday).slice(0, 4)), age = by > 1900 ? Number(day.slice(0, 4)) - by : null;
+          return { kind: 'bday', client: c.id, due: day, title: `${d === 0 ? 'Hoje faz anos' : 'Aniversário'}: ${c.name}${age ? ` (${age} anos)` : ''}`,
+            sub: [d === 0 ? 'hoje' : d === 1 ? 'amanhã' : parseDateKey(day).toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' }), c.phone, c.email].filter(Boolean).join(' · '),
+            when: d === 0 ? 'Hoje' : d === 1 ? 'Amanhã' : `Em ${d} dias`, today: d === 0 };
+        });
+    }
+
     async function renderToday() {
       const weekEl = document.getElementById('today-week-list');
       const phasesEl = document.getElementById('today-phases');
@@ -13089,7 +13115,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         renderWeekHours(hoursEl, hours, tg);
         // Avisos de organização: horas em falta (a partir de sexta), projetos sem responsável,
         // fases em curso/seguintes sem ninguém nos projetos de que sou responsável
-        const teamAlerts = [...await meetingAlerts(milestones, me, todayKey).catch(() => []), ...await transcriptAlerts(me).catch(() => []), ...radarAlerts, ...lawAlerts, ...debtAlerts, ...npsAlerts, ...camaraAlerts];
+        const teamAlerts = [...await meetingAlerts(milestones, me, todayKey).catch(() => []), ...await transcriptAlerts(me).catch(() => []), ...await birthdayAlerts().catch(() => []), ...radarAlerts, ...lawAlerts, ...debtAlerts, ...npsAlerts, ...camaraAlerts];
         const wd = new Date().getDay();
         const missing = missingHourDays(hours, tg);
         if ((wd === 5 || wd === 6 || wd === 0) && missing.length)

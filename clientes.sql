@@ -66,3 +66,6 @@ begin
     execute format('revoke all on %I from anon', t);
   end loop;
 end $$;
+
+-- Aniversário do cliente (aviso na Hoje 7 dias antes e no dia)
+alter table public.clients add column if not exists birthday date;
