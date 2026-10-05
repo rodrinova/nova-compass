@@ -2219,6 +2219,11 @@
   .mm-label { font-style: normal; font-size: var(--fs-xs); color: var(--text-3); }
   .mm-badge { flex-shrink: 0; width: 40px; height: 40px; border-radius: var(--r-full); display: inline-flex; align-items: center; justify-content: center; font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; font-size: var(--fs-md); background: var(--surface-2); color: var(--text-2); }
   .mm-badge.top { background: var(--success-soft); color: var(--success); }
+  /* Modalidades de investimento (viabilidade) */
+  .rs-mod .fz-big > span { font-weight: var(--fw-semibold); color: var(--text); }
+  .rs-mod .fz-big b small { font-size: 12px; font-weight: 500; }
+  .mod-why { margin: var(--sp-2) 0; padding-left: 1.1em; font-size: var(--fs-sm); color: var(--text-2); display: grid; gap: 3px; }
+  .mod-best { color: var(--success); }
   /* Página do cliente (investidor) */
   .op-client-pick { width: auto; min-width: 160px; margin: 0 0 0 auto; height: 34px; padding-top: 0; padding-bottom: 0; }
   .iv-top { align-items: center; } .iv-top select { width: auto; min-width: 220px; margin: 0; }
@@ -14809,7 +14814,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       rent_on: false, rent_m2: null, occupancy: 90, rent_opex_pct: 20,
       mix: { T1: 35, T2: 45, T3: 20 },     // tipologias escolhidas e peso (%) de cada uma no total de frações
       typ_markup: 15,
-      delta_pct: 10
+      delta_pct: 10,
+      // modalidades: prazos (meses), horizonte do arrendamento (anos), parte dos projetos gasta até cada etapa (%)
+      // e o ROI que um promotor pede para comprar o terreno com PIP / com projeto aprovado (%)
+      pip_months: 6, lic_months: 12, sales_months: 6, rent_years: 20, pip_proj_share: 15, lic_proj_share: 50, buyer_roi_pip: 25, buyer_roi_lic: 20
     };
     // Áreas brutas mínimas por tipologia (RGEU, art. 67.º); a média estimada = mínimo + uma margem (15% por referência)
     const RGEU_MIN = [['T0', 35], ['T1', 52], ['T2', 72], ['T3', 91], ['T4', 105], ['T5', 122]];
@@ -14928,6 +14936,70 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const d = (Number(f.delta_pct) || 0) / 100;
       return [['Conservador', feasCalc(p, f, { sales: 1 - d, build: 1 + d })], ['Base', feasCalc(p, f)], ['Otimista', feasCalc(p, f, { sales: 1 + d, build: 1 - d })]];
     }
+    // ---------- Modalidades de investimento: onde parar na cadeia de valor ----------
+    // Terreno → PIP → projeto aprovado → obra → venda ou arrendamento. Cada modalidade vira um fluxo de caixa mensal
+    // (compra no mês 0, custos espalhados pelos prazos, receita no fim) e compara-se pela TIR anual (antes de impostos).
+    // O terreno valorizado (com PIP ou projeto aprovado) vale o que um promotor pagaria para ter o ROI que pede
+    // (método residual), descontado do que já se gastou e que ele já não paga.
+    function irrMonthly(cf) {
+      const npv = r => cf.reduce((t, v, i) => t + v / Math.pow(1 + r, i), 0);
+      let lo = -0.99, hi = 1, flo = npv(lo), fhi = npv(hi);
+      if (!Number.isFinite(flo) || !Number.isFinite(fhi) || flo * fhi > 0) return null;
+      for (let i = 0; i < 200; i++) { const mid = (lo + hi) / 2, fm = npv(mid); if (Math.abs(fm) < 1e-6) return mid; if (flo * fm < 0) { hi = mid; } else { lo = mid; flo = fm; } }
+      return (lo + hi) / 2;
+    }
+    function feasModalities(p, f = feasInputs(p)) {
+      const c = feasCalc(p, f), N = v => Number(v) || 0;
+      if (!c.hasCosts || !N(p.asking_price)) return null;
+      const P = Math.max(1, Math.round(N(f.pip_months))), L = Math.max(1, Math.round(N(f.lic_months))), W = Math.max(1, Math.round(N(f.fisc_months))), S = Math.max(1, Math.round(N(f.sales_months)));
+      const H = Math.max(1, Math.round(N(f.rent_years))) * 12;
+      const projAll = c.projects + c.vatProjects;
+      const lic = projAll + c.licences + c.muni;                       // até ao projeto aprovado (todos os projetos + taxas)
+      const works = Math.max(0, c.costGlobal - c.acquisition - lic);    // obra, fiscalização, contingência e IVA
+      const type = IMT_TYPES.find(t => t[0] === f.acq_type) || IMT_TYPES[0];
+      const k = 1 + (f.imt_exempt ? 0 : (type[0] === 'custom' ? N(f.imt_custom) : type[2])) / 100 + N(f.stamp_pct) / 100;
+      // preço que um promotor pagaria pelo terreno, para ter o ROI r sobre o que ainda lhe falta gastar
+      const c0 = feasCalc({ ...p, asking_price: 0 }, f);
+      const landValue = (r, spent) => c.hasSales ? Math.max(0, (c0.salesNet / (1 + r) - (c0.costGlobal - spent)) / k) : 0;
+      const flow = (n, steps) => { const cf = new Array(n + 1).fill(0); steps.forEach(([from, to, total]) => { const m = to - from + 1; for (let i = from; i <= to; i++) cf[i] += total / m; }); return cf; };
+      const mk = (key, name, short, months, cf, extra = {}) => {
+        let bal = 0, cap = 0; cf.forEach(v => { bal += v; cap = Math.min(cap, bal); });
+        const r = irrMonthly(cf);
+        return { key, name, short, months, capital: -cap, profit: cf.reduce((t, v) => t + v, 0), irr: r == null ? null : Math.pow(1 + r, 12) - 1, ...extra };
+      };
+      const out = [];
+      if (c.hasSales) {
+        const spentPip = projAll * N(f.pip_proj_share) / 100, vPip = landValue(N(f.buyer_roi_pip) / 100, spentPip);
+        out.push(mk('pip', 'Aprovar o PIP e vender o terreno', 'PIP e venda do terreno', P,
+          flow(P, [[0, 0, -c.acquisition], [1, P, -spentPip], [P, P, vPip]]), { value: vPip, note: `o terreno com PIP vale cerca de ${fmtEURShort(vPip)} (promotor a pedir ${fmtNum(f.buyer_roi_pip)}% de ROI)` }));
+        const spentLic = projAll * N(f.lic_proj_share) / 100 + c.licences + c.muni, vLic = landValue(N(f.buyer_roi_lic) / 100, spentLic);
+        out.push(mk('lic', 'Aprovar o projeto e vender o terreno', 'Projeto aprovado e venda do terreno', L,
+          flow(L, [[0, 0, -c.acquisition], [1, L, -spentLic], [L, L, vLic]]), { value: vLic, note: `o terreno com projeto aprovado vale cerca de ${fmtEURShort(vLic)} (promotor a pedir ${fmtNum(f.buyer_roi_lic)}% de ROI)` }));
+        out.push(mk('sale', 'Construir e vender', 'Construir e vender', L + W + S,
+          flow(L + W + S, [[0, 0, -c.acquisition], [1, L, -lic], [L + 1, L + W, -works], [L + W + 1, L + W + S, c.salesNet]]), { note: `ROI ${pct(c.roi)} em ${Math.round((L + W + S) / 12 * 10) / 10} anos` }));
+      }
+      if (c.rentNet > 0) out.push(mk('rent', 'Construir e arrendar', 'Construir e arrendar (só rendas)', L + W + H,
+        flow(L + W + H, [[0, 0, -c.acquisition], [1, L, -lic], [L + 1, L + W, -works], [L + W + 1, L + W + H, c.rentNet * H / 12]]), { note: `yield bruto ${pct(c.yieldGross, 1)}, rendas líquidas durante ${H / 12} anos, sem venda no fim` }));
+      const ranked = out.filter(x => x.irr != null).sort((a, b) => b.irr - a.irr);
+      let best = ranked[0] || null;
+      // quase empate (menos de 2 pontos): fica a que pede menos capital e acaba mais cedo
+      if (best && ranked[1] && best.irr - ranked[1].irr < 0.02 && ranked[1].capital < best.capital) best = ranked[1];
+      // porquê, com os rácios
+      const why = [];
+      if (best) {
+        const second = ranked.find(x => x !== best);
+        why.push(`${best.short}: TIR de ${pct(best.irr, 1)} ao ano, em ${best.months} meses, com ${fmtEURShort(best.capital)} de capital no pico.`);
+        if (second) why.push(`${second.short} fica nos ${pct(second.irr, 1)} ao ano${second.capital > best.capital ? ` e precisa de mais capital (${fmtEURShort(second.capital)})` : ''}.`);
+        // a TIR favorece prazos curtos: se outra modalidade dá muito mais lucro, diz-se o compromisso
+        const bigger = ranked.filter(x => x !== best && x.irr > 0 && x.profit > best.profit * 1.5).sort((a, b) => b.profit - a.profit)[0];
+        if (bigger) why.push(`Com capital e tempo, ${bigger.short.toLowerCase()} dá mais lucro no total (${fmtEURShort(bigger.profit)} contra ${fmtEURShort(best.profit)}), mas exige ${fmtEURShort(bigger.capital)} e ${bigger.months} meses.`);
+        if (c.ratios.revenue != null && c.hasSales) why.push(c.ratios.revenue > 0.25 ? `O terreno pesa ${pct(c.ratios.revenue, 0)} da receita: sobra pouca margem para quem constrói.` : `O terreno pesa só ${pct(c.ratios.revenue, 0)} da receita: há margem para construir.`);
+        if (c.hasSales && c.hasCosts) why.push(c.roi >= ROI_GOAL ? `O ROI da venda (${pct(c.roi)}) está acima dos ${pct(ROI_GOAL, 0)}.` : `O ROI da venda (${pct(c.roi)}) fica abaixo dos ${pct(ROI_GOAL, 0)}.`);
+        if (c.yieldGross) why.push(c.yieldGross >= YIELD_GOAL ? `A yield bruta (${pct(c.yieldGross, 1)}) passa os ${pct(YIELD_GOAL, 0)}.` : `A yield bruta (${pct(c.yieldGross, 1)}) fica abaixo dos ${pct(YIELD_GOAL, 0)}: o arrendamento rende pouco face ao custo.`);
+      }
+      return { list: out, ranked, best, why, missing: [!c.hasSales ? 'preço de venda' : null, c.rentNet > 0 ? null : 'rendas (grupo Arrendamento)'].filter(Boolean) };
+    }
+
     // Metas: ROI de 30% na venda e yield de 6% no arrendamento — verde acima, amarelo abaixo (vermelho se negativo)
     const ROI_GOAL = 0.30, YIELD_GOAL = 0.06;
     const perf = (v, goal) => v == null || !Number.isFinite(v) ? '' : v < 0 ? 'perf-bad' : v >= goal ? 'perf-good' : 'perf-low';
@@ -15094,6 +15166,13 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             ${num('typ_markup', 'Margem sobre o mínimo RGEU (%)', cfg.typ_markup)}
             ${num('occupancy', 'Ocupação no arrendamento (%)', cfg.occupancy)}${num('rent_opex_pct', 'Despesas do arrendamento (%)', cfg.rent_opex_pct)}${num('delta_pct', 'Variação dos cenários (%)', cfg.delta_pct)}
           </div>
+          <div class="section-label op-form-sec">Modalidades de investimento (prazos e TIR)</div>
+          <div class="form-grid fz-grid3">
+            ${num('pip_months', 'PIP (meses)', cfg.pip_months)}${num('lic_months', 'Licenciamento (meses)', cfg.lic_months)}${num('sales_months', 'Vendas (meses)', cfg.sales_months)}
+            ${num('rent_years', 'Arrendamento (anos de rendas)', cfg.rent_years)}${num('pip_proj_share', 'Projetos gastos até ao PIP (%)', cfg.pip_proj_share)}${num('lic_proj_share', 'Projetos gastos até à aprovação (%)', cfg.lic_proj_share)}
+            ${num('buyer_roi_pip', 'ROI pedido por quem compra com PIP (%)', cfg.buyer_roi_pip)}${num('buyer_roi_lic', 'ROI pedido por quem compra com projeto aprovado (%)', cfg.buyer_roi_lic)}
+          </div>
+          <div class="field-hint">A obra usa os meses da fiscalização. O valor do terreno com PIP ou com projeto aprovado é o que um promotor pagaria para ter o ROI que pede (método residual).</div>
           <div class="field-hint">IMT: 6,5% em terrenos para construção e prédios urbanos, 5% em rústicos (2026). Escolhe-se em cada terreno.</div>
           <button type="button" class="primary-btn" id="fs-save">Guardar</button>
           <div id="fs-msg" class="form-msg"></div>`;
@@ -15940,6 +16019,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               ${vrow('Renda mensal', '', '', o('rentMonth'), 'vt-sub')}
               ${vrow('Renda anual<small>× 12 meses × ocupação</small>', fIn('occupancy', f.occupancy, '%'), o('rentMonth12'), o('rentYear'))}
               ${vrow('Yield bruto<small>renda anual ÷ custo global</small>', '', '', o('yield'), 'vt-sub')}</div>`)}
+            ${grp('vt-mod', 'Modalidades de investimento', 'TIR anual, antes de impostos', `
+              ${vrow('Aprovar o PIP e vender o terreno<small>prazo do PIP</small>', fIn('pip_months', f.pip_months, 'meses'), '', o('mod_pip'))}
+              ${vrow('Aprovar o projeto e vender o terreno<small>prazo do licenciamento</small>', fIn('lic_months', f.lic_months, 'meses'), '', o('mod_lic'))}
+              ${vrow('Construir e vender<small>licenciamento + obra (meses da fiscalização) + vendas</small>', fIn('sales_months', f.sales_months, 'meses'), '', o('mod_sale'))}
+              ${vrow('Construir e arrendar<small>só rendas líquidas, sem venda no fim</small>', fIn('rent_years', f.rent_years, 'anos'), '', o('mod_rent'))}`)}
             <div class="vt-foot"><button type="button" class="text-btn" id="fz-reset">Repor os valores de referência</button></div>
           </div>
           <aside class="vt-side"><div class="gantt-wrap ps-result" id="fz-result"></div></aside>
@@ -16193,6 +16277,13 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           const rl = Nn(t.rent) || Nn(t.rent_max), rh = Nn(t.rent_max) || rl;
           vals['tr' + i] = E(u * (rl + rh) / 2) + `<small class="vt-rng">${rh !== rl ? `${E(u * Math.min(rl, rh))} a ${E(u * Math.max(rl, rh))} · ` : ''}por mês</small>`;
         });
+        const md = feasModalities(p, f);
+        ['pip', 'lic', 'sale', 'rent'].forEach(key => {
+          const x = md?.list.find(y => y.key === key);
+          vals['mod_' + key] = x && x.irr != null ? `<b class="${x.irr < 0 ? 'late' : md.best === x && x.irr > 0 ? 'mod-best' : ''}">${pct(x.irr, 1)}</b><small class="vt-rng">${E(x.profit)} em ${x.months} meses${md.best === x && x.irr > 0 ? ' · recomendada' : ''}</small>`
+            : x ? `<small class="late">${key === 'rent' ? `não recupera o investimento em ${Math.round((x.months - Number(f.lic_months) - Number(f.fisc_months)) / 12)} anos` : key === 'sale' ? 'dá prejuízo' : 'o terreno não valoriza o suficiente'}</small>`
+            : `<small class="muted">${key === 'rent' ? 'falta a renda' : 'falta o preço de venda'}</small>`;
+        });
         view.querySelectorAll('.vt-sheet [data-o]').forEach(el => { if (el.dataset.o in vals) el.innerHTML = vals[el.dataset.o]; });
         const pv = document.getElementById('vt-proj-v'), pp = view.querySelector('[data-f="proj_pct"]');
         if (pv) pv.placeholder = Math.round(c.projects).toLocaleString('pt-PT');
@@ -16205,6 +16296,20 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         // Só as métricas do Excel: custo global, receita, lucro e ROI; renda anual e yield; rácios do terreno
         const rentOk = f.rent_on && c.rentYear > 0 && c.hasCosts;
         document.getElementById('fz-result').innerHTML = `
+          ${md && md.list.length && !(md.best && md.best.irr > 0) ? `<div class="rs-block rs-mod">
+            <div class="rs-tag">Modalidade recomendada</div>
+            <div class="fz-big"><span>Nenhuma compensa com estes valores</span>
+              <small>${(() => { const ml = feasCalc(p, f).hasSales ? maxLandPrice(p, f, ROI_GOAL) : 0; return ml > 0 ? `Para ${pct(ROI_GOAL, 0)} de ROI a construir e vender, o terreno teria de custar até <b>${E(ml)}</b> (pedem ${E(Number(p.asking_price))}).` : 'Mesmo com o terreno a custo zero não chega: rever o preço de venda, os custos ou a densidade.'; })()}</small></div>
+            <ul class="mod-why">${md.why.slice(2).map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>
+          </div>` : ''}
+          ${md && md.best && md.best.irr > 0 ? `<div class="rs-block rs-mod">
+            <div class="rs-tag">Modalidade recomendada</div>
+            <div class="fz-big"><span>${escapeHtml(md.best.name)}</span><b class="${md.best.irr < 0 ? 'perf-bad' : 'perf-good'}">${pct(md.best.irr, 1)}<small> /ano</small></b>
+              <small>${escapeHtml(md.best.months + ' meses · capital no pico ' + fmtEURShort(md.best.capital) + ' · lucro ' + fmtEURShort(md.best.profit))}</small></div>
+            <ul class="mod-why">${md.why.slice(1).map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>
+            <div class="op-sum">${md.ranked.map(x => row(escapeHtml(x.short), `${pct(x.irr, 1)}${x === md.best ? ' ✓' : ''}`)).join('')}</div>
+            ${md.missing.length ? `<small class="muted">Para comparar tudo, falta: ${escapeHtml(md.missing.join(', '))}.</small>` : ''}
+          </div>` : ''}
           <div class="rs-block">
             <div class="rs-tag">Venda</div>
             <div class="fz-big"><span>ROI</span><b class="${ok ? perf(c.roi, ROI_GOAL) : ''}">${ok ? pct(c.roi) : '—'}</b>
@@ -16293,7 +16398,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         });
       };
       // ---- Valores diferentes dos de referência ----
-      const DEF_PATHS = ['typ_markup', 'sellable_pct', 'stamp_pct', 'fisc_visit', 'fisc_months', 'cost.housing', 'cost.common', 'cost.parking', 'cost.commerce', 'cost.green', 'cost.infra', 'lic_pct', 'proj_pct', 'cont_pct', 'vat_pct', 'comm_pct', 'occupancy', 'rent_opex_pct', 'delta_pct'];
+      const DEF_PATHS = ['typ_markup', 'sellable_pct', 'stamp_pct', 'fisc_visit', 'fisc_months', 'pip_months', 'lic_months', 'sales_months', 'rent_years', 'cost.housing', 'cost.common', 'cost.parking', 'cost.commerce', 'cost.green', 'cost.infra', 'lic_pct', 'proj_pct', 'cont_pct', 'vat_pct', 'comm_pct', 'occupancy', 'rent_opex_pct', 'delta_pct'];
       const markDefaults = () => {
         let n = 0;
         DEF_PATHS.forEach(path => {
