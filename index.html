@@ -2725,6 +2725,176 @@
     #top-progress::before { animation: none; transform: none; opacity: .6; }
   }
 
+  /* ---------- Modo apresentação (ecrã inteiro, sempre escuro) ---------- */
+  #pres { position: fixed; inset: 0; z-index: 2000; background: #120d14; color: #f4f1f5; overflow: hidden;
+    font-family: inherit; opacity: 0; transition: opacity .35s ease; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+  #pres.open { opacity: 1; }
+  #pres[hidden] { display: none; }
+  .pres-aura { position: absolute; inset: -20%; pointer-events: none; filter: blur(60px); opacity: .55; }
+  .pres-aura i { position: absolute; width: 46vmax; height: 46vmax; border-radius: 50%; }
+  .pres-aura i:nth-child(1) { background: radial-gradient(circle, #714d79 0%, transparent 65%); left: 5%; top: 0; animation: presDrift1 22s ease-in-out infinite alternate; }
+  .pres-aura i:nth-child(2) { background: radial-gradient(circle, #2f5d62 0%, transparent 65%); right: 0; bottom: 0; animation: presDrift2 26s ease-in-out infinite alternate; }
+  .pres-aura i:nth-child(3) { background: radial-gradient(circle, #a8741f55 0%, transparent 60%); left: 40%; top: 45%; width: 30vmax; height: 30vmax; animation: presDrift1 30s ease-in-out infinite alternate-reverse; }
+  @keyframes presDrift1 { to { transform: translate(12vw, 10vh) scale(1.15); } }
+  @keyframes presDrift2 { to { transform: translate(-14vw, -8vh) scale(.9); } }
+  .pres-grid { position: absolute; inset: 0; pointer-events: none; opacity: .06;
+    background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px); background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse at center, #000 20%, transparent 75%); -webkit-mask-image: radial-gradient(ellipse at center, #000 20%, transparent 75%); }
+  .pres-bar { position: absolute; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, #b48bbd, #e3c48a); transition: width .6s cubic-bezier(.2,.8,.2,1); z-index: 3; }
+  .pres-top { position: absolute; top: 14px; left: 20px; right: 14px; display: flex; align-items: center; gap: 12px; z-index: 3; font-size: 13px; color: #b9b0bd; }
+  .pres-top img { height: 16px; opacity: .9; }
+  .pres-top .grow { flex: 1; }
+  .pres-ic { width: 38px; height: 38px; border-radius: 50%; border: 1px solid #ffffff22; background: #ffffff0d; color: #f4f1f5; display: inline-grid; place-items: center; cursor: pointer; transition: background .2s, transform .2s; }
+  .pres-ic:hover { background: #ffffff22; transform: scale(1.05); }
+  .pres-ic svg { width: 18px; height: 18px; }
+  .pres-foot { position: absolute; left: 20px; right: 20px; bottom: 16px; display: flex; align-items: center; gap: 10px; z-index: 3; }
+  .pres-foot .grow { flex: 1; }
+  .pres-count { font-variant-numeric: tabular-nums; color: #b9b0bd; font-size: 13px; min-width: 52px; text-align: center; }
+  .pres-dots { position: absolute; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; }
+  .pres-dots button { width: 7px; height: 7px; border-radius: 99px; border: 0; padding: 0; background: #ffffff33; cursor: pointer; transition: width .35s, background .35s; }
+  .pres-dots button.on { width: 22px; background: #e3c48a; }
+  .pres-go { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px; border-radius: 99px; border: 1px solid #e3c48a66; background: #e3c48a1a; color: #f3dfb6; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: background .2s, transform .2s; }
+  .pres-go:hover { background: #e3c48a33; transform: translateY(-1px); }
+  .pres-go[hidden] { display: none; }
+  .pres-stage { position: absolute; inset: 0; }
+  .pres-slide { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; padding: 72px clamp(20px, 7vw, 120px) 80px;
+    opacity: 0; visibility: hidden; transform: translateX(40px) scale(.985); transition: opacity .55s ease, transform .7s cubic-bezier(.2,.8,.2,1), visibility 0s .7s; overflow-y: auto; }
+  .pres-slide.before { transform: translateX(-40px) scale(.985); }
+  .pres-slide.on { opacity: 1; visibility: visible; transform: none; transition: opacity .55s ease, transform .7s cubic-bezier(.2,.8,.2,1), visibility 0s; }
+  .pres-slide .pa { opacity: 0; transform: translateY(22px); filter: blur(8px); transition: opacity .7s ease, transform .9s cubic-bezier(.2,.8,.2,1), filter .7s ease; transition-delay: 0s; }
+  .pres-slide.on .pa { opacity: 1; transform: none; filter: none; transition-delay: calc(var(--d, 0) * 90ms + 160ms); }
+  .pres-kick { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: #e3c48a; font-weight: 600; margin-bottom: 14px; }
+  .pres-h { font-size: clamp(30px, 4.6vw, 64px); line-height: 1.04; letter-spacing: -.025em; font-weight: 650; margin: 0 0 14px; max-width: 18ch; }
+  .pres-h em { font-style: normal; background: linear-gradient(90deg, #d7b6de, #e3c48a); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .pres-sub { font-size: clamp(16px, 1.6vw, 21px); color: #cfc6d2; max-width: 46ch; line-height: 1.45; margin: 0; }
+  .pres-cols { display: grid; grid-template-columns: 1.05fr 1fr; gap: clamp(24px, 5vw, 80px); align-items: center; }
+  .pres-list { list-style: none; padding: 0; margin: 26px 0 0; display: grid; gap: 14px; }
+  .pres-list li { display: flex; gap: 12px; align-items: flex-start; font-size: clamp(15px, 1.35vw, 18px); color: #e6dfe8; line-height: 1.4; }
+  .pres-list li::before { content: ''; flex: none; width: 8px; height: 8px; margin-top: .5em; border-radius: 50%; background: #e3c48a; box-shadow: 0 0 0 4px #e3c48a22; }
+  .pres-glass { background: linear-gradient(180deg, #ffffff12, #ffffff06); border: 1px solid #ffffff1c; border-radius: 20px; padding: 22px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: 0 30px 80px #0006; }
+  .pres-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-top: 28px; }
+  .pres-stat { padding: 16px 18px; border-radius: 16px; background: #ffffff0b; border: 1px solid #ffffff17; }
+  .pres-stat b { display: block; font-size: clamp(28px, 3.2vw, 44px); font-weight: 650; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .pres-stat span { font-size: 13px; color: #b9b0bd; }
+  .pres-stat.gold b { color: #f3dfb6; }
+  .pres-lock { display: inline-flex; gap: 8px; align-items: center; margin-top: 22px; padding: 10px 14px; border-radius: 12px; background: #ffffff0d; color: #cfc6d2; font-size: 14px; }
+  /* capa */
+  .pres-cover { align-items: flex-start; }
+  .pres-compass { position: absolute; right: clamp(-80px, 4vw, 100px); top: 50%; width: min(52vmin, 520px); aspect-ratio: 1; transform: translateY(-50%); opacity: .9; pointer-events: none; }
+  .pres-compass .ring { fill: none; stroke: #ffffff26; }
+  .pres-compass .tick { stroke: #ffffff55; stroke-width: 2; }
+  .pres-compass .needle { transform-origin: 200px 200px; transform: rotate(-160deg); transition: transform 2.4s cubic-bezier(.2,1.6,.3,1) .5s; }
+  .pres-slide.on .pres-compass .needle { transform: rotate(38deg); }
+  .pres-compass .spin { transform-origin: 200px 200px; animation: presSpin 60s linear infinite; }
+  @keyframes presSpin { to { transform: rotate(360deg); } }
+  .pres-hint { margin-top: 38px; font-size: 13px; color: #9d93a2; display: flex; gap: 8px; align-items: center; }
+  .pres-hint kbd, .pres-cmdk kbd { border: 1px solid #ffffff33; border-radius: 6px; padding: 1px 7px; font: inherit; color: #f3dfb6; background: #ffffff10; box-shadow: none; }
+  /* problema: peças espalhadas que convergem */
+  .pres-chaos { position: relative; height: min(52vh, 440px); }
+  .pres-chip { position: absolute; left: 50%; top: 50%; padding: 9px 14px; border-radius: 99px; background: #ffffff10; border: 1px solid #ffffff22; font-size: 14px; white-space: nowrap; color: #e6dfe8;
+    transform: translate(-50%, -50%) translate(var(--sx), var(--sy)) rotate(var(--r)); opacity: 0; transition: transform 1.2s cubic-bezier(.2,.8,.2,1), opacity .5s ease, background .6s; }
+  .pres-slide.on .pres-chip { opacity: 1; transform: translate(-50%, -50%) translate(var(--sx), var(--sy)) rotate(var(--r)); transition-delay: calc(var(--d) * 80ms + 200ms); animation: presFloat 4s ease-in-out infinite alternate; animation-delay: calc(var(--d) * -.7s); }
+  .pres-slide.on.merged .pres-chip { transform: translate(-50%, -50%) translate(calc(var(--ex) * 1px), calc(var(--ey) * 1px)); animation: none; background: #714d7944; border-color: #b48bbd66; transition-delay: calc(var(--d) * 60ms); }
+  @keyframes presFloat { to { margin-top: 10px; } }
+  .pres-hub { position: absolute; left: 50%; top: 50%; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; display: grid; place-items: center; text-align: center; font-weight: 650; font-size: 15px;
+    background: radial-gradient(circle at 30% 30%, #8c6394, #3d2842); box-shadow: 0 0 0 0 #b48bbd55; transform: scale(0); transition: transform .8s cubic-bezier(.2,1.5,.3,1); }
+  .pres-slide.on.merged .pres-hub { transform: scale(1); animation: presPulse 2.4s ease-out infinite 1s; }
+  @keyframes presPulse { 0% { box-shadow: 0 0 0 0 #b48bbd66; } 100% { box-shadow: 0 0 0 36px #b48bbd00; } }
+  /* mapa */
+  .pres-map { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 30px; }
+  .pres-tile { text-align: left; padding: 18px; border-radius: 18px; background: #ffffff0b; border: 1px solid #ffffff17; color: inherit; font: inherit; cursor: pointer; transition: background .25s, transform .25s, border-color .25s; }
+  .pres-tile:hover { background: #ffffff17; border-color: #e3c48a66; transform: translateY(-3px); }
+  .pres-tile svg { width: 26px; height: 26px; color: #e3c48a; margin-bottom: 12px; }
+  .pres-tile b { display: block; font-size: 16px; margin-bottom: 4px; }
+  .pres-tile span { font-size: 13px; color: #b9b0bd; line-height: 1.35; }
+  .pres-cmdk { margin-top: 18px; color: #b9b0bd; font-size: 14px; }
+  /* Hoje: maqueta de avisos */
+  .pres-alert { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 14px; background: #ffffff0a; border: 1px solid #ffffff14; margin-bottom: 10px; font-size: 14px; }
+  .pres-alert i { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .pres-alert small { display: block; color: #a99fae; font-size: 12px; margin-top: 2px; }
+  .pres-alert .pill { margin-left: auto; padding: 5px 11px; border-radius: 99px; background: #e3c48a; color: #20161f; font-size: 12px; font-weight: 700; }
+  .pres-hours { margin-top: 14px; font-size: 13px; color: #b9b0bd; }
+  .pres-track { height: 10px; border-radius: 99px; background: #ffffff14; overflow: hidden; margin-top: 8px; }
+  .pres-track > i { display: block; height: 100%; width: var(--w); border-radius: inherit; background: linear-gradient(90deg, #8c6394, #e3c48a); transform-origin: left; transform: scaleX(0); transition: transform 1.4s cubic-bezier(.2,.8,.2,1) .9s; }
+  .pres-slide.on .pres-track > i { transform: scaleX(1); }
+  /* Gantt */
+  .pres-gantt { display: grid; gap: 12px; }
+  .pres-grow { display: grid; grid-template-columns: 130px 1fr; gap: 12px; align-items: center; font-size: 13px; color: #cfc6d2; }
+  .pres-gtrack { position: relative; height: 26px; }
+  .pres-gbar { position: absolute; top: 0; bottom: 0; left: var(--l); width: var(--w); border-radius: 8px; background: var(--c); transform-origin: left; transform: scaleX(0); transition: transform 1s cubic-bezier(.2,.8,.2,1); transition-delay: calc(var(--d) * 160ms + 400ms); }
+  .pres-gbar.pause { background: repeating-linear-gradient(135deg, #ffffff22 0 6px, #ffffff0a 6px 12px); border: 1px dashed #ffffff44; }
+  .pres-slide.on .pres-gbar { transform: scaleX(1); }
+  .pres-today { position: absolute; top: -6px; bottom: -6px; left: 58%; width: 2px; background: #e3c48a; opacity: 0; transition: opacity .6s 1.6s; }
+  .pres-slide.on .pres-today { opacity: 1; }
+  /* anel */
+  .pres-ringwrap { position: relative; width: min(300px, 60vw); aspect-ratio: 1; margin: 0 auto; }
+  .pres-ringwrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .pres-ringwrap circle { fill: none; stroke-width: 16; }
+  .pres-ringwrap .bg { stroke: #ffffff14; }
+  .pres-ringwrap .fg { stroke: url(#presGrad); stroke-linecap: round; stroke-dasharray: 754; stroke-dashoffset: 754; transition: stroke-dashoffset 1.8s cubic-bezier(.2,.8,.2,1) .5s; }
+  .pres-slide.on .pres-ringwrap .fg { stroke-dashoffset: var(--off); }
+  .pres-ringc { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+  .pres-ringc b { font-size: clamp(40px, 5vw, 64px); font-weight: 650; letter-spacing: -.03em; }
+  .pres-ringc span { color: #b9b0bd; font-size: 14px; }
+  /* fluxos */
+  .pres-flow { display: flex; align-items: stretch; gap: 0; margin-top: 34px; }
+  .pres-node { flex: 1; min-width: 0; padding: 18px; border-radius: 18px; background: #ffffff0b; border: 1px solid #ffffff1a; }
+  .pres-node .n { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: #e3c48a; color: #20161f; font-weight: 700; font-size: 14px; margin-bottom: 12px; }
+  .pres-node b { display: block; font-size: 16px; margin-bottom: 6px; }
+  .pres-node span { font-size: 13px; color: #b9b0bd; line-height: 1.4; }
+  .pres-link { flex: 0 0 34px; align-self: center; height: 2px; background: #ffffff1a; position: relative; overflow: hidden; }
+  .pres-link::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, #b48bbd, #e3c48a); transform: scaleX(0); transform-origin: left; transition: transform .5s ease; transition-delay: calc(var(--d) * 90ms + 300ms); }
+  .pres-slide.on .pres-link::after { transform: scaleX(1); }
+  .pres-link::before { content: ''; position: absolute; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: #f3dfb6; left: -10px; z-index: 1; }
+  .pres-slide.on .pres-link::before { animation: presPacket 2.2s ease-in-out infinite; animation-delay: calc(var(--d) * .3s + 1.4s); }
+  @keyframes presPacket { 0% { left: -10px; } 60%, 100% { left: 100%; } }
+  /* gráfico de faturação */
+  .pres-chart { display: flex; align-items: flex-end; gap: 8px; height: min(34vh, 260px); padding-top: 10px; }
+  .pres-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+  .pres-col i { width: 100%; max-width: 38px; height: var(--h); min-height: 2px; border-radius: 8px 8px 3px 3px; background: linear-gradient(180deg, #e3c48a, #714d79); transform-origin: bottom; transform: scaleY(0); transition: transform 1s cubic-bezier(.2,.8,.2,1); transition-delay: calc(var(--d) * 60ms + 400ms); }
+  .pres-slide.on .pres-col i { transform: scaleY(1); }
+  .pres-col span { font-size: 11px; color: #9d93a2; }
+  .pres-target { margin-top: 18px; }
+  .pres-target .row { display: flex; justify-content: space-between; font-size: 13px; color: #cfc6d2; }
+  /* cartões e visão */
+  .pres-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 30px; }
+  .pres-card { padding: 20px; border-radius: 18px; background: #ffffff0b; border: 1px solid #ffffff17; }
+  .pres-card svg { width: 28px; height: 28px; color: #e3c48a; margin-bottom: 14px; }
+  .pres-card b { display: block; font-size: 17px; margin-bottom: 6px; }
+  .pres-card span { font-size: 14px; color: #b9b0bd; line-height: 1.45; }
+  .pres-road { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 40px; }
+  .pres-road::before { content: ''; position: absolute; left: 0; right: 0; top: 15px; height: 2px; background: linear-gradient(90deg, #b48bbd, #e3c48a); transform-origin: left; transform: scaleX(0); transition: transform 1.6s cubic-bezier(.2,.8,.2,1) .3s; }
+  .pres-slide.on .pres-road::before { transform: scaleX(1); }
+  .pres-step .n { position: relative; width: 32px; height: 32px; border-radius: 50%; background: #120d14; border: 2px solid #e3c48a; display: grid; place-items: center; font-weight: 700; color: #f3dfb6; margin-bottom: 16px; }
+  .pres-step b { display: block; font-size: 17px; margin-bottom: 6px; }
+  .pres-step span { font-size: 14px; color: #b9b0bd; line-height: 1.45; }
+  .pres-close { margin-top: 42px; font-size: clamp(18px, 2vw, 26px); color: #f3dfb6; font-weight: 600; }
+  @media (max-width: 860px) {
+    .pres-cols { grid-template-columns: 1fr; gap: 28px; }
+    .pres-map, .pres-cards { grid-template-columns: repeat(2, 1fr); }
+    .pres-road { grid-template-columns: 1fr 1fr; }
+    .pres-road::before { display: none; }
+    .pres-flow { flex-direction: column; gap: 8px; }
+    .pres-link { flex-basis: 18px; width: 2px; height: 18px; }
+    .pres-link::after { transform-origin: top; }
+    .pres-link::before { display: none; }
+    .pres-compass { opacity: .25; right: -30%; }
+  }
+  @media (max-width: 560px) {
+    .pres-slide { justify-content: flex-start; padding: 64px 16px 84px; }
+    .pres-map, .pres-cards, .pres-road { grid-template-columns: 1fr; }
+    .pres-tile, .pres-card { padding: 14px; }
+    .pres-grow { grid-template-columns: 92px 1fr; font-size: 12px; }
+    .pres-dots { display: none; }
+    .pres-foot .pres-go span { display: none; }
+    .pres-chaos { height: 300px; transform: scale(.66); margin: -30px -40px; }
+    .pres-foot { left: 0; right: 0; bottom: 0; padding: 28px 16px 14px; background: linear-gradient(180deg, #120d1400, #120d14 50%); }
+    .pres-slide { padding-bottom: 96px; }
+    .pres-chip { font-size: 12px; padding: 7px 11px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #pres *, #pres *::before, #pres *::after { transition-duration: 0s !important; transition-delay: 0s !important; animation: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -2794,6 +2964,7 @@
         <button type="button" class="nav-item" data-nav="despesas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12v17l-3-2-3 2-3-2-3 2z"/><path d="M9 8.5h6M9 12h6M9 15.5h3"/></svg><span>Despesas</span></button>
       </nav>
       <div class="side-foot">
+        <button type="button" class="nav-item" data-open-pres><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8.5 20h7"/><path d="M10 8.2v3.6l3.2-1.8z" fill="currentColor"/></svg><span>Modo apresentação</span></button>
         <button type="button" class="nav-item" data-nav="help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.3a2.5 2.5 0 014.8.9c0 1.7-2.4 2.2-2.4 3.6"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg><span>Ajuda</span></button>
         <button type="button" class="nav-item" data-nav="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.5 7.5 0 000-2l1.9-1.5-2-3.4-2.2.9a7.6 7.6 0 00-1.7-1L15 3.5h-4l-.4 2.5a7.6 7.6 0 00-1.7 1l-2.2-.9-2 3.4L6.6 11a7.5 7.5 0 000 2l-1.9 1.5 2 3.4 2.2-.9a7.6 7.6 0 001.7 1L11 20.5h4l.4-2.5a7.6 7.6 0 001.7-1l2.2.9 2-3.4z"/></svg><span>Definições</span></button>
         <div class="side-user"><span class="avatar" id="side-avatar">—</span><span class="who"><b id="side-user-name">—</b><span id="side-user-team">—</span></span></div>
@@ -2819,6 +2990,7 @@
         <button type="button" class="nav-item" data-nav="finance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5h16"/><path d="M6.5 16v-4M11 16V8M15.5 16v-6M20 16V5"/></svg><span>Mission Control</span></button>
       <button type="button" class="nav-item" data-nav="atas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h7l4 4v12a1 1 0 01-1 1H7a1 1 0 01-1-1v-15a1 1 0 011-1z"/><path d="M9 11h6M9 14.5h6M9 18h3.5"/></svg><span>Atas</span></button>
       <button type="button" class="nav-item" data-nav="despesas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12v17l-3-2-3 2-3-2-3 2z"/><path d="M9 8.5h6M9 12h6M9 15.5h3"/></svg><span>Despesas</span></button>
+      <button type="button" class="nav-item" data-open-pres><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8.5 20h7"/><path d="M10 8.2v3.6l3.2-1.8z" fill="currentColor"/></svg><span>Modo apresentação</span></button>
       <button type="button" class="nav-item" data-nav="help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.3a2.5 2.5 0 014.8.9c0 1.7-2.4 2.2-2.4 3.6"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg><span>Ajuda</span></button>
       <button type="button" class="nav-item" data-nav="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.5 7.5 0 000-2l1.9-1.5-2-3.4-2.2.9a7.6 7.6 0 00-1.7-1L15 3.5h-4l-.4 2.5a7.6 7.6 0 00-1.7 1l-2.2-.9-2 3.4L6.6 11a7.5 7.5 0 000 2l-1.9 1.5 2 3.4 2.2-.9a7.6 7.6 0 001.7 1L11 20.5h4l.4-2.5a7.6 7.6 0 001.7-1l2.2.9 2-3.4z"/></svg><span>Definições</span></button>
       <button type="button" class="nav-item danger" data-logout><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4.5h4a1.5 1.5 0 011.5 1.5v12a1.5 1.5 0 01-1.5 1.5h-4"/><path d="M10 16l-4-4 4-4M6 12h9"/></svg><span>Sair</span></button>
@@ -3156,6 +3328,25 @@
   <div id="help-panel-overlay" hidden></div>
   <aside id="help-panel" hidden aria-label="Ajuda"></aside>
   <div id="toast-root" aria-live="polite"></div>
+  <div id="pres" hidden role="dialog" aria-label="Modo apresentação" aria-roledescription="apresentação">
+    <div class="pres-aura"><i></i><i></i><i></i></div>
+    <div class="pres-grid"></div>
+    <div class="pres-bar" id="pres-bar"></div>
+    <div class="pres-top">
+      <img src="assets/nova-logo-white-cropped.png" alt="NOVA"><span>Compass</span><span class="grow"></span>
+      <button type="button" class="pres-ic" id="pres-fs" aria-label="Ecrã inteiro" title="Ecrã inteiro (F)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+      <button type="button" class="pres-ic" id="pres-x" aria-label="Sair da apresentação" title="Sair (Esc)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="pres-stage" id="pres-stage"></div>
+    <div class="pres-foot">
+      <button type="button" class="pres-go" id="pres-open" hidden><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"/></svg><span>Ver na app</span></button>
+      <div class="pres-dots" id="pres-dots"></div>
+      <span class="grow"></span>
+      <button type="button" class="pres-ic" id="pres-prev" aria-label="Anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <span class="pres-count" id="pres-count">1 / 12</span>
+      <button type="button" class="pres-ic" id="pres-next" aria-label="Seguinte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
+  </div>
   <div id="cmdk-overlay" hidden></div>
   <div id="cmdk" hidden role="dialog" aria-label="Pesquisar e criar">
     <input id="cmdk-input" type="text" placeholder="Pesquisar projetos, ir para, criar…" autocomplete="off" spellcheck="false">
@@ -17199,6 +17390,369 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       }
     }
 
+    // ---------- Modo apresentação: a app explicada aos sócios, com números reais ----------
+    const PRES_ICON = {
+      home: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/>',
+      projects: '<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/>',
+      horas: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+      agenda: '<rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+      atas: '<path d="M7 3.5h7l4 4v12a1 1 0 01-1 1H7a1 1 0 01-1-1v-15a1 1 0 011-1z"/><path d="M9 11h6M9 14.5h6M9 18h3.5"/>',
+      clients: '<circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 19.5c.8-3.3 3.4-5 6.5-5s5.7 1.7 6.5 5"/><path d="M15.5 5.2a3.5 3.5 0 010 6.6M17.8 14.8c1.9.7 3.2 2.3 3.7 4.7"/>',
+      finance: '<path d="M4 19.5h16"/><path d="M6.5 16v-4M11 16V8M15.5 16v-6M20 16V5"/>',
+      opps: '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0113 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>',
+      lock: '<rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 018 0v2.5"/>',
+      sync: '<path d="M19.5 12a7.5 7.5 0 01-13 5.1M4.5 12a7.5 7.5 0 0113-5.1"/><path d="M17.5 3v4h-4M6.5 21v-4h4"/>',
+      device: '<rect x="3" y="4.5" width="13" height="10" rx="1.5"/><path d="M7 18.5h5"/><rect x="17" y="8.5" width="4.5" height="10" rx="1"/>',
+      coin: '<circle cx="12" cy="12" r="8.5"/><path d="M14.8 9.2A3.3 3.3 0 0012 8c-1.8 0-3 .9-3 2.1 0 2.8 6 1.4 6 4.1 0 1.2-1.3 2-3 2a3.6 3.6 0 01-3-1.4M12 6.3V8M12 16.2V18"/>'
+    };
+    const presSvg = (k, w = 1.7) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${PRES_ICON[k]}</svg>`;
+    let presIdx = 0, presNavs = [], presData = null, presPartner = false, presMergeT = null;
+
+    // Lê os números ao vivo. Cada consulta falha sozinha (fica "—") sem estragar a apresentação.
+    async function loadPresData() {
+      const today = dateKey(new Date()), since = addDaysKey(today, -365);
+      const rows = q => q.then(r => r.error ? null : (r.data || [])).catch(() => null);
+      const count = q => q.then(r => r.error ? null : r.count).catch(() => null);
+      const head = t => supabase.from(t).select('id', { count: 'exact', head: true });
+      let inv, te, proj, closed, stages, clients, plots, investors, notes, team, nps, meets;
+      if (devMode) {
+        inv = MOCK_INVOICES; te = MOCK_TIME; proj = MOCK_PROJECTS; closed = ['Done']; stages = MOCK_STAGES.length;
+        clients = MOCK_CLIENTS.length; plots = 3; investors = 2; notes = 4; team = 3; nps = mockNpsRequests; meets = 5;
+      } else {
+        const st = await rows(supabase.from('project_statuses').select('code, is_closed'));
+        closed = (st || []).filter(s => s.is_closed).map(s => s.code);
+        [inv, te, proj, stages, clients, plots, investors, notes, team, nps, meets] = await Promise.all([
+          rows(selectAll(() => supabase.from('invoices').select('amount, issue_date, payment_date, status, archived_at').order('id'))),
+          rows(selectAll(() => supabase.from('time_entries').select('hours, billable, project_id').gte('date', since).order('id'))),
+          rows(supabase.from('projects').select('id, status, archived_at')),
+          count(head('project_stages')),
+          count(head('clients')),
+          count(head('land_plots')),
+          count(head('investors')),
+          count(head('meeting_notes')),
+          count(supabase.from('team_members').select('id', { count: 'exact', head: true }).eq('active', true)),
+          loadNpsRequests().catch(() => null),
+          count(supabase.from('project_milestones').select('id', { count: 'exact', head: true }).gte('event_date', today).lte('event_date', addDaysKey(today, 30)))
+        ]);
+      }
+      const d = { stages, clients, plots, investors, notes, team, meets };
+      if (inv) {
+        const ok = inv.filter(i => i.status !== 'cancelled' && !i.archived_at && i.issue_date);
+        d.billed = ok.filter(i => i.issue_date >= since).reduce((t, i) => t + Number(i.amount || 0), 0);
+        const months = [];
+        for (let k = 11; k >= 0; k--) { const m = new Date(); m.setDate(1); m.setMonth(m.getMonth() - k); months.push(dateKey(m).slice(0, 7)); }
+        d.months = months.map(mk => ({ mk, v: ok.filter(i => i.issue_date.slice(0, 7) === mk).reduce((t, i) => t + Number(i.amount || 0), 0) }));
+        const paid = ok.filter(i => i.payment_date && Number(i.amount) > 0 && i.payment_date >= i.issue_date);
+        d.payDays = paid.length ? Math.round(paid.reduce((t, i) => t + diffDays(i.issue_date, i.payment_date), 0) / paid.length) : null;
+      }
+      if (te) {
+        d.hours = te.reduce((t, e) => t + Number(e.hours || 0), 0);
+        const proj = te.filter(e => e.project_id).reduce((t, e) => t + Number(e.hours || 0), 0);
+        d.billPct = d.hours ? Math.round(te.filter(e => e.billable).reduce((t, e) => t + Number(e.hours || 0), 0) / d.hours * 100) : null;
+        d.perHour = d.billed != null && proj ? Math.round(d.billed / proj) : null;
+      }
+      if (proj) d.active = proj.filter(p => !p.archived_at && !closed.includes(p.status)).length;
+      if (nps) { const s = npsStats(nps); d.nps = s.nps; d.npsN = s.n; }
+      return d;
+    }
+
+    // Número que conta até ao valor quando o diapositivo aparece
+    const presNum = (v, kind = 'int') => v == null ? '<b>—</b>' : `<b data-pres-num="${v}" data-kind="${kind}">${presFmt(v, kind)}</b>`;
+    function presFmt(v, kind) {
+      const n = Math.round(v);
+      if (kind === 'eur') return n.toLocaleString('pt-PT') + ' €';
+      if (kind === 'eurh') return n.toLocaleString('pt-PT') + ' €/h';
+      if (kind === 'pct') return n + '%';
+      if (kind === 'nps') return (n > 0 ? '+' : '') + n;
+      if (kind === 'days') return n + ' dias';
+      return n.toLocaleString('pt-PT');
+    }
+    function presCount(slide) {
+      slide.querySelectorAll('[data-pres-num]').forEach(el => {
+        const target = Number(el.dataset.presNum), kind = el.dataset.kind;
+        if (reduceMotion.matches) { el.textContent = presFmt(target, kind); return; }
+        const t0 = performance.now() + 350, dur = 1500;
+        el.textContent = presFmt(0, kind);
+        const step = now => {
+          if (!slide.classList.contains('on')) { el.textContent = presFmt(target, kind); return; }
+          const k = Math.max(0, Math.min(1, (now - t0) / dur)), e = k === 1 ? 1 : 1 - Math.pow(2, -10 * k);
+          el.textContent = presFmt(target * e, kind);
+          if (k < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      });
+    }
+
+    function presSlides() {
+      const d = presData || {}, P = presPartner;
+      const s = (n, v, label, kind, gold) => `<div class="pres-stat pa${gold ? ' gold' : ''}" style="--d:${n}">${presNum(v, kind)}<span>${label}</span></div>`;
+      const chips = ['Excel de horas', 'Outlook de cada um', 'E-mails', 'WhatsApp', 'Pastas no servidor', 'weoInvoice', 'Post-its', 'Memória de cada um', 'Folhas de viabilidade'];
+      const chaos = chips.map((c, i) => {
+        const a = i / chips.length * Math.PI * 2, rx = 230, ry = 150;
+        const sx = Math.round(Math.cos(a * 2.3 + 1) * rx * 1.15), sy = Math.round(Math.sin(a * 1.7) * ry * 1.1);
+        const ex = Math.round(Math.cos(a) * rx * .78), ey = Math.round(Math.sin(a) * ry * .95);
+        return `<span class="pres-chip" style="--d:${i};--sx:${sx}px;--sy:${sy}px;--r:${(i % 2 ? 1 : -1) * (6 + i * 2)}deg;--ex:${ex};--ey:${ey}">${c}</span>`;
+      }).join('');
+      const gantt = [['Estudo prévio', 0, 22, '#8c6394'], ['Licenciamento', 20, 30, '#b48bbd'], ['Câmara (pausa)', 50, 14, 'pause'], ['Execução', 64, 20, '#e3c48a'], ['Assistência técnica', 84, 16, '#5d9aa1']]
+        .map(([n, l, w, c], i) => `<div class="pres-grow pa" style="--d:${i + 2}"><span>${n}</span><div class="pres-gtrack">${i === 0 ? '<span class="pres-today"></span>' : ''}<i class="pres-gbar${c === 'pause' ? ' pause' : ''}" style="--l:${l}%;--w:${w}%;--c:${c};--d:${i}"></i></div></div>`).join('');
+      const ring = d.billPct == null ? 0 : d.billPct;
+      const maxM = Math.max(1, ...(d.months || []).map(m => m.v));
+      const MES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+      const chart = (d.months || []).map((m, i) => `<div class="pres-col"><i style="--h:${Math.max(0, m.v) / maxM * 100}%;--d:${i}" title="${fmtEURShort(m.v)}"></i><span>${MES[Number(m.mk.slice(5)) - 1]}</span></div>`).join('');
+      const node = (i, t, x) => `<div class="pres-node pa" style="--d:${i * 2 + 2}"><div class="n">${i + 1}</div><b>${t}</b><span>${x}</span></div>`;
+      const link = i => `<div class="pres-link" style="--d:${i * 2 + 3}"></div>`;
+      const flow = items => `<div class="pres-flow">${items.map((it, i) => (i ? link(i - 1) : '') + node(i, it[0], it[1])).join('')}</div>`;
+      const lockNote = `<div class="pres-lock pa" style="--d:6">${presSvg('lock')}<span>Os valores financeiros só aparecem a Partners.</span></div>`;
+      return [
+        { nav: null, html: `
+          <svg class="pres-compass" viewBox="0 0 400 400" aria-hidden="true">
+            <defs><linearGradient id="presNeedle" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e3c48a"/><stop offset="1" stop-color="#b48bbd"/></linearGradient></defs>
+            <g class="spin"><circle class="ring" cx="200" cy="200" r="190" stroke-dasharray="2 10"/>${Array.from({ length: 12 }, (_, i) => `<line class="tick" x1="200" y1="22" x2="200" y2="40" transform="rotate(${i * 30} 200 200)"/>`).join('')}</g>
+            <circle class="ring" cx="200" cy="200" r="150"/><circle class="ring" cx="200" cy="200" r="95" stroke-dasharray="4 6"/>
+            <g class="needle"><path d="M200 70 L214 200 L200 214 L186 200 Z" fill="url(#presNeedle)"/><path d="M200 330 L214 200 L200 186 L186 200 Z" fill="#ffffff33"/><circle cx="200" cy="200" r="8" fill="#120d14" stroke="#e3c48a" stroke-width="3"/></g>
+          </svg>
+          <div class="pres-kick pa" style="--d:0">NOVA Associates · apresentação aos sócios</div>
+          <h1 class="pres-h pa" style="--d:1">NOVA <em>Compass</em></h1>
+          <p class="pres-sub pa" style="--d:2">Uma só bússola para os nossos projetos, pessoas, clientes e investimento — com os números reais, ao vivo.</p>
+          <div class="pres-hint pa" style="--d:4"><kbd>→</kbd> ou toque para avançar · <kbd>Esc</kbd> para sair</div>`, cls: 'pres-cover' },
+        { nav: null, html: `
+          <div class="pres-cols">
+            <div>
+              <div class="pres-kick pa" style="--d:0">Porquê</div>
+              <h2 class="pres-h pa" style="--d:1">A informação vivia <em>espalhada</em></h2>
+              <ul class="pres-list">
+                <li class="pa" style="--d:2">Não sabíamos ao certo quanto nos custava cada projeto.</li>
+                <li class="pa" style="--d:3">Prazos, reuniões e pendentes dependiam da memória de cada um.</li>
+                <li class="pa" style="--d:4">Terrenos e investidores sem um método para os cruzar.</li>
+                <li class="pa" style="--d:5"><span>Agora: <b>um só sítio</b>, a mesma verdade para todos.</span></li>
+              </ul>
+            </div>
+            <div class="pres-chaos">${chaos}<div class="pres-hub">NOVA<br>Compass</div></div>
+          </div>` },
+        { nav: null, html: `
+          <div class="pres-kick pa" style="--d:0">O mapa</div>
+          <h2 class="pres-h pa" style="--d:1">Oito áreas, <em>um só sítio</em></h2>
+          <div class="pres-map">${[
+            ['home', 'Hoje', 'O que cada um tem de fazer hoje', 3], ['projects', 'Projetos', 'Fases, prazos, Gantt e histórico', 4], ['horas', 'Horas', 'Para onde vai o nosso tempo', 5],
+            ['agenda', 'Agenda', 'Outlook e Teams sincronizados', 6], ['atas', 'Atas', 'Reuniões transcritas e arquivadas', 6], ['clients', 'Clientes', 'Fichas, NPS e aniversários', 7],
+            ['finance', 'Faturação & Mission Control', 'Dinheiro a entrar e saúde da empresa', 8], ['opps', 'Investment Intelligence', 'Terrenos, viabilidades e investidores', 9]
+          ].map(([k, t, x, to], i) => `<button type="button" class="pres-tile pa" style="--d:${i + 2}" data-pres-to="${to}">${presSvg(k)}<b>${t}</b><span>${x}</span></button>`).join('')}</div>
+          <div class="pres-cmdk pa" style="--d:11"><kbd>⌘K</kbd> em qualquer ecrã: pesquisar um projeto, ir para uma área ou criar qualquer coisa.</div>` },
+        { nav: 'home', html: `
+          <div class="pres-cols">
+            <div>
+              <div class="pres-kick pa" style="--d:0">Hoje</div>
+              <h2 class="pres-h pa" style="--d:1">Abrir a app e <em>saber o que fazer</em></h2>
+              <ul class="pres-list">
+                <li class="pa" style="--d:2">Avisos de prazos, fases sem pessoas e pausas abertas.</li>
+                <li class="pa" style="--d:3">No dia da reunião, o link para entrar está logo ali.</li>
+                <li class="pa" style="--d:4">Aniversários de clientes, para nunca falharem.</li>
+                <li class="pa" style="--d:5">A barra de horas da semana (objetivo 30 h).</li>
+              </ul>
+              <div class="pres-stats">${s(6, d.meets, 'marcos nos próximos 30 dias')}${s(7, d.team, 'pessoas na equipa')}</div>
+            </div>
+            <div class="pres-glass pa" style="--d:3">
+              <div class="pres-alert pa" style="--d:4"><i style="background:#e3c48a"></i><div>Reunião com o cliente às 15:00<small>Teams · gravada e transcrita</small></div><span class="pill">Entrar</span></div>
+              <div class="pres-alert pa" style="--d:5"><i style="background:#c4453d"></i><div>Entrega do licenciamento em 3 dias<small>Prazo a controlar</small></div></div>
+              <div class="pres-alert pa" style="--d:6"><i style="background:#b48bbd"></i><div>Aniversário de um cliente amanhã<small>Ligar ou mandar mensagem</small></div></div>
+              <div class="pres-alert pa" style="--d:7"><i style="background:#5d9aa1"></i><div>Fase sem pessoas atribuídas<small>Projeto em curso</small></div></div>
+              <div class="pres-hours pa" style="--d:8">Horas desta semana · 24 de 30 h<div class="pres-track"><i style="--w:80%"></i></div></div>
+            </div>
+          </div>` },
+        { nav: 'projects', html: `
+          <div class="pres-cols">
+            <div>
+              <div class="pres-kick pa" style="--d:0">Projetos</div>
+              <h2 class="pres-h pa" style="--d:1">Cada projeto, <em>do início ao fim</em></h2>
+              <ul class="pres-list">
+                <li class="pa" style="--d:2">Fases com responsável, prazo e estado.</li>
+                <li class="pa" style="--d:3">Pausas (à espera da Câmara ou do cliente) ficam à parte: não contam contra nós.</li>
+                <li class="pa" style="--d:4">Histórico lado a lado: fases, marcos, pausas e faturação.</li>
+              </ul>
+              <div class="pres-stats">${s(5, d.active, 'projetos ativos')}${s(6, d.stages, 'fases planeadas')}</div>
+            </div>
+            <div class="pres-glass pa pres-gantt" style="--d:2">${gantt}</div>
+          </div>` },
+        { nav: 'horas', html: `
+          <div class="pres-cols">
+            <div>
+              <div class="pres-kick pa" style="--d:0">Horas</div>
+              <h2 class="pres-h pa" style="--d:1">Para onde vai <em>o nosso tempo</em></h2>
+              <ul class="pres-list">
+                <li class="pa" style="--d:2">Grelha semanal: registar o dia leva segundos.</li>
+                <li class="pa" style="--d:3">Faturável e não faturável separados, por projeto e fase.</li>
+                <li class="pa" style="--d:4">Cada hora registada diz-nos se um projeto dá lucro.</li>
+              </ul>
+              <div class="pres-stats">${s(5, d.hours, 'horas nos últimos 12 meses')}${P ? s(6, d.perHour, 'faturado por hora de projeto · objetivo 150&nbsp;€/h', 'eurh', true) : ''}</div>
+            </div>
+            <div class="pres-ringwrap pa" style="--d:3">
+              <svg viewBox="0 0 280 280"><defs><linearGradient id="presGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b48bbd"/><stop offset="1" stop-color="#e3c48a"/></linearGradient></defs>
+                <circle class="bg" cx="140" cy="140" r="120"/><circle class="fg" cx="140" cy="140" r="120" style="--off:${754 - 754 * ring / 100}"/></svg>
+              <div class="pres-ringc">${presNum(d.billPct, 'pct')}<span>das horas são faturáveis</span></div>
+            </div>
+          </div>` },
+        { nav: 'agenda', html: `
+          <div class="pres-kick pa" style="--d:0">Agenda, Outlook e Teams</div>
+          <h2 class="pres-h pa" style="--d:1">Marcar uma reunião <em>faz o resto sozinho</em></h2>
+          ${flow([['Marco na app', 'Reunião, visita ou entrega, ligada ao projeto.'], ['Outlook e Teams', 'Convite para a equipa, o cliente e quem for preciso, com aviso RGPD.'], ['Gravação e transcrição', 'Automáticas, sem custos extra.'], ['Ata no projeto', 'Arquivada no histórico do projeto e do marco.']])}
+          <div class="pres-stats">${s(10, d.notes, 'atas arquivadas')}<div class="pres-stat pa" style="--d:11"><b>Cores</b><span>por pessoa, com filtro</span></div><div class="pres-stat pa" style="--d:12"><b>Conflitos</b><span>avisados, com alternativas</span></div></div>` },
+        { nav: 'clients', html: `
+          <div class="pres-cols">
+            <div>
+              <div class="pres-kick pa" style="--d:0">Clientes</div>
+              <h2 class="pres-h pa" style="--d:1">Uma ficha por pessoa, <em>tudo ligado</em></h2>
+              <ul class="pres-list">
+                <li class="pa" style="--d:2">O cliente que também investe tem só um tick: “Investidor”.</li>
+                <li class="pa" style="--d:3">Inquérito de satisfação (NPS) enviado sozinho no fim de cada fase.</li>
+                <li class="pa" style="--d:4">Contactos, projetos, faturas e aniversário no mesmo sítio.</li>
+              </ul>
+            </div>
+            <div class="pres-stats" style="grid-template-columns:1fr 1fr">${s(3, d.clients, 'clientes')}${s(4, d.investors, 'investidores')}${s(5, d.nps, 'NPS dos clientes (de −100 a +100)', 'nps', true)}${s(6, d.npsN, 'respostas ao inquérito')}</div>
+          </div>` },
+        { nav: 'finance', html: `
+          <div class="pres-cols">
+            <div>
+              <div class="pres-kick pa" style="--d:0">Faturação e Mission Control</div>
+              <h2 class="pres-h pa" style="--d:1">A saúde da empresa <em>num ecrã</em></h2>
+              <ul class="pres-list">
+                <li class="pa" style="--d:2">Faturas importadas do weoInvoice e extratos do banco.</li>
+                <li class="pa" style="--d:3">O que está por faturar e por receber, por projeto.</li>
+                <li class="pa" style="--d:4">IVA, IRC, tesouraria, custos fixos e objetivos do ano.</li>
+              </ul>
+              ${P ? `<div class="pres-stats">${s(5, d.billed, 'faturado nos últimos 12 meses', 'eur', true)}${s(6, d.payDays, 'até recebermos, em média', 'days')}</div>` : lockNote}
+            </div>
+            ${P ? `<div class="pres-glass pa" style="--d:3"><div class="pres-chart">${chart}</div>
+              <div class="pres-target"><div class="row"><span>Faturado por hora de projeto</span><span>${d.perHour == null ? '—' : d.perHour + ' € de 150 €'}</span></div><div class="pres-track"><i style="--w:${Math.min(100, (d.perHour || 0) / 150 * 100)}%"></i></div></div></div>` : ''}
+          </div>` },
+        { nav: 'opps', html: `
+          <div class="pres-kick pa" style="--d:0">Investment Intelligence</div>
+          <h2 class="pres-h pa" style="--d:1">Do terreno <em>ao investidor certo</em></h2>
+          ${flow([['Terreno', 'Localização, área e o que o PDM permite.'], ['Viabilidade', 'Custos, vendas e margem, como no nosso Excel.'], ['Modalidade', 'PIP, licenciado, venda ou renda: a app recomenda a de maior TIR.'], ['Investidor', 'Score de compatibilidade com o perfil de cada um, apresentação e PDF.']])}
+          <div class="pres-stats">${s(10, d.plots, 'terrenos analisados')}${s(11, d.investors, 'investidores com perfil')}</div>` },
+        { nav: null, html: `
+          <div class="pres-kick pa" style="--d:0">Por dentro</div>
+          <h2 class="pres-h pa" style="--d:1">Seguro, automático e <em>sem custos extra</em></h2>
+          <div class="pres-cards">${[
+            ['lock', 'Só a equipa entra', 'Cada pessoa com a sua conta. Os dados estão protegidos na base de dados.'],
+            ['sync', 'Trabalha sozinha', 'Outlook, Teams, NPS e avisos sincronizam sem ninguém carregar em nada.'],
+            ['device', 'Em todo o lado', 'Computador, iPad e telemóvel, com o mesmo ecrã adaptado.'],
+            ['coin', 'Sem licenças novas', 'Usa o Microsoft 365 que já pagamos.']
+          ].map(([k, t, x], i) => `<div class="pres-card pa" style="--d:${i + 2}">${presSvg(k)}<b>${t}</b><span>${x}</span></div>`).join('')}</div>` },
+        { nav: null, html: `
+          <div class="pres-kick pa" style="--d:0">A visão</div>
+          <h2 class="pres-h pa" style="--d:1">Para onde <em>vamos a seguir</em></h2>
+          <div class="pres-road">${[
+            ['Orçamento de horas por fase', 'Saber a meio do projeto se estamos a ganhar ou a perder.'],
+            ['Propostas na app', 'Honorários calculados com o nosso histórico real.'],
+            ['Investment Intelligence como motor de projetos', 'Cada terreno que juntamos a um investidor é um projeto para o ateliê.'],
+            ['Assistência técnica como receita recorrente', 'Acompanhamento pós-obra com avença mensal.']
+          ].map(([t, x], i) => `<div class="pres-step pa" style="--d:${i * 2 + 3}"><div class="n">${i + 1}</div><b>${t}</b><span>${x}</span></div>`).join('')}</div>
+          <div class="pres-close pa" style="--d:12">Decidir com dados, não de memória.</div>` }
+      ];
+    }
+
+    function renderPresSlide(el, sl) {
+      el.className = 'pres-slide' + (sl.cls ? ' ' + sl.cls : '');
+      el.innerHTML = sl.html;
+      el.querySelectorAll('[data-pres-to]').forEach(b => b.addEventListener('click', ev => { ev.stopPropagation(); presGo(Number(b.dataset.presTo)); }));
+    }
+    function buildPres() {
+      const stage = document.getElementById('pres-stage');
+      const slides = presSlides();
+      presNavs = slides.map(sl => sl.nav);
+      stage.innerHTML = slides.map(() => '<section class="pres-slide"></section>').join('');
+      [...stage.children].forEach((el, i) => renderPresSlide(el, slides[i]));
+      document.getElementById('pres-dots').innerHTML = slides.map((_, i) => `<button type="button" aria-label="Diapositivo ${i + 1}" data-i="${i}"></button>`).join('');
+      document.querySelectorAll('#pres-dots button').forEach(b => b.addEventListener('click', ev => { ev.stopPropagation(); presGo(Number(b.dataset.i)); }));
+    }
+    // Quando os números chegam, atualiza os diapositivos; o que está à vista volta a animar.
+    function refreshPres() {
+      const stage = document.getElementById('pres-stage'), slides = presSlides();
+      [...stage.children].forEach((el, i) => { if (i || presIdx) renderPresSlide(el, slides[i]); });
+      presGo(presIdx, true);
+    }
+    function presGo(i, force) {
+      const stage = document.getElementById('pres-stage'), list = [...stage.children], n = list.length;
+      i = Math.max(0, Math.min(n - 1, i));
+      if (i === presIdx && !force && list[i].classList.contains('on')) return;
+      presIdx = i;
+      clearTimeout(presMergeT);
+      list.forEach((el, k) => { el.classList.remove('on', 'merged'); el.classList.toggle('before', k < i); el.setAttribute('aria-hidden', k === i ? 'false' : 'true'); });
+      const cur = list[i];
+      void cur.offsetWidth;   // reinicia as animações do diapositivo
+      cur.classList.add('on');
+      cur.scrollTop = 0;
+      if (cur.querySelector('.pres-chaos')) presMergeT = setTimeout(() => cur.classList.add('merged'), reduceMotion.matches ? 0 : 2300);
+      presCount(cur);
+      document.getElementById('pres-bar').style.width = ((i + 1) / n * 100) + '%';
+      document.getElementById('pres-count').textContent = `${i + 1} / ${n}`;
+      document.querySelectorAll('#pres-dots button').forEach((b, k) => b.classList.toggle('on', k === i));
+      const nav = presNavs[i];
+      const go = document.getElementById('pres-open');
+      go.hidden = !nav; go.dataset.nav = nav || '';
+      document.getElementById('pres-prev').disabled = i === 0;
+      document.getElementById('pres-next').disabled = i === n - 1;
+    }
+
+    async function openPresentation() {
+      closeFabMenu();
+      document.getElementById('more-sheet')?.classList.remove('open');
+      const pres = document.getElementById('pres');
+      presData = null;
+      presPartner = isPartnerMember(await getCurrentMember().catch(() => null));
+      buildPres();
+      pres.hidden = false;
+      document.body.style.overflow = 'hidden';
+      requestAnimationFrame(() => { pres.classList.add('open'); presGo(0, true); });
+      try { if (!document.fullscreenElement && window.matchMedia('(min-width: 900px)').matches) await document.documentElement.requestFullscreen?.(); } catch (_) { /* o browser pode recusar: continua na janela */ }
+      loadPresData().then(d => { if (pres.hidden) return; presData = d; refreshPres(); }).catch(() => {});
+    }
+    function closePresentation(then) {
+      const pres = document.getElementById('pres');
+      if (pres.hidden) return;
+      pres.classList.remove('open');
+      document.body.style.overflow = '';
+      clearTimeout(presMergeT);
+      if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+      setTimeout(() => { pres.hidden = true; document.getElementById('pres-stage').innerHTML = ''; }, reduceMotion.matches ? 0 : 350);
+      if (then) { navStack = []; NAV_ACTIONS[then](); }
+    }
+    (() => {
+      const pres = document.getElementById('pres');
+      document.getElementById('pres-x').addEventListener('click', e => { e.stopPropagation(); closePresentation(); });
+      document.getElementById('pres-prev').addEventListener('click', e => { e.stopPropagation(); presGo(presIdx - 1); });
+      document.getElementById('pres-next').addEventListener('click', e => { e.stopPropagation(); presGo(presIdx + 1); });
+      document.getElementById('pres-open').addEventListener('click', e => { e.stopPropagation(); closePresentation(e.currentTarget.dataset.nav); });
+      document.getElementById('pres-fs').addEventListener('click', e => {
+        e.stopPropagation();
+        if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+        else document.documentElement.requestFullscreen?.().catch(() => {});
+      });
+      document.addEventListener('keydown', e => {
+        if (pres.hidden) return;
+        const k = e.key;
+        if (['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'].includes(k)) { if (k === 'Enter' && e.target.closest?.('button')) return; e.preventDefault(); presGo(presIdx + 1); }
+        else if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(k)) { e.preventDefault(); presGo(presIdx - 1); }
+        else if (k === 'Home') { e.preventDefault(); presGo(0); }
+        else if (k === 'End') { e.preventDefault(); presGo(pres.querySelectorAll('.pres-slide').length - 1); }
+        else if (k === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); closePresentation(); }
+        else if (k === 'f' || k === 'F') document.getElementById('pres-fs').click();
+        else return;
+        e.stopPropagation();
+      }, true);
+      // Toque: deslizar para os lados, ou tocar à direita (avança) / à esquerda (recua)
+      let sx = null, sy = null;
+      pres.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; });
+      pres.addEventListener('pointerup', e => {
+        if (sx == null) return;
+        const dx = e.clientX - sx, dy = e.clientY - sy; sx = null;
+        if (e.target.closest('button, a, .pres-top, .pres-foot')) return;
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) presGo(presIdx + (dx < 0 ? 1 : -1));
+        else if (Math.abs(dx) < 8 && Math.abs(dy) < 8) presGo(presIdx + (e.clientX < window.innerWidth / 3 ? -1 : 1));
+      });
+      document.querySelectorAll('[data-open-pres]').forEach(b => b.addEventListener('click', openPresentation));
+    })();
+
     const CMDK_ACTIONS = [
       { group: 'Criar', label: 'Registar horas', hint: 'H', keys: 'horas imputar tempo registar', run: () => runCreateAction('horas') },
       { group: 'Criar', label: 'Novo marco', keys: 'marco reuniao visita vistoria entrega prazo evento', run: () => runCreateAction('marco') },
@@ -17223,6 +17777,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { group: 'Ir para', label: 'Despesas', keys: 'reembolsos', run: () => NAV_ACTIONS.despesas() },
       { group: 'Ir para', label: 'Agenda', keys: 'calendario mes planeamento gantt fases cronograma', run: () => NAV_ACTIONS.agenda() },
       { group: 'Ir para', label: 'Definições', keys: 'categorias tipos configuracao', run: () => NAV_ACTIONS.settings() },
+      { group: 'Ir para', label: 'Modo apresentação', keys: 'apresentacao apresentar socios slides demo explicar', run: () => openPresentation() },
       { group: 'Ir para', label: 'Ajuda', keys: 'manual ajuda como guia instrucoes', run: () => NAV_ACTIONS.help() }
     ];
     const cmdk = document.getElementById('cmdk');
