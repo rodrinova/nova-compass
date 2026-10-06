@@ -2896,6 +2896,62 @@
     .kw > i { animation: none !important; transform: none !important; }
   }
 
+
+  /* =================== VIVO: movimento mesmo quando a página está parada =================== */
+  /* Luz ambiente que deriva devagar por trás de tudo (só transform: leve para o telemóvel) */
+  #k-ambient { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+  #k-ambient i { position: absolute; width: 70vmax; height: 70vmax; border-radius: 50%; opacity: var(--amb-o, .55); will-change: transform; }
+  #k-ambient i:nth-child(1) { left: -20vmax; top: -30vmax; background: radial-gradient(closest-side, var(--amb1), transparent); animation: kDrift1 38s ease-in-out infinite alternate; }
+  #k-ambient i:nth-child(2) { right: -25vmax; top: 10vh; background: radial-gradient(closest-side, var(--amb2), transparent); animation: kDrift2 46s ease-in-out infinite alternate; }
+  #k-ambient i:nth-child(3) { left: 20vw; bottom: -40vmax; background: radial-gradient(closest-side, var(--amb3), transparent); animation: kDrift3 54s ease-in-out infinite alternate; }
+  :root { --amb1: rgba(113,77,121,.10); --amb2: rgba(47,93,98,.07); --amb3: rgba(168,116,31,.06); --k-ripple: rgba(113,77,121,.16); --k-spot: rgba(113,77,121,.06); }
+  @media (prefers-color-scheme: dark) { :root { --amb1: rgba(140,99,148,.20); --amb2: rgba(47,93,98,.16); --amb3: rgba(168,116,31,.08); --k-ripple: rgba(255,255,255,.12); --k-spot: rgba(255,255,255,.045); } body::before { display: none; } }
+  @keyframes kDrift1 { to { transform: translate(22vw, 18vh) scale(1.15); } }
+  @keyframes kDrift2 { to { transform: translate(-18vw, 26vh) scale(.88); } }
+  @keyframes kDrift3 { to { transform: translate(-14vw, -22vh) scale(1.1); } }
+  /* as barras de progresso têm um brilho que passa de vez em quando */
+  :is(.punch-bar, .fg-bar, .ind-bar, .dinner-bar, .mt-track) > span, .time-bar-seg {
+    background-image: linear-gradient(100deg, transparent 35%, rgba(255,255,255,.38) 50%, transparent 65%); background-size: 260% 100%; background-repeat: no-repeat;
+    animation: kSheen 5.5s ease-in-out infinite; }
+  @keyframes kSheen { 0%, 55% { background-position: 130% 0; } 100% { background-position: -130% 0; } }
+  /* a linha de "hoje" nos cronogramas respira */
+  .gantt-today-line { animation: kBreath 2.6s ease-in-out infinite; }
+  @keyframes kBreath { 50% { box-shadow: 0 0 10px 1px var(--danger); opacity: .75; } }
+  /* o botão "Cheguei" convida ao toque */
+  .punch-btn:not(.late) { animation: kInvite 3.2s ease-in-out infinite; }
+  @keyframes kInvite { 0%, 100% { box-shadow: 0 0 0 0 var(--accent-muted); } 50% { box-shadow: 0 0 0 8px transparent; } }
+  /* a pastilha do separador ativo tem um brilho lento */
+  .seg-thumb::after, .nav-ind::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(100deg, transparent 30%, var(--k-spot) 50%, transparent 70%); background-size: 250% 100%; animation: kSheen 7s ease-in-out infinite; }
+
+  /* luz que segue o rato dentro dos cartões (computador) */
+  @media (hover: hover) {
+    :is(.gantt-wrap, .stat-tile, .client-card, .kpi-strip, .hero-card, .team-card, .projects-table-wrap).k-lit { background-image: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), var(--k-spot), transparent 65%); }
+  }
+
+  /* toque: onda que nasce do dedo */
+  .k-rip { position: fixed; pointer-events: none; overflow: hidden; z-index: 2147483000; }
+  .k-rip > i { position: absolute; border-radius: 50%; background: var(--k-ripple); transform: translate(-50%, -50%) scale(0); animation: kRip .6s var(--expo) forwards; }
+  @keyframes kRip { 60% { opacity: 1; } to { transform: translate(-50%, -50%) scale(1); opacity: 0; } }
+
+  /* passagem entre páginas: a antiga afasta-se e desfoca enquanto a nova entra (na direção certa) */
+  .k-ghost { position: fixed; pointer-events: none; z-index: 5; margin: 0 !important; animation: kGhostOut .32s var(--ease-io) forwards; }
+  .k-ghost[data-dir="1"] { animation-name: kGhostLeft; } .k-ghost[data-dir="-1"] { animation-name: kGhostRight; }
+  @keyframes kGhostOut { to { opacity: 0; transform: scale(.975); filter: blur(6px); } }
+  @keyframes kGhostLeft { to { opacity: 0; transform: translateX(-48px) scale(.98); filter: blur(5px); } }
+  @keyframes kGhostRight { to { opacity: 0; transform: translateX(48px) scale(.98); filter: blur(5px); } }
+  .content-area[data-kdir="1"] > :is(#home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #feas-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view, #help-view) { animation-name: kPageR; }
+  .content-area[data-kdir="-1"] > :is(#home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #feas-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view, #help-view) { animation-name: kPageL; }
+  @keyframes kPageR { from { opacity: 0; transform: translateX(56px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+  @keyframes kPageL { from { opacity: 0; transform: translateX(-56px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+
+  /* o título grande afasta-se com o scroll (parallax) */
+  .k-large, .home-head { transform: translateY(calc(var(--ks, 0) * -0.25px)); opacity: calc(1 - var(--ks, 0) / 260); will-change: transform, opacity; }
+
+  @media (prefers-reduced-motion: reduce) {
+    #k-ambient, .k-rip, .k-ghost { display: none !important; }
+    .k-large, .home-head { transform: none !important; opacity: 1 !important; }
+  }
+
   /* ---------- Modo apresentação (keynote: preto, sóbrio, sempre em movimento) ---------- */
   #pres { --mx: 50%; --my: 30%; --rx: 0deg; --ry: 0deg; --ac: #c9a7d1; --t2: #86868b; --t3: #6e6e73; --hl: #ffffff1a;
     position: fixed; inset: 0; z-index: 2000; background: #000; color: #f5f5f7; overflow: hidden; opacity: 0; transition: opacity .5s ease;
@@ -4075,6 +4131,7 @@
 
     function pushCurrentView(newState) {
       const sameView = JSON.stringify(currentViewState) === JSON.stringify(newState);
+      if (!sameView && currentViewState) kNavDir = suppressNavPush ? -1 : K_DEEP.has(newState.name) ? 1 : 0;
       if (!suppressNavPush && !sameView) {
         navStack.push(currentViewState);
       }
@@ -4222,6 +4279,7 @@
     }
 
     function hideAllViews() {
+      kGhostOut();
       ['home-view', 'projects-view', 'clients-view', 'client-view', 'opps-view', 'plot-view', 'feas-view', 'proposal-view', 'billing-view', 'finance-view', 'agenda-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view', 'despesas-view', 'help-view'].forEach(id => {
         document.getElementById(id).style.display = 'none';
       });
@@ -17998,6 +18056,81 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       window.addEventListener('focus', check);
       setTimeout(check, 5000);
       setInterval(check, 15 * 60000);
+    })();
+
+
+    // ================= VIVO: luz ambiente, passagem entre páginas, ondas ao toque, luz nos cartões =================
+    (() => {
+      const amb = document.createElement('div'); amb.id = 'k-ambient'; amb.setAttribute('aria-hidden', 'true');
+      amb.innerHTML = '<i></i><i></i><i></i>';
+      document.body.prepend(amb);
+    })();
+
+    // Passagem entre páginas: pushCurrentView diz a direção (entrar numa ficha → da direita; voltar → da esquerda)
+    var kNavDir = null;
+    var K_DEEP = new Set(['detail', 'client', 'plot', 'proposal', 'feas', 'investorView']);
+    var K_VIEWS = ['home-view', 'projects-view', 'clients-view', 'client-view', 'opps-view', 'plot-view', 'feas-view', 'proposal-view', 'billing-view', 'finance-view', 'agenda-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view', 'despesas-view', 'help-view'];
+    function kGhostOut() {
+      const dir = kNavDir; kNavDir = null;
+      if (dir === null || reduceMotion.matches || document.getElementById('app-screen')?.style.display === 'none') return;
+      const area = document.querySelector('.content-area');
+      if (area) { area.dataset.kdir = String(dir); clearTimeout(area.__kT); area.__kT = setTimeout(() => { delete area.dataset.kdir; }, 700); }
+      const cur = K_VIEWS.map(id => document.getElementById(id)).find(v => v && v.style.display !== 'none' && v.offsetHeight);
+      if (!cur) return;
+      const r = cur.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > window.innerHeight) return;
+      // só a parte visível (mais leve): copia a vista e recorta à janela
+      const ghost = cur.cloneNode(true);
+      ghost.removeAttribute('id'); ghost.querySelectorAll('[id]').forEach(e => e.removeAttribute('id'));
+      ghost.querySelectorAll('input, select, textarea, button').forEach(e => { e.tabIndex = -1; });
+      ghost.className += ' k-ghost'; ghost.dataset.dir = String(dir); ghost.setAttribute('aria-hidden', 'true');
+      ghost.style.cssText = `display:block;top:${r.top}px;left:${r.left}px;width:${r.width}px;height:${Math.min(r.height, window.innerHeight - Math.max(0, r.top))}px;overflow:hidden;`;
+      document.body.appendChild(ghost);
+      setTimeout(() => ghost.remove(), 380);
+    }
+
+    // Onda que nasce do dedo, recortada à forma do botão/cartão (não mexe no elemento)
+    const RIP_SEL = 'button:not(:disabled), .nav-item, .click-row, .project-row, .client-card, .opp-card, .plot-card, .iv-card, .proj-card, .alert-row, .settings-link, .hi, .rec-row, .tx-line, .band-chip, .pm-tile, a.btn, [data-haptic]';
+    document.addEventListener('pointerdown', e => {
+      if (reduceMotion.matches || e.button > 0) return;
+      const el = e.target.closest?.(RIP_SEL);
+      if (!el || el.closest('#pres, .k-ghost')) return;
+      const r = el.getBoundingClientRect();
+      if (!r.width || r.width > 1400) return;
+      const box = document.createElement('div');
+      box.className = 'k-rip';
+      const cs = getComputedStyle(el);
+      box.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;border-radius:${cs.borderRadius};`;
+      const d = Math.hypot(Math.max(e.clientX - r.left, r.right - e.clientX), Math.max(e.clientY - r.top, r.bottom - e.clientY)) * 2;
+      box.innerHTML = `<i style="left:${e.clientX - r.left}px;top:${e.clientY - r.top}px;width:${d}px;height:${d}px"></i>`;
+      document.body.appendChild(box);
+      setTimeout(() => box.remove(), 650);
+    }, { passive: true });
+
+    // Luz que segue o rato dentro do cartão por baixo do cursor; título grande com parallax no scroll
+    (() => {
+      let lit = null, mx = 0, my = 0, q = false;
+      const CARD = '.gantt-wrap, .stat-tile, .client-card, .kpi-strip, .hero-card, .team-card, .projects-table-wrap';
+      document.addEventListener('pointermove', e => {
+        if (e.pointerType !== 'mouse' || reduceMotion.matches) return;
+        mx = e.clientX; my = e.clientY;
+        if (q) return; q = true;
+        requestAnimationFrame(() => {
+          q = false;
+          const el = document.elementFromPoint(mx, my)?.closest(CARD);
+          if (lit && lit !== el) { lit.classList.remove('k-lit'); }
+          lit = el || null;
+          if (!el) return;
+          const r = el.getBoundingClientRect();
+          el.style.setProperty('--mx', (mx - r.left) + 'px'); el.style.setProperty('--my', (my - r.top) + 'px');
+          el.classList.add('k-lit');
+        });
+      }, { passive: true });
+      let sq = false;
+      window.addEventListener('scroll', () => {
+        if (sq || reduceMotion.matches) return; sq = true;
+        requestAnimationFrame(() => { sq = false; document.documentElement.style.setProperty('--ks', String(Math.min(260, Math.max(0, window.scrollY)))); });
+      }, { passive: true });
     })();
 
     // ---------- Modo apresentação (keynote): o que faz, como faz e benefícios, com números reais ----------
