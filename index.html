@@ -1619,6 +1619,15 @@
   .ck-badge { font-size: var(--fs-xs); font-weight: var(--fw-semibold); padding: var(--sp-0-5) var(--sp-2); border-radius: var(--r-full); background: var(--accent-soft); color: var(--accent); white-space: nowrap; }
   .ck-x { border: none; background: none; color: var(--text-3); font-size: var(--fs-xl); line-height: 1; cursor: pointer; padding: var(--sp-0-5) var(--sp-1-5); border-radius: var(--r-sm); }
   .ck-x:hover { color: var(--danger); background: var(--surface-2); }
+  .ck-grip { flex: none; width: 22px; text-align: center; color: var(--text-3); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; font-size: 15px; line-height: 1; padding: 6px 0; border-radius: 6px; }
+  .ck-grip:hover { color: var(--text); background: var(--surface-2); }
+  .ck-drag { position: relative; z-index: 5; background: var(--surface); box-shadow: var(--shadow-lift); border-radius: 10px; scale: 1.02; }
+  .ck-drag .ck-grip { cursor: grabbing; color: var(--accent); }
+  .ck-kind { flex: none; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-3); font: inherit; font-size: var(--fs-xs); font-weight: var(--fw-semibold); padding: 2px 9px; border-radius: 99px; cursor: pointer; white-space: nowrap; }
+  .ck-kind.on { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+  .ck-ed { font-size: 14px; }
+  .ck-edit-in { flex: 1; min-width: 0; margin: 0 !important; height: 34px; }
+  .ckt-row .st-name { flex: 1; min-width: 0; }
   .ck-add { display: flex; gap: var(--sp-1-5); margin-top: var(--sp-2); flex-wrap: wrap; }
   .ck-add .form-input { margin: 0; }
   .ck-add input { flex: 1 1 180px; }
@@ -13118,6 +13127,67 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     }
     const ckCountText = c => (c && c.total ? `${c.done}/${c.total}` : '');
 
+    // Arrastar para reordenar (rato e dedo): o item segue o ponteiro e os outros abrem espaço com animação.
+    // onDone(ids) recebe a nova ordem (data-id de cada item) só se mudou.
+    function kSortable(list, itemSel, onDone) {
+      if (!list) return;
+      list.querySelectorAll(`${itemSel} .ck-grip`).forEach(grip => grip.addEventListener('pointerdown', e => {
+        const it = grip.closest(itemSel);
+        if (!it || e.button > 0) return;
+        e.preventDefault();
+        const order = () => [...list.querySelectorAll(itemSel)].map(x => x.dataset.id).join('|');
+        const before = order(), startY = e.clientY, top0 = it.offsetTop;
+        const flip = el => { const a = el.offsetTop; return () => { const d = a - el.offsetTop; if (!d) return; el.style.transition = 'none'; el.style.transform = `translateY(${d}px)`; void el.offsetWidth; el.style.transition = 'transform .28s var(--expo)'; el.style.transform = ''; }; };
+        it.classList.add('ck-drag');
+        haptic();
+        const move = ev => {
+          if (ev.pointerId !== e.pointerId) return;
+          ev.preventDefault();
+          const center = top0 + (ev.clientY - startY) + it.offsetHeight / 2;
+          let prev = it.previousElementSibling, next = it.nextElementSibling;
+          while (prev && !prev.matches(itemSel)) prev = prev.previousElementSibling;
+          while (next && !next.matches(itemSel)) next = next.nextElementSibling;
+          if (prev && center < prev.offsetTop + prev.offsetHeight / 2) { const done = flip(prev); list.insertBefore(it, prev); done(); }
+          else if (next && center > next.offsetTop + next.offsetHeight / 2) { const done = flip(next); list.insertBefore(next, it); done(); }
+          it.style.transform = `translateY(${top0 + (ev.clientY - startY) - it.offsetTop}px)`;
+        };
+        // Escuta na janela: mover o próprio item no DOM faz o browser perder a captura do ponteiro
+        const up = ev => {
+          if (ev.pointerId !== e.pointerId) return;
+          window.removeEventListener('pointermove', move);
+          window.removeEventListener('pointerup', up);
+          window.removeEventListener('pointercancel', up);
+          it.style.transition = 'transform .3s var(--spring)'; it.style.transform = '';
+          setTimeout(() => { it.style.transition = ''; it.classList.remove('ck-drag'); }, 300);
+          const after = order();
+          if (after !== before) { haptic(); onDone(after.split('|')); }
+        };
+        window.addEventListener('pointermove', move, { passive: false });
+        window.addEventListener('pointerup', up);
+        window.addEventListener('pointercancel', up);
+      }));
+    }
+    // Editar um texto no sítio: troca o elemento por uma caixa; Enter (ou sair) grava, Esc cancela
+    function kInlineEdit(el, value, save, redraw) {
+      if (!el) return;
+      const inp = document.createElement('input');
+      inp.type = 'text'; inp.className = 'form-input ck-edit-in'; inp.value = value; inp.maxLength = 200;
+      el.replaceWith(inp);
+      inp.focus(); inp.select();
+      let done = false;
+      const finish = async ok => {
+        if (done) return; done = true;
+        const v = inp.value.trim();
+        if (ok && v && v !== value) {
+          try { await save(v); showToast('Texto atualizado'); }
+          catch (err) { showToast('Não foi possível gravar: ' + err.message, { type: 'error' }); }
+        }
+        redraw();
+      };
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); finish(true); } else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(false); } });
+      inp.addEventListener('blur', () => finish(true));
+    }
+
     // Checklist dentro da janela da fase: cada toque grava logo
     async function mountChecklist(box, stage, onChange) {
       if (!(await checklistsAvailable())) { box.innerHTML = '<div class="field-hint">Para usar checklists, corre checklists_prazos_camara.sql no Supabase.</div>'; return; }
@@ -13130,13 +13200,15 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const done = items.filter(i => i.done).length;
         box.innerHTML = `
           ${items.length ? `<div class="ck-head"><span>${done} de ${items.length} feitos</span><div class="ck-progress"><span style="width:${Math.round(done / items.length * 100)}%"></span></div></div>` : ''}
-          ${items.map(i => `
-            <div class="ck-item${i.done ? ' done' : ''}">
+          <div class="ck-list">${items.map(i => `
+            <div class="ck-item${i.done ? ' done' : ''}" data-id="${escapeHtml(i.id)}">
+              <span class="ck-grip" aria-label="Arrastar para reordenar" title="Arrastar para reordenar">⠿</span>
               <label><input type="checkbox" data-ck-done="${escapeHtml(i.id)}"${i.done ? ' checked' : ''}>
                 <span class="ck-title">${escapeHtml(i.title)}</span></label>
-              ${i.kind === 'deliverable' ? '<span class="ck-badge">Entregável</span>' : ''}
+              <button type="button" class="ck-kind${i.kind === 'deliverable' ? ' on' : ''}" data-ck-kind="${escapeHtml(i.id)}" title="Tocar para mudar para ${i.kind === 'deliverable' ? 'tarefa' : 'entregável'}">${i.kind === 'deliverable' ? 'Entregável' : 'Tarefa'}</button>
+              <button type="button" class="ck-x ck-ed" data-ck-edit="${escapeHtml(i.id)}" aria-label="Editar texto" title="Editar texto">✎</button>
               <button type="button" class="ck-x" data-ck-del="${escapeHtml(i.id)}" aria-label="Apagar item" title="Apagar">×</button>
-            </div>`).join('')}
+            </div>`).join('')}</div>
           ${!items.length ? `<div class="field-hint" style="margin:0 0 8px;">Sem itens.${template.length ? ` <button type="button" class="text-btn" data-ck-template>Usar o modelo de ${escapeHtml(stage.stage_types?.name ?? 'esta fase')} (${template.length})</button>` : ' Os modelos por tipo de fase definem-se em Definições.'}</div>` : ''}
           <div class="ck-add">
             <input type="text" class="form-input" id="ck-new" placeholder="Nova tarefa ou entregável…" maxlength="200">
@@ -13172,6 +13244,29 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             } });
           } catch (err) { showToast('Não foi possível apagar: ' + err.message, { type: 'error' }); }
         }));
+        // mudar tarefa ↔ entregável
+        box.querySelectorAll('[data-ck-kind]').forEach(b => b.addEventListener('click', async () => {
+          const it = items.find(i => String(i.id) === b.dataset.ckKind);
+          const kind = it.kind === 'deliverable' ? 'task' : 'deliverable';
+          try { await dbUpdate('stage_checklist_items', it.id, { kind }, mockChecklist); it.kind = kind; draw(); changed(); }
+          catch (err) { showToast('Não foi possível mudar: ' + err.message, { type: 'error' }); }
+        }));
+        // editar o texto (Enter grava, Esc cancela)
+        box.querySelectorAll('[data-ck-edit]').forEach(b => b.addEventListener('click', () => {
+          const it = items.find(i => String(i.id) === b.dataset.ckEdit);
+          kInlineEdit(b.closest('.ck-item').querySelector('label'), it.title, async v => {
+            await dbUpdate('stage_checklist_items', it.id, { title: v }, mockChecklist); it.title = v; changed();
+          }, draw);
+        }));
+        // arrastar pela pega para reordenar
+        kSortable(box.querySelector('.ck-list'), '.ck-item', async ids => {
+          const prev = items.slice();
+          items = ids.map(id => items.find(i => String(i.id) === id)).filter(Boolean);
+          try {
+            await Promise.all(items.map((it, k) => it.sort_order === k + 1 ? null : dbUpdate('stage_checklist_items', it.id, { sort_order: k + 1 }, mockChecklist).then(() => { it.sort_order = k + 1; })));
+            changed();
+          } catch (err) { items = prev; draw(); showToast('Não foi possível reordenar: ' + err.message, { type: 'error' }); }
+        });
         const tpl = box.querySelector('[data-ck-template]');
         if (tpl) tpl.addEventListener('click', async () => {
           try { await add(template.map(t => ({ stage_id: stage.id, title: t.title, kind: t.kind, sort_order: t.sort_order }))); draw(); changed(); }
@@ -13207,13 +13302,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         <div class="field-hint" style="margin:0 0 10px;">Cada fase nova deste tipo recebe uma cópia desta lista, que depois se ajusta na própria fase. As fases que já existem não mudam.</div>
         <select class="form-input" id="ckt-type" aria-label="Tipo de fase">${types.map(t => `<option value="${escapeHtml(t.id)}"${t.id === ckSettingsType ? ' selected' : ''}>${escapeHtml(t.name)}</option>`).join('')}</select>
         <div class="ckt-list">${items.length ? items.map((t, i) => `
-          <div class="status-row" data-ckt-id="${escapeHtml(t.id)}">
+          <div class="status-row ckt-row" data-ckt-id="${escapeHtml(t.id)}" data-id="${escapeHtml(t.id)}">
+            <span class="ck-grip" aria-label="Arrastar para reordenar" title="Arrastar para reordenar">⠿</span>
             <span class="st-name">${escapeHtml(t.title)}</span>
             <button type="button" class="chip-toggle${t.kind === 'deliverable' ? ' on' : ''}" data-ckt-kind title="Tocar para mudar">${t.kind === 'deliverable' ? 'Entregável' : 'Tarefa'}</button>
-            <span class="order-btns">
-              <button type="button" data-ckt-move="-1" ${i === 0 ? 'disabled' : ''} aria-label="Subir">▲</button>
-              <button type="button" data-ckt-move="1" ${i === items.length - 1 ? 'disabled' : ''} aria-label="Descer">▼</button>
-            </span>
+            <button type="button" class="ck-x ck-ed" data-ckt-edit aria-label="Editar texto" title="Editar texto">✎</button>
             <button type="button" class="text-btn danger" data-ckt-delete>Eliminar</button>
           </div>`).join('') : '<div class="gantt-empty">Este tipo de fase ainda não tem checklist-modelo.</div>'}</div>
         <div class="ck-add">
@@ -13228,12 +13321,16 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         try { await dbUpdate('stage_type_checklist_items', t.id, { kind: t.kind === 'deliverable' ? 'task' : 'deliverable' }, mockChecklistTemplates); loadChecklistTemplateSettings(); }
         catch (err) { showToast('Não foi possível mudar: ' + err.message, { type: 'error' }); }
       }));
-      box.querySelectorAll('[data-ckt-move]').forEach(b => b.addEventListener('click', async () => {
-        const i = items.indexOf(rowOf(b)), j = i + Number(b.dataset.cktMove);
-        if (j < 0 || j >= items.length) return;
-        const re = [...items]; [re[i], re[j]] = [re[j], re[i]];
-        try { await Promise.all(re.map((t, k) => t.sort_order === k + 1 ? null : dbUpdate('stage_type_checklist_items', t.id, { sort_order: k + 1 }, mockChecklistTemplates))); loadChecklistTemplateSettings(); }
-        catch (err) { showToast('Não foi possível reordenar: ' + err.message, { type: 'error' }); }
+      kSortable(box.querySelector('.ckt-list'), '.ckt-row', async ids => {
+        const re = ids.map(id => items.find(t => String(t.id) === id)).filter(Boolean);
+        try { await Promise.all(re.map((t, k) => t.sort_order === k + 1 ? null : dbUpdate('stage_type_checklist_items', t.id, { sort_order: k + 1 }, mockChecklistTemplates).then(() => { t.sort_order = k + 1; }))); }
+        catch (err) { showToast('Não foi possível reordenar: ' + err.message, { type: 'error' }); loadChecklistTemplateSettings(); }
+      });
+      box.querySelectorAll('[data-ckt-edit]').forEach(b => b.addEventListener('click', () => {
+        const t = rowOf(b);
+        kInlineEdit(b.closest('.ckt-row').querySelector('.st-name'), t.title, async v => {
+          await dbUpdate('stage_type_checklist_items', t.id, { title: v }, mockChecklistTemplates); t.title = v;
+        }, () => loadChecklistTemplateSettings());
       }));
       box.querySelectorAll('[data-ckt-delete]').forEach(b => b.addEventListener('click', async () => {
         const t = rowOf(b);
