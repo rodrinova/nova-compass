@@ -8515,6 +8515,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     // Fases sem entrega (acompanhamento contínuo): Assistência Técnica e Adjudicação
     const hasNoDelivery = s => /assist[eê]ncia|adjudica/i.test(s.stage_types?.name || '');
     // Plano do projeto: cada fase começa quando a anterior acaba (a primeira, na adjudicação).
+    // Atrasos passam para a frente: entregue depois do previsto, a fase seguinte conta a partir da entrega real;
+    // ainda por entregar e já fora de prazo, as seguintes deslizam até hoje. Entregas antecipadas não adiantam o plano.
     // Pausas entre fases (after_stage_id): as fases a seguir só começam depois de a pausa acabar
     // (aberta = hoje, por isso as datas andam para a frente até a fecharem). Uma fase com
     // ignores_breaks (ou de um tipo imune) não espera. Pausas sem posição (antigas): os dias
@@ -8541,6 +8543,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             s.plan_start = start && start <= end ? start : end;
             s.plan_end = end;
             cursor = end;
+            if (s.delivery_date && s.delivery_date > end) cursor = s.delivery_date;
+            else if (!s.delivery_date && !isStageDone(s) && today > end) cursor = today;
           }
         }
         placed.filter(b => String(b.after_stage_id) === String(s.id)).forEach(b => {
@@ -13737,7 +13741,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const urgent = r.late ? 'late' : (r.kind === 'camara' || r.kind === 'debt' || r.kind === 'meet' || (r.kind === 'bday' && r.today)) ? 'soon' : '';
         items.push({ pri: r.late || r.kind === 'meet' ? 0 : urgent ? 1 : 2, date: r.due || '9999', html: `
           <div class="alert-row team${urgent ? ' ' + urgent : ''}" data-alert-team="${r.kind}"${r.note ? ` data-note="${escapeHtml(r.note.id)}"` : ''}${r.project ? ` data-project="${escapeHtml(r.project)}"` : ''}${r.nps ? ` data-nps="${escapeHtml(r.nps)}"` : ''}${r.client ? ` data-client="${escapeHtml(r.client)}"` : ''}${r.ticket ? ` data-ticket="${escapeHtml(r.ticket)}"` : ''}${r.url ? ` data-url="${escapeHtml(r.url)}" role="link" tabindex="0"` : ''}>
-            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : r.kind === 'nps' ? '★' : r.kind === 'debt' ? '€' : r.kind === 'law' ? '§' : r.kind === 'radar' ? '◎' : r.kind === 'meet' ? '▶' : r.kind === 'transcript' ? '≡' : r.kind === 'bday' ? '✦' : r.kind === 'ticket' ? '💡' : r.kind === 'absence' ? '◐' : '+'}</span>
+            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : r.kind === 'nps' ? '★' : r.kind === 'debt' ? '€' : r.kind === 'law' ? '§' : r.kind === 'radar' ? '◎' : r.kind === 'meet' ? '▶' : r.kind === 'transcript' ? '≡' : r.kind === 'bday' ? '✦' : r.kind === 'ticket' ? '💡' : r.kind === 'absence' ? '◐' : r.kind === 'data' ? '!' : '+'}</span>
             <span class="alert-text"><b>${escapeHtml(r.title)}</b><span>${escapeHtml(r.sub)}</span></span>
             <span class="alert-when">${escapeHtml(r.when)}</span>
           </div>` });
@@ -13790,6 +13794,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         else if (k === 'bday') openClientDetail(r.dataset.client);
         else if (k === 'ticket') openTicketDetail(r.dataset.ticket);
         else if (k === 'absence') { navStack = []; openAbsencesModule(); }
+        else if (k === 'data') { detailTabByProject[r.dataset.project] = 'fases'; openDetail(r.dataset.project); }
         else if (k === 'transcript') { const n = teamRows.find(x => x.note && String(x.note.id) === r.dataset.note)?.note; if (n) openNewAtaModal(null, null, n, () => renderToday()); }
         else if (k === 'hours') openHorasModule();
         else if (k === 'owner') openProjectsModule();
@@ -14073,6 +14078,32 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       return out;
     }
 
+    // Dados em falta para os prazos (para o responsável de cada projeto; projetos sem responsável, para todos):
+    // sem data de adjudicação, fases sem lead time nem prazo fixo, fases concluídas sem data de entrega
+    async function loadMissingDataAlerts(me) {
+      let projects, stages;
+      if (devMode) { projects = MOCK_PROJECTS; stages = MOCK_STAGES.map(s => ({ ...s, project_id: s.project_id || 'mock-1' })); }
+      else {
+        const [pr, st] = await Promise.all([
+          supabase.from('projects').select('id, name, code, owner_id, awarding_date, archived_at').is('archived_at', null),
+          supabase.from('project_stages').select('id, project_id, stage_order, status, delivery_date, expected_lead_time_days, is_deadline_fixed, deadline_override, revision_label, stage_types(name)')
+        ]);
+        if (pr.error) throw pr.error;
+        projects = pr.data || []; stages = st.data || [];
+      }
+      const out = [];
+      projects.filter(p => !p.archived_at && (!p.owner_id || p.owner_id === me)).forEach(p => {
+        const list = stages.filter(s => s.project_id === p.id && !isOffPlanStage(s));
+        const miss = [];
+        if (!p.awarding_date) miss.push('sem data de adjudicação');
+        const noLead = list.filter(s => !isStageDone(s) && !s.delivery_date && !(Number(s.expected_lead_time_days) > 0) && !(s.is_deadline_fixed && s.deadline_override));
+        if (noLead.length) miss.push(`${noLead.length === 1 ? 'fase' : noLead.length + ' fases'} sem lead time (${noLead.slice(0, 3).map(phaseName).join(', ')}${noLead.length > 3 ? '…' : ''})`);
+        const noDel = list.filter(s => isStageDone(s) && !s.delivery_date);
+        if (noDel.length) miss.push(`${noDel.length === 1 ? 'fase concluída' : noDel.length + ' fases concluídas'} sem data de entrega`);
+        if (miss.length) out.push({ kind: 'data', project: p.id, title: `Dados em falta: ${String(p.name || '').replace(/<[^>]*>/g, '')}`, sub: miss.join(' · ') + '. Sem isto os prazos e atrasos não são fiáveis.', when: 'Completar' });
+      });
+      return out;
+    }
     const projectOwnerOf = p => p.projects?.owner_id ?? (devMode ? MOCK_PROJECTS.find(x => x.id === p.project_id)?.owner_id : null) ?? null;
     async function loadProjectsWithoutOwner() {
       await loadProjectStatuses();
@@ -14227,7 +14258,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         renderWeekHours(hoursEl, hours, tg);
         // Avisos de organização: horas em falta (a partir de sexta), projetos sem responsável,
         // fases em curso/seguintes sem ninguém nos projetos de que sou responsável
-        const teamAlerts = [...await meetingAlerts(milestones, me, todayKey).catch(() => []), ...await transcriptAlerts(me).catch(() => []), ...await birthdayAlerts().catch(() => []), ...await ticketAlerts(me).catch(() => []), ...await absenceAlerts(me).catch(() => []), ...radarAlerts, ...lawAlerts, ...debtAlerts, ...npsAlerts, ...camaraAlerts];
+        const teamAlerts = [...await meetingAlerts(milestones, me, todayKey).catch(() => []), ...await transcriptAlerts(me).catch(() => []), ...await birthdayAlerts().catch(() => []), ...await ticketAlerts(me).catch(() => []), ...await absenceAlerts(me).catch(() => []), ...await loadMissingDataAlerts(me).catch(() => []), ...radarAlerts, ...lawAlerts, ...debtAlerts, ...npsAlerts, ...camaraAlerts];
         const wd = new Date().getDay();
         const missing = missingHourDays(hours, tg);
         if ((wd === 5 || wd === 6 || wd === 0) && missing.length)
@@ -14981,6 +15012,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         steps: ['Ao chegar, abre [[Hoje]] e toca em [[Cheguei]]. O horário é das 8h às 14h, com 5 minutos de tolerância.', 'Ao sair, toca em [[Fechar o tasco]].', 'Dia em obra, na Câmara ou no cliente? Toca em **Hoje estou fora** e escreve onde: conta como a horas.', 'Folga ou férias? Toca em **Folga / férias**: esse dia não conta.', 'Esqueceste-te de marcar? Toca em [[Corrigir]] e põe a hora certa. Fica assinalado com ✎.'],
         kw: 'ponto entrada saida chegar cheguei sair picar pontualidade horario presenca atraso reuniao',
         tour: [{ go: 'nav:home', sel: '#today-punch .punch, #today-punch', text: 'Toca em «Cheguei» ao chegar e em «Fechar o tasco» ao sair.' }] },
+      { id: 'prazos-atrasos', cat: 'proj', ctx: ['detail', 'finance:time', 'home'],
+        q: 'a app calcula os prazos e os atrasos das fases',
+        a: 'Cada fase tem o seu lead time em dias úteis. A primeira conta da adjudicação; as seguintes, do fim da anterior. Se uma fase entrega tarde, as seguintes passam a contar da entrega real; se entrega cedo, o plano não se adianta.',
+        steps: ['A **primeira fase** conta a partir da **data de adjudicação** do projeto.', 'Cada fase seguinte começa quando a anterior acaba. **Entregue com atraso**: a seguinte conta a partir da entrega real (cada fase é avaliada pelo seu próprio tempo). **Entregue antes**: o plano mantém-se.', 'Fase **por entregar e já fora de prazo**: as seguintes deslizam até hoje, até ela ser entregue.', 'Esperas pelo cliente ou pela Câmara (ex.: aprovação do Estudo Prévio) marcam-se como **pausa**: enquanto estiver aberta, empurra os prazos das fases que estão à frente.', 'Um **prazo fixo** posto à mão substitui o cálculo.', 'Sem data de adjudicação, sem lead time ou sem data de entrega o cálculo falha: a [[Hoje]] mostra **Dados em falta** ao responsável do projeto.'],
+        kw: 'prazo prazos atraso atrasos lead time entrega previsto calculo adjudicacao pausa aprovacao dados em falta fiavel',
+        tour: [{ go: 'nav:home', sel: '#today-alerts:not([hidden])', text: 'Os avisos «Dados em falta» dizem o que completar.' }] },
       { id: 'daybreak', cat: 'horas', ctx: ['home', 'finance:daybreak'],
         q: 'faço o Daybreak (reunião das 8:40, plano do dia e fecho)',
         a: 'Ao sair, o «Fechar o tasco» abre o fecho do dia: o que ficou feito e as horas não planeadas e de retrabalho. De manhã, planeia o dia no cartão Daybreak da Hoje. Às 8:40, «Começar o Daybreak» passa pessoa a pessoa.',
