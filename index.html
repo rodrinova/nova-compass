@@ -19246,7 +19246,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           if (e.date >= tsWeekStart) l.origin = 'week';
         });
         phases.forEach(p => addLine({ project_id: p.project_id, stage_id: p.id, billable: true }, 'phase'));
-        (tsExtraLines[tsWeekStart] || []).forEach(l => addLine(l, 'extra'));
+        // linha acrescentada à mão: passa a linha da semana mesmo que já fosse sugestão (fase minha ou usada há pouco)
+        (tsExtraLines[tsWeekStart] || []).forEach(l => { const x = addLine(l, 'extra'); if (x.origin !== 'week') x.origin = 'extra'; });
         const hidden = tsHidden[tsWeekStart] || new Set();
         const lineList = [...lines.values()].filter(l => l.origin === 'week' || (l.origin === 'extra' && !hidden.has(l.key)));
         const suggest = [...lines.values()].filter(l => l.origin === 'phase' || l.origin === 'recent').sort((a, b) => (a.origin === 'phase' ? 0 : 1) - (b.origin === 'phase' ? 0 : 1)).slice(0, 8);
