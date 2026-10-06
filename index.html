@@ -2808,7 +2808,7 @@
   /* ---- páginas: entram a subir e a focar ---- */
   @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
   @keyframes kPage { from { opacity: 0; transform: translateY(16px) scale(.995); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
-  #home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #feas-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view, #help-view {
+  #home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #feas-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view, #help-view, #tickets-view {
     animation: kPage .5s var(--expo) both; }
   .anim-in :is(.gantt-wrap, .hero-card, .fg, .tax-card, .stat-tile, .hs-tile, .kpi, .project-row, .tx-row, .rec-row, .ata-entry, .client-card, .hrow) { animation-duration: .55s; animation-timing-function: var(--expo); }
   .anim-in :is(.gantt-wrap, .hero-card, .fg, .tax-card, .stat-tile, .hs-tile, .kpi, .project-row, .tx-row, .rec-row, .ata-entry, .hrow):nth-child(n+7) { animation-delay: 200ms; }
@@ -2939,8 +2939,8 @@
   @keyframes kGhostOut { to { opacity: 0; transform: scale(.975); filter: blur(6px); } }
   @keyframes kGhostLeft { to { opacity: 0; transform: translateX(-48px) scale(.98); filter: blur(5px); } }
   @keyframes kGhostRight { to { opacity: 0; transform: translateX(48px) scale(.98); filter: blur(5px); } }
-  .content-area[data-kdir="1"] > :is(#home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #feas-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view, #help-view) { animation-name: kPageR; }
-  .content-area[data-kdir="-1"] > :is(#home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #feas-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view, #help-view) { animation-name: kPageL; }
+  .content-area[data-kdir="1"] > :is(#home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #feas-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view, #help-view, #tickets-view) { animation-name: kPageR; }
+  .content-area[data-kdir="-1"] > :is(#home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #feas-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view, #help-view, #tickets-view) { animation-name: kPageL; }
   @keyframes kPageR { from { opacity: 0; transform: translateX(56px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
   @keyframes kPageL { from { opacity: 0; transform: translateX(-56px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
 
@@ -2955,6 +2955,38 @@
 
   .k-fi { animation: kFill .6s var(--expo) both; animation-delay: var(--kd, 0ms); }
   @keyframes kFill { from { opacity: 0; transform: translateY(10px); filter: blur(3px); } to { opacity: 1; transform: none; filter: none; } }
+  /* ---- Melhorias (tickets) ---- */
+  .tk-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .tk-bar .segmented { margin: 0; } .tk-bar .segmented em { font-style: normal; color: var(--text-3); margin-left: 3px; font-size: 12px; }
+  .tk-new { width: auto; margin: 0; padding: 0 18px; }
+  #tk-kinds { margin-bottom: 14px; }
+  .tk-list { display: grid; gap: 10px; }
+  .tk-card { display: flex; gap: 14px; align-items: center; cursor: pointer; margin: 0; }
+  .tk-card:hover { box-shadow: var(--shadow-lift); }
+  .tk-vote { flex: none; display: grid; place-items: center; width: 48px; height: 52px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-2); cursor: pointer; line-height: 1; }
+  .tk-vote span { font-size: 11px; } .tk-vote b { font-size: 16px; font-variant-numeric: tabular-nums; }
+  .tk-vote.on { background: var(--accent-soft); border-color: var(--accent-muted); color: var(--accent); }
+  .tk-vote.pop { animation: kVote .45s var(--spring); }
+  @keyframes kVote { 40% { transform: scale(1.18); } }
+  .tk-main { min-width: 0; flex: 1; display: grid; gap: 3px; }
+  .tk-top { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .tk-kind, .tk-st, .tk-urg { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; letter-spacing: .01em; }
+  .tk-kind.k-bug { background: var(--danger-soft); color: var(--danger); } .tk-kind.k-improvement { background: var(--accent-soft); color: var(--accent); } .tk-kind.k-idea { background: var(--warning-soft); color: var(--warning); }
+  .tk-urg { background: var(--danger); color: #fff; }
+  .tk-st { background: var(--surface-2); color: var(--text-2); margin-left: auto; } .tk-st.s-planned { background: var(--accent-soft); color: var(--accent); } .tk-st.s-done { background: var(--success-soft); color: var(--success); } .tk-st.s-rejected { opacity: .7; text-decoration: line-through; }
+  .tk-title { font-size: 15px; font-weight: 650; letter-spacing: -.01em; overflow-wrap: anywhere; }
+  .tk-main small { color: var(--text-3); font-size: 12px; }
+  .tk-shot { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 8px 12px; border: 1.5px dashed var(--border-strong); border-radius: 12px; cursor: pointer; color: var(--text-2); font-size: 14px; }
+  .tk-shot img { width: 72px; height: 48px; object-fit: cover; border-radius: 8px; }
+  .tk-seg { display: flex; flex-wrap: wrap; margin-bottom: 4px; }
+  .tk-d-title { font-size: 20px; font-weight: 700; letter-spacing: -.02em; margin-bottom: 4px; }
+  .tk-d-meta { font-size: 13px; color: var(--text-2); margin-bottom: 10px; }
+  .tk-d-body { white-space: pre-wrap; font-size: 15px; line-height: 1.5; margin: 0 0 10px; }
+  .tk-d-shot img { display: block; max-width: 100%; max-height: 260px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 8px; }
+  .tk-coms { display: grid; gap: 8px; }
+  .tk-com { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: baseline; font-size: 14px; padding: 8px 10px; border-radius: 10px; background: var(--surface-2); }
+  .tk-com small { color: var(--text-3); font-size: 12px; } .tk-com span { overflow-wrap: anywhere; }
+  .tk-addc { display: flex; gap: 8px; margin-top: 10px; } .tk-addc .form-input { flex: 1; } .tk-addc .secondary-btn { width: auto; margin: 0; padding: 0 14px; }
   /* ---- Investment Intelligence: página do investidor (para mostrar ao cliente) ---- */
   .iv-head .card-head { align-items: flex-end; flex-wrap: wrap; }
   .iv-head .card-head h2 { font-size: clamp(28px, 3.6vw, 46px); font-weight: 700; letter-spacing: -.04em; line-height: 1.05; }
@@ -3383,6 +3415,7 @@
         <button type="button" class="nav-item" data-nav="despesas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12v17l-3-2-3 2-3-2-3 2z"/><path d="M9 8.5h6M9 12h6M9 15.5h3"/></svg><span>Despesas</span></button>
       </nav>
       <div class="side-foot">
+        <button type="button" class="nav-item" data-nav="tickets"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 00-3.6 10.8c.6.5 1 1.2 1 2V16h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0012 3z"/></svg><span>Melhorias</span></button>
         <button type="button" class="nav-item" data-open-pres><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8.5 20h7"/><path d="M10 8.2v3.6l3.2-1.8z" fill="currentColor"/></svg><span>Modo apresentação</span></button>
         <button type="button" class="nav-item" data-nav="help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.3a2.5 2.5 0 014.8.9c0 1.7-2.4 2.2-2.4 3.6"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg><span>Ajuda</span></button>
         <button type="button" class="nav-item" data-nav="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.5 7.5 0 000-2l1.9-1.5-2-3.4-2.2.9a7.6 7.6 0 00-1.7-1L15 3.5h-4l-.4 2.5a7.6 7.6 0 00-1.7 1l-2.2-.9-2 3.4L6.6 11a7.5 7.5 0 000 2l-1.9 1.5 2 3.4 2.2-.9a7.6 7.6 0 001.7 1L11 20.5h4l.4-2.5a7.6 7.6 0 001.7-1l2.2.9 2-3.4z"/></svg><span>Definições</span></button>
@@ -3409,6 +3442,7 @@
         <button type="button" class="nav-item" data-nav="finance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5h16"/><path d="M6.5 16v-4M11 16V8M15.5 16v-6M20 16V5"/></svg><span>Mission Control</span></button>
       <button type="button" class="nav-item" data-nav="atas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h7l4 4v12a1 1 0 01-1 1H7a1 1 0 01-1-1v-15a1 1 0 011-1z"/><path d="M9 11h6M9 14.5h6M9 18h3.5"/></svg><span>Atas</span></button>
       <button type="button" class="nav-item" data-nav="despesas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12v17l-3-2-3 2-3-2-3 2z"/><path d="M9 8.5h6M9 12h6M9 15.5h3"/></svg><span>Despesas</span></button>
+      <button type="button" class="nav-item" data-nav="tickets"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 00-3.6 10.8c.6.5 1 1.2 1 2V16h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0012 3z"/></svg><span>Melhorias</span></button>
       <button type="button" class="nav-item" data-open-pres><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8.5 20h7"/><path d="M10 8.2v3.6l3.2-1.8z" fill="currentColor"/></svg><span>Modo apresentação</span></button>
       <button type="button" class="nav-item" data-nav="help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.3a2.5 2.5 0 014.8.9c0 1.7-2.4 2.2-2.4 3.6"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg><span>Ajuda</span></button>
       <button type="button" class="nav-item" data-nav="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.5 7.5 0 000-2l1.9-1.5-2-3.4-2.2.9a7.6 7.6 0 00-1.7-1L15 3.5h-4l-.4 2.5a7.6 7.6 0 00-1.7 1l-2.2-.9-2 3.4L6.6 11a7.5 7.5 0 000 2l-1.9 1.5 2 3.4 2.2-.9a7.6 7.6 0 001.7 1L11 20.5h4l.4-2.5a7.6 7.6 0 001.7-1l2.2.9 2-3.4z"/></svg><span>Definições</span></button>
@@ -3433,7 +3467,7 @@
         </button>
         <h1 id="nav-title">Hoje</h1>
       </div>
-      <div class="nav-right"><button type="button" class="nav-icon-btn" id="top-help-btn" aria-label="Ajuda deste ecrã" title="Ajuda deste ecrã (?)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.3a2.5 2.5 0 014.8.9c0 1.7-2.4 2.2-2.4 3.6"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg></button>
+      <div class="nav-right"><button type="button" class="nav-icon-btn" id="top-idea-btn" aria-label="Sugerir melhoria" title="Sugerir melhoria ou reportar erro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 00-3.6 10.8c.6.5 1 1.2 1 2V16h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0012 3z"/></svg></button><button type="button" class="nav-icon-btn" id="top-help-btn" aria-label="Ajuda deste ecrã" title="Ajuda deste ecrã (?)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.3a2.5 2.5 0 014.8.9c0 1.7-2.4 2.2-2.4 3.6"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg></button>
       <button type="button" class="nav-icon-btn" id="top-search-btn" data-open-cmdk aria-label="Pesquisar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg></button></div>
     </header>
     <div class="content-area">
@@ -3475,6 +3509,7 @@
       <div id="feas-view" style="display:none;"></div>
       <div id="proposal-view" style="display:none;"></div>
       <div id="help-view" style="display:none;"></div>
+      <div id="tickets-view" style="display:none;"></div>
       <div id="billing-view" style="display:none;"><div id="billing-container"></div></div>
       <div id="finance-view" style="display:none;">
         <div class="mc-head">
@@ -4192,7 +4227,7 @@
       const navKey = newState.name === 'detail' ? 'projects' : newState.name === 'client' ? 'clients' : ['plot', 'proposal', 'feas'].includes(newState.name) ? 'opps' : newState.name;
       document.querySelectorAll('[data-nav]').forEach(el => el.classList.toggle('active', el.dataset.nav === navKey));
       document.getElementById('more-sheet').classList.remove('open');
-      document.getElementById('tab-more').classList.toggle('active', ['clients', 'opps', 'billing', 'finance', 'atas', 'despesas', 'settings', 'help'].includes(navKey));
+      document.getElementById('tab-more').classList.toggle('active', ['clients', 'opps', 'billing', 'finance', 'atas', 'despesas', 'settings', 'help', 'tickets'].includes(navKey));
       requestAnimationFrame(() => syncNavInd());
       syncLargeTitle(newState.name);
       if (!sameView) window.scrollTo(0, 0);   // voltar a carregar a mesma página não salta para o topo
@@ -4330,7 +4365,7 @@
 
     function hideAllViews() {
       kGhostOut();
-      ['home-view', 'projects-view', 'clients-view', 'client-view', 'opps-view', 'plot-view', 'feas-view', 'proposal-view', 'billing-view', 'finance-view', 'agenda-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view', 'despesas-view', 'help-view'].forEach(id => {
+      ['home-view', 'projects-view', 'clients-view', 'client-view', 'opps-view', 'plot-view', 'feas-view', 'proposal-view', 'billing-view', 'finance-view', 'agenda-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view', 'despesas-view', 'help-view', 'tickets-view'].forEach(id => {
         document.getElementById(id).style.display = 'none';
       });
     }
@@ -5486,7 +5521,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       settings: openSettingsModule,
       help: () => openHelpModule(),
       agenda: () => openAgendaModule(),
-      opps: () => openOppsModule()
+      opps: () => openOppsModule(),
+      tickets: () => openTicketsModule()
     };
     document.querySelectorAll('[data-nav]').forEach(el => el.addEventListener('click', () => {
       navStack = [];
@@ -13334,8 +13370,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       teamRows.forEach(r => {
         const urgent = r.late ? 'late' : (r.kind === 'camara' || r.kind === 'debt' || r.kind === 'meet' || (r.kind === 'bday' && r.today)) ? 'soon' : '';
         items.push({ pri: r.late || r.kind === 'meet' ? 0 : urgent ? 1 : 2, date: r.due || '9999', html: `
-          <div class="alert-row team${urgent ? ' ' + urgent : ''}" data-alert-team="${r.kind}"${r.note ? ` data-note="${escapeHtml(r.note.id)}"` : ''}${r.project ? ` data-project="${escapeHtml(r.project)}"` : ''}${r.nps ? ` data-nps="${escapeHtml(r.nps)}"` : ''}${r.client ? ` data-client="${escapeHtml(r.client)}"` : ''}${r.url ? ` data-url="${escapeHtml(r.url)}" role="link" tabindex="0"` : ''}>
-            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : r.kind === 'nps' ? '★' : r.kind === 'debt' ? '€' : r.kind === 'law' ? '§' : r.kind === 'radar' ? '◎' : r.kind === 'meet' ? '▶' : r.kind === 'transcript' ? '≡' : r.kind === 'bday' ? '✦' : '+'}</span>
+          <div class="alert-row team${urgent ? ' ' + urgent : ''}" data-alert-team="${r.kind}"${r.note ? ` data-note="${escapeHtml(r.note.id)}"` : ''}${r.project ? ` data-project="${escapeHtml(r.project)}"` : ''}${r.nps ? ` data-nps="${escapeHtml(r.nps)}"` : ''}${r.client ? ` data-client="${escapeHtml(r.client)}"` : ''}${r.ticket ? ` data-ticket="${escapeHtml(r.ticket)}"` : ''}${r.url ? ` data-url="${escapeHtml(r.url)}" role="link" tabindex="0"` : ''}>
+            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : r.kind === 'nps' ? '★' : r.kind === 'debt' ? '€' : r.kind === 'law' ? '§' : r.kind === 'radar' ? '◎' : r.kind === 'meet' ? '▶' : r.kind === 'transcript' ? '≡' : r.kind === 'bday' ? '✦' : r.kind === 'ticket' ? '💡' : '+'}</span>
             <span class="alert-text"><b>${escapeHtml(r.title)}</b><span>${escapeHtml(r.sub)}</span></span>
             <span class="alert-when">${escapeHtml(r.when)}</span>
           </div>` });
@@ -13386,6 +13422,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const k = r.dataset.alertTeam;
         if (k === 'meet') window.open(r.dataset.url, '_blank', 'noopener');
         else if (k === 'bday') openClientDetail(r.dataset.client);
+        else if (k === 'ticket') openTicketDetail(r.dataset.ticket);
         else if (k === 'transcript') { const n = teamRows.find(x => x.note && String(x.note.id) === r.dataset.note)?.note; if (n) openNewAtaModal(null, null, n, () => renderToday()); }
         else if (k === 'hours') openHorasModule();
         else if (k === 'owner') openProjectsModule();
@@ -13822,7 +13859,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         renderWeekHours(hoursEl, hours, tg);
         // Avisos de organização: horas em falta (a partir de sexta), projetos sem responsável,
         // fases em curso/seguintes sem ninguém nos projetos de que sou responsável
-        const teamAlerts = [...await meetingAlerts(milestones, me, todayKey).catch(() => []), ...await transcriptAlerts(me).catch(() => []), ...await birthdayAlerts().catch(() => []), ...radarAlerts, ...lawAlerts, ...debtAlerts, ...npsAlerts, ...camaraAlerts];
+        const teamAlerts = [...await meetingAlerts(milestones, me, todayKey).catch(() => []), ...await transcriptAlerts(me).catch(() => []), ...await birthdayAlerts().catch(() => []), ...await ticketAlerts(me).catch(() => []), ...radarAlerts, ...lawAlerts, ...debtAlerts, ...npsAlerts, ...camaraAlerts];
         const wd = new Date().getDay();
         const missing = missingHourDays(hours, tg);
         if ((wd === 5 || wd === 6 || wd === 0) && missing.length)
@@ -14576,6 +14613,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         steps: ['Ao chegar, abre [[Hoje]] e toca em [[Cheguei]]. O horário é das 8h às 14h, com 5 minutos de tolerância.', 'Ao sair, toca em [[Fechar o tasco]].', 'Dia em obra, na Câmara ou no cliente? Toca em **Hoje estou fora** e escreve onde: conta como a horas.', 'Folga ou férias? Toca em **Folga / férias**: esse dia não conta.', 'Esqueceste-te de marcar? Toca em [[Corrigir]] e põe a hora certa. Fica assinalado com ✎.'],
         kw: 'ponto entrada saida chegar cheguei sair picar pontualidade horario presenca atraso reuniao',
         tour: [{ go: 'nav:home', sel: '#today-punch .punch, #today-punch', text: 'Toca em «Cheguei» ao chegar e em «Fechar o tasco» ao sair.' }] },
+      { id: 'melhorias', cat: 'horas', ctx: ['tickets', 'home'],
+        q: 'sugiro uma melhoria ou reporto um erro na app',
+        a: 'Toca na lâmpada 💡 no topo de qualquer ecrã (ou ⌘K → "Sugerir melhoria"). Escolhe Erro, Melhoria ou Ideia, escreve numa frase e envia.',
+        steps: ['Em qualquer ecrã, toca na **lâmpada 💡** no canto superior direito.', 'Escolhe o tipo (**Erro**, **Melhoria** ou **Ideia**), escreve o que é e, se quiseres, junta uma captura de ecrã.', 'A app guarda sozinha onde estavas e o aparelho, para ser fácil perceber.', 'Na página [[Melhorias]] vês todos os pedidos: vota ▲ nos que também queres, comenta e muda o estado (Novo → Em análise → Planeado → Feito).', 'Quando o estado de um pedido teu muda, aparece um aviso na [[Hoje]].'],
+        kw: 'melhoria melhorias ticket tickets erro bug ideia sugestao sugerir pedido feedback reportar problema votar',
+        tour: [{ go: 'nav:home', sel: '#top-idea-btn', text: 'A lâmpada abre o formulário em qualquer ecrã.' }] },
       { id: 'chegar-tarde', cat: 'horas', ctx: ['home', 'finance:time'],
         q: 'combino chegar mais tarde (banco de horas)',
         a: 'Se combinaste com a equipa chegar mais tarde, marca-o antes da hora de entrada desse dia. Não conta como atraso: o tempo vai para o banco de horas e compensa-se ficando depois da saída noutros dias.',
@@ -17973,6 +18016,220 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       }
     }
 
+    // ================= MELHORIAS: tickets da equipa (erros, melhorias, ideias) =================
+    // Qualquer pessoa submete de qualquer ecrã (botão 💡 no topo, menu ou ⌘K); a app guarda onde estava e o aparelho.
+    // Página "Melhorias": votos (+1), comentários e estados. Quem submeteu é avisado na Hoje quando o estado muda.
+    const TK_KIND = { bug: ['Erro', '⚠'], improvement: ['Melhoria', '↗'], idea: ['Ideia', '✦'] };
+    const TK_PRIO = { low: 'Baixa', normal: 'Normal', urgent: 'Urgente' };
+    const TK_STATUS = { new: 'Novo', review: 'Em análise', planned: 'Planeado', done: 'Feito', rejected: 'Recusado' };
+    const TK_OPEN = ['new', 'review', 'planned'];
+    let mockTickets = [
+      { id: 'tk-1', kind: 'improvement', title: 'Exportar a agenda da semana em PDF', body: 'Para levar para obra em papel.', priority: 'normal', status: 'planned', page: 'Agenda', device: 'Mac · 1440 px', created_by: 'm2', created_at: '2026-10-01T09:12:00Z', author_seen: true },
+      { id: 'tk-2', kind: 'bug', title: 'O separador Câmara demora a abrir no iPhone', body: '', priority: 'urgent', status: 'new', page: 'Projeto', device: 'iPhone · 390 px', created_by: 'mock-member-1', created_at: '2026-10-05T16:40:00Z', author_seen: true }
+    ];
+    let mockTicketVotes = [{ ticket_id: 'tk-1', member_id: 'm3' }, { ticket_id: 'tk-1', member_id: 'mock-member-1' }];
+    let mockTicketComments = [{ id: 'tc-1', ticket_id: 'tk-1', member_id: 'mock-member-1', body: 'Boa ideia, fica para a próxima ronda.', created_at: '2026-10-02T10:00:00Z' }];
+    let tkFilter = 'open', tkKind = 'all';
+
+    async function loadTickets() {
+      if (devMode) return { tickets: mockTickets, votes: mockTicketVotes, comments: mockTicketComments };
+      const [t, v, c] = await Promise.all([
+        supabase.from('app_tickets').select('id, kind, title, body, priority, status, status_note, status_changed_at, author_seen, page, device, created_by, created_at').order('created_at', { ascending: false }),
+        supabase.from('app_ticket_votes').select('ticket_id, member_id'),
+        supabase.from('app_ticket_comments').select('id, ticket_id, member_id, body, created_at').order('created_at')
+      ]);
+      if (t.error) throw t.error;
+      return { tickets: t.data || [], votes: v.data || [], comments: c.data || [] };
+    }
+    const tkDevice = () => {
+      const ua = navigator.userAgent;
+      const d = /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android' : /Mac/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'Windows' : /Linux/.test(ua) ? 'Linux' : 'Outro';
+      return `${d} · ${window.innerWidth} px${window.matchMedia('(display-mode: standalone)').matches || navigator.standalone ? ' · app' : ''}`;
+    };
+    // Captura reduzida (máx. 1400 px, JPEG) para não pesar na base de dados
+    function tkShrink(file) {
+      return new Promise((res, rej) => {
+        const img = new Image(), url = URL.createObjectURL(file);
+        img.onload = () => {
+          const k = Math.min(1, 1400 / Math.max(img.width, img.height));
+          const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          URL.revokeObjectURL(url);
+          res(c.toDataURL('image/jpeg', 0.72));
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Imagem inválida')); };
+        img.src = url;
+      });
+    }
+
+    // Submeter (de qualquer ecrã)
+    function openTicketModal(after) {
+      const page = (currentViewState?.name === 'tickets' ? '' : document.getElementById('nav-title')?.textContent || '').trim();
+      let kind = 'improvement', prio = 'normal', shot = null;
+      openQuickModal('Sugerir melhoria', `
+        <div class="segmented tk-seg" id="tk-kind">${Object.entries(TK_KIND).map(([k, [l, i]]) => `<button type="button" data-k="${k}"${k === kind ? ' class="active"' : ''}>${i} ${l}</button>`).join('')}</div>
+        <label class="field-label" for="tk-title">O que é?</label>
+        <input type="text" id="tk-title" class="form-input" maxlength="140" placeholder="Ex.: Poder exportar a agenda em PDF">
+        <label class="field-label" for="tk-body">Detalhes <span class="muted">(opcional)</span></label>
+        <textarea id="tk-body" class="form-input" rows="4" placeholder="O que acontece, o que esperavas, como se faria melhor…"></textarea>
+        <label class="field-label">Prioridade</label>
+        <div class="segmented" id="tk-prio">${Object.entries(TK_PRIO).map(([k, l]) => `<button type="button" data-p="${k}"${k === prio ? ' class="active"' : ''}>${l}</button>`).join('')}</div>
+        <label class="field-label">Captura de ecrã <span class="muted">(opcional)</span></label>
+        <label class="tk-shot" id="tk-shot-drop"><input type="file" id="tk-shot" accept="image/*" hidden><span id="tk-shot-txt">Escolher imagem</span></label>
+        <div class="field-hint">${page ? `Fica registado que estavas em <b>${escapeHtml(page)}</b> (${escapeHtml(tkDevice())}).` : `Fica registado o aparelho (${escapeHtml(tkDevice())}).`}</div>
+        <button type="button" class="primary-btn" id="tk-save">Enviar</button>
+        <div id="tk-msg" class="form-msg"></div>`);
+      document.querySelectorAll('#tk-kind [data-k]').forEach(b => b.addEventListener('click', () => { kind = b.dataset.k; document.querySelectorAll('#tk-kind [data-k]').forEach(x => x.classList.toggle('active', x === b)); }));
+      document.querySelectorAll('#tk-prio [data-p]').forEach(b => b.addEventListener('click', () => { prio = b.dataset.p; document.querySelectorAll('#tk-prio [data-p]').forEach(x => x.classList.toggle('active', x === b)); }));
+      document.getElementById('tk-shot').addEventListener('change', async e => {
+        const f = e.target.files?.[0]; if (!f) return;
+        try {
+          shot = await tkShrink(f);
+          document.getElementById('tk-shot-drop').innerHTML = `<img src="${shot}" alt="Captura"><span>Trocar imagem</span><input type="file" id="tk-shot" accept="image/*" hidden>`;
+          document.getElementById('tk-shot').addEventListener('change', e2 => { e.target.files = e2.target.files; e.target.dispatchEvent(new Event('change')); });
+        } catch (err) { formError('tk-msg', err.message); }
+      });
+      setTimeout(() => document.getElementById('tk-title')?.focus(), 80);
+      document.getElementById('tk-save').addEventListener('click', async () => {
+        const title = document.getElementById('tk-title').value.trim();
+        if (!title) return formError('tk-msg', 'Escreve numa frase o que é.');
+        const btn = document.getElementById('tk-save'); btn.disabled = true;
+        try {
+          const me = await getCurrentMember();
+          await dbInsert('app_tickets', { kind, title, body: valOrNull(document.getElementById('tk-body').value.trim()), priority: prio, page: page || null, device: tkDevice(), screenshot: shot, created_by: me?.id || null, created_at: new Date().toISOString(), status: 'new', author_seen: true }, mockTickets);
+          closeQuickModal();
+          showToast('Obrigado! Ficou registado em Melhorias.');
+          haptic();
+          if (after) after();
+          else if (currentViewState?.name === 'tickets') renderTickets();
+        } catch (err) { btn.disabled = false; formError('tk-msg', 'Não foi possível enviar: ' + err.message); }
+      });
+    }
+
+    function openTicketsModule() {
+      pushCurrentView({ name: 'tickets' });
+      document.getElementById('nav-title').textContent = 'Melhorias';
+      hideAllViews();
+      document.getElementById('tickets-view').style.display = 'block';
+      renderTickets();
+    }
+    async function renderTickets() {
+      const box = document.getElementById('tickets-view');
+      beginLoad(box, 'tickets', '<div class="gantt-wrap">' + SKELETON(5) + '</div>');
+      try {
+        const [data, members, me] = await Promise.all([loadTickets(), loadAllMembers(), getCurrentMember()]);
+        const name = id => attFirst(members.find(m => m.id === id)?.name || '') || '—';
+        const votes = id => data.votes.filter(v => v.ticket_id === id);
+        const ncom = id => data.comments.filter(c => c.ticket_id === id).length;
+        const counts = { open: data.tickets.filter(t => TK_OPEN.includes(t.status)).length, done: data.tickets.filter(t => t.status === 'done').length, rejected: data.tickets.filter(t => t.status === 'rejected').length, all: data.tickets.length };
+        const list = data.tickets
+          .filter(t => tkFilter === 'all' || (tkFilter === 'open' ? TK_OPEN.includes(t.status) : t.status === tkFilter))
+          .filter(t => tkKind === 'all' || t.kind === tkKind)
+          .sort((a, b) => (b.priority === 'urgent') - (a.priority === 'urgent') || votes(b.id).length - votes(a.id).length || String(b.created_at).localeCompare(String(a.created_at)));
+        box.innerHTML = `
+          <div class="op-listbar tk-bar">
+            <div class="segmented" id="tk-filter">${[['open', 'Abertos'], ['done', 'Feitos'], ['rejected', 'Recusados'], ['all', 'Todos']].map(([k, l]) => `<button type="button" data-f="${k}"${k === tkFilter ? ' class="active"' : ''}>${l} <em>${counts[k]}</em></button>`).join('')}</div>
+            <button type="button" class="primary-btn tk-new" id="tk-new">+ Sugerir melhoria</button>
+          </div>
+          <div class="band-chips" id="tk-kinds">${[['all', 'Tudo'], ...Object.entries(TK_KIND).map(([k, [l, i]]) => [k, `${i} ${l}s`])].map(([k, l]) => `<button type="button" class="band-chip${k === tkKind ? ' on' : ''}" data-kk="${k}">${escapeHtml(l)}</button>`).join('')}</div>
+          ${list.length ? `<div class="tk-list">${list.map(t => {
+            const v = votes(t.id), mine = !!me && v.some(x => x.member_id === me.id);
+            return `<div class="gantt-wrap tk-card k-${t.kind}" data-tk="${escapeHtml(t.id)}" role="button" tabindex="0">
+              <button type="button" class="tk-vote${mine ? ' on' : ''}" data-vote="${escapeHtml(t.id)}" aria-label="${mine ? 'Retirar voto' : 'Votar'}" title="${mine ? 'Retirar o teu voto' : 'Também quero isto'}"><span>▲</span><b>${v.length}</b></button>
+              <div class="tk-main">
+                <div class="tk-top"><span class="tk-kind k-${t.kind}">${TK_KIND[t.kind][1]} ${TK_KIND[t.kind][0]}</span>${t.priority === 'urgent' ? '<span class="tk-urg">Urgente</span>' : ''}<span class="tk-st s-${t.status}">${TK_STATUS[t.status]}</span></div>
+                <b class="tk-title">${escapeHtml(t.title)}</b>
+                <small>${escapeHtml(name(t.created_by))} · ${escapeHtml(fmtDayMonth(String(t.created_at).slice(0, 10)))}${t.page ? ' · em ' + escapeHtml(t.page) : ''}${ncom(t.id) ? ` · 💬 ${ncom(t.id)}` : ''}</small>
+              </div></div>`;
+          }).join('')}</div>` : `<div class="gantt-wrap"><div class="gantt-empty">${tkFilter === 'open' ? 'Nada em aberto. Tens uma ideia? Toca em <b>Sugerir melhoria</b>.' : 'Nada por aqui.'}</div></div>`}
+          <div class="field-hint">Ordem: urgentes primeiro, depois os mais votados. Toca num pedido para ver detalhes, comentar ou mudar o estado.</div>`;
+        box.querySelectorAll('#tk-filter [data-f]').forEach(b => b.addEventListener('click', () => { tkFilter = b.dataset.f; renderTickets(); }));
+        box.querySelectorAll('#tk-kinds [data-kk]').forEach(b => b.addEventListener('click', () => { tkKind = b.dataset.kk; renderTickets(); }));
+        document.getElementById('tk-new').addEventListener('click', () => openTicketModal());
+        box.querySelectorAll('[data-vote]').forEach(b => b.addEventListener('click', async e => {
+          e.stopPropagation();
+          if (!me) return;
+          const id = b.dataset.vote, on = b.classList.contains('on');
+          b.classList.toggle('on', !on); b.querySelector('b').textContent = String(Number(b.querySelector('b').textContent) + (on ? -1 : 1));
+          b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
+          try {
+            if (devMode) { if (on) mockTicketVotes = mockTicketVotes.filter(x => !(x.ticket_id === id && x.member_id === me.id)); else mockTicketVotes.push({ ticket_id: id, member_id: me.id }); }
+            else { const r = on ? await supabase.from('app_ticket_votes').delete().eq('ticket_id', id).eq('member_id', me.id) : await supabase.from('app_ticket_votes').insert({ ticket_id: id, member_id: me.id }); if (r.error) throw r.error; }
+          } catch (err) { showToast('Não foi possível votar: ' + err.message, { type: 'error' }); renderTickets(); }
+        }));
+        box.querySelectorAll('[data-tk]').forEach(c => c.addEventListener('click', () => openTicketDetail(c.dataset.tk)));
+      } catch (err) {
+        box.innerHTML = `<div class="error-box">${/app_tickets/.test(err.message || '') ? 'A tabela das melhorias ainda não existe na base de dados.' : 'Não foi possível carregar: ' + escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    // Detalhe: texto, captura, estado (qualquer pessoa da equipa) e comentários
+    async function openTicketDetail(id) {
+      let data, members, me;
+      try { [data, members, me] = await Promise.all([loadTickets(), loadAllMembers(), getCurrentMember()]); }
+      catch (err) { showToast('Não foi possível abrir: ' + err.message, { type: 'error' }); return; }
+      const t = data.tickets.find(x => String(x.id) === String(id));
+      if (!t) { showToast('Este pedido já não existe.', { type: 'error' }); return; }
+      let shot = t.screenshot;
+      if (!devMode && shot === undefined) { const r = await supabase.from('app_tickets').select('screenshot').eq('id', id).maybeSingle(); shot = r.data?.screenshot || null; }
+      // quem submeteu já viu a mudança de estado
+      if (me && t.created_by === me.id && t.author_seen === false) { dbUpdate('app_tickets', t.id, { author_seen: true }, mockTickets).catch(() => {}); }
+      const name = mid => members.find(m => m.id === mid)?.name || '—';
+      const coms = data.comments.filter(c => c.ticket_id === t.id);
+      const nv = data.votes.filter(v => v.ticket_id === t.id).length;
+      openQuickModal(`${TK_KIND[t.kind][1]} ${TK_KIND[t.kind][0]}`, `
+        <h3 class="tk-d-title">${escapeHtml(t.title)}</h3>
+        <div class="tk-d-meta">${escapeHtml(name(t.created_by))} · ${escapeHtml(fmtDayMonth(String(t.created_at).slice(0, 10)))} · ${escapeHtml(TK_PRIO[t.priority])}${t.page ? ` · em <b>${escapeHtml(t.page)}</b>` : ''}${t.device ? ` · ${escapeHtml(t.device)}` : ''} · ▲ ${nv}</div>
+        ${t.body ? `<p class="tk-d-body">${escapeHtml(t.body)}</p>` : ''}
+        ${shot ? `<a href="${shot}" target="_blank" rel="noopener" class="tk-d-shot"><img src="${shot}" alt="Captura de ecrã"></a>` : ''}
+        <label class="field-label">Estado</label>
+        <div class="segmented tk-seg" id="tk-status">${Object.entries(TK_STATUS).map(([k, l]) => `<button type="button" data-s="${k}"${k === t.status ? ' class="active"' : ''}>${l}</button>`).join('')}</div>
+        <input type="text" id="tk-note" class="form-input" maxlength="200" placeholder="Nota sobre o estado (opcional), ex.: fica para novembro" value="${escapeHtml(t.status_note || '')}">
+        <div class="section-label" style="margin-top:18px">Comentários</div>
+        <div class="tk-coms">${coms.length ? coms.map(c => `<div class="tk-com"><b>${escapeHtml(attFirst(name(c.member_id)))}</b><span>${escapeHtml(c.body)}</span><small>${escapeHtml(fmtDayMonth(String(c.created_at).slice(0, 10)))}</small></div>`).join('') : '<div class="field-hint">Ainda sem comentários.</div>'}</div>
+        <div class="tk-addc"><input type="text" id="tk-com" class="form-input" maxlength="500" placeholder="Escrever um comentário…"><button type="button" class="secondary-btn" id="tk-com-btn">Enviar</button></div>
+        <button type="button" class="primary-btn" id="tk-save-st">Guardar estado</button>
+        ${me && t.created_by === me.id ? '<button type="button" class="text-btn danger-text" id="tk-del" style="margin-top:10px;">Apagar o meu pedido</button>' : ''}
+        <div id="tk-dmsg" class="form-msg"></div>`);
+      let st = t.status;
+      document.querySelectorAll('#tk-status [data-s]').forEach(b => b.addEventListener('click', () => { st = b.dataset.s; document.querySelectorAll('#tk-status [data-s]').forEach(x => x.classList.toggle('active', x === b)); }));
+      const refresh = () => { if (currentViewState?.name === 'tickets') renderTickets(); else if (currentViewState?.name === 'home') renderToday(); };
+      document.getElementById('tk-save-st').addEventListener('click', async () => {
+        const note = valOrNull(document.getElementById('tk-note').value.trim());
+        if (st === t.status && note === (t.status_note || null)) { closeQuickModal(); return; }
+        try {
+          const patch = { status: st, status_note: note, updated_at: new Date().toISOString() };
+          if (st !== t.status) { patch.status_changed_at = patch.updated_at; patch.author_seen = !!me && t.created_by === me.id; }
+          await dbUpdate('app_tickets', t.id, patch, mockTickets);
+          closeQuickModal(); showToast(`Estado: ${TK_STATUS[st]}`); refresh();
+        } catch (err) { formError('tk-dmsg', 'Não foi possível guardar: ' + err.message); }
+      });
+      const addCom = async () => {
+        const body = document.getElementById('tk-com').value.trim();
+        if (!body) return;
+        try {
+          await dbInsert('app_ticket_comments', { ticket_id: t.id, member_id: me?.id || null, body, created_at: new Date().toISOString() }, mockTicketComments);
+          openTicketDetail(t.id); refresh();
+        } catch (err) { formError('tk-dmsg', 'Não foi possível comentar: ' + err.message); }
+      };
+      document.getElementById('tk-com-btn').addEventListener('click', addCom);
+      document.getElementById('tk-com').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addCom(); } });
+      document.getElementById('tk-del')?.addEventListener('click', async () => {
+        if (!confirm('Apagar este pedido?')) return;
+        try { await dbDelete('app_tickets', t.id, mockTickets); closeQuickModal(); showToast('Pedido apagado'); refresh(); }
+        catch (err) { formError('tk-dmsg', 'Não foi possível apagar: ' + err.message); }
+      });
+    }
+
+    // Aviso na Hoje: os meus pedidos que mudaram de estado e que ainda não vi
+    async function ticketAlerts(me) {
+      if (!me) return [];
+      let rows;
+      if (devMode) rows = mockTickets.filter(t => t.created_by === me && t.author_seen === false);
+      else { const r = await supabase.from('app_tickets').select('id, title, status, status_note, status_changed_at').eq('created_by', me).eq('author_seen', false); rows = r.error ? [] : (r.data || []); }
+      return rows.map(t => ({ kind: 'ticket', ticket: t.id, title: `O teu pedido passou a ${TK_STATUS[t.status]}: ${t.title}`, sub: t.status_note || 'Toca para ver os detalhes', when: t.status === 'done' ? 'Feito ✓' : TK_STATUS[t.status] }));
+    }
+
     // ================= KEYNOTE: movimento em toda a app =================
     // Títulos palavra a palavra, cartões que entram ao fazer scroll (e só então desenham os gráficos e contam os
     // números), destaque que desliza no menu e nos segmentados, toques com mola e vibração subtil.
@@ -18016,7 +18273,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       opps: ['Investment Intelligence', 'Do terreno ao investidor certo.'], billing: ['Faturação', 'O que faturámos, o que falta faturar e receber.'],
       finance: ['Mission Control', 'A empresa inteira, num relance.'], horas: ['Horas', 'Para onde vai o nosso tempo.'],
       agenda: ['Agenda', 'Reuniões, prazos e fases da equipa.'], atas: ['Atas', 'O que ficou dito em cada reunião.'],
-      despesas: ['Despesas', 'Gastos, recibos e reembolsos.'], settings: ['Definições', 'Como a app trabalha para a NOVA.'], help: ['Ajuda', 'Como é que…']
+      despesas: ['Despesas', 'Gastos, recibos e reembolsos.'], settings: ['Definições', 'Como a app trabalha para a NOVA.'], help: ['Ajuda', 'Como é que…'],
+      tickets: ['Melhorias', 'Erros, melhorias e ideias da equipa para a app.']
     };
     const kLargeIO = typeof IntersectionObserver === 'function' ? new IntersectionObserver(([en]) => {
       const box = document.getElementById('k-large');
@@ -18180,7 +18438,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     // Passagem entre páginas: pushCurrentView diz a direção (entrar numa ficha → da direita; voltar → da esquerda)
     var kNavDir = null;
     var K_DEEP = new Set(['detail', 'client', 'plot', 'proposal', 'feas', 'investorView']);
-    var K_VIEWS = ['home-view', 'projects-view', 'clients-view', 'client-view', 'opps-view', 'plot-view', 'feas-view', 'proposal-view', 'billing-view', 'finance-view', 'agenda-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view', 'despesas-view', 'help-view'];
+    var K_VIEWS = ['home-view', 'projects-view', 'clients-view', 'client-view', 'opps-view', 'plot-view', 'feas-view', 'proposal-view', 'billing-view', 'finance-view', 'agenda-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view', 'despesas-view', 'help-view', 'tickets-view'];
     function kGhostOut() {
       const dir = kNavDir; kNavDir = null;
       if (dir === null || reduceMotion.matches || document.getElementById('app-screen')?.style.display === 'none') return;
@@ -18748,6 +19006,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         else if (Math.abs(dx) < 8 && Math.abs(dy) < 8) (e.clientX < window.innerWidth / 3 ? presPrev : presNext)();
       });
       document.querySelectorAll('[data-open-pres]').forEach(b => b.addEventListener('click', openPresentation));
+      document.getElementById('top-idea-btn')?.addEventListener('click', () => openTicketModal());
     })();
 
     const CMDK_ACTIONS = [
@@ -18775,6 +19034,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { group: 'Ir para', label: 'Agenda', keys: 'calendario mes planeamento gantt fases cronograma', run: () => NAV_ACTIONS.agenda() },
       { group: 'Ir para', label: 'Definições', keys: 'categorias tipos configuracao', run: () => NAV_ACTIONS.settings() },
       { group: 'Ir para', label: 'Modo apresentação', keys: 'apresentacao apresentar socios slides demo explicar', run: () => openPresentation() },
+      { group: 'Criar', label: 'Sugerir melhoria ou reportar erro', keys: 'melhoria ticket erro bug ideia sugestao pedido feedback reportar', run: () => openTicketModal() },
+      { group: 'Ir para', label: 'Melhorias', keys: 'melhorias tickets pedidos erros ideias votos', run: () => NAV_ACTIONS.tickets() },
       { group: 'Ir para', label: 'Ajuda', keys: 'manual ajuda como guia instrucoes', run: () => NAV_ACTIONS.help() }
     ];
     const cmdk = document.getElementById('cmdk');
