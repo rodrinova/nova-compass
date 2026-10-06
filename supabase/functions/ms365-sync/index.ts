@@ -15,6 +15,10 @@
 //      assunto; senão fica por arquivar e a Hoje de quem organizou pede o projeto ou a categoria).
 //      Precisa ainda das permissões OnlineMeetings.Read.All, OnlineMeetingTranscript.Read.All e User.Read.All e de uma
 //      Application Access Policy do Teams (ver Definições → Office 365). Sem elas, o calendário continua a funcionar.
+//   5. AUSÊNCIAS (férias, doença, faltas, formação): no calendário da própria pessoa, dia inteiro, como "Fora do
+//      escritório" (o Teams mostra-a fora e quem marca reuniões vê). A doença fica só como "Ausente" (sem motivo).
+//   6. DAYBREAK: cria uma reunião Teams fixa para a reunião diária das 8:40 (só o link, sem evento no calendário;
+//      app_settings 'daybreak'.join_url). Precisa de OnlineMeetings.ReadWrite.All e da política do Teams.
 //   4. GRAVAÇÃO AUTOMÁTICA: nas reuniões Teams futuras organizadas pela equipa (14 dias), liga "Gravar e transcrever
 //      automaticamente" (recordAutomatically), para a transcrição arrancar sozinha. Precisa de OnlineMeetings.ReadWrite.All.
 // Precisa (Edge Functions → Secrets): MS_TENANT_ID, MS_CLIENT_ID, MS_CLIENT_SECRET — uma aplicação registada
@@ -92,7 +96,7 @@ async function g(method: string, path: string, body?: unknown, extra: Record<str
 type Want = { key: string; member: string; payload: Record<string, unknown> };
 async function desired(members: any[]) {
   const from = addDays(todayKey(), -WRITE_BACK), to = addDays(todayKey(), WRITE_AHEAD);
-  const [ms, ow, ty, pr, pres, plots, invs, gu] = await Promise.all([
+  const [ms, ow, ty, pr, pres, plots, invs, gu, ab] = await Promise.all([
     db.from("project_milestones").select("id, project_id, type_id, title, event_date, all_day, start_time, end_time, location, notes, done, auto_kind, created_by, teams_link").gte("event_date", from).lte("event_date", to),
     db.from("milestone_owners").select("milestone_id, member_id"),
     db.from("milestone_types").select("id, name, is_deadline"),
@@ -101,6 +105,7 @@ async function desired(members: any[]) {
     db.from("land_plots").select("id, name, scout_id, status"),
     db.from("investors").select("id, name"),
     db.from("milestone_guests").select("milestone_id, name, email"),
+    db.from("absences").select("id, member_id, kind, subkind, start_date, end_date").lte("start_date", to).gte("end_date", from),
   ]);
   for (const r of [ms, ow, ty, pr]) if (r.error) throw r.error;
   const types = Object.fromEntries((ty.data || []).map((t: any) => [t.id, t]));
@@ -163,7 +168,37 @@ async function desired(members: any[]) {
       start: { dateTime: `${day}T00:00:00`, timeZone: TZ }, end: { dateTime: `${addDays(day, 1)}T00:00:00`, timeZone: TZ },
       isAllDay: true, categories: [CATEGORY], showAs: "free", isReminderOn: false } });
   }
+  // Ausências: dia inteiro, "Fora do escritório", no calendário de quem está fora
+  const ABS: Record<string, string> = { vacation: "Férias", sick: "Ausente", justified: "Ausente", training: "Formação" };
+  for (const a of ab.data || []) {
+    if (!email[a.member_id]) continue;
+    out.push({ key: `a:${a.id}`, member: a.member_id, payload: {
+      subject: `${ABS[a.kind] || "Ausente"} — fora do escritório`,
+      body: body(["Marcado no NOVA Compass (Ausências)."]),
+      start: { dateTime: `${a.start_date}T00:00:00`, timeZone: TZ }, end: { dateTime: `${addDays(a.end_date, 1)}T00:00:00`, timeZone: TZ },
+      isAllDay: true, categories: [CATEGORY], showAs: "oof", isReminderOn: false, sensitivity: a.kind === "sick" ? "private" : "normal" } });
+  }
   return out;
+}
+
+// Daybreak: uma reunião Teams fixa (só o link; não aparece em nenhum calendário). Organiza o 1.º sócio por nome.
+// As reuniões criadas assim expiram 60 dias depois do fim sem uso: o fim fica a 1 ano e renova-se 30 dias antes.
+async function ensureDaybreak(members: any[]) {
+  const r = await db.from("app_settings").select("value").eq("key", "daybreak").maybeSingle();
+  const cur = r.data?.value || {};
+  if (cur.join_url && cur.manual) return { ok: true, manual: true };
+  if (cur.join_url && cur.expires && cur.expires > addDays(todayKey(), 30)) return { ok: true };
+  const org = [...members].sort((a, b) => String(a.name).localeCompare(String(b.name), "pt"))[0];
+  if (!org) return { ok: false };
+  const uid = await userId(org.email);
+  const end = addDays(todayKey(), 365);
+  const om = await g("POST", `/users/${uid}/onlineMeetings`, {
+    subject: "Daybreak — NOVA Associates",
+    startDateTime: lisbonToUtc(todayKey(), "08:40").toISOString(), endDateTime: lisbonToUtc(end, "09:00").toISOString(),
+    lobbyBypassSettings: { scope: "organization", isDialInBypassEnabled: true }, allowedPresenters: "everyone",
+  });
+  await db.from("app_settings").upsert({ key: "daybreak", value: { join_url: om.joinWebUrl, meeting_id: om.id, organizer: org.id, expires: end, at: new Date().toISOString() }, updated_at: new Date().toISOString() });
+  return { ok: true, created: true };
 }
 
 // Aviso RGPD que segue no convite enviado a pessoas de fora da equipa
@@ -443,17 +478,25 @@ Deno.serve(async (req) => {
       const from = addDays(todayKey(), -WRITE_BACK);
       (r.data || []).forEach((x: any) => { if (x.done || x.event_date < from) keep.add("m:" + x.id); });
     }
+    // Ausências já passadas ficam no calendário (só sai do Outlook a que foi apagada na app)
+    const goneAbs = [...new Set(links.filter((l: any) => l.source_key.startsWith("a:") && !wanted.has(l.source_key)).map((l: any) => l.source_key.slice(2)))];
+    if (goneAbs.length) {
+      const r = await db.from("absences").select("id").in("id", goneAbs);
+      if (r.error) throw r.error;
+      (r.data || []).forEach((x: any) => keep.add("a:" + x.id));
+    }
     const out = [];
     for (const m of members) {
       try { out.push(await syncMember(m, wants, links, keep)); }
       catch (e: any) { out.push({ name: m.name, error: e.message }); }
     }
     const ok = out.every((x: any) => !x.error);
-    let transcripts: any = null, autorecord: any = null;
+    let transcripts: any = null, autorecord: any = null, daybreak: any = null;
+    try { daybreak = await ensureDaybreak(members); } catch (e: any) { daybreak = { error: e.message }; }
     try { autorecord = await syncAutoRecord(members, links); } catch (e: any) { autorecord = { error: e.message }; }
     try { transcripts = await syncTranscripts(members, links); } catch (e: any) { transcripts = { error: e.message }; }
-    await saveStatus({ configured: true, ok, members: out, transcripts, autorecord });
-    return json({ configured: true, ok, members: out, transcripts, autorecord });
+    await saveStatus({ configured: true, ok, members: out, transcripts, autorecord, daybreak });
+    return json({ configured: true, ok, members: out, transcripts, autorecord, daybreak });
   } catch (e: any) {
     await saveStatus({ configured: true, ok: false, error: e.message });
     return json({ configured: true, ok: false, error: e.message }, 200);
