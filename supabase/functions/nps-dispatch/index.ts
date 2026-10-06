@@ -34,7 +34,7 @@ const json = (b: unknown, status = 200) =>
   new Response(JSON.stringify(b), { status, headers: { ...cors, "Content-Type": "application/json" } });
 
 const norm = (s: string | null | undefined) =>
-  String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+  String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 const todayKey = () => new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Lisbon" });
 const addDays = (k: string, n: number) => {
   const d = new Date(k + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10);
@@ -189,28 +189,35 @@ function emailFor(c: Cfg, q: any, reminder: boolean) {
   return { subject, html, text };
 }
 
-async function sendEmail(c: Cfg, to: string, m: { subject: string; html: string; text: string }) {
+async function sendEmail(c: Cfg, to: string | string[], m: { subject: string; html: string; text: string }) {
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${RESEND}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      from: `${c.sender_name || "NOVA Associates"} <${c.from_email}>`, to: [to],
+      from: `${c.sender_name || "NOVA Associates"} <${c.from_email}>`, to: Array.isArray(to) ? to : [to],
       subject: m.subject, html: m.html, text: m.text, ...(c.reply_to ? { reply_to: c.reply_to } : {}),
     }),
   });
   if (!r.ok) throw new Error(`Resend ${r.status}: ${(await r.text()).slice(0, 300)}`);
 }
 
-const SEL = "id, token, kind, phase_name, status, scheduled_for, sent_at, sent_to, reminder_sent_at, client_id, clients(email, language, nps_opt_out), projects(name, archived_at)";
+const SEL = "id, token, kind, phase_name, status, scheduled_for, sent_at, sent_to, reminder_sent_at, client_id, clients(email, language, nps_opt_out), projects(name, archived_at, nps_to, client_pms(email))";
+// Destinatários: o cliente, o project manager do cliente (projects.pm_id) ou os dois (projects.nps_to)
+function recipients(q: any): string[] {
+  const c = String(q.clients?.email || "").trim(), pm = String(q.projects?.client_pms?.email || "").trim();
+  const to = q.projects?.nps_to || "client";
+  const list = to === "pm" ? [pm || c] : to === "both" ? [c, pm] : [c];
+  return [...new Set(list.filter((e) => /^[^@\s]+@[^@\s]+$/.test(e)))];
+}
 
 async function deliver(c: Cfg, q: any, reminder: boolean) {
-  const to = reminder ? (q.sent_to || q.clients?.email) : q.clients?.email;
-  if (!to) return false;
+  const to = reminder && q.sent_to ? String(q.sent_to).split(/,\s*/).filter(Boolean) : recipients(q);
+  if (!to.length) return false;
   try {
     await sendEmail(c, to, emailFor(c, q, reminder));
     const patch = reminder
       ? { reminder_sent_at: new Date().toISOString(), send_error: null }
-      : { status: "sent", sent_at: new Date().toISOString(), sent_to: to, send_error: null };
+      : { status: "sent", sent_at: new Date().toISOString(), sent_to: to.join(", "), send_error: null };
     await db.from("nps_requests").update(patch).eq("id", q.id);
     return true;
   } catch (e) {
@@ -281,7 +288,7 @@ Deno.serve(async (req) => {
       const { data: q } = await db.from("nps_requests").select(SEL).eq("id", body.id).maybeSingle();
       if (!q) return json({ ok: false, error: "Pedido não encontrado" }, 404);
       if ((q as any).status === "answered") return json({ ok: false, error: "O cliente já respondeu." });
-      if (!(q as any).clients?.email) return json({ ok: false, error: "O cliente não tem email na ficha." });
+      if (!recipients(q).length) return json({ ok: false, error: "O cliente (ou o PM) não tem email na ficha." });
       const reminder = (q as any).status === "sent";
       const ok = await deliver(c, q, reminder);
       return json({ ok, reminder });
