@@ -3534,6 +3534,10 @@
     .dbk-hs .dbk-h { font-size: var(--fs-md); }
   }
 
+  .pr-status { font-size: var(--fs-sm); border-radius: var(--r-md); padding: var(--sp-2-5) var(--sp-3); margin: var(--sp-2) 0 var(--sp-3); }
+  .pr-status.ok { background: var(--success-soft); }
+  .pr-status.warn { background: var(--warning-soft); }
+  .pr-status small { display: block; color: var(--text-2); margin-top: 2px; }
   /* PM do cliente */
   .pm-pick { display: flex; flex-direction: column; gap: var(--sp-1-5); }
   .pm-opt { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; border: 1px solid var(--border); background: var(--surface); border-radius: var(--r-lg); padding: var(--sp-2-5) var(--sp-3); font: inherit; font-weight: var(--fw-semibold); color: var(--text); cursor: pointer; transition: border-color var(--t), background var(--t); }
@@ -3929,6 +3933,7 @@
             <button type="button" class="settings-link" data-sec="payroll"><span>Pessoas, salários e custo/hora</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button type="button" class="settings-link" data-sec="finance"><span>Impostos e categorias de despesa</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <div class="settings-group">Clientes</div>
+            <button type="button" class="settings-link" data-sec="payrem"><span>Lembretes de pagamento</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button type="button" class="settings-link" data-sec="nps"><span>Satisfação (NPS)</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button type="button" class="settings-link" data-sec="feas"><span>Viabilidade de terrenos</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button type="button" class="settings-link" data-sec="proposals"><span>Propostas de honorários</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
@@ -3974,6 +3979,10 @@
           <section class="settings-sec" data-sec-panel="ms365" hidden>
             <h2 class="settings-title">Office 365 (calendário Teams)</h2>
             <div class="gantt-wrap" id="settings-ms365-container"><div class="detail-loading">A carregar...</div></div>
+          </section>
+          <section class="settings-sec" data-sec-panel="payrem" hidden>
+            <h2 class="settings-title">Lembretes de pagamento</h2>
+            <div class="gantt-wrap" id="settings-payrem-container"><div class="detail-loading">A carregar...</div></div>
           </section>
           <section class="settings-sec" data-sec-panel="nps" hidden>
             <h2 class="settings-title">Satisfação dos clientes (NPS)</h2>
@@ -5007,7 +5016,7 @@
       checklists: () => loadChecklistTemplateSettings(), categories: () => loadCategories(),
       mtypes: () => loadMilestoneTypeSettings(), clientscore: () => loadClientScoreSettings(),
       finance: () => loadFinanceSettingsPanel(), camara: () => loadCamaraSettings(),
-      nps: () => loadNpsSettings(), ms365: () => loadMs365Settings(), proposals: () => loadProposalSettings(), payroll: () => loadPayrollSettings(), feas: () => loadFeasSettings()
+      nps: () => loadNpsSettings(), payrem: () => loadPayRemSettings(), ms365: () => loadMs365Settings(), proposals: () => loadProposalSettings(), payroll: () => loadPayrollSettings(), feas: () => loadFeasSettings()
     };
     let settingsSection = 'models';
     async function loadMs365Settings() {
@@ -6619,6 +6628,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             <div class="invoice-row"><span>Cliente</span><span>${project.client_id ? `<button type="button" class="text-btn" data-open-client="${escapeHtml(project.client_id)}">${escapeHtml(clienteNome)}</button>` : escapeHtml(clienteNome)}</span></div>
             ${project.client_entities ? `<div class="invoice-row"><span>Faturar a</span><span>${escapeHtml(project.client_entities.kind === 'company' ? project.client_entities.name : clienteNome + ' (a título pessoal)')}${project.client_entities.nif ? ' · NIF ' + escapeHtml(project.client_entities.nif) : ''}</span></div>` : ''}
             <div class="invoice-row"><span>Project manager do cliente</span><span>${projectPm ? `<b>${escapeHtml(projectPm.name)}</b>${projectPm.company ? ' · ' + escapeHtml(projectPm.company) : ''}${projectPm.email ? ` · <a class="text-btn" href="mailto:${escapeHtml(projectPm.email)}">${escapeHtml(projectPm.email)}</a>` : ''}${projectPm.phone ? ` · <a class="text-btn" href="tel:${escapeHtml(projectPm.phone.replace(/[^\d+]/g, ''))}">${escapeHtml(projectPm.phone)}</a>` : ''}` : '<span style="color:var(--text-3)">Sem PM</span>'} <button type="button" class="text-btn" id="detail-pm-btn">${projectPm ? 'Mudar' : 'Escolher'}</button></span></div>
+            <div class="invoice-row"><span>Lembretes de pagamento vão para</span><span>${({ client: 'Cliente', pm: 'Project manager', both: 'Cliente e project manager' })[project.pay_reminder_to || 'client']}</span></div>
             <div class="invoice-row"><span>Inquérito NPS vai para</span><span>${({ client: 'Cliente', pm: 'Project manager', both: 'Cliente e project manager' })[project.nps_to || 'client']}</span></div>
             <div class="invoice-row"><span>Responsável</span><span id="detail-owner-val">${project.owner_id ? escapeHtml(ownerName || '—') : '<span style="color:var(--text-3)">Sem responsável</span>'}</span></div>
             <div class="invoice-row"><span>Tipo</span><span>${escapeHtml(project.project_types?.name ?? '—')}</span></div>
@@ -13076,7 +13086,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       if (!clientId) { showToast('Escolhe primeiro o cliente do projeto (Editar).', { type: 'error' }); return; }
       const client = devMode ? MOCK_CLIENT_ROWS.find(c => c.id === clientId) : (await supabase.from('clients').select('id, name, email').eq('id', clientId).single()).data;
       const pms = await loadClientPms(clientId);
-      let pmId = project.pm_id || '', npsTo = project.nps_to || 'client';
+      let pmId = project.pm_id || '', npsTo = project.nps_to || 'client', payTo = project.pay_reminder_to || 'client';
       openQuickModal('Project manager do cliente', `
         <label class="field-label" style="margin-top:0">Project manager</label>
         <div class="pm-pick" id="pp-list">
@@ -13086,19 +13096,22 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         <button type="button" class="text-btn" id="pp-new" style="margin-top:6px">+ Novo project manager de ${escapeHtml(client?.name || 'cliente')}</button>
         <label class="field-label">Inquérito de satisfação (NPS) vai para</label>
         <div class="segmented" id="pp-nps">${[['client', 'Cliente'], ['pm', 'PM'], ['both', 'Os dois']].map(([k, l]) => `<button type="button" data-n="${k}"${k === npsTo ? ' class="active"' : ''}>${l}</button>`).join('')}</div>
-        <div class="field-hint">O PM aparece para convidar nas reuniões do projeto, nas atas como presente e nos avisos de faturas.</div>
+        <label class="field-label">Lembretes de pagamento vão para</label>
+        <div class="segmented" id="pp-pay">${[['client', 'Cliente'], ['pm', 'PM'], ['both', 'Os dois']].map(([k, l]) => `<button type="button" data-n="${k}"${k === payTo ? ' class="active"' : ''}>${l}</button>`).join('')}</div>
+        <div class="field-hint">O PM aparece para convidar nas reuniões do projeto e nas atas como presente.</div>
         <button type="button" class="primary-btn" id="pp-save">Guardar</button><div id="pp-msg" class="form-msg"></div>`);
       const draw = () => document.querySelectorAll('#pp-list [data-pm]').forEach(b => b.classList.toggle('on', b.dataset.pm === pmId));
       document.getElementById('pp-list').addEventListener('click', e => { const b = e.target.closest('[data-pm]'); if (b) { pmId = b.dataset.pm; draw(); } });
       document.querySelectorAll('#pp-nps [data-n]').forEach(b => b.addEventListener('click', () => { npsTo = b.dataset.n; document.querySelectorAll('#pp-nps [data-n]').forEach(x => x.classList.toggle('active', x === b)); }));
+      document.querySelectorAll('#pp-pay [data-n]').forEach(b => b.addEventListener('click', () => { payTo = b.dataset.n; document.querySelectorAll('#pp-pay [data-n]').forEach(x => x.classList.toggle('active', x === b)); }));
       document.getElementById('pp-new').addEventListener('click', () => openPmModal(client, null, saved => { if (saved) { project.pm_id = saved.id; } openProjectPmPicker(project, onSaved); }));
       document.getElementById('pp-save').addEventListener('click', async () => {
-        if (npsTo !== 'client' && !pmId) return formError('pp-msg', 'Para o NPS ir ao PM, escolhe primeiro o PM.');
+        if ((npsTo !== 'client' || payTo !== 'client') && !pmId) return formError('pp-msg', 'Para enviar ao PM, escolhe primeiro o PM.');
         const pm = pms.find(x => x.id === pmId);
-        if (npsTo !== 'client' && pm && !pm.email) return formError('pp-msg', 'Este PM não tem email: o NPS não lhe pode chegar.');
+        if ((npsTo !== 'client' || payTo !== 'client') && pm && !pm.email) return formError('pp-msg', 'Este PM não tem email: os emails não lhe podem chegar.');
         try {
-          await dbUpdate('projects', project.id, { pm_id: pmId || null, nps_to: npsTo }, MOCK_PROJECTS);
-          project.pm_id = pmId || null; project.nps_to = npsTo;
+          await dbUpdate('projects', project.id, { pm_id: pmId || null, nps_to: npsTo, pay_reminder_to: payTo }, MOCK_PROJECTS);
+          project.pm_id = pmId || null; project.nps_to = npsTo; project.pay_reminder_to = payTo;
           closeQuickModal(); showToast('Guardado'); onSaved && onSaved();
         } catch (err) { formError('pp-msg', /pm_id|nps_to/.test(err.message || '') ? 'Corre pm_project_manager.sql no Supabase.' : 'Não foi possível guardar: ' + err.message); }
       });
@@ -13859,8 +13872,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       teamRows.forEach(r => {
         const urgent = r.late ? 'late' : (r.kind === 'camara' || r.kind === 'debt' || r.kind === 'meet' || (r.kind === 'bday' && r.today)) ? 'soon' : '';
         items.push({ pri: r.late || r.kind === 'meet' ? 0 : urgent ? 1 : 2, date: r.due || '9999', html: `
-          <div class="alert-row team${urgent ? ' ' + urgent : ''}" data-alert-team="${r.kind}"${r.note ? ` data-note="${escapeHtml(r.note.id)}"` : ''}${r.project ? ` data-project="${escapeHtml(r.project)}"` : ''}${r.nps ? ` data-nps="${escapeHtml(r.nps)}"` : ''}${r.client ? ` data-client="${escapeHtml(r.client)}"` : ''}${r.ticket ? ` data-ticket="${escapeHtml(r.ticket)}"` : ''}${r.url ? ` data-url="${escapeHtml(r.url)}" role="link" tabindex="0"` : ''}>
-            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : r.kind === 'nps' ? '★' : r.kind === 'debt' ? '€' : r.kind === 'law' ? '§' : r.kind === 'radar' ? '◎' : r.kind === 'meet' ? '▶' : r.kind === 'transcript' ? '≡' : r.kind === 'bday' ? '✦' : r.kind === 'ticket' ? '💡' : r.kind === 'absence' ? '◐' : r.kind === 'data' ? '!' : '+'}</span>
+          <div class="alert-row team${urgent ? ' ' + urgent : ''}" data-alert-team="${r.kind}"${r.note ? ` data-note="${escapeHtml(r.note.id)}"` : ''}${r.project ? ` data-project="${escapeHtml(r.project)}"` : ''}${r.nps ? ` data-nps="${escapeHtml(r.nps)}"` : ''}${r.client ? ` data-client="${escapeHtml(r.client)}"` : ''}${r.ticket ? ` data-ticket="${escapeHtml(r.ticket)}"` : ''}${r.invoice ? ` data-invoice="${escapeHtml(r.invoice)}"` : ''}${r.url ? ` data-url="${escapeHtml(r.url)}" role="link" tabindex="0"` : ''}>
+            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : r.kind === 'nps' ? '★' : r.kind === 'debt' ? '€' : r.kind === 'law' ? '§' : r.kind === 'radar' ? '◎' : r.kind === 'meet' ? '▶' : r.kind === 'transcript' ? '≡' : r.kind === 'bday' ? '✦' : r.kind === 'ticket' ? '💡' : r.kind === 'absence' ? '◐' : r.kind === 'data' ? '!' : r.kind === 'payrem' ? '€' : '+'}</span>
             <span class="alert-text"><b>${escapeHtml(r.title)}</b><span>${escapeHtml(r.sub)}</span></span>
             <span class="alert-when">${escapeHtml(r.when)}</span>
           </div>` });
@@ -13913,6 +13926,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         else if (k === 'bday') openClientDetail(r.dataset.client);
         else if (k === 'ticket') openTicketDetail(r.dataset.ticket);
         else if (k === 'absence') { navStack = []; openAbsencesModule(); }
+        else if (k === 'payrem') openPayRemPause(r.dataset.invoice, () => renderToday());
         else if (k === 'data') { detailTabByProject[r.dataset.project] = 'fases'; openDetail(r.dataset.project); }
         else if (k === 'transcript') { const n = teamRows.find(x => x.note && String(x.note.id) === r.dataset.note)?.note; if (n) openNewAtaModal(null, null, n, () => renderToday()); }
         else if (k === 'hours') openHorasModule();
@@ -14377,7 +14391,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         renderWeekHours(hoursEl, hours, tg);
         // Avisos de organização: horas em falta (a partir de sexta), projetos sem responsável,
         // fases em curso/seguintes sem ninguém nos projetos de que sou responsável
-        const teamAlerts = [...await meetingAlerts(milestones, me, todayKey).catch(() => []), ...await transcriptAlerts(me).catch(() => []), ...await birthdayAlerts().catch(() => []), ...await ticketAlerts(me).catch(() => []), ...await absenceAlerts(me).catch(() => []), ...await loadMissingDataAlerts(me).catch(() => []), ...radarAlerts, ...lawAlerts, ...debtAlerts, ...npsAlerts, ...camaraAlerts];
+        const teamAlerts = [...await meetingAlerts(milestones, me, todayKey).catch(() => []), ...await transcriptAlerts(me).catch(() => []), ...await birthdayAlerts().catch(() => []), ...await ticketAlerts(me).catch(() => []), ...await absenceAlerts(me).catch(() => []), ...await loadMissingDataAlerts(me).catch(() => []), ...await payReminderAlerts(me).catch(() => []), ...radarAlerts, ...lawAlerts, ...debtAlerts, ...npsAlerts, ...camaraAlerts];
         const wd = new Date().getDay();
         const missing = missingHourDays(hours, tg);
         if ((wd === 5 || wd === 6 || wd === 0) && missing.length)
@@ -15131,6 +15145,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         steps: ['Ao chegar, abre [[Hoje]] e toca em [[Cheguei]]. O horário é das 8h às 14h, com 5 minutos de tolerância.', 'Ao sair, toca em [[Fechar o tasco]].', 'Dia em obra, na Câmara ou no cliente? Toca em **Hoje estou fora** e escreve onde: conta como a horas.', 'Folga ou férias? Toca em **Folga / férias**: esse dia não conta.', 'Esqueceste-te de marcar? Toca em [[Corrigir]] e põe a hora certa. Fica assinalado com ✎.'],
         kw: 'ponto entrada saida chegar cheguei sair picar pontualidade horario presenca atraso reuniao',
         tour: [{ go: 'nav:home', sel: '#today-punch .punch, #today-punch', text: 'Toca em «Cheguei» ao chegar e em «Fechar o tasco» ao sair.' }] },
+      { id: 'lembretes-pagamento', cat: 'money', ctx: ['billing', 'detail', 'home', 'settings'],
+        q: 'a app lembra os clientes das faturas por pagar',
+        a: 'Faturas a pronto pagamento ainda por pagar aos 15 e 30 dias: a app envia um email automático ao cliente (ou ao PM). Na véspera, o responsável do projeto vê na Hoje e pode travar.',
+        steps: ['As regras estão em [[Definições]] → **Lembretes de pagamento**: dias (15 e 30), a partir de que data, e o **IBAN** que vai no email.', 'O email sai em português ou inglês (língua do cliente) com o número, a data, o valor em dívida (se já pagou uma parte, só o que falta) e o IBAN. O responsável do projeto vai em cópia oculta e recebe as respostas.', 'Em cada projeto, [[Dados]] → **Project manager do cliente** → escolhe se os lembretes vão ao **cliente**, ao **PM** ou aos **dois**.', 'Na véspera, a [[Hoje]] avisa «Amanhã sai um lembrete…»: toca para **travar** (ex.: há um acordo de pagamento).', 'Na própria fatura há **Não enviar lembretes de pagamento**.', 'Para os emails saírem é preciso o envio de email ligado (o mesmo do NPS).'],
+        kw: 'lembrete lembretes pagamento fatura faturas cobranca cobrar divida email automatico cliente pronto pagamento iban atraso pagamento',
+        tour: [{ go: 'settings:payrem', sel: '#settings-payrem-container', text: 'As regras dos lembretes de pagamento.' }] },
       { id: 'pm-cliente', cat: 'clients', ctx: ['detail', 'client'],
         q: 'registo o project manager do cliente num projeto',
         a: 'Abre o projeto → Dados → Project manager do cliente → Escolher. Os PMs ficam guardados na ficha do cliente e servem para todos os projetos dele.',
@@ -19498,6 +19518,106 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       }
     }
 
+
+    // ================= LEMBRETES DE PAGAMENTO (email automático ao cliente / PM) =================
+    // Pronto pagamento: a fatura vence na data de emissão. A função pay-reminders envia aos 15 e 30 dias
+    // (app_settings 'pay_reminders') o que ainda está por pagar. Na véspera, o responsável do projeto vê na Hoje
+    // e pode travar ("Não enviar lembretes" na fatura). Remetente e chave do Resend: os mesmos do NPS.
+    const PAYREM_DEFAULT = { active: true, steps: [15, 30], from: dateKey(new Date()), iban: '' };
+    let mockPayRem = { ...PAYREM_DEFAULT }, mockInvReminders = [];
+    async function loadPayRemCfg() {
+      if (devMode) return { ...PAYREM_DEFAULT, ...mockPayRem };
+      const r = await supabase.from('app_settings').select('value').eq('key', 'pay_reminders').maybeSingle();
+      return { ...PAYREM_DEFAULT, ...(r.data?.value || {}) };
+    }
+    const payOwedGross = i => { const net = Number(i.amount || 0), paid = Number(i.amount_paid || 0), gross = Number(i.gross_amount || 0) || net; return net - paid > 0.5 ? Math.round(gross * (net - paid) / (net || 1) * 100) / 100 : 0; };
+    // Próximo lembrete de cada fatura por pagar: { inv, step, day }
+    async function upcomingPayReminders(from, to) {
+      const cfg = await loadPayRemCfg();
+      if (!cfg.active) return [];
+      let invs, rems;
+      if (devMode) { invs = (window.__mockInv || MOCK_INVOICES).map(i => ({ ...i })); rems = mockInvReminders; }
+      else {
+        const [a, b] = await Promise.all([
+          supabase.from('invoices').select('id, project_id, invoice_number, amount, amount_paid, gross_amount, issue_date, status, doc_type, archived_at, reminders_paused, customer_name').is('archived_at', null).gte('issue_date', cfg.from),
+          supabase.from('invoice_reminders').select('invoice_id, step, status, created_at')
+        ]);
+        invs = a.data || []; rems = b.error ? [] : (b.data || []);
+      }
+      const steps = [...cfg.steps].map(Number).sort((a, b) => a - b);
+      const out = [];
+      invs.filter(i => i.issue_date >= cfg.from && !i.archived_at && i.status !== 'cancelled' && !/^(NC|ND|RC|RG)$/i.test(i.doc_type || '') && payOwedGross(i) > 0).forEach(i => {
+        const next = steps.find(s => !rems.some(r => r.invoice_id === i.id && r.step === s));
+        if (next == null) return;
+        let day = addDaysKey(i.issue_date, next);
+        const today = dateKey(new Date());
+        if (day < today) day = today;
+        if (day >= from && day <= to) out.push({ inv: i, step: next, day, paused: !!i.reminders_paused });
+      });
+      return out;
+    }
+    // Hoje: na véspera (e no próprio dia), o responsável vê o lembrete que vai sair e pode travar
+    async function payReminderAlerts(me) {
+      const today = dateKey(new Date());
+      const list = (await upcomingPayReminders(today, addDaysKey(today, 1))).filter(x => !x.paused);
+      if (!list.length) return [];
+      let owners = {};
+      if (devMode) owners = Object.fromEntries(MOCK_PROJECTS.map(p => [p.id, p]));
+      else { const r = await supabase.from('projects').select('id, name, owner_id').in('id', [...new Set(list.map(x => x.inv.project_id).filter(Boolean))]); owners = Object.fromEntries((r.data || []).map(p => [p.id, p])); }
+      return list.filter(x => { const o = owners[x.inv.project_id]?.owner_id; return !o || o === me; }).map(x => ({
+        kind: 'payrem', invoice: x.inv.id, project: x.inv.project_id,
+        title: `${x.day === today ? 'Hoje' : 'Amanhã'} sai um lembrete de pagamento · fatura ${x.inv.invoice_number || ''}`,
+        sub: `${String(owners[x.inv.project_id]?.name || x.inv.customer_name || '').replace(/<[^>]*>/g, '')} · ${fmtEUR(payOwedGross(x.inv))} em dívida · ${x.step} dias depois da emissão. Toca para travar.`,
+        when: 'Travar'
+      }));
+    }
+    function openPayRemPause(invoiceId, after) {
+      openQuickModal('Travar o lembrete?', `
+        <p style="margin:0 0 12px">Esta fatura deixa de receber lembretes automáticos (por exemplo, há um acordo de pagamento). Podes voltar a ligar na própria fatura.</p>
+        <button type="button" class="primary-btn" id="prp-yes">Não enviar lembretes desta fatura</button>
+        <button type="button" class="text-btn" id="prp-no" style="margin-top:10px">Deixar sair</button><div id="prp-msg" class="form-msg"></div>`);
+      document.getElementById('prp-no').addEventListener('click', () => closeQuickModal());
+      document.getElementById('prp-yes').addEventListener('click', async () => {
+        try { await dbUpdate('invoices', invoiceId, { reminders_paused: true }, window.__mockInv || MOCK_INVOICES); closeQuickModal(); showToast('Lembretes travados para esta fatura'); after && after(); }
+        catch (err) { formError('prp-msg', /reminders_paused/.test(err.message || '') ? 'Corre lembretes_pagamento.sql no Supabase.' : 'Não foi possível: ' + err.message); }
+      });
+    }
+    async function loadPayRemSettings() {
+      const box = document.getElementById('settings-payrem-container');
+      try {
+        const cfg = await loadPayRemCfg();
+        const st = devMode ? { ready: false, resend_key: false } : ((await supabase.from('app_settings').select('value').eq('key', 'pay_reminders_status').maybeSingle()).data?.value || {});
+        const nps = devMode ? {} : ((await supabase.from('app_settings').select('value').eq('key', 'nps').maybeSingle()).data?.value || {});
+        const next = await upcomingPayReminders(dateKey(new Date()), addDaysKey(dateKey(new Date()), 30)).catch(() => []);
+        box.innerHTML = `
+          <div class="field-hint" style="margin-top:0">As faturas são a <b>pronto pagamento</b>. Se continuarem por pagar, a app envia um email ao cliente aos <b>${cfg.steps.join(' e ')} dias</b> (em português ou inglês, conforme a ficha), com o número, a data, o valor em dívida e o IBAN. O responsável do projeto vai em cópia oculta e recebe as respostas. Em cada projeto (Dados) escolhe-se se vai ao cliente, ao PM ou aos dois.</div>
+          <div class="pr-status ${st.ready ? 'ok' : 'warn'}">${st.ready ? '✓ Envio de email ligado.' : `Ainda não saem emails: ${!st.resend_key ? 'falta a chave do Resend nos segredos do Supabase' : 'falta o email do remetente'} (o mesmo do NPS, em Satisfação (NPS)).`}${st.last_run ? ` <small>Última verificação: ${escapeHtml(new Date(st.last_run).toLocaleString('pt-PT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))}${st.sent ? ` · ${st.sent} enviados` : ''}${st.problems?.length ? ` · ${escapeHtml(st.problems.join('; '))}` : ''}</small>` : ''}</div>
+          <label class="check-row"><input type="checkbox" id="pr-active"${cfg.active ? ' checked' : ''}> Enviar lembretes automáticos</label>
+          <div class="ab-dates">
+            <div><label class="field-label" for="pr-steps">Dias depois da emissão</label><input type="text" id="pr-steps" class="form-input" value="${escapeHtml(cfg.steps.join(', '))}"></div>
+            <div><label class="field-label" for="pr-from">Só faturas emitidas a partir de</label><input type="date" id="pr-from" class="form-input" value="${escapeHtml(cfg.from)}"></div>
+          </div>
+          <label class="field-label" for="pr-iban">IBAN da NOVA (vai no email)</label>
+          <input type="text" id="pr-iban" class="form-input" value="${escapeHtml(cfg.iban || '')}" placeholder="PT50 0000 0000 0000 0000 0000 0">
+          <button type="button" class="primary-btn" id="pr-save">Guardar</button><div id="pr-msg" class="form-msg"></div>
+          <div class="section-label" style="margin:18px 0 6px">Próximos 30 dias</div>
+          ${next.length ? next.map(x => `<div class="invoice-row"><span>${escapeHtml(fmtDayMonth(x.day))} · fatura ${escapeHtml(x.inv.invoice_number || '')}${x.paused ? ' <em class="muted">(travada)</em>' : ''}<br><small style="color:var(--text-3)">${escapeHtml(x.inv.customer_name || '')} · ${x.step} dias</small></span><span class="amount">${escapeHtml(fmtEUR(payOwedGross(x.inv)))}</span></div>`).join('') : '<div class="gantt-empty">Nenhum lembrete previsto.</div>'}`;
+        document.getElementById('pr-save').addEventListener('click', async () => {
+          const steps = document.getElementById('pr-steps').value.split(/[,;\s]+/).map(Number).filter(n => n > 0 && n < 400);
+          if (!steps.length) return formError('pr-msg', 'Indica os dias (ex.: 15, 30).');
+          const iban = document.getElementById('pr-iban').value.replace(/\s+/g, ' ').trim().toUpperCase();
+          if (iban && !/^[A-Z]{2}\d{2}[ \dA-Z]{10,40}$/.test(iban)) return formError('pr-msg', 'O IBAN não parece válido.');
+          const v = { active: document.getElementById('pr-active').checked, steps: [...new Set(steps)].sort((a, b) => a - b), from: document.getElementById('pr-from').value || dateKey(new Date()), iban };
+          try {
+            if (devMode) mockPayRem = v;
+            else { const r = await supabase.from('app_settings').upsert({ key: 'pay_reminders', value: v, updated_at: new Date().toISOString() }); if (r.error) throw r.error; }
+            showToast('Guardado'); loadPayRemSettings();
+          } catch (err) { formError('pr-msg', 'Não foi possível guardar: ' + err.message); }
+        });
+        if (!nps.from_email && !devMode) box.querySelector('.pr-status').insertAdjacentHTML('beforeend', ' <button type="button" class="text-btn" id="pr-go-nps">Configurar remetente</button>');
+        document.getElementById('pr-go-nps')?.addEventListener('click', () => showSettingsSection('nps'));
+      } catch (err) { box.innerHTML = `<div class="error-box">${escapeHtml(err.message)}</div>`; }
+    }
     // ================= MELHORIAS: tickets da equipa (erros, melhorias, ideias) =================
     // Qualquer pessoa submete de qualquer ecrã (botão 💡 no topo, menu ou ⌘K); a app guarda onde estava e o aparelho.
     // Página "Melhorias": votos (+1), comentários e estados. Quem submeteu é avisado na Hoje quando o estado muda.
@@ -21701,6 +21821,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <div><label class="field-label">Valor recebido (€)</label><input type="text" inputmode="decimal" id="iv-paid" class="form-input" value="${escapeHtml(String(inv.amount_paid ?? 0).replace('.', ','))}"></div>
           <div><label class="field-label">Data de pagamento</label><input type="date" id="iv-paydate" class="form-input" value="${escapeHtml(inv.payment_date ?? '')}"></div>
           <div class="span2"><label class="field-label">Notas</label><input type="text" id="iv-notes" class="form-input" value="${escapeHtml(inv.notes ?? '')}"></div>
+          <label class="check-row span2"><input type="checkbox" id="iv-norem"${inv.reminders_paused ? ' checked' : ''}> Não enviar lembretes de pagamento (ex.: acordo com o cliente)</label>
         </div>
         <button type="button" id="iv-save" class="primary-btn">${isEdit ? 'Guardar' : 'Registar fatura'}</button>
         ${isEdit ? '<button type="button" id="iv-delete" class="secondary-btn danger-btn">Eliminar fatura</button>' : ''}
@@ -21730,6 +21851,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           payment_date: valOrNull(document.getElementById('iv-paydate').value),
           notes: valOrNull(document.getElementById('iv-notes').value.trim())
         };
+        if (document.getElementById('iv-norem').checked || inv.reminders_paused) row.reminders_paused = document.getElementById('iv-norem').checked;
         try {
           if (isEdit) await dbUpdate('invoices', inv.id, row, MOCK_INVOICES);
           else await dbInsert('invoices', row, MOCK_INVOICES);
