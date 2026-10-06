@@ -3534,6 +3534,11 @@
     .dbk-hs .dbk-h { font-size: var(--fs-md); }
   }
 
+  /* PM do cliente */
+  .pm-pick { display: flex; flex-direction: column; gap: var(--sp-1-5); }
+  .pm-opt { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; border: 1px solid var(--border); background: var(--surface); border-radius: var(--r-lg); padding: var(--sp-2-5) var(--sp-3); font: inherit; font-weight: var(--fw-semibold); color: var(--text); cursor: pointer; transition: border-color var(--t), background var(--t); }
+  .pm-opt small { font-weight: var(--fw-regular); color: var(--text-2); font-size: var(--fs-xs); }
+  .pm-opt.on { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
   /* ================= AUSÊNCIAS ================= */
   .ab-bar { display: flex; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; align-items: center; margin-bottom: var(--sp-4); }
   .ab-actions { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
@@ -6341,6 +6346,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const ganttHtml = renderGanttSection(ganttScale);
 
         // --- Participação: colaboradores por percentagem de horas no projeto ---
+        const projectPm = await loadPm(project.pm_id).catch(() => null);
         let participacaoHtml = '<div class="gantt-empty">Sem horas registadas neste projeto.</div>';
         const pessoasNomes = Object.keys(hoursByPerson);
         if (pessoasNomes.length > 0) {
@@ -6612,6 +6618,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             <div class="invoice-row"><span>Código</span><span>${escapeHtml(project.code ?? '—')}</span></div>
             <div class="invoice-row"><span>Cliente</span><span>${project.client_id ? `<button type="button" class="text-btn" data-open-client="${escapeHtml(project.client_id)}">${escapeHtml(clienteNome)}</button>` : escapeHtml(clienteNome)}</span></div>
             ${project.client_entities ? `<div class="invoice-row"><span>Faturar a</span><span>${escapeHtml(project.client_entities.kind === 'company' ? project.client_entities.name : clienteNome + ' (a título pessoal)')}${project.client_entities.nif ? ' · NIF ' + escapeHtml(project.client_entities.nif) : ''}</span></div>` : ''}
+            <div class="invoice-row"><span>Project manager do cliente</span><span>${projectPm ? `<b>${escapeHtml(projectPm.name)}</b>${projectPm.company ? ' · ' + escapeHtml(projectPm.company) : ''}${projectPm.email ? ` · <a class="text-btn" href="mailto:${escapeHtml(projectPm.email)}">${escapeHtml(projectPm.email)}</a>` : ''}${projectPm.phone ? ` · <a class="text-btn" href="tel:${escapeHtml(projectPm.phone.replace(/[^\d+]/g, ''))}">${escapeHtml(projectPm.phone)}</a>` : ''}` : '<span style="color:var(--text-3)">Sem PM</span>'} <button type="button" class="text-btn" id="detail-pm-btn">${projectPm ? 'Mudar' : 'Escolher'}</button></span></div>
+            <div class="invoice-row"><span>Inquérito NPS vai para</span><span>${({ client: 'Cliente', pm: 'Project manager', both: 'Cliente e project manager' })[project.nps_to || 'client']}</span></div>
             <div class="invoice-row"><span>Responsável</span><span id="detail-owner-val">${project.owner_id ? escapeHtml(ownerName || '—') : '<span style="color:var(--text-3)">Sem responsável</span>'}</span></div>
             <div class="invoice-row"><span>Tipo</span><span>${escapeHtml(project.project_types?.name ?? '—')}</span></div>
             <div class="invoice-row"><span>Morada</span><span>${escapeHtml(project.address ?? '—')}</span></div>
@@ -6858,6 +6866,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const reopen = () => openDetail(project.id ?? projectId);
         detailBody.querySelectorAll('[data-open-client]').forEach(b => b.addEventListener('click', () => openClientDetail(b.dataset.openClient)));
         document.getElementById('edit-project-btn').addEventListener('click', () => openProjectEditModal(project, reopen));
+        document.getElementById('detail-pm-btn')?.addEventListener('click', () => openProjectPmPicker(project, reopen));
         // Arquivar / desarquivar (onclick: os botões são fixos e a ficha é redesenhada a cada abertura)
         // Ações menos usadas num menu "⋯" (o título fica sozinho no topo)
         const moreBtn = document.getElementById('detail-more-btn');
@@ -7555,6 +7564,20 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           mkSelect.innerHTML = '<option value="">Sem marco associado</option>';
         }
       }
+      // PM do cliente como presente (atas novas, enquanto o texto está vazio ou só tem esta linha)
+      const ataBody = document.getElementById('ata-body');
+      let pmLine = '';
+      const prefillPm = async () => {
+        if (isEdit || ataLink !== 'project') return;
+        const pid = projSelect.value;
+        const pmId = !pid ? null : devMode ? MOCK_PROJECTS.find(x => x.id === pid)?.pm_id : (await supabase.from('projects').select('pm_id').eq('id', pid).single()).data?.pm_id;
+        const pm = await loadPm(pmId).catch(() => null);
+        const line = pm ? `**Presentes:** ${pm.name} (project manager do cliente${pm.company ? ', ' + pm.company : ''}), ` : '';
+        const cur = ataBody.value;
+        if (!cur.trim() || cur.trim() === pmLine.trim()) { ataBody.value = line; pmLine = line; }
+      };
+      projSelect.addEventListener('change', prefillPm);
+      prefillPm();
       projSelect.addEventListener('change', () => refreshAtaMilestones());
       catSelect.addEventListener('change', () => refreshAtaMilestones());
       await refreshAtaMilestones();
@@ -12661,7 +12684,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const [c, e, p, inv, ex, t, w, op, ivs] = await Promise.all([
         supabase.from('clients').select('id, name, email, phone, address, notes, nif, language, nps_opt_out, birthday').order('name'),
         supabase.from('client_entities').select('*').order('created_at'),
-        supabase.from('projects').select('id, name, code, status, awarding_date, client_id, client_entity_id, archived_at, commission_value'),
+        supabase.from('projects').select('*'),
         selectAll(() => supabase.from('invoices').select('project_id, stage_id, amount, issue_date').gte('issue_date', from).order('id')),
         supabase.from('project_stages').select('id').eq('excluded_from_invoicing', true),
         selectAll(() => supabase.from('time_entries').select('project_id, stage_id, hours').gte('date', from).not('project_id', 'is', null).order('id')),
@@ -12827,6 +12850,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const r = scores[c.id];
         const civ = (data.investors || []).find(x => x.client_id === c.id) || null;
         const ents = data.entities.filter(e => e.client_id === c.id);
+        const pms = await loadClientPms(c.id);
         const entById = Object.fromEntries(ents.map(e => [e.id, e]));
         const invByProject = {};
         data.invoices.forEach(i => { invByProject[i.project_id] = (invByProject[i.project_id] || 0) + Number(i.amount || 0); });
@@ -12864,6 +12888,14 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               </div>`).join('') : '<div class="gantt-empty">Sem entidades. Acrescenta o NIF pessoal e/ou as empresas deste cliente — depois escolhes qual usar em cada projeto.</div>'}
           </div>
           <div class="gantt-wrap">
+            <div class="card-head"><h2>Project managers</h2><button type="button" class="text-btn" id="cl-add-pm">+ Adicionar</button></div>
+            ${pms.length ? pms.map(x => { const n = projs.filter(p => p.pm_id === x.id).length; return `
+              <div class="invoice-row click-row" data-pm-id="${escapeHtml(x.id)}">
+                <span>${escapeHtml(x.name)}<br><small style="color:var(--text-3)">${escapeHtml([x.company, x.email, x.phone].filter(Boolean).join(' · ') || 'sem contactos')}</small></span>
+                <span class="amount" style="font-weight:var(--fw-medium)">${n ? `${n} ${n === 1 ? 'projeto' : 'projetos'}` : ''}</span>
+              </div>`; }).join('') : '<div class="gantt-empty">Quem gere os projetos do lado deste cliente (o intermediário). Acrescenta aqui e escolhe-o em cada projeto, em Dados.</div>'}
+          </div>
+          <div class="gantt-wrap">
             <div class="card-head"><h2>Projetos</h2><span>${projs.length}</span></div>
             ${projs.length ? projs.map(p => `
               <div class="invoice-row click-row" data-open-project="${escapeHtml(p.id)}">
@@ -12885,6 +12917,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         document.getElementById('cl-edit').addEventListener('click', () => openClientModal(c, reopen));
         document.getElementById('cl-inv-card')?.addEventListener('click', async () => { await (oppsCache || loadOppsData()); openInvestorModal(civ, reopen); });
         document.getElementById('cl-add-entity').addEventListener('click', () => openEntityModal(c, null, reopen));
+        document.getElementById('cl-add-pm').addEventListener('click', () => openPmModal(c, null, reopen));
+        view.querySelectorAll('[data-pm-id]').forEach(row => row.addEventListener('click', () => openPmModal(c, pms.find(x => x.id === row.dataset.pmId), reopen)));
         view.querySelectorAll('[data-entity-id]').forEach(row => row.addEventListener('click', () =>
           openEntityModal(c, ents.find(e => String(e.id) === row.dataset.entityId), reopen)));
         view.querySelectorAll('[data-open-project]').forEach(row => row.addEventListener('click', () => openDetail(row.dataset.openProject)));
@@ -12984,6 +13018,91 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       });
     }
 
+    // ---------- Project managers do cliente (intermediário): registo por cliente, um por projeto ----------
+    let mockClientPms = [{ id: 'pm-1', client_id: 'cl-1', name: 'Marta Sousa', company: 'Atlântico Development', email: 'marta.sousa@exemplo.pt', phone: '+351 912 345 678', created_at: new Date().toISOString() }];
+    let pmSupport = null;
+    async function loadClientPms(clientId) {
+      if (devMode) return mockClientPms.filter(x => !clientId || x.client_id === clientId);
+      let q = supabase.from('client_pms').select('*').order('name');
+      if (clientId) q = q.eq('client_id', clientId);
+      const r = await q;
+      pmSupport = !r.error;
+      return r.error ? [] : (r.data || []);
+    }
+    async function loadPm(id) {
+      if (!id) return null;
+      if (devMode) return mockClientPms.find(x => x.id === id) || null;
+      const r = await supabase.from('client_pms').select('*').eq('id', id).maybeSingle();
+      return r.data || null;
+    }
+    const pmLabel = pm => pm ? [pm.name, pm.company].filter(Boolean).join(' · ') : '';
+    function openPmModal(client, pm, onSaved) {
+      const isEdit = !!pm;
+      openQuickModal(isEdit ? 'Project manager' : 'Novo project manager', `
+        <div class="field-hint" style="margin-top:0">Quem gere os projetos do lado de ${escapeHtml(client.name)}. Fica guardado no cliente e escolhe-se em cada projeto.</div>
+        <label class="field-label" for="pm-name">Nome</label>
+        <input type="text" id="pm-name" class="form-input" maxlength="120" value="${escapeHtml(pm?.name || '')}">
+        <label class="field-label" for="pm-company">Empresa <span class="muted">(opcional)</span></label>
+        <input type="text" id="pm-company" class="form-input" maxlength="120" value="${escapeHtml(pm?.company || '')}" placeholder="ex: gestora de projeto, promotora">
+        <div class="ab-dates"><div><label class="field-label" for="pm-email">Email</label><input type="email" id="pm-email" class="form-input" value="${escapeHtml(pm?.email || '')}"></div>
+          <div><label class="field-label" for="pm-phone">Telefone</label><input type="tel" id="pm-phone" class="form-input" value="${escapeHtml(pm?.phone || '')}"></div></div>
+        <label class="field-label" for="pm-notes">Notas <span class="muted">(opcional)</span></label>
+        <input type="text" id="pm-notes" class="form-input" maxlength="300" value="${escapeHtml(pm?.notes || '')}">
+        <button type="button" id="pm-save" class="primary-btn">Guardar</button>
+        ${isEdit ? '<button type="button" id="pm-delete" class="secondary-btn danger-btn">Eliminar</button>' : ''}
+        <div id="pm-msg" class="form-msg"></div>`);
+      setTimeout(() => document.getElementById('pm-name')?.focus(), 80);
+      document.getElementById('pm-save').addEventListener('click', async () => {
+        const row = { name: document.getElementById('pm-name').value.trim(), company: valOrNull(document.getElementById('pm-company').value.trim()),
+          email: valOrNull(document.getElementById('pm-email').value.trim().toLowerCase()), phone: valOrNull(document.getElementById('pm-phone').value.trim()), notes: valOrNull(document.getElementById('pm-notes').value.trim()) };
+        if (!row.name) return formError('pm-msg', 'Indica o nome.');
+        if (row.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(row.email)) return formError('pm-msg', 'O email não parece válido.');
+        try {
+          let saved = pm;
+          if (isEdit) { await dbUpdate('client_pms', pm.id, row, mockClientPms); saved = { ...pm, ...row }; }
+          else saved = await dbInsert('client_pms', { ...row, client_id: client.id, created_at: new Date().toISOString() }, mockClientPms);
+          closeQuickModal(); showToast('Guardado'); onSaved && onSaved(saved);
+        } catch (err) { formError('pm-msg', 'Não foi possível guardar: ' + err.message); }
+      });
+      document.getElementById('pm-delete')?.addEventListener('click', async () => {
+        if (!window.confirm('Eliminar este project manager? Os projetos dele ficam sem PM.')) return;
+        try { await dbDelete('client_pms', pm.id, mockClientPms); closeQuickModal(); showToast('Eliminado'); onSaved && onSaved(null); }
+        catch (err) { formError('pm-msg', 'Não foi possível eliminar: ' + err.message); }
+      });
+    }
+    // Escolher o PM do projeto (da lista do cliente) e a quem vai o inquérito NPS
+    async function openProjectPmPicker(project, onSaved) {
+      const clientId = project.client_id || (devMode ? MOCK_CLIENT_LINKS[project.id]?.[0] : null);
+      if (!clientId) { showToast('Escolhe primeiro o cliente do projeto (Editar).', { type: 'error' }); return; }
+      const client = devMode ? MOCK_CLIENT_ROWS.find(c => c.id === clientId) : (await supabase.from('clients').select('id, name, email').eq('id', clientId).single()).data;
+      const pms = await loadClientPms(clientId);
+      let pmId = project.pm_id || '', npsTo = project.nps_to || 'client';
+      openQuickModal('Project manager do cliente', `
+        <label class="field-label" style="margin-top:0">Project manager</label>
+        <div class="pm-pick" id="pp-list">
+          <button type="button" class="pm-opt${!pmId ? ' on' : ''}" data-pm="">Sem PM <small>o contacto é o próprio cliente</small></button>
+          ${pms.map(x => `<button type="button" class="pm-opt${x.id === pmId ? ' on' : ''}" data-pm="${escapeHtml(x.id)}">${escapeHtml(x.name)}<small>${escapeHtml([x.company, x.email, x.phone].filter(Boolean).join(' · ') || 'sem contactos')}</small></button>`).join('')}
+        </div>
+        <button type="button" class="text-btn" id="pp-new" style="margin-top:6px">+ Novo project manager de ${escapeHtml(client?.name || 'cliente')}</button>
+        <label class="field-label">Inquérito de satisfação (NPS) vai para</label>
+        <div class="segmented" id="pp-nps">${[['client', 'Cliente'], ['pm', 'PM'], ['both', 'Os dois']].map(([k, l]) => `<button type="button" data-n="${k}"${k === npsTo ? ' class="active"' : ''}>${l}</button>`).join('')}</div>
+        <div class="field-hint">O PM aparece para convidar nas reuniões do projeto, nas atas como presente e nos avisos de faturas.</div>
+        <button type="button" class="primary-btn" id="pp-save">Guardar</button><div id="pp-msg" class="form-msg"></div>`);
+      const draw = () => document.querySelectorAll('#pp-list [data-pm]').forEach(b => b.classList.toggle('on', b.dataset.pm === pmId));
+      document.getElementById('pp-list').addEventListener('click', e => { const b = e.target.closest('[data-pm]'); if (b) { pmId = b.dataset.pm; draw(); } });
+      document.querySelectorAll('#pp-nps [data-n]').forEach(b => b.addEventListener('click', () => { npsTo = b.dataset.n; document.querySelectorAll('#pp-nps [data-n]').forEach(x => x.classList.toggle('active', x === b)); }));
+      document.getElementById('pp-new').addEventListener('click', () => openPmModal(client, null, saved => { if (saved) { project.pm_id = saved.id; } openProjectPmPicker(project, onSaved); }));
+      document.getElementById('pp-save').addEventListener('click', async () => {
+        if (npsTo !== 'client' && !pmId) return formError('pp-msg', 'Para o NPS ir ao PM, escolhe primeiro o PM.');
+        const pm = pms.find(x => x.id === pmId);
+        if (npsTo !== 'client' && pm && !pm.email) return formError('pp-msg', 'Este PM não tem email: o NPS não lhe pode chegar.');
+        try {
+          await dbUpdate('projects', project.id, { pm_id: pmId || null, nps_to: npsTo }, MOCK_PROJECTS);
+          project.pm_id = pmId || null; project.nps_to = npsTo;
+          closeQuickModal(); showToast('Guardado'); onSaved && onSaved();
+        } catch (err) { formError('pp-msg', /pm_id|nps_to/.test(err.message || '') ? 'Corre pm_project_manager.sql no Supabase.' : 'Não foi possível guardar: ' + err.message); }
+      });
+    }
     function openEntityModal(client, ent, onSaved) {
       const isEdit = !!ent;
       let kind = ent?.kind ?? 'personal';
@@ -15012,6 +15131,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         steps: ['Ao chegar, abre [[Hoje]] e toca em [[Cheguei]]. O horário é das 8h às 14h, com 5 minutos de tolerância.', 'Ao sair, toca em [[Fechar o tasco]].', 'Dia em obra, na Câmara ou no cliente? Toca em **Hoje estou fora** e escreve onde: conta como a horas.', 'Folga ou férias? Toca em **Folga / férias**: esse dia não conta.', 'Esqueceste-te de marcar? Toca em [[Corrigir]] e põe a hora certa. Fica assinalado com ✎.'],
         kw: 'ponto entrada saida chegar cheguei sair picar pontualidade horario presenca atraso reuniao',
         tour: [{ go: 'nav:home', sel: '#today-punch .punch, #today-punch', text: 'Toca em «Cheguei» ao chegar e em «Fechar o tasco» ao sair.' }] },
+      { id: 'pm-cliente', cat: 'clients', ctx: ['detail', 'client'],
+        q: 'registo o project manager do cliente num projeto',
+        a: 'Abre o projeto → Dados → Project manager do cliente → Escolher. Os PMs ficam guardados na ficha do cliente e servem para todos os projetos dele.',
+        steps: ['Abre o projeto e vai a [[Dados]].', 'Em **Project manager do cliente**, toca em **Escolher** e escolhe da lista do cliente (ou **+ Novo project manager**: nome, empresa, email, telefone).', 'Escolhe a quem vai o **inquérito NPS**: cliente, PM ou os dois.', 'O PM aparece para convidar com um toque ao marcar uma reunião do projeto e entra como presente nas atas novas.', 'Na ficha do cliente, **Project managers** mostra todos os PMs dele e em quantos projetos estão.'],
+        kw: 'project manager pm intermediario gestor projeto cliente representante contacto bi dados nps convidar ata',
+        tour: [{ go: 'nav:clients', sel: '#clients-container', text: 'Na ficha de cada cliente está a lista dos seus project managers.' }] },
       { id: 'prazos-atrasos', cat: 'proj', ctx: ['detail', 'finance:time', 'home'],
         q: 'a app calcula os prazos e os atrasos das fases',
         a: 'Cada fase tem o seu lead time em dias úteis. A primeira conta da adjudicação; as seguintes, do fim da anterior. Se uma fase entrega tarde, as seguintes passam a contar da entrega real; se entrega cedo, o plano não se adianta.',
@@ -22117,6 +22242,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const loadGuestSugg = async () => {
         guestSugg = [];
         const pid = curProject();
+        if (pid && devMode) {
+          const pm = await loadPm(MOCK_PROJECTS.find(x => x.id === pid)?.pm_id).catch(() => null);
+          if (pm) guestSugg.push({ name: pm.name, email: String(pm.email || '').toLowerCase(), role: 'PM do cliente' });
+        }
         if (pid && !devMode) {
           const [pr, pc] = await Promise.all([
             supabase.from('projects').select('client_id').eq('id', pid).single(),
@@ -22127,6 +22256,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             if (c.data) guestSugg.push({ name: c.data.name, email: String(c.data.email || '').trim().toLowerCase(), role: 'Cliente', clientId: c.data.id });
           }
           (pc.data || []).forEach(x => { const e = String(x.email).toLowerCase(); if (!guestSugg.some(y => y.email === e)) guestSugg.push({ name: x.name, email: e, role: x.role || 'Contacto' }); });
+          const pmRow = (await supabase.from('projects').select('pm_id').eq('id', pid).single()).data;
+          const pm = await loadPm(pmRow?.pm_id).catch(() => null);
+          if (pm) { const e = String(pm.email || '').trim().toLowerCase(); if (!e || !guestSugg.some(y => y.email === e)) guestSugg.splice(1, 0, { name: pm.name, email: e, role: 'PM do cliente' }); }
         }
         renderGuests();
       };
