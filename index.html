@@ -2817,7 +2817,7 @@
   /* ---- páginas: entram a subir e a focar ---- */
   @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
   @keyframes kPage { from { opacity: 0; transform: translateY(16px) scale(.995); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
-  #home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #feas-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view, #help-view, #tickets-view {
+  #home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #feas-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view, #help-view, #tickets-view, #absences-view {
     animation: kPage .5s var(--expo) both; }
   .anim-in :is(.gantt-wrap, .hero-card, .fg, .tax-card, .stat-tile, .hs-tile, .kpi, .project-row, .tx-row, .rec-row, .ata-entry, .client-card, .hrow) { animation-duration: .55s; animation-timing-function: var(--expo); }
   .anim-in :is(.gantt-wrap, .hero-card, .fg, .tax-card, .stat-tile, .hs-tile, .kpi, .project-row, .tx-row, .rec-row, .ata-entry, .hrow):nth-child(n+7) { animation-delay: 200ms; }
@@ -2948,8 +2948,8 @@
   @keyframes kGhostOut { to { opacity: 0; transform: scale(.975); filter: blur(6px); } }
   @keyframes kGhostLeft { to { opacity: 0; transform: translateX(-48px) scale(.98); filter: blur(5px); } }
   @keyframes kGhostRight { to { opacity: 0; transform: translateX(48px) scale(.98); filter: blur(5px); } }
-  .content-area[data-kdir="1"] > :is(#home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #feas-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view, #help-view, #tickets-view) { animation-name: kPageR; }
-  .content-area[data-kdir="-1"] > :is(#home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #feas-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view, #help-view, #tickets-view) { animation-name: kPageL; }
+  .content-area[data-kdir="1"] > :is(#home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #feas-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view, #help-view, #tickets-view, #absences-view) { animation-name: kPageR; }
+  .content-area[data-kdir="-1"] > :is(#home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #feas-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view, #help-view, #tickets-view, #absences-view) { animation-name: kPageL; }
   @keyframes kPageR { from { opacity: 0; transform: translateX(56px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
   @keyframes kPageL { from { opacity: 0; transform: translateX(-56px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
 
@@ -3355,6 +3355,247 @@
   @media (prefers-reduced-motion: reduce) {
     #pres *, #pres *::before, #pres *::after { transition-duration: 0s !important; transition-delay: 0s !important; animation: none !important; }
   }
+  /* ================= DAYBREAK (cartão na Hoje, plano, fecho, modo reunião) ================= */
+  .dbk-card { position: relative; overflow: hidden; }
+  .dbk-card::before { content: ''; position: absolute; inset: -40% -10% auto auto; width: 320px; height: 320px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 176, 92, .16), transparent 65%); pointer-events: none; }
+  .dbk-head h2 { display: flex; align-items: center; gap: var(--sp-2); }
+  .dbk-sun { width: 14px; height: 14px; border-radius: 50%; background: linear-gradient(180deg, #FFB65C, #F2734B); box-shadow: 0 0 0 4px rgba(255, 166, 92, .18); }
+  .dbk-top { display: flex; gap: var(--sp-2); flex-wrap: wrap; align-items: center; margin: var(--sp-1) 0 var(--sp-3); position: relative; }
+  .dbk-top .primary-btn, .dbk-top .secondary-btn, .ab-actions .primary-btn, .ab-actions .secondary-btn { width: auto; margin: 0; padding: 0 var(--sp-4); min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-1-5); }
+  .dbk-join { text-decoration: none; display: inline-flex; align-items: center; }
+  .dbk-away { display: flex; flex-direction: column; gap: var(--sp-1); background: var(--warning-soft); border-radius: var(--r-md); padding: var(--sp-2) var(--sp-3); margin-bottom: var(--sp-3); font-size: var(--fs-sm); }
+  .dbk-note { font-size: var(--fs-sm); background: var(--surface-2); border-radius: var(--r-md); padding: var(--sp-2) var(--sp-3); margin-bottom: var(--sp-3); }
+  .dbk-note .text-btn { padding: 0; min-height: 0; }
+  .dbk-sub { display: flex; justify-content: space-between; align-items: baseline; margin: var(--sp-2) 0 var(--sp-1-5); font-size: var(--fs-md); }
+  .dbk-sub span { color: var(--text-2); font-size: var(--fs-xs); }
+  .dbk-list { display: flex; flex-direction: column; }
+  .dbk-task { display: flex; align-items: flex-start; gap: var(--sp-2-5); padding: var(--sp-2) 0; border-top: 1px solid var(--border); }
+  .dbk-task:first-child { border-top: 0; }
+  .dbk-task input { margin-top: 2px; width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
+  .dbk-t { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .dbk-t b { font-weight: var(--fw-medium); font-size: var(--fs-md); }
+  .dbk-t small { color: var(--text-2); font-size: var(--fs-xs); }
+  .dbk-task.done .dbk-t b { color: var(--text-3); text-decoration: line-through; text-decoration-color: var(--text-3); }
+  .dbk-task.late .dbk-t small { color: var(--danger); }
+  .dbk-star { color: #E8A33A; font-style: normal; }
+  .dbk-mark { width: 18px; text-align: center; color: var(--text-3); flex: none; }
+  .dbk-task.done .dbk-mark { color: var(--success); }
+  .dbk-mine .secondary-btn { margin-top: var(--sp-2); }
+  .dbk-team { display: flex; flex-wrap: wrap; gap: var(--sp-1-5); margin-top: var(--sp-3); padding-top: var(--sp-3); border-top: 1px solid var(--border); }
+  .dbk-chip { display: inline-flex; align-items: center; gap: var(--sp-1-5); font-size: var(--fs-xs); font-weight: var(--fw-semibold); background: var(--surface-2); border-radius: var(--r-full); padding: var(--sp-1) var(--sp-2-5); }
+  .dbk-chip i { width: 7px; height: 7px; border-radius: 50%; }
+  .dbk-chip em { font-style: normal; font-weight: var(--fw-regular); color: var(--text-2); }
+  .dbk-chip.ok em { color: var(--success); }
+  .dbk-chip.away { opacity: .6; }
+  /* Plano (janela) */
+  .dbk-prow { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-1-5) 0; border-top: 1px solid var(--border); background: var(--surface); }
+  .dbk-prow:first-child { border-top: 0; }
+  .dbk-prow .dbk-t { flex: 1; }
+  .dbk-star-btn { border: 0; background: none; font-size: 18px; color: var(--border-strong); cursor: pointer; width: 32px; height: 32px; border-radius: 50%; flex: none; transition: color var(--t), transform var(--t); }
+  .dbk-star-btn.on { color: #E8A33A; transform: scale(1.1); }
+  .dbk-add { display: flex; gap: var(--sp-2); margin-top: var(--sp-2); }
+  .dbk-add .form-input { margin: 0; }
+  .dbk-add .secondary-btn { width: auto; margin: 0; }
+  .dbk-pick { display: flex; flex-direction: column; gap: var(--sp-3); max-height: 260px; overflow: auto; }
+  .dbk-pg { display: flex; flex-direction: column; gap: var(--sp-1); }
+  .dbk-pg > b { font-size: var(--fs-xs); color: var(--text-2); font-weight: var(--fw-semibold); }
+  .dbk-pi { display: flex; align-items: center; gap: var(--sp-2); text-align: left; border: 1px solid var(--border); background: var(--surface); border-radius: var(--r-md); padding: var(--sp-1-5) var(--sp-2-5); font: inherit; font-size: var(--fs-sm); color: var(--text); cursor: pointer; }
+  .dbk-pi span { color: var(--accent); font-weight: var(--fw-bold); }
+  .dbk-pi em { font-style: normal; font-size: var(--fs-micro); color: var(--accent); background: var(--accent-soft); border-radius: var(--r-full); padding: 1px 6px; margin-left: auto; }
+  .dbk-pi.used { opacity: .45; cursor: default; }
+  .dbk-pi.used span { color: var(--success); }
+  .dbk-pi.used span::before { content: '✓'; }
+  .dbk-pi.used span { font-size: 0; }
+  .dbk-pi.used span::before { font-size: var(--fs-sm); }
+  /* Fecho */
+  .dbk-q { display: flex; justify-content: space-between; align-items: baseline; margin: var(--sp-5) 0 var(--sp-2); }
+  .dbk-q span { font-size: var(--fs-xs); color: var(--text-2); }
+  .dbk-hs { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--sp-1-5); }
+  .dbk-h { height: 44px; border: 1px solid var(--border); background: var(--surface); border-radius: var(--r-lg); font: inherit; font-weight: var(--fw-semibold); font-size: var(--fs-lg); color: var(--text); cursor: pointer; transition: background var(--t), color var(--t), transform var(--t); }
+  .dbk-h.on { background: var(--accent); color: var(--on-accent); border-color: transparent; transform: scale(1.04); }
+  #dc-un-more, #dc-rw-more { margin-top: var(--sp-2); display: flex; flex-direction: column; gap: var(--sp-2); }
+  #dc-un-more[hidden], #dc-rw-more[hidden], #dc-rw-stage[hidden] { display: none; }
+  #dc-un-more .form-input, #dc-rw-more .form-input { margin: 0; }
+  .dbk-causes { flex-wrap: wrap; }
+  .dbk-auto { font-size: var(--fs-sm); background: var(--accent-soft); color: var(--text); border-radius: var(--r-md); padding: var(--sp-2) var(--sp-3); margin-bottom: var(--sp-2); }
+  .dbk-ask { border: 1px solid var(--accent-muted); border-radius: var(--r-md); padding: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-1); font-size: var(--fs-sm); }
+  .dbk-ask span { color: var(--text-2); }
+  .dbk-ask div { display: flex; gap: var(--sp-2); margin-top: var(--sp-1); }
+  .dbk-ask .secondary-btn { width: auto; margin: 0; }
+  /* Mission Control */
+  .dbk-weeks { display: flex; gap: var(--sp-2); align-items: flex-end; height: 160px; padding-top: var(--sp-2); }
+  .dbk-wk { flex: 1; display: flex; flex-direction: column; align-items: center; gap: var(--sp-1); height: 100%; min-width: 0; }
+  .dbk-wk .bar { flex: 1; width: 100%; max-width: 34px; display: flex; flex-direction: column-reverse; border-radius: var(--r-sm); overflow: hidden; background: var(--track); }
+  .dbk-wk .bar i { display: block; }
+  .dbk-wk .bar .un { background: #3E6FA8; }
+  .dbk-wk .bar .rw { background: #C4453D; }
+  .dbk-wk span { font-size: var(--fs-micro); color: var(--text-3); white-space: nowrap; }
+  .dbk-causes-bars { display: flex; flex-direction: column; gap: var(--sp-2); }
+  .dbk-causes-bars > div { display: grid; grid-template-columns: minmax(120px, 190px) 1fr auto auto; gap: var(--sp-2-5); align-items: center; font-size: var(--fs-sm); }
+  .dbk-causes-bars i { height: 10px; border-radius: var(--r-full); background: linear-gradient(90deg, #F2734B, #FFB65C); width: var(--w); min-width: 4px; }
+  .dbk-causes-bars small { color: var(--text-2); font-size: var(--fs-xs); }
+
+  /* Modo reunião: ecrã inteiro, escuro, como a apresentação */
+  #dbk { position: fixed; inset: 0; z-index: var(--z-splash); background: #000; color: #f5f5f7; display: flex; flex-direction: column; opacity: 0; transition: opacity .3s var(--ease); --ac: #FFB65C; }
+  #dbk[hidden] { display: none; }
+  #dbk.on { opacity: 1; }
+  body.dbk-open { overflow: hidden; }
+  body.dbk-open #quick-modal-overlay { z-index: 101; }
+  body.dbk-open #quick-modal { z-index: 102; }
+  body.dbk-open #toast-root { z-index: 103; }
+  #dbk::before { content: ''; position: absolute; inset: auto -20% -55% -20%; height: 90%; background: radial-gradient(ellipse at 50% 100%, rgba(242, 115, 75, .32), rgba(255, 182, 92, .12) 40%, transparent 70%); pointer-events: none; animation: dbkRise 2.4s var(--ease) both; }
+  @keyframes dbkRise { from { transform: translateY(30%); opacity: 0; } to { transform: none; opacity: 1; } }
+  .dbk-bar { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-4) var(--sp-6); position: relative; z-index: 1; }
+  .dbk-bar .brand { font-weight: var(--fw-semibold); letter-spacing: .02em; display: flex; align-items: center; gap: var(--sp-2); }
+  .dbk-bar .brand i { width: 12px; height: 12px; border-radius: 50%; background: linear-gradient(180deg, #FFB65C, #F2734B); }
+  .dbk-dots { display: flex; gap: 6px; margin: 0 auto; }
+  .dbk-dots i { width: 7px; height: 7px; border-radius: 50%; background: #ffffff2e; transition: all .3s var(--ease); }
+  .dbk-dots i.past { background: #ffffff6b; }
+  .dbk-dots i.on { background: var(--ac); width: 22px; border-radius: 4px; }
+  .dbk-x { border: 0; background: #ffffff14; color: #f5f5f7; width: 36px; height: 36px; border-radius: 50%; font-size: 18px; cursor: pointer; }
+  .dbk-stage { flex: 1; overflow: auto; position: relative; z-index: 1; padding: var(--sp-4) var(--sp-6) var(--sp-8); }
+  .dbk-slide { max-width: 1040px; margin: 0 auto; }
+  .dbk-in { animation: dbkIn .55s var(--ease) both; }
+  @keyframes dbkIn { from { opacity: 0; transform: translateY(14px); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
+  .dbk-kicker { color: var(--ac); font-size: var(--fs-sm); font-weight: var(--fw-semibold); letter-spacing: .04em; text-transform: uppercase; }
+  .dbk-title { font-size: clamp(56px, 11vw, 132px); font-weight: var(--fw-bold); letter-spacing: -.045em; line-height: .95; margin: var(--sp-2) 0 var(--sp-4); background: linear-gradient(180deg, #fff 30%, #FFB65C 120%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .dbk-lead { font-size: clamp(18px, 2.4vw, 26px); color: #a1a1a6; margin: 0 0 var(--sp-6); }
+  .dbk-faces { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-bottom: var(--sp-6); }
+  .dbk-faces span { border: 1px solid #ffffff26; border-radius: var(--r-full); padding: var(--sp-2) var(--sp-4); font-weight: var(--fw-semibold); display: inline-flex; align-items: center; gap: var(--sp-2); }
+  .dbk-faces span::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+  .dbk-out { display: flex; flex-direction: column; gap: 4px; margin-bottom: var(--sp-4); color: #d2d2d7; }
+  .dbk-out b { color: var(--ac); font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .04em; }
+  .dbk-out.soon b { color: #a1a1a6; }
+  .dbk-teams { display: inline-flex; margin-top: var(--sp-2); background: #5B5FC7; color: #fff; text-decoration: none; border-radius: var(--r-full); padding: var(--sp-3) var(--sp-5); font-weight: var(--fw-semibold); }
+  .dbk-ph { display: flex; align-items: center; gap: var(--sp-4); margin-bottom: var(--sp-6); }
+  .dbk-ph h2 { font-size: clamp(32px, 5vw, 56px); margin: 0; letter-spacing: -.035em; line-height: 1.05; }
+  .dbk-av { width: 64px; height: 64px; border-radius: 50%; background: var(--c); display: grid; place-items: center; font-size: 28px; font-weight: var(--fw-bold); color: #fff; flex: none; box-shadow: 0 0 0 6px color-mix(in srgb, var(--c) 25%, transparent); }
+  .dbk-timer { margin-left: auto; width: 76px; height: 76px; position: relative; flex: none; --p: 100; }
+  .dbk-timer svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .dbk-timer circle { fill: none; stroke: #ffffff1f; stroke-width: 3; }
+  .dbk-timer .p { stroke: var(--ac); stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: calc(100 - var(--p)); transition: stroke-dashoffset 1s linear, stroke .3s; }
+  .dbk-timer b { position: absolute; inset: 0; display: grid; place-items: center; font-variant-numeric: tabular-nums; font-size: var(--fs-lg); }
+  .dbk-timer.warn .p { stroke: #FFD60A; }
+  .dbk-timer.over .p { stroke: #FF453A; }
+  .dbk-timer.over b { color: #FF453A; }
+  .dbk-cols { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-5); }
+  .dbk-cols section { background: #ffffff0d; border: 1px solid #ffffff14; border-radius: 22px; padding: var(--sp-5); backdrop-filter: blur(20px); }
+  .dbk-cols h3, .dbk-h3 { margin: 0 0 var(--sp-3); font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .05em; color: #a1a1a6; }
+  #dbk .dbk-task { border-color: #ffffff14; }
+  #dbk .dbk-t b { font-size: var(--fs-lg); color: #f5f5f7; }
+  #dbk .dbk-t small { color: #a1a1a6; }
+  #dbk .dbk-task.done .dbk-t b { color: #8e8e93; }
+  #dbk .dbk-task.done .dbk-mark { color: #30D158; }
+  #dbk .dbk-t small.warn-text, #dbk .dbk-task.late .dbk-t small { color: #FF9F0A; }
+  .dbk-score { display: flex; align-items: baseline; gap: 4px; margin-bottom: var(--sp-2); }
+  .dbk-score b { font-size: 54px; font-weight: var(--fw-bold); letter-spacing: -.04em; line-height: 1; }
+  .dbk-score span { font-size: 24px; color: #a1a1a6; }
+  .dbk-score em { font-style: normal; color: #a1a1a6; margin-left: var(--sp-2); }
+  .dbk-hrs { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); margin-top: var(--sp-4); }
+  .dbk-hrs > div { background: #ffffff0a; border-radius: 14px; padding: var(--sp-3); display: flex; flex-direction: column; gap: 2px; }
+  .dbk-hrs span { font-size: var(--fs-xs); color: #a1a1a6; }
+  .dbk-hrs b { font-size: 26px; letter-spacing: -.02em; }
+  .dbk-hrs small { color: #d2d2d7; font-size: var(--fs-xs); }
+  .dbk-hrs .on b { color: #64D2FF; }
+  .dbk-hrs .bad b { color: #FF6961; }
+  .dbk-empty { color: #8e8e93; padding: var(--sp-2) 0; }
+  .dbk-btn { border: 0; background: var(--ac); color: #1d1d1f; font: inherit; font-weight: var(--fw-semibold); border-radius: var(--r-full); padding: var(--sp-2-5) var(--sp-5); cursor: pointer; margin-top: var(--sp-3); min-height: var(--tap); }
+  .dbk-btn.ghost { background: #ffffff14; color: #f5f5f7; }
+  .dbk-btn:disabled { opacity: .3; cursor: default; }
+  .dbk-act { margin-top: var(--sp-5); }
+  .dbk-h2 { font-size: clamp(36px, 6vw, 64px); letter-spacing: -.04em; margin: var(--sp-1) 0 var(--sp-5); }
+  .dbk-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); margin-bottom: var(--sp-5); }
+  .dbk-tiles > div { background: #ffffff0d; border-radius: 20px; padding: var(--sp-4); display: flex; flex-direction: column; gap: 2px; }
+  .dbk-tiles b { font-size: 40px; letter-spacing: -.03em; }
+  .dbk-tiles span { color: #a1a1a6; font-size: var(--fs-sm); }
+  .dbk-tiles .bad b { color: #FF6961; }
+  #dbk .dbk-causes-bars { margin-bottom: var(--sp-6); }
+  #dbk .dbk-causes-bars > div { color: #d2d2d7; grid-template-columns: minmax(120px, 200px) 1fr auto auto; }
+  .dbk-mini { border: 0; background: #ffffff14; color: #f5f5f7; border-radius: var(--r-full); font: inherit; font-size: var(--fs-xs); padding: 4px 10px; cursor: pointer; }
+  .dbk-acts { display: flex; flex-direction: column; gap: var(--sp-2); }
+  .dbk-a { display: flex; gap: var(--sp-3); align-items: flex-start; background: #ffffff0a; border-radius: 14px; padding: var(--sp-3); }
+  .dbk-a input { width: 20px; height: 20px; accent-color: #30D158; margin-top: 2px; }
+  .dbk-a span { display: flex; flex-direction: column; }
+  .dbk-a small { color: #a1a1a6; }
+  .dbk-a.late small { color: #FF9F0A; }
+  .dbk-a.done b { text-decoration: line-through; color: #8e8e93; }
+  .dbk-end { display: flex; gap: var(--sp-2); justify-content: flex-end; margin-top: var(--sp-5); }
+  .dbk-nav { display: flex; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-3) var(--sp-6) calc(var(--sp-4) + var(--safe-b)); position: relative; z-index: 1; }
+  .dbk-nav .dbk-btn { margin: 0; }
+  @media (max-width: 760px) {
+    .dbk-cols, .dbk-tiles { grid-template-columns: 1fr; }
+    .dbk-stage { padding: var(--sp-2) var(--sp-4) var(--sp-6); }
+    .dbk-bar, .dbk-nav { padding-left: var(--sp-4); padding-right: var(--sp-4); }
+    .dbk-ph { flex-wrap: wrap; gap: var(--sp-3); }
+    .dbk-av { width: 48px; height: 48px; font-size: 22px; }
+    .dbk-timer { width: 60px; height: 60px; }
+    .dbk-causes-bars > div, #dbk .dbk-causes-bars > div { grid-template-columns: 1fr auto; }
+    .dbk-causes-bars i { grid-column: 1 / -1; grid-row: 2; }
+    .dbk-hs .dbk-h { font-size: var(--fs-md); }
+  }
+
+  /* ================= AUSÊNCIAS ================= */
+  .ab-bar { display: flex; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; align-items: center; margin-bottom: var(--sp-4); }
+  .ab-actions { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+  .ab-people { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: var(--sp-3); margin-bottom: var(--sp-4); }
+  .ab-person { margin: 0 !important; }
+  .ab-person.me { box-shadow: inset 0 0 0 1.5px var(--accent-muted); }
+  .ab-p-head { display: flex; align-items: center; gap: var(--sp-2); }
+  .ab-p-head .text-btn { margin-left: auto; padding: 0; min-height: 0; font-size: var(--fs-xs); }
+  .ab-dot { width: 9px; height: 9px; border-radius: 50%; }
+  .ab-left { display: flex; align-items: baseline; gap: var(--sp-2); margin: var(--sp-3) 0 var(--sp-2); }
+  .ab-left b { font-size: var(--fs-num); letter-spacing: -.03em; line-height: 1; }
+  .ab-left span { color: var(--text-2); font-size: var(--fs-sm); }
+  .ab-meter { height: 6px; border-radius: var(--r-full); background: var(--track); display: flex; overflow: hidden; margin-bottom: var(--sp-3); }
+  .ab-meter .t { background: #2E7D4F; }
+  .ab-meter .b { background: #6FBF8E; }
+  .ab-facts { display: flex; flex-direction: column; gap: 3px; font-size: var(--fs-sm); color: var(--text-2); }
+  .ab-facts b { color: var(--text); }
+  .ab-facts em { font-style: normal; }
+  .ok-text { color: var(--success); }
+  .ab-rules { border-left: 3px solid var(--warning); }
+  .ab-rule { display: flex; flex-direction: column; gap: 1px; padding: var(--sp-2) 0; border-top: 1px solid var(--border); font-size: var(--fs-sm); }
+  .ab-rule:first-of-type { border-top: 0; }
+  .ab-rule span { color: var(--text-2); }
+  .ab-map-head { display: flex; align-items: center; justify-content: center; gap: var(--sp-3); }
+  .ab-map-head h2 { min-width: 160px; text-align: center; }
+  .ab-nav { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 20px; line-height: 1; cursor: pointer; display: grid; place-items: center; padding: 0 0 2px; }
+  .ab-nav:hover { background: var(--surface-2); }
+  .ab-grid { border-collapse: separate; border-spacing: 2px; width: 100%; font-size: var(--fs-xs); }
+  .ab-grid th { font-weight: var(--fw-semibold); color: var(--text-2); text-align: center; padding: 2px 0; min-width: 22px; }
+  .ab-grid thead th i { display: block; font-style: normal; font-size: var(--fs-micro); color: var(--text-3); }
+  .ab-grid thead th.off { color: var(--text-3); }
+  .ab-grid thead th.today { color: var(--accent); }
+  .ab-grid thead th.clash { color: var(--danger); }
+  .ab-grid thead th.clash::after { content: ''; display: block; width: 5px; height: 5px; border-radius: 50%; background: var(--danger); margin: 2px auto 0; }
+  .ab-grid tbody th { text-align: left; padding-right: var(--sp-2); white-space: nowrap; color: var(--text); position: sticky; left: 0; background: var(--surface); z-index: 1; }
+  .ab-grid td { height: 26px; border-radius: 5px; background: var(--surface-2); cursor: pointer; transition: transform var(--t-fast); }
+  .ab-grid td:hover { transform: scale(1.12); }
+  .ab-grid td.off { background: repeating-linear-gradient(135deg, var(--surface-2) 0 3px, var(--surface-3) 3px 6px); }
+  .ab-grid td.today { box-shadow: inset 0 0 0 1.5px var(--accent); }
+  .ab-grid td.k-vacation, .ab-legend i.k-vacation { background: #2E9E6A; }
+  .ab-grid td.k-sick, .ab-legend i.k-sick { background: #D9534F; }
+  .ab-grid td.k-justified, .ab-legend i.k-justified { background: #3E6FA8; }
+  .ab-grid td.k-training, .ab-legend i.k-training { background: #A8741F; }
+  .ab-grid td.off.k-vacation, .ab-grid td.off.k-sick, .ab-grid td.off.k-justified, .ab-grid td.off.k-training { opacity: .45; }
+  .ab-legend { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-top: var(--sp-3); font-size: var(--fs-xs); color: var(--text-2); }
+  .ab-legend span { display: inline-flex; align-items: center; gap: var(--sp-1-5); }
+  .ab-legend i { width: 12px; height: 12px; border-radius: 3px; }
+  .ab-legend i.off { background: repeating-linear-gradient(135deg, var(--surface-2) 0 3px, var(--surface-3) 3px 6px); }
+  .ab-legend i.clash { background: var(--danger); border-radius: 50%; width: 7px; height: 7px; }
+  .ab-list { display: flex; flex-direction: column; }
+  .ab-row { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2-5) 0; border-top: 1px solid var(--border); cursor: pointer; }
+  .ab-row:first-child { border-top: 0; }
+  .ab-row.past { opacity: .55; }
+  .ab-ico { font-size: 20px; width: 28px; text-align: center; }
+  .ab-main { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+  .ab-main small { color: var(--text-2); }
+  .ab-n { font-size: var(--fs-sm); color: var(--text-2); white-space: nowrap; }
+  .ab-kinds { flex-wrap: wrap; margin: var(--sp-3) 0 var(--sp-1); }
+  .ab-dates { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+  .ab-sum { margin: var(--sp-3) 0 var(--sp-1); font-size: var(--fs-md); }
+  .ab-w { font-size: var(--fs-sm); color: var(--warning); background: var(--warning-soft); border-radius: var(--r-sm); padding: var(--sp-1-5) var(--sp-2-5); margin-top: var(--sp-1-5); }
+  @media (max-width: 760px) { .ab-people { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -3420,6 +3661,7 @@
         <button type="button" class="nav-item" data-nav="finance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5h16"/><path d="M6.5 16v-4M11 16V8M15.5 16v-6M20 16V5"/></svg><span>Mission Control</span></button>
         <button type="button" class="nav-item" data-nav="horas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span>Horas</span></button>
         <button type="button" class="nav-item" data-nav="agenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Agenda</span></button>
+        <button type="button" class="nav-item" data-nav="absences"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16"/><path d="M7 18a5 5 0 0110 0"/><path d="M12 6v2M5.6 9.6l1.4 1.4M18.4 9.6L17 11M3 14h2M19 14h2"/></svg><span>Ausências</span></button>
         <button type="button" class="nav-item" data-nav="atas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h7l4 4v12a1 1 0 01-1 1H7a1 1 0 01-1-1v-15a1 1 0 011-1z"/><path d="M9 11h6M9 14.5h6M9 18h3.5"/></svg><span>Atas</span></button>
         <button type="button" class="nav-item" data-nav="despesas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12v17l-3-2-3 2-3-2-3 2z"/><path d="M9 8.5h6M9 12h6M9 15.5h3"/></svg><span>Despesas</span></button>
       </nav>
@@ -3445,6 +3687,7 @@
       <button type="button" class="nav-item" data-nav="projects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg><span>Projetos</span></button>
       <button type="button" class="nav-item" data-nav="horas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span>Horas</span></button>
       <button type="button" class="nav-item" data-nav="agenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Agenda</span></button>
+      <button type="button" class="nav-item" data-nav="absences"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16"/><path d="M7 18a5 5 0 0110 0"/><path d="M12 6v2M5.6 9.6l1.4 1.4M18.4 9.6L17 11M3 14h2M19 14h2"/></svg><span>Ausências</span></button>
       <button type="button" class="nav-item" data-nav="clients"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 19.5c.8-3.3 3.4-5 6.5-5s5.7 1.7 6.5 5"/><path d="M15.5 5.2a3.5 3.5 0 010 6.6M17.8 14.8c1.9.7 3.2 2.3 3.7 4.7"/></svg><span>Clientes</span></button>
       <button type="button" class="nav-item" data-nav="opps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0113 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg><span>Investment Intelligence</span></button>
       <button type="button" class="nav-item" data-nav="billing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 6.5A7 7 0 1 0 17.5 17.5"/><path d="M4.5 10.5h9M4.5 13.5h9"/></svg><span>Faturação</span></button>
@@ -3484,6 +3727,7 @@
       <div id="home-view">
         <div class="home-head"><div id="home-greeting" class="home-greeting">—</div><div class="home-date" id="home-date"></div></div>
         <section class="gantt-wrap punch-card" id="today-punch" hidden></section>
+        <section class="gantt-wrap dbk-card" id="today-daybreak" hidden></section>
         <section class="gantt-wrap alerts-card" id="today-alerts" hidden></section>
         <div class="today-grid">
           <section class="gantt-wrap">
@@ -3519,6 +3763,7 @@
       <div id="proposal-view" style="display:none;"></div>
       <div id="help-view" style="display:none;"></div>
       <div id="tickets-view" style="display:none;"></div>
+      <div id="absences-view" style="display:none;"></div>
       <div id="billing-view" style="display:none;"><div id="billing-container"></div></div>
       <div id="finance-view" style="display:none;">
         <div class="mc-head">
@@ -3527,6 +3772,7 @@
             <button type="button" data-mc="finance" role="tab">Financeiro</button>
             <button type="button" data-mc="time" role="tab">Tempo</button>
             <button type="button" data-mc="pipeline" role="tab">Pipeline</button>
+            <button type="button" data-mc="daybreak" role="tab">Daybreak</button>
           </div>
           <div class="segmented mc-period" id="mc-period"></div>
         </div>
@@ -3534,6 +3780,7 @@
         <div id="finance-container" hidden></div>
         <div id="mc-time" hidden></div>
         <div id="mc-pipeline" hidden></div>
+        <div id="mc-daybreak" hidden></div>
       </div>
       <div id="projects-view" style="display:none;">
         <div class="list-toolbar">
@@ -3792,6 +4039,11 @@
   <div id="help-panel-overlay" hidden></div>
   <aside id="help-panel" hidden aria-label="Ajuda"></aside>
   <div id="toast-root" aria-live="polite"></div>
+  <div id="dbk" hidden role="dialog" aria-label="Daybreak">
+    <div class="dbk-bar"><span class="brand"><i></i>Daybreak</span><span class="dbk-dots"></span><button type="button" class="dbk-x" data-dbk-x aria-label="Sair (Esc)" title="Sair (Esc)">×</button></div>
+    <div class="dbk-stage"></div>
+    <div class="dbk-nav"><button type="button" class="dbk-btn ghost" data-dbk-prev>← Anterior</button><button type="button" class="dbk-btn" data-dbk-next>Seguinte →</button></div>
+  </div>
   <div id="pres" hidden role="dialog" aria-label="Modo apresentação" aria-roledescription="apresentação">
     <div class="pres-aura"><i></i><i></i></div>
     <div class="pres-dots-bg"></div>
@@ -4236,7 +4488,7 @@
       const navKey = newState.name === 'detail' ? 'projects' : newState.name === 'client' ? 'clients' : ['plot', 'proposal', 'feas'].includes(newState.name) ? 'opps' : newState.name;
       document.querySelectorAll('[data-nav]').forEach(el => el.classList.toggle('active', el.dataset.nav === navKey));
       document.getElementById('more-sheet').classList.remove('open');
-      document.getElementById('tab-more').classList.toggle('active', ['clients', 'opps', 'billing', 'finance', 'atas', 'despesas', 'settings', 'help', 'tickets'].includes(navKey));
+      document.getElementById('tab-more').classList.toggle('active', ['clients', 'opps', 'billing', 'finance', 'atas', 'despesas', 'settings', 'help', 'tickets', 'absences'].includes(navKey));
       requestAnimationFrame(() => syncNavInd());
       syncLargeTitle(newState.name);
       if (!sameView) window.scrollTo(0, 0);   // voltar a carregar a mesma página não salta para o topo
@@ -4374,7 +4626,7 @@
 
     function hideAllViews() {
       kGhostOut();
-      ['home-view', 'projects-view', 'clients-view', 'client-view', 'opps-view', 'plot-view', 'feas-view', 'proposal-view', 'billing-view', 'finance-view', 'agenda-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view', 'despesas-view', 'help-view', 'tickets-view'].forEach(id => {
+      ['home-view', 'projects-view', 'clients-view', 'client-view', 'opps-view', 'plot-view', 'feas-view', 'proposal-view', 'billing-view', 'finance-view', 'agenda-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view', 'despesas-view', 'help-view', 'tickets-view', 'absences-view'].forEach(id => {
         document.getElementById(id).style.display = 'none';
       });
     }
@@ -5531,7 +5783,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       help: () => openHelpModule(),
       agenda: () => openAgendaModule(),
       opps: () => openOppsModule(),
-      tickets: () => openTicketsModule()
+      tickets: () => openTicketsModule(),
+      absences: () => openAbsencesModule()
     };
     document.querySelectorAll('[data-nav]').forEach(el => el.addEventListener('click', () => {
       navStack = [];
@@ -8609,7 +8862,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         } else {
           const [st, br] = await Promise.all([
             supabase.from('project_stages')
-              .select('id, project_id, stage_order, status, start_date, end_date, delivery_date, deadline_override, is_deadline_fixed, expected_lead_time_days, ignores_breaks, revision_label, stage_types(name, break_immune), projects(name, code, awarding_date, archived_at, owner_id)'),
+              .select('id, project_id, stage_order, status, start_date, end_date, delivery_date, deadline_override, is_deadline_fixed, expected_lead_time_days, ignores_breaks, revision_label, base_stage, revision_kind, revision_cause, always_rework, stage_types(name, break_immune), projects(name, code, awarding_date, archived_at, owner_id)'),
             supabase.from('project_breaks').select('project_id, start_date, end_date, after_stage_id')
           ]);
           if (st.error) throw st.error;
@@ -9883,13 +10136,14 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       showMcTab(mcTab);
     }
     function showMcTab(t) {
-      mcTab = ['quality', 'finance', 'time', 'pipeline'].includes(t) ? t : 'quality';
+      mcTab = ['quality', 'finance', 'time', 'pipeline', 'daybreak'].includes(t) ? t : 'quality';
       try { localStorage.setItem('nova.mcTab', mcTab); } catch { /* sem armazenamento */ }
       document.querySelectorAll('#mc-tabs [data-mc]').forEach(b => { b.classList.toggle('active', b.dataset.mc === mcTab); b.setAttribute('aria-selected', b.dataset.mc === mcTab); });
       document.getElementById('mc-quality').hidden = mcTab !== 'quality';
       document.getElementById('finance-container').hidden = mcTab !== 'finance';
       document.getElementById('mc-time').hidden = mcTab !== 'time';
       document.getElementById('mc-pipeline').hidden = mcTab !== 'pipeline';
+      document.getElementById('mc-daybreak').hidden = mcTab !== 'daybreak';
       // o Financeiro tem o seu próprio seletor de ano
       const per = document.getElementById('mc-period');
       per.hidden = mcTab === 'finance';
@@ -9898,6 +10152,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         .map(([v, l]) => `<button type="button" data-per="${v}" class="${v === mcPeriod ? 'active' : ''}">${l}</button>`).join('');
       if (mcTab === 'finance') loadFinance();
       else if (mcTab === 'pipeline') loadMcPipeline();
+      else if (mcTab === 'daybreak') loadMcDaybreak();
       else loadMc();
     }
     document.getElementById('mc-tabs').addEventListener('click', e => { const b = e.target.closest('[data-mc]'); if (b) showMcTab(b.dataset.mc); });
@@ -10082,10 +10337,23 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       if (r.error) throw r.error;
     }
     async function loadAttendance(from, to) {
-      if (devMode) return mockAttendance.filter(a => a.day >= from && a.day <= to);
-      const r = await supabase.from('attendance').select('*').gte('day', from).lte('day', to);
-      if (r.error) { if (/attendance/.test(r.error.message || '')) return []; throw r.error; }
-      return r.data || [];
+      let rows;
+      if (devMode) rows = mockAttendance.filter(a => a.day >= from && a.day <= to);
+      else {
+        const r = await supabase.from('attendance').select('*').gte('day', from).lte('day', to);
+        if (r.error) { if (/attendance/.test(r.error.message || '')) return []; throw r.error; }
+        rows = r.data || [];
+      }
+      // Ausências marcadas (férias, doença, formação…) contam como folga nos dias sem entrada
+      const abs = await loadAbsences(from, to).catch(() => []);
+      abs.forEach(a => {
+        for (let d = a.start_date < from ? from : a.start_date; d <= (a.end_date > to ? to : a.end_date); d = addDaysKey(d, 1)) {
+          if (!isWorkday(d) || rows.some(x => x.member_id === a.member_id && x.day === d && (x.check_in || x.kind !== 'office'))) continue;
+          rows = rows.filter(x => !(x.member_id === a.member_id && x.day === d));
+          rows.push({ id: 'abs:' + a.id + ':' + d, member_id: a.member_id, day: d, kind: 'off', note: absLabel(a), absence: true, edited: false });
+        }
+      });
+      return rows;
     }
     async function loadCheckins(ids) {
       if (!ids.length) return [];
@@ -10310,7 +10578,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           await saveAttendance({ member_id: me, day, kind: 'office', check_in: row.check_in, check_out: nowIso, edited: row.edited || false });
           showToast('Tasco fechado. Até amanhã! 🍷');
           renderAttendance(me);
-          checkDayHours(me, day, row.check_in, nowIso);
+          // Fecho do dia do Daybreak; depois, a verificação das horas registadas
+          openDbkClose(me, day, () => checkDayHours(me, day, row.check_in, nowIso));
           return;
         } else if (kind === 'out' || kind === 'off' || kind === 'fix') {
           return openAttFix(kind, me, cfg, day, row);
@@ -13468,7 +13737,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const urgent = r.late ? 'late' : (r.kind === 'camara' || r.kind === 'debt' || r.kind === 'meet' || (r.kind === 'bday' && r.today)) ? 'soon' : '';
         items.push({ pri: r.late || r.kind === 'meet' ? 0 : urgent ? 1 : 2, date: r.due || '9999', html: `
           <div class="alert-row team${urgent ? ' ' + urgent : ''}" data-alert-team="${r.kind}"${r.note ? ` data-note="${escapeHtml(r.note.id)}"` : ''}${r.project ? ` data-project="${escapeHtml(r.project)}"` : ''}${r.nps ? ` data-nps="${escapeHtml(r.nps)}"` : ''}${r.client ? ` data-client="${escapeHtml(r.client)}"` : ''}${r.ticket ? ` data-ticket="${escapeHtml(r.ticket)}"` : ''}${r.url ? ` data-url="${escapeHtml(r.url)}" role="link" tabindex="0"` : ''}>
-            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : r.kind === 'nps' ? '★' : r.kind === 'debt' ? '€' : r.kind === 'law' ? '§' : r.kind === 'radar' ? '◎' : r.kind === 'meet' ? '▶' : r.kind === 'transcript' ? '≡' : r.kind === 'bday' ? '✦' : r.kind === 'ticket' ? '💡' : '+'}</span>
+            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : r.kind === 'nps' ? '★' : r.kind === 'debt' ? '€' : r.kind === 'law' ? '§' : r.kind === 'radar' ? '◎' : r.kind === 'meet' ? '▶' : r.kind === 'transcript' ? '≡' : r.kind === 'bday' ? '✦' : r.kind === 'ticket' ? '💡' : r.kind === 'absence' ? '◐' : '+'}</span>
             <span class="alert-text"><b>${escapeHtml(r.title)}</b><span>${escapeHtml(r.sub)}</span></span>
             <span class="alert-when">${escapeHtml(r.when)}</span>
           </div>` });
@@ -13520,6 +13789,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         if (k === 'meet') window.open(r.dataset.url, '_blank', 'noopener');
         else if (k === 'bday') openClientDetail(r.dataset.client);
         else if (k === 'ticket') openTicketDetail(r.dataset.ticket);
+        else if (k === 'absence') { navStack = []; openAbsencesModule(); }
         else if (k === 'transcript') { const n = teamRows.find(x => x.note && String(x.note.id) === r.dataset.note)?.note; if (n) openNewAtaModal(null, null, n, () => renderToday()); }
         else if (k === 'hours') openHorasModule();
         else if (k === 'owner') openProjectsModule();
@@ -13935,6 +14205,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const todayKey = dateKey(new Date());
         const lastKey = addDaysKey(todayKey, 6);
         renderAttendance(me);
+        renderDaybreakCard(me);
 
         const [milestones, phases, types, hours, alerts, breakAlerts, importAlerts, target, noOwner, camaraAlerts, npsAlerts, debtAlerts, lawAlerts, radarAlerts] = await Promise.all([
           Promise.all([fetchMilestones({ from: todayKey, to: lastKey }), fetchMsEvents(todayKey, lastKey).catch(() => [])]).then(([a, b]) => { msShown = b; return [...a, ...b]; }),
@@ -13956,7 +14227,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         renderWeekHours(hoursEl, hours, tg);
         // Avisos de organização: horas em falta (a partir de sexta), projetos sem responsável,
         // fases em curso/seguintes sem ninguém nos projetos de que sou responsável
-        const teamAlerts = [...await meetingAlerts(milestones, me, todayKey).catch(() => []), ...await transcriptAlerts(me).catch(() => []), ...await birthdayAlerts().catch(() => []), ...await ticketAlerts(me).catch(() => []), ...radarAlerts, ...lawAlerts, ...debtAlerts, ...npsAlerts, ...camaraAlerts];
+        const teamAlerts = [...await meetingAlerts(milestones, me, todayKey).catch(() => []), ...await transcriptAlerts(me).catch(() => []), ...await birthdayAlerts().catch(() => []), ...await ticketAlerts(me).catch(() => []), ...await absenceAlerts(me).catch(() => []), ...radarAlerts, ...lawAlerts, ...debtAlerts, ...npsAlerts, ...camaraAlerts];
         const wd = new Date().getDay();
         const missing = missingHourDays(hours, tg);
         if ((wd === 5 || wd === 6 || wd === 0) && missing.length)
@@ -14710,6 +14981,18 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         steps: ['Ao chegar, abre [[Hoje]] e toca em [[Cheguei]]. O horário é das 8h às 14h, com 5 minutos de tolerância.', 'Ao sair, toca em [[Fechar o tasco]].', 'Dia em obra, na Câmara ou no cliente? Toca em **Hoje estou fora** e escreve onde: conta como a horas.', 'Folga ou férias? Toca em **Folga / férias**: esse dia não conta.', 'Esqueceste-te de marcar? Toca em [[Corrigir]] e põe a hora certa. Fica assinalado com ✎.'],
         kw: 'ponto entrada saida chegar cheguei sair picar pontualidade horario presenca atraso reuniao',
         tour: [{ go: 'nav:home', sel: '#today-punch .punch, #today-punch', text: 'Toca em «Cheguei» ao chegar e em «Fechar o tasco» ao sair.' }] },
+      { id: 'daybreak', cat: 'horas', ctx: ['home', 'finance:daybreak'],
+        q: 'faço o Daybreak (reunião das 8:40, plano do dia e fecho)',
+        a: 'Ao sair, o «Fechar o tasco» abre o fecho do dia: o que ficou feito e as horas não planeadas e de retrabalho. De manhã, planeia o dia no cartão Daybreak da Hoje. Às 8:40, «Começar o Daybreak» passa pessoa a pessoa.',
+        steps: ['Ao sair, toca em [[Fechar o tasco]]: marca o que ficou feito e diz, mais ou menos, quantas horas foram para **trabalho não planeado** e para **retrabalho**, e porquê.', 'De manhã, antes das 8:40, abre [[Hoje]] → cartão **Daybreak** → [[Planear o dia]]: escolhe tarefas das checklists das tuas fases ou escreve outras. Marca até **3 prioridades** com ★.', 'O que fica por fazer passa sozinho para o dia seguinte, com **↻ 2.º dia**, **3.º dia**…', 'Às 8:40 toca em [[Começar o Daybreak]]: cada pessoa tem 2 minutos (ontem, horas fora do plano, hoje). Nos dias de teletrabalho, **Entrar no Teams**.', 'No fim, as **ações de melhoria**: o quê, quem e até quando. Entram na lista de tarefas de quem fica responsável.', 'Fases de revisão que são todas retrabalho: ao indicá-las no fecho, a app pergunta e, se disseres que sim, passa a contar essas horas sozinha.', 'A evolução está no [[Mission Control]] → **Daybreak**.'],
+        kw: 'daybreak kaizen reuniao diaria 8:40 plano do dia tarefas prioridades retrabalho nao planeado fecho do dia acoes melhoria teams standup',
+        tour: [{ go: 'nav:home', sel: '#today-daybreak', text: 'O plano do dia e o botão para começar a reunião das 8:40.' }] },
+      { id: 'ausencias', cat: 'horas', ctx: ['absences', 'home'],
+        q: 'marco férias, uma falta ou formação',
+        a: 'Em Ausências, toca em «+ Marcar ausência», escolhe o tipo e as datas. Fica logo marcada, a equipa vê na Hoje e vai para o teu Outlook como "Fora do escritório".',
+        steps: ['Abre [[Ausências]] e toca em [[+ Marcar ausência]] (ou toca num dia vazio do mapa).', 'Escolhe **Férias**, **Doença / consulta**, **Falta justificada** (casamento, falecimento, exames…) ou **Formação / outra**, e as datas.', 'A app conta os **dias úteis** (sem fins de semana nem feriados) e avisa se outra pessoa está fora, se tens marcos nesses dias ou se passas do saldo.', 'Cada pessoa tem o **saldo de férias**: 22 dias úteis por ano (no ano de entrada, 2 por mês completo, até 20) e os dias transitados, que se gozam até 30 de abril. Em **Ajustar** pões a data de admissão e corriges os transitados.', 'A lei pede o **mapa de férias até 15 de abril** e pelo menos **10 dias úteis seguidos**: a app avisa. Em [[Mapa de férias (PDF)]] imprimes o mapa para afixar.'],
+        kw: 'ferias ausencia ausencias falta faltas folga doenca baixa consulta formacao casamento falecimento luto mapa de ferias saldo dias transitados outlook fora do escritorio',
+        tour: [{ go: 'nav:absences', sel: '#ab-new', text: 'Marca aqui férias, faltas ou formação.' }, { sel: '.ab-map', text: 'O mapa do mês: quem está fora e quando.' }] },
       { id: 'melhorias', cat: 'horas', ctx: ['tickets', 'home'],
         q: 'sugiro uma melhoria ou reporto um erro na app',
         a: 'Toca na lâmpada 💡 no topo de qualquer ecrã (ou ⌘K → "Sugerir melhoria"). Escolhe Erro, Melhoria ou Ideia, escreve numa frase e envia.',
@@ -18113,6 +18396,946 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       }
     }
 
+    // ================= AUSÊNCIAS: férias, doença, faltas justificadas e formação =================
+    // Cada pessoa marca e fica logo (os outros veem na Hoje). Saldo de férias pelo Código do Trabalho:
+    // 22 dias úteis por ano (art. 238.º); no ano de admissão, 2 dias úteis por mês completo, até 20, a gozar
+    // depois de 6 meses (art. 239.º); dias por gozar transitam até 30 de abril do ano seguinte (art. 240.º);
+    // mapa de férias até 15 de abril, afixado até 31 de outubro, e pelo menos 10 dias úteis seguidos (art. 241.º).
+    // Faltas por falecimento contam dias seguidos de calendário (art. 251.º).
+    const ABS_KIND = { vacation: ['Férias', '🏖️'], sick: ['Doença / consulta', '🩺'], justified: ['Falta justificada', '📄'], training: ['Formação / outra', '🎓'] };
+    const ABS_SUB = {
+      sick: [['doenca', 'Doença'], ['consulta', 'Consulta ou exame médico'], ['assistencia', 'Assistência a filho ou familiar']],
+      justified: [
+        ['casamento', 'Casamento', 15, 'até 15 dias seguidos (art. 249.º)'],
+        ['luto1', 'Falecimento de cônjuge, unido de facto, filho ou enteado', 20, 'até 20 dias seguidos de calendário (art. 251.º)'],
+        ['luto2', 'Falecimento de pais, sogros, padrasto ou madrasta', 5, 'até 5 dias seguidos de calendário (art. 251.º)'],
+        ['luto3', 'Falecimento de avós, netos, irmãos ou cunhados', 2, 'até 2 dias seguidos de calendário (art. 251.º)'],
+        ['exame', 'Prova de avaliação (trabalhador-estudante)', 0, 'o dia da prova e o anterior'],
+        ['escola', 'Deslocação à escola de filho menor', 0, 'até 4 horas por trimestre, por filho'],
+        ['sangue', 'Doação de sangue', 0, ''],
+        ['eleicoes', 'Candidatura a eleições', 0, ''],
+        ['autorizada', 'Autorizada pela empresa', 0, ''],
+        ['outra', 'Outra prevista na lei', 0, '']],
+      training: [['formacao', 'Formação'], ['compensacao', 'Dia de compensação'], ['outra', 'Outra']]
+    };
+    const ABS_SINCE = 2026;   // primeiro ano registado na app: antes disso, os transitados põem-se à mão
+    let absYear = new Date().getFullYear(), absMonth = dateKey(new Date()).slice(0, 7);
+    let mockAbsences = (() => {
+      const t = dateKey(new Date());
+      return [
+        { id: 'abs-1', member_id: 'm3', kind: 'vacation', start_date: addDaysKey(t, -1), end_date: addDaysKey(t, 6), note: 'Açores', created_by: 'm3', created_at: new Date().toISOString() },
+        { id: 'abs-2', member_id: 'm2', kind: 'training', subkind: 'formacao', start_date: addDaysKey(t, 9), end_date: addDaysKey(t, 9), note: 'BIM avançado', created_by: 'm2', created_at: new Date(Date.now() - 864e5 * 10).toISOString() },
+        { id: 'abs-3', member_id: 'mock-member-1', kind: 'vacation', start_date: `${t.slice(0, 4)}-08-03`, end_date: `${t.slice(0, 4)}-08-14`, note: null, created_by: 'mock-member-1', created_at: new Date(Date.now() - 864e5 * 90).toISOString() }
+      ];
+    })();
+    let mockAbsCfg = { carry: {}, admission: {} };
+    async function loadAbsences(from, to) {
+      if (devMode) return mockAbsences.filter(a => a.end_date >= from && a.start_date <= to);
+      const r = await supabase.from('absences').select('*').lte('start_date', to).gte('end_date', from).order('start_date');
+      if (r.error) { if (/absences/.test(r.error.message || '')) return []; throw r.error; }
+      return r.data || [];
+    }
+    // Datas de admissão e dias transitados postos à mão (app_settings 'absences')
+    async function loadAbsCfg() {
+      if (devMode) return { carry: {}, ...mockAbsCfg };
+      const [s, m] = await Promise.all([
+        supabase.from('app_settings').select('value').eq('key', 'absences').maybeSingle(),
+        supabase.from('team_members').select('id, admission_date').eq('active', true)
+      ]);
+      const v = s.data?.value || {};
+      return { carry: v.carry || {}, admission: Object.fromEntries((m.data || []).map(x => [x.id, x.admission_date])) };
+    }
+    async function saveAbsCarry(memberId, year, days) {
+      const cfg = await loadAbsCfg();
+      const carry = { ...cfg.carry, [memberId]: { ...(cfg.carry[memberId] || {}), [year]: days } };
+      if (days == null) delete carry[memberId][year];
+      if (devMode) { mockAbsCfg.carry = carry; return; }
+      const r = await supabase.from('app_settings').upsert({ key: 'absences', value: { carry }, updated_at: new Date().toISOString() });
+      if (r.error) throw r.error;
+    }
+    async function saveAdmission(memberId, date) {
+      if (devMode) { mockAbsCfg.admission = { ...mockAbsCfg.admission, [memberId]: date }; return; }
+      const r = await supabase.from('team_members').update({ admission_date: date }).eq('id', memberId);
+      if (r.error) throw r.error;
+    }
+    const absLabel = a => a.kind === 'vacation' ? 'Férias' : (ABS_SUB[a.kind]?.find(s => s[0] === a.subkind)?.[1] || ABS_KIND[a.kind]?.[0] || 'Ausência');
+    // Dias úteis (seg–sex, sem feriados) entre duas datas, inclusive; opcionalmente cortado a um intervalo
+    function absWorkdays(s, e, from = s, to = e) {
+      let n = 0;
+      for (let d = s < from ? from : s; d <= (e > to ? to : e); d = addDaysKey(d, 1)) if (isWorkday(d)) n++;
+      return n;
+    }
+    const absOn = (list, memberId, day) => list.find(a => a.member_id === memberId && a.start_date <= day && a.end_date >= day);
+    // Direito a férias num ano
+    function absEntitlement(adm, year) {
+      if (!adm) return 22;
+      const ay = Number(adm.slice(0, 4));
+      if (ay > year) return 0;
+      if (ay < year) return 22;
+      const d = parseDateKey(adm);
+      const months = 12 - d.getMonth() - (d.getDate() > 1 ? 1 : 0);   // meses completos até 31/12
+      return Math.min(20, 2 * Math.max(0, months));
+    }
+    // Saldo de férias de uma pessoa num ano: { ent, carry, carryLeft, carryExpired, booked, taken, left, from6m }
+    function absBalance(memberId, year, list, cfg, today = dateKey(new Date())) {
+      const adm = cfg.admission?.[memberId] || null;
+      const vac = list.filter(a => a.member_id === memberId && a.kind === 'vacation');
+      const used = (y, from, to) => vac.reduce((t, a) => t + absWorkdays(a.start_date, a.end_date, from || `${y}-01-01`, to || `${y}-12-31`), 0);
+      const carryOf = y => {
+        const manual = cfg.carry?.[memberId]?.[y];
+        if (manual != null) return Number(manual) || 0;
+        if (y - 1 < ABS_SINCE) return 0;
+        const c = carryOf(y - 1), early = used(y - 1, `${y - 1}-01-01`, `${y - 1}-04-30`);
+        const fromCur = used(y - 1) - Math.min(c, early);
+        return Math.max(0, absEntitlement(adm, y - 1) - fromCur);
+      };
+      const ent = absEntitlement(adm, year), carry = carryOf(year);
+      const early = used(year, `${year}-01-01`, `${year}-04-30`);
+      const carryUsed = Math.min(carry, early);
+      const booked = used(year), taken = used(year, `${year}-01-01`, today < `${year}-12-31` ? today : `${year}-12-31`);
+      const carryExpired = today > `${year}-04-30`;
+      const carryLeft = carryExpired ? 0 : carry - carryUsed;
+      const left = ent - (booked - carryUsed) + carryLeft;
+      const from6m = adm && Number(adm.slice(0, 4)) === year ? addMonthsKey(adm, 6) : null;
+      return { ent, carry, carryUsed, carryLeft, carryLost: carryExpired ? carry - carryUsed : 0, booked, taken, left, from6m };
+    }
+    // Maior período de dias úteis seguidos de férias no ano (fins de semana e feriados não cortam)
+    function absLongestRun(memberId, year, list) {
+      const vac = list.filter(a => a.member_id === memberId && a.kind === 'vacation');
+      let best = 0, run = 0;
+      for (let d = `${year}-01-01`; d <= `${year}-12-31`; d = addDaysKey(d, 1)) {
+        if (!isWorkday(d)) continue;
+        if (vac.some(a => a.start_date <= d && a.end_date >= d)) { run++; best = Math.max(best, run); } else run = 0;
+      }
+      return best;
+    }
+    // Avisos das regras (para a pessoa, ou para todos no centro de ausências)
+    function absRuleAlerts(members, list, cfg, year, today = dateKey(new Date())) {
+      const out = [];
+      const y = Number(today.slice(0, 4));
+      members.forEach(m => {
+        const b = absBalance(m.id, y, list, cfg, today);
+        const who = attFirst(m.name);
+        if (year === y && today >= `${y}-03-01` && today <= `${y}-04-15` && b.left > 0)
+          out.push({ member: m.id, kind: 'map', title: `${who}: faltam marcar ${b.left} ${b.left === 1 ? 'dia' : 'dias'} de férias`, sub: `O mapa de férias tem de estar feito até 15 de abril.` });
+        if (year === y && b.carryLeft > 0 && today >= `${y}-02-01` && today <= `${y}-04-30`)
+          out.push({ member: m.id, kind: 'carry', title: `${who}: ${b.carryLeft} ${b.carryLeft === 1 ? 'dia transitado caduca' : 'dias transitados caducam'} a 30 de abril`, sub: `Dias de ${y - 1} por gozar. Marca-os antes de 30/4.` });
+        const run = absLongestRun(m.id, year, list);
+        const yb = absBalance(m.id, year, list, cfg, today);
+        if (run < 10 && yb.ent >= 10 && (yb.booked >= 10 || today >= `${year}-04-15`))
+          out.push({ member: m.id, kind: 'run', title: `${who}: ainda sem 10 dias úteis de férias seguidos em ${year}`, sub: run ? `O período mais longo marcado tem ${run} ${run === 1 ? 'dia útil' : 'dias úteis'}.` : 'Nenhum período marcado.' });
+      });
+      return out;
+    }
+    // Quem está fora num dia (para a Hoje dos outros e o Daybreak)
+    async function absentOn(day) {
+      const [list, members] = await Promise.all([loadAbsences(day, day), loadAllMembers()]);
+      return list.map(a => ({ ...a, member: members.find(m => m.id === a.member_id) })).filter(a => a.member);
+    }
+    // Avisos na Hoje: quem está fora hoje, ausências marcadas pelos outros nos últimos 3 dias e as regras da pessoa
+    async function absenceAlerts(me) {
+      const today = dateKey(new Date()), y = Number(today.slice(0, 4));
+      const [list, members, cfg] = await Promise.all([loadAbsences(`${y - 1}-01-01`, `${y + 1}-12-31`), loadAllMembers(), loadAbsCfg()]);
+      const name = id => attFirst(members.find(m => m.id === id)?.name || '');
+      const out = [];
+      list.filter(a => a.member_id !== me && a.start_date <= today && a.end_date >= today && name(a.member_id)).forEach(a => {
+        let back = addDaysKey(a.end_date, 1); while (!isWorkday(back)) back = addDaysKey(back, 1);
+        out.push({ kind: 'absence', title: `${name(a.member_id)} está fora hoje · ${absLabel(a)}`, sub: `Volta ${diffDays(today, back) === 1 ? 'amanhã' : 'a ' + fmtDayMonth(back)}${a.note && a.kind !== 'sick' ? ' · ' + a.note : ''}`, when: 'Ver' });
+      });
+      const recent = new Date(Date.now() - 3 * 864e5).toISOString();
+      list.filter(a => a.member_id !== me && a.created_at >= recent && a.start_date > today && name(a.member_id)).forEach(a =>
+        out.push({ kind: 'absence', title: `${name(a.member_id)} marcou ${absLabel(a).toLowerCase()}`, sub: a.start_date === a.end_date ? fmtDayMonth(a.start_date) : `${fmtDayMonth(a.start_date)} → ${fmtDayMonth(a.end_date)}`, when: 'Ver' }));
+      const meM = members.find(m => m.id === me);
+      if (meM) absRuleAlerts([meM], list, cfg, y, today).forEach(r => out.push({ kind: 'absence', title: r.title.replace(/^[^:]+: /, ''), sub: r.sub, when: 'Marcar' }));
+      return out;
+    }
+
+    // ---------- Página "Ausências" ----------
+    function openAbsencesModule() {
+      pushCurrentView({ name: 'absences' });
+      document.getElementById('nav-title').textContent = 'Ausências';
+      hideAllViews();
+      document.getElementById('absences-view').style.display = 'block';
+      renderAbsences();
+    }
+    async function renderAbsences() {
+      const box = document.getElementById('absences-view');
+      beginLoad(box, 'absences', '<div class="gantt-wrap">' + SKELETON(3) + '</div><div class="gantt-wrap">' + SKELETON(5) + '</div>');
+      try {
+        const today = dateKey(new Date());
+        const [list, members, cfg, meM] = await Promise.all([loadAbsences(`${absYear - 2}-01-01`, `${absYear + 1}-12-31`), loadAllMembers(), loadAbsCfg(), getCurrentMember()]);
+        const me = meM?.id;
+        const ys = [absYear - 1, absYear, absYear + 1];
+        const yNow = new Date().getFullYear();
+        const rules = absRuleAlerts(members, list, cfg, absYear, today);
+        // Mapa do mês: pessoas × dias
+        const [my, mm] = absMonth.split('-').map(Number);
+        const days = []; for (let d = `${absMonth}-01`; d.slice(0, 7) === absMonth; d = addDaysKey(d, 1)) days.push(d);
+        const monthName = parseDateKey(`${absMonth}-01`).toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' });
+        const outCount = d => members.filter(m => absOn(list, m.id, d)).length;
+        const yearList = list.filter(a => a.end_date >= `${absYear}-01-01` && a.start_date <= `${absYear}-12-31`).sort((a, b) => a.start_date.localeCompare(b.start_date));
+        const nm = id => members.find(m => m.id === id)?.name || '—';
+        box.innerHTML = `
+          <div class="op-listbar ab-bar">
+            <div class="segmented" id="ab-year">${ys.map(y => `<button type="button" data-y="${y}"${y === absYear ? ' class="active"' : ''}>${y}</button>`).join('')}</div>
+            <div class="ab-actions"><button type="button" class="secondary-btn" id="ab-print">Mapa de férias (PDF)</button><button type="button" class="primary-btn" id="ab-new">+ Marcar ausência</button></div>
+          </div>
+          <div class="ab-people">${members.map(m => {
+            const b = absBalance(m.id, absYear, list, cfg, today), run = absLongestRun(m.id, absYear, list), adm = cfg.admission?.[m.id];
+            return `<div class="gantt-wrap ab-person${m.id === me ? ' me' : ''}" data-ab-member="${escapeHtml(m.id)}">
+              <div class="ab-p-head"><span class="ab-dot" style="background:${escapeHtml(memberColor(m.id))}"></span><b>${escapeHtml(m.name)}</b><button type="button" class="text-btn" data-ab-adjust="${escapeHtml(m.id)}">Ajustar</button></div>
+              <div class="ab-left"><b data-count="${b.left}">${b.left}</b><span>${b.left === 1 ? 'dia por marcar' : 'dias por marcar'}</span></div>
+              <div class="ab-meter" title="${b.taken} gozados · ${b.booked - b.taken} marcados por gozar">${(() => { const tot = Math.max(1, b.ent + b.carry); return `<span class="t" style="width:${Math.min(100, b.taken / tot * 100)}%"></span><span class="b" style="width:${Math.min(100, (b.booked - b.taken) / tot * 100)}%"></span>`; })()}</div>
+              <div class="ab-facts">
+                <span>Direito ${absYear}: <b>${b.ent}</b></span>
+                ${b.carry ? `<span>Transitados de ${absYear - 1}: <b>${b.carry}</b>${b.carryLost ? ` <em class="warn-text">(${b.carryLost} caducaram)</em>` : b.carryLeft ? ` <em>· ${b.carryLeft} até 30/4</em>` : ''}</span>` : ''}
+                <span>Gozados: <b>${b.taken}</b> · marcados: <b>${b.booked - b.taken}</b></span>
+                <span class="${run >= 10 ? 'ok-text' : 'muted'}">${run >= 10 ? '✓ tem um período de 10 dias úteis seguidos' : `Período mais longo: ${run} ${run === 1 ? 'dia útil' : 'dias úteis'} (a lei pede 10)`}</span>
+                ${adm ? `<span class="muted">Admissão: ${escapeHtml(fmtDayMonth(adm))} ${escapeHtml(adm.slice(0, 4))}${b.from6m ? ` · férias a partir de ${escapeHtml(fmtDayMonth(b.from6m))}` : ''}</span>` : `<span class="muted">Sem data de admissão (conta 22 dias)</span>`}
+              </div></div>`;
+          }).join('')}</div>
+          ${rules.length ? `<div class="gantt-wrap ab-rules"><div class="card-head"><h2>Regras da lei</h2><span>Código do Trabalho</span></div>${rules.map(r => `<div class="ab-rule k-${r.kind}"><b>${escapeHtml(r.title)}</b><span>${escapeHtml(r.sub)}</span></div>`).join('')}</div>` : ''}
+          <div class="gantt-wrap ab-map">
+            <div class="card-head ab-map-head"><button type="button" class="ab-nav" data-ab-m="-1" aria-label="Mês anterior">‹</button><h2>${escapeHtml(monthName.charAt(0).toUpperCase() + monthName.slice(1))}</h2><button type="button" class="ab-nav" data-ab-m="1" aria-label="Mês seguinte">›</button></div>
+            <div class="table-scroll"><table class="ab-grid"><thead><tr><th></th>${days.map(d => { const w = parseDateKey(d).getDay(), c = outCount(d); return `<th class="${isWorkday(d) ? '' : 'off'}${d === today ? ' today' : ''}${c >= 2 && isWorkday(d) ? ' clash' : ''}" title="${c >= 2 ? c + ' pessoas fora' : ''}"><i>${'DSTQQSS'[w]}</i>${Number(d.slice(8))}</th>`; }).join('')}</tr></thead>
+              <tbody>${members.map(m => `<tr><th>${escapeHtml(attFirst(m.name))}</th>${days.map(d => { const a = absOn(list, m.id, d); return `<td class="${isWorkday(d) ? '' : 'off'}${d === today ? ' today' : ''}${a ? ' k-' + a.kind : ''}" data-ab-cell="${escapeHtml(m.id)}|${d}"${a ? ` data-ab-id="${escapeHtml(a.id)}" title="${escapeHtml(absLabel(a))}"` : ''}></td>`; }).join('')}</tr>`).join('')}</tbody></table></div>
+            <div class="ab-legend">${Object.entries(ABS_KIND).map(([k, [l]]) => `<span><i class="k-${k}"></i>${escapeHtml(l)}</span>`).join('')}<span><i class="off"></i>Fim de semana / feriado</span><span><i class="clash"></i>2 ou mais pessoas fora</span></div>
+          </div>
+          <div class="gantt-wrap"><div class="card-head"><h2>Ausências de ${absYear}</h2><span>${yearList.length}</span></div>
+            ${yearList.length ? `<div class="ab-list">${yearList.map(a => `<div class="ab-row${a.end_date < today ? ' past' : ''}" data-ab-id="${escapeHtml(a.id)}" role="button" tabindex="0">
+              <span class="ab-ico" aria-hidden="true">${ABS_KIND[a.kind]?.[1] || '•'}</span>
+              <span class="ab-main"><b>${escapeHtml(attFirst(nm(a.member_id)))} · ${escapeHtml(absLabel(a))}</b><small>${a.start_date === a.end_date ? escapeHtml(fmtDayMonth(a.start_date)) : `${escapeHtml(fmtDayMonth(a.start_date))} → ${escapeHtml(fmtDayMonth(a.end_date))}`}${a.note && (a.kind !== 'sick' || a.member_id === me) ? ' · ' + escapeHtml(a.note) : ''}</small></span>
+              <span class="ab-n">${absWorkdays(a.start_date, a.end_date)} ${absWorkdays(a.start_date, a.end_date) === 1 ? 'dia útil' : 'dias úteis'}</span></div>`).join('')}</div>`
+              : `<div class="gantt-empty">Ainda nada marcado em ${absYear}. Toca em <b>+ Marcar ausência</b>.</div>`}
+            <div class="field-hint">Férias: 22 dias úteis por ano (no ano de entrada, 2 por mês completo, até 20). Os dias por gozar transitam até 30 de abril. O mapa faz-se até 15 de abril e fica afixado até 31 de outubro, com pelo menos 10 dias úteis seguidos. As ausências vão para o Outlook de cada um como "Fora do escritório".</div>
+          </div>`;
+        box.querySelectorAll('#ab-year [data-y]').forEach(b => b.addEventListener('click', () => { absYear = Number(b.dataset.y); if (absMonth.slice(0, 4) !== String(absYear)) absMonth = `${absYear}-${absYear === yNow ? today.slice(5, 7) : '01'}`; renderAbsences(); }));
+        box.querySelectorAll('[data-ab-m]').forEach(b => b.addEventListener('click', () => { absMonth = addMonthsKey(`${absMonth}-01`, Number(b.dataset.abM)).slice(0, 7); absYear = Number(absMonth.slice(0, 4)); renderAbsences(); }));
+        document.getElementById('ab-new').addEventListener('click', () => openAbsenceModal({}));
+        document.getElementById('ab-print').addEventListener('click', () => printVacationMap(absYear, list, members, cfg));
+        box.querySelectorAll('[data-ab-adjust]').forEach(b => b.addEventListener('click', () => openAbsAdjust(b.dataset.abAdjust, members, cfg, list)));
+        box.querySelectorAll('.ab-row[data-ab-id]').forEach(r => r.addEventListener('click', () => openAbsenceModal({ id: r.dataset.abId })));
+        box.querySelectorAll('[data-ab-cell]').forEach(c => c.addEventListener('click', () => {
+          if (c.dataset.abId) return openAbsenceModal({ id: c.dataset.abId });
+          const [mid, d] = c.dataset.abCell.split('|');
+          openAbsenceModal({ member: mid, start: d });
+        }));
+      } catch (err) {
+        box.innerHTML = `<div class="error-box">Não foi possível carregar as ausências: ${escapeHtml(err.message)}</div>`;
+      }
+    }
+    // Data de admissão e dias transitados (à mão) de uma pessoa
+    function openAbsAdjust(memberId, members, cfg, list) {
+      const m = members.find(x => x.id === memberId);
+      const b = absBalance(memberId, absYear, list, cfg);
+      const manual = cfg.carry?.[memberId]?.[absYear];
+      openQuickModal(`Férias de ${attFirst(m?.name)}`, `
+        <label class="field-label" for="aa-adm">Data de admissão</label>
+        <input type="date" id="aa-adm" class="form-input" value="${escapeHtml(cfg.admission?.[memberId] || '')}">
+        <div class="field-hint">No ano de entrada tem direito a 2 dias úteis por mês completo (até 20), a gozar depois de 6 meses. Nos anos seguintes, 22.</div>
+        <label class="field-label" for="aa-carry">Dias de ${absYear - 1} por gozar (transitados para ${absYear})</label>
+        <input type="text" inputmode="numeric" id="aa-carry" class="form-input" value="${manual != null ? escapeHtml(manual) : ''}" placeholder="${b.carry} (calculado)">
+        <div class="field-hint">Deixa vazio para a app calcular a partir das férias marcadas. Só se gozam até 30 de abril.</div>
+        <button type="button" class="primary-btn" id="aa-save">Guardar</button>
+        <div id="aa-msg" class="form-msg"></div>`);
+      document.getElementById('aa-save').addEventListener('click', async () => {
+        const adm = document.getElementById('aa-adm').value || null;
+        const cv = document.getElementById('aa-carry').value.trim();
+        if (cv && !/^\d{1,2}$/.test(cv)) return formError('aa-msg', 'Escreve um número de dias (ex.: 3).');
+        try {
+          if (adm !== (cfg.admission?.[memberId] || null)) await saveAdmission(memberId, adm);
+          if ((cv === '' ? null : Number(cv)) !== (manual ?? null)) await saveAbsCarry(memberId, absYear, cv === '' ? null : Number(cv));
+          closeQuickModal(); showToast('Guardado'); renderAbsences();
+        } catch (err) { formError('aa-msg', 'Não foi possível guardar: ' + err.message); }
+      });
+    }
+    // Marcar / alterar uma ausência
+    async function openAbsenceModal({ id = null, member = null, start = null, after = null } = {}) {
+      const [members, meM, cfg] = await Promise.all([loadAllMembers(), getCurrentMember(), loadAbsCfg()]);
+      const y0 = Number((start || dateKey(new Date())).slice(0, 4));
+      const all = await loadAbsences(`${y0 - 2}-01-01`, `${y0 + 1}-12-31`);
+      const ex = id ? all.find(a => String(a.id) === String(id)) : null;
+      if (id && !ex) { showToast('Esta ausência já não existe.', { type: 'error' }); return; }
+      let kind = ex?.kind || 'vacation';
+      const today = dateKey(new Date());
+      const s0 = ex?.start_date || start || (isWorkday(addDaysKey(today, 1)) ? addDaysKey(today, 1) : today);
+      openQuickModal(ex ? 'Alterar ausência' : 'Marcar ausência', `
+        <label class="field-label" for="ab-who">Quem</label>
+        <select id="ab-who" class="form-input">${members.map(m => `<option value="${escapeHtml(m.id)}"${m.id === (ex?.member_id || member || meM?.id) ? ' selected' : ''}>${escapeHtml(m.name)}</option>`).join('')}</select>
+        <div class="segmented ab-kinds" id="ab-kind">${Object.entries(ABS_KIND).map(([k, [l, i]]) => `<button type="button" data-k="${k}"${k === kind ? ' class="active"' : ''}>${i} ${l}</button>`).join('')}</div>
+        <div id="ab-sub-wrap"></div>
+        <div class="ab-dates">
+          <div><label class="field-label" for="ab-s">De</label><input type="date" id="ab-s" class="form-input" value="${escapeHtml(s0)}"></div>
+          <div><label class="field-label" for="ab-e">Até (inclusive)</label><input type="date" id="ab-e" class="form-input" value="${escapeHtml(ex?.end_date || s0)}"></div>
+        </div>
+        <div class="ab-sum" id="ab-sum"></div>
+        <div id="ab-warn"></div>
+        <label class="field-label" for="ab-note">Nota <span class="muted">(opcional)</span></label>
+        <input type="text" id="ab-note" class="form-input" maxlength="200" value="${escapeHtml(ex?.note || '')}" placeholder="Ex.: Açores, consulta no Hospital de S. João…">
+        <button type="button" class="primary-btn" id="ab-save">${ex ? 'Guardar' : 'Marcar'}</button>
+        ${ex ? '<button type="button" class="text-btn danger-text" id="ab-del" style="margin-top:10px;">Apagar esta ausência</button>' : ''}
+        <div id="ab-msg" class="form-msg"></div>`);
+      const $ = s => document.getElementById(s);
+      let sub = ex?.subkind || null;
+      const drawSub = () => {
+        const opts = ABS_SUB[kind];
+        if (!opts) { $('ab-sub-wrap').innerHTML = ''; sub = null; return; }
+        if (!opts.some(o => o[0] === sub)) sub = opts[0][0];
+        $('ab-sub-wrap').innerHTML = `<label class="field-label" for="ab-sub">Motivo</label><select id="ab-sub" class="form-input">${opts.map(o => `<option value="${o[0]}"${o[0] === sub ? ' selected' : ''}>${escapeHtml(o[1])}</option>`).join('')}</select>`;
+        $('ab-sub').addEventListener('change', e => { sub = e.target.value; sync(); });
+      };
+      let ms = null;
+      const sync = async () => {
+        const s = $('ab-s').value, e = $('ab-e').value, who = $('ab-who').value;
+        if (!s || !e) { $('ab-sum').textContent = ''; return; }
+        if (e < s) { $('ab-sum').innerHTML = '<span class="warn-text">A data final é antes da inicial.</span>'; return; }
+        const wd = absWorkdays(s, e), cal = diffDays(s, e) + 1;
+        const legal = ABS_SUB[kind]?.find(o => o[0] === sub);
+        let txt = `<b>${wd}</b> ${wd === 1 ? 'dia útil' : 'dias úteis'}${cal !== wd ? ` <span class="muted">(${cal} ${cal === 1 ? 'dia' : 'dias'} de calendário)</span>` : ''}`;
+        if (legal?.[3]) txt += `<div class="field-hint">${escapeHtml(legal[1])}: ${escapeHtml(legal[3])}.</div>`;
+        $('ab-sum').innerHTML = txt;
+        const warn = [];
+        if (legal?.[2] && cal > legal[2]) warn.push(`A lei prevê ${legal[3]}; marcaste ${cal} dias.`);
+        const others = all.filter(a => a.id !== ex?.id && a.member_id !== who && a.end_date >= s && a.start_date <= e);
+        if (others.length) warn.push(`Também fora nesses dias: ${[...new Set(others.map(a => attFirst(members.find(m => m.id === a.member_id)?.name)))].join(', ')}.`);
+        const mine = all.filter(a => a.id !== ex?.id && a.member_id === who && a.end_date >= s && a.start_date <= e);
+        if (mine.length) warn.push('Já tem uma ausência marcada nesses dias.');
+        if (kind === 'vacation') {
+          const y = Number(s.slice(0, 4));
+          const trial = [...all.filter(a => a.id !== ex?.id), { member_id: who, kind: 'vacation', start_date: s, end_date: e }];
+          const b = absBalance(who, y, trial, cfg);
+          if (b.left < 0) warn.push(`Passa ${-b.left} ${b.left === -1 ? 'dia' : 'dias'} além do saldo de ${y}.`);
+          if (b.from6m && s < b.from6m) warn.push(`No ano de admissão, as férias só se gozam depois de ${fmtDayMonth(b.from6m)} (6 meses).`);
+        }
+        // Marcos e entregas da pessoa nesses dias
+        try {
+          ms = ms || await fetchMilestones({ from: addDaysKey(today, -400), to: addDaysKey(today, 400) });
+          const hit = ms.filter(m => !m.done && (m.owner_ids || []).includes(who) && m.event_date >= s && m.event_date <= e);
+          if (hit.length) warn.push(`Tem ${hit.length === 1 ? 'um marco' : hit.length + ' marcos'} nesses dias: ${hit.slice(0, 3).map(m => `${m.title} (${fmtDayMonth(m.event_date)})`).join(', ')}${hit.length > 3 ? '…' : ''}.`);
+        } catch (_) { /* sem marcos */ }
+        $('ab-warn').innerHTML = warn.map(w => `<div class="ab-w">⚠ ${escapeHtml(w)}</div>`).join('');
+      };
+      document.querySelectorAll('#ab-kind [data-k]').forEach(b => b.addEventListener('click', () => { kind = b.dataset.k; document.querySelectorAll('#ab-kind [data-k]').forEach(x => x.classList.toggle('active', x === b)); drawSub(); sync(); }));
+      $('ab-s').addEventListener('change', () => { if ($('ab-e').value < $('ab-s').value) $('ab-e').value = $('ab-s').value; sync(); });
+      $('ab-e').addEventListener('change', sync);
+      $('ab-who').addEventListener('change', sync);
+      drawSub(); sync();
+      const done = msg => { closeQuickModal(); showToast(msg); haptic(); kickMs365Sync(); if (after) after(); else if (currentViewState?.name === 'absences') renderAbsences(); else if (currentViewState?.name === 'home') renderToday(); };
+      $('ab-save').addEventListener('click', async () => {
+        const s = $('ab-s').value, e = $('ab-e').value;
+        if (!s || !e || e < s) return formError('ab-msg', 'Escolhe as datas (a final não pode ser antes da inicial).');
+        const row = { member_id: $('ab-who').value, kind, subkind: ABS_SUB[kind] ? sub : null, start_date: s, end_date: e, note: valOrNull($('ab-note').value.trim()), updated_at: new Date().toISOString() };
+        try {
+          if (ex) await dbUpdate('absences', ex.id, row, mockAbsences);
+          else await dbInsert('absences', { ...row, created_by: meM?.id || null, created_at: new Date().toISOString() }, mockAbsences);
+          done(ex ? 'Ausência alterada' : 'Ausência marcada. A equipa vê na Hoje.');
+        } catch (err) { formError('ab-msg', 'Não foi possível guardar: ' + err.message); }
+      });
+      if (ex) $('ab-del').addEventListener('click', async () => {
+        try { await dbDelete('absences', ex.id, mockAbsences); done('Ausência apagada'); }
+        catch (err) { formError('ab-msg', 'Não foi possível apagar: ' + err.message); }
+      });
+    }
+    // Mapa de férias do ano para imprimir / guardar em PDF (para afixar, art. 241.º)
+    function printVacationMap(year, list, members, cfg) {
+      const w = window.open('', '_blank');
+      if (!w) { showToast('O browser bloqueou a janela. Permite pop-ups para imprimir o mapa.', { type: 'error' }); return; }
+      const months = Array.from({ length: 12 }, (_, i) => `${year}-${String(i + 1).padStart(2, '0')}`);
+      const mName = k => parseDateKey(k + '-01').toLocaleDateString('pt-PT', { month: 'short' }).replace('.', '');
+      const vac = list.filter(a => a.kind === 'vacation' && a.end_date >= `${year}-01-01` && a.start_date <= `${year}-12-31`);
+      const cell = (mid, mk) => vac.filter(a => a.member_id === mid && a.start_date.slice(0, 7) <= mk && a.end_date.slice(0, 7) >= mk)
+        .map(a => { const s = a.start_date < mk + '-01' ? mk + '-01' : a.start_date; const e = a.end_date.slice(0, 7) > mk ? addDaysKey(addMonthsKey(mk + '-01', 1), -1) : a.end_date; return `${Number(s.slice(8))}–${Number(e.slice(8))}`; }).join('<br>');
+      w.document.write(`<!doctype html><html lang="pt"><head><meta charset="utf-8"><title>Mapa de férias ${year} — NOVA Associates</title>
+        <style>body{font:12px/1.4 -apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#111;margin:28px}h1{font-size:20px;margin:0 0 4px}p{margin:0 0 14px;color:#555}
+        table{border-collapse:collapse;width:100%}th,td{border:1px solid #bbb;padding:6px 5px;text-align:center;vertical-align:top}th:first-child,td:first-child{text-align:left;white-space:nowrap}
+        thead th{background:#f2f2f4;font-weight:600;text-transform:capitalize}.tot{font-weight:600}.foot{margin-top:18px;font-size:11px;color:#555}.sig{margin-top:40px;display:flex;gap:60px}.sig span{border-top:1px solid #999;padding-top:4px;min-width:200px}
+        @page{size:A4 landscape;margin:12mm}</style></head><body>
+        <h1>Mapa de férias ${year}</h1><p>NOVA Associates · elaborado a ${escapeHtml(fmtDayMonth(dateKey(new Date())))} ${new Date().getFullYear()}</p>
+        <table><thead><tr><th>Pessoa</th>${months.map(k => `<th>${escapeHtml(mName(k))}</th>`).join('')}<th>Dias úteis</th></tr></thead><tbody>
+        ${members.map(m => `<tr><td>${escapeHtml(m.name)}</td>${months.map(k => `<td>${cell(m.id, k)}</td>`).join('')}<td class="tot">${absBalance(m.id, year, list, cfg).booked}</td></tr>`).join('')}
+        </tbody></table>
+        <div class="foot">Mapa de férias elaborado até 15 de abril e afixado entre 15 de abril e 31 de outubro (art. 241.º do Código do Trabalho). Dias indicados por mês (ex.: 3–14 = de 3 a 14). Total em dias úteis.</div>
+        <div class="sig"><span>A gerência</span><span>Data</span></div>
+        <script>window.onload=()=>setTimeout(()=>window.print(),200)<\/script></body></html>`);
+      w.document.close();
+    }
+
+    // ================= DAYBREAK: a reunião diária das 8:40 =================
+    // Ao sair ("Fechar o tasco") cada pessoa faz o fecho do dia: o que concluiu do plano e, mais ou menos, quantas
+    // horas foram para trabalho não planeado e para retrabalho, e porquê. De manhã, antes das 8:40, escreve o plano
+    // do dia (tarefas das checklists das suas fases + texto livre; até 3 prioridades). O que fica por fazer passa
+    // sozinho para o dia seguinte, com contador. Às 8:40 o modo reunião passa pessoa a pessoa (2 min cada) e no fim
+    // as ações de melhoria, que entram na lista de tarefas de quem fica responsável, com prazo.
+    const DBK_TIME = '08:40', DBK_SLOT = 120;
+    const DBK_CAUSES = [['client', 'Pedido do cliente'], ['ours', 'Erro ou omissão nossa'], ['camara', 'Exigência da Câmara'], ['info', 'Falta de informação'], ['urgent', 'Urgência de outro projeto'], ['interrupt', 'Interrupções'], ['other', 'Outra']];
+    const DBK_HOURS = [[0, '0'], [0.5, '½'], [1, '1'], [2, '2'], [3, '3'], [4, '4+']];
+    const dbkCause = k => DBK_CAUSES.find(c => c[0] === k)?.[1] || '';
+    const dbkH = h => !h ? '0 h' : h >= 4 ? '4+ h' : `${String(h).replace('.5', ',5').replace(/^0,5$/, '½')} h`;
+    const REV_CAUSE_MAP = { client: 'client', nova: 'ours', camara: 'camara' };
+    let mockDbTasks = (() => {
+      const t = dateKey(new Date()); let y = addDaysKey(t, -1); while (!isWorkday(y)) y = addDaysKey(y, -1);
+      const mk = (id, m, day, title, x = {}) => ({ id, member_id: m, day, title, priority: false, done: false, carried: false, carry_count: 0, is_action: false, sort_order: 0, created_at: new Date().toISOString(), ...x });
+      return [
+        mk('dt-1', 'mock-member-1', y, 'Rever peças desenhadas do licenciamento', { priority: true, done: true, project_id: 'mock-1' }),
+        mk('dt-2', 'mock-member-1', y, 'Responder ao cliente sobre a cozinha', { done: true }),
+        mk('dt-3', 'mock-member-1', y, 'Memória descritiva — capítulo 3', { project_id: 'mock-1' }),
+        mk('dt-4', 'm2', y, 'Mapa de quantidades', { done: true, priority: true }),
+        mk('dt-5', 'm2', y, 'Pedido de orçamento ao topógrafo'),
+        mk('dt-6', 'm2', y, 'Criar modelo de checklist para PIP', { is_action: true, due_date: addDaysKey(t, 3), cause: 'info', created_by: 'mock-member-1' })
+      ];
+    })();
+    let mockDbDays = (() => {
+      const t = dateKey(new Date()); let y = addDaysKey(t, -1); while (!isWorkday(y)) y = addDaysKey(y, -1);
+      return [{ id: 'dd-1', member_id: 'mock-member-1', day: y, closed_at: new Date().toISOString(), unplanned_h: 1, unplanned_cause: 'urgent', unplanned_note: 'Pedido urgente Moradia Vale das Flores', rework_h: 2, rework_cause: 'ours', rework_project_id: 'mock-1', rework_auto: 2 },
+        { id: 'dd-2', member_id: 'm2', day: y, closed_at: new Date().toISOString(), unplanned_h: 0.5, unplanned_cause: 'interrupt', rework_h: 0 }];
+    })();
+    let mockDbkCfg = { join_url: 'https://teams.microsoft.com/l/meetup-join/daybreak-exemplo' };
+    async function loadDbTasks(from, to) {
+      if (devMode) return mockDbTasks.filter(t => t.day >= from && t.day <= to);
+      const r = await supabase.from('daybreak_tasks').select('*').gte('day', from).lte('day', to).order('sort_order').order('created_at');
+      if (r.error) throw r.error;
+      return r.data || [];
+    }
+    async function loadDbDays(from, to) {
+      if (devMode) return mockDbDays.filter(t => t.day >= from && t.day <= to);
+      const r = await supabase.from('daybreak_days').select('*').gte('day', from).lte('day', to);
+      if (r.error) throw r.error;
+      return r.data || [];
+    }
+    async function saveDbDay(row) {
+      row = { ...row, updated_at: new Date().toISOString() };
+      if (devMode) {
+        const i = mockDbDays.findIndex(d => d.member_id === row.member_id && d.day === row.day);
+        if (i >= 0) mockDbDays[i] = { ...mockDbDays[i], ...row }; else mockDbDays.push({ id: 'dd-' + Date.now(), ...row });
+        return;
+      }
+      const r = await supabase.from('daybreak_days').upsert(row, { onConflict: 'member_id,day' });
+      if (r.error) throw r.error;
+    }
+    async function loadDbkCfg() {
+      if (devMode) return { ...mockDbkCfg };
+      const r = await supabase.from('app_settings').select('value').eq('key', 'daybreak').maybeSingle();
+      return r.data?.value || {};
+    }
+    // O que ficou por fazer passa para hoje (uma linha nova com contador); só em dias úteis e para quem não está fora.
+    // As tarefas ligadas a checklists ficam feitas quando o item foi marcado noutro sítio (e vice-versa, ao marcar aqui).
+    async function dbkPrepare(today, absentIds = []) {
+      const tasks = await loadDbTasks(addDaysKey(today, -30), today);
+      const ckIds = [...new Set(tasks.filter(t => t.checklist_item_id && !t.done).map(t => t.checklist_item_id))];
+      if (ckIds.length) {
+        let items = [];
+        if (devMode) items = mockChecklist.filter(i => ckIds.includes(i.id));
+        else { const r = await supabase.from('stage_checklist_items').select('id, done').in('id', ckIds); items = r.data || []; }
+        const doneIds = new Set(items.filter(i => i.done).map(i => i.id));
+        for (const t of tasks.filter(t => !t.done && doneIds.has(t.checklist_item_id) && (t.day === today || !t.carried))) {
+          t.done = true; t.done_at = new Date().toISOString();
+          await dbUpdate('daybreak_tasks', t.id, { done: true, done_at: t.done_at }, mockDbTasks).catch(() => {});
+        }
+      }
+      if (!isWorkday(today)) return tasks;
+      const pend = tasks.filter(t => t.day < today && !t.done && !t.carried && !absentIds.includes(t.member_id));
+      for (const t of pend) {
+        const copy = { member_id: t.member_id, day: today, title: t.title, priority: t.priority, done: false, carried: false, carried_from: t.id, carry_count: (t.carry_count || 0) + 1,
+          checklist_item_id: t.checklist_item_id || null, stage_id: t.stage_id || null, project_id: t.project_id || null, is_action: !!t.is_action, due_date: t.due_date || null, cause: t.cause || null,
+          sort_order: t.sort_order || 0, created_by: t.created_by || null, created_at: new Date().toISOString() };
+        try {
+          const row = await dbInsert('daybreak_tasks', copy, mockDbTasks);
+          await dbUpdate('daybreak_tasks', t.id, { carried: true }, mockDbTasks);
+          t.carried = true; tasks.push(row);
+        } catch (e) { t.carried = true; /* outra pessoa já passou esta tarefa (índice único) */ }
+      }
+      if (pend.length && !devMode) return loadDbTasks(addDaysKey(today, -30), today);
+      return tasks;
+    }
+    // Marcar / desmarcar uma tarefa (e o item da checklist ligado)
+    async function dbkToggle(t, done) {
+      t.done = done; t.done_at = done ? new Date().toISOString() : null;
+      await dbUpdate('daybreak_tasks', t.id, { done, done_at: t.done_at }, mockDbTasks);
+      if (t.checklist_item_id) {
+        const me = await getCurrentMember();
+        await dbUpdate('stage_checklist_items', t.checklist_item_id, { done, done_at: t.done_at, done_by: done ? me?.id || null : null }, mockChecklist).catch(() => {});
+      }
+    }
+    // Dia anterior com plano ou fecho de uma pessoa (o "ontem" da reunião)
+    function dbkPrevDay(memberId, today, tasks, days) {
+      const ds = [...tasks.filter(t => t.member_id === memberId && t.day < today).map(t => t.day), ...days.filter(d => d.member_id === memberId && d.day < today).map(d => d.day)];
+      return ds.sort().pop() || null;
+    }
+    const dbkWeekday = d => { const s = parseDateKey(d).toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'short' }).replace('-feira', ''); return s.charAt(0).toUpperCase() + s.slice(1); };
+    function dbkTaskRow(t, { check = true, today } = {}) {
+      const meta = [t.projectName, t.carry_count ? `↻ ${t.carry_count + 1}.º dia` : '', t.is_action ? `ação${t.due_date ? ' · até ' + fmtDayMonth(t.due_date) : ''}` : ''].filter(Boolean);
+      const late = t.is_action && t.due_date && today && t.due_date < today && !t.done;
+      return `<div class="dbk-task${t.done ? ' done' : ''}${t.priority ? ' prio' : ''}${late ? ' late' : ''}" data-dbk-task="${escapeHtml(t.id)}">
+        ${check ? `<input type="checkbox" data-dbk-done${t.done ? ' checked' : ''} aria-label="Feito">` : `<span class="dbk-mark">${t.done ? '✓' : '○'}</span>`}
+        <span class="dbk-t"><b>${t.priority ? '<i class="dbk-star">★</i> ' : ''}${escapeHtml(t.title)}</b>${meta.length ? `<small class="${t.carry_count >= 2 ? 'warn-text' : ''}">${escapeHtml(meta.join(' · '))}</small>` : ''}</span></div>`;
+    }
+    async function dbkProjectNames(tasks) {
+      const ids = [...new Set(tasks.map(t => t.project_id).filter(Boolean))];
+      if (!ids.length) return {};
+      if (devMode) return Object.fromEntries(MOCK_PROJECTS.map(p => [p.id, p.name.replace(/<[^>]*>/g, '')]));
+      const r = await supabase.from('projects').select('id, name').in('id', ids);
+      return Object.fromEntries((r.data || []).map(p => [p.id, p.name]));
+    }
+
+    // ---------- Cartão na Hoje ----------
+    async function renderDaybreakCard(me) {
+      const box = document.getElementById('today-daybreak');
+      if (!box || !me) { if (box) box.hidden = true; return; }
+      try {
+        const today = dateKey(new Date());
+        const away = await absentOn(today).catch(() => []);
+        const [tasks0, days, members, cfg] = await Promise.all([dbkPrepare(today, away.map(a => a.member_id)), loadDbDays(addDaysKey(today, -14), today), loadAllMembers(), loadDbkCfg()]);
+        const names = await dbkProjectNames(tasks0);
+        const tasks = tasks0.map(t => ({ ...t, projectName: names[t.project_id] || '' }));
+        const mine = tasks.filter(t => t.member_id === me && t.day === today).sort((a, b) => (b.priority - a.priority) || (a.sort_order - b.sort_order));
+        const prev = dbkPrevDay(me, today, tasks, days);
+        const prevClosed = prev && days.some(d => d.member_id === me && d.day === prev && d.closed_at);
+        const workday = isWorkday(today);
+        const isAway = away.some(a => a.member_id === me);
+        const team = members.filter(m => m.id !== me).map(m => {
+          const a = away.find(x => x.member_id === m.id);
+          const n = tasks.filter(t => t.member_id === m.id && t.day === today).length;
+          return `<span class="dbk-chip${a ? ' away' : n ? ' ok' : ''}" title="${a ? escapeHtml(absLabel(a)) : n ? n + ' tarefas planeadas' : 'ainda sem plano'}"><i style="background:${escapeHtml(memberColor(m.id))}"></i>${escapeHtml(attFirst(m.name))}<em>${a ? 'fora' : n ? `plano ✓ ${n}` : 'sem plano'}</em></span>`;
+        }).join('');
+        const join = /^https:\/\//.test(cfg.join_url || '') ? cfg.join_url : null;
+        box.hidden = false;
+        box.innerHTML = `
+          <div class="card-head dbk-head"><h2><span class="dbk-sun" aria-hidden="true"></span>Daybreak</h2><span>${workday ? `hoje às ${DBK_TIME}` : 'próximo dia útil às ' + DBK_TIME}</span></div>
+          <div class="dbk-top">
+            ${join ? `<a class="secondary-btn dbk-join" href="${escapeHtml(join)}" target="_blank" rel="noopener">Entrar no Teams</a>` : `<button type="button" class="text-btn" id="dbk-link">Pôr o link Teams</button>`}
+            <button type="button" class="primary-btn dbk-go" id="dbk-start" data-haptic>▶ Começar o Daybreak</button>
+          </div>
+          ${away.length ? `<div class="dbk-away">${away.map(a => { let back = addDaysKey(a.end_date, 1); while (!isWorkday(back)) back = addDaysKey(back, 1); return `<span><b>${escapeHtml(attFirst(a.member.name))}</b> fora · ${escapeHtml(absLabel(a))} · volta ${escapeHtml(fmtDayMonth(back))}</span>`; }).join('')}</div>` : ''}
+          ${prev && !prevClosed && !isAway ? `<div class="dbk-note">Ainda não fizeste o fecho de <b>${escapeHtml(dbkWeekday(prev).toLowerCase())}</b>. <button type="button" class="text-btn" id="dbk-close-prev">Fazer o fecho</button></div>` : ''}
+          <div class="dbk-mine">
+            <div class="dbk-sub"><b>O meu plano de hoje</b><span>${mine.length ? `${mine.filter(t => t.done).length}/${mine.length} feitas` : ''}</span></div>
+            ${mine.length ? `<div class="dbk-list">${mine.map(t => dbkTaskRow(t, { today })).join('')}</div>` : `<div class="gantt-empty">${isAway ? 'Hoje estás fora. Bom descanso.' : 'Ainda sem plano. Escolhe tarefas das tuas fases ou escreve as tuas.'}</div>`}
+            <button type="button" class="secondary-btn" id="dbk-plan">${mine.length ? 'Editar o plano' : 'Planear o dia'}</button>
+          </div>
+          ${team ? `<div class="dbk-team">${team}</div>` : ''}`;
+        box.querySelectorAll('[data-dbk-done]').forEach(c => c.addEventListener('change', async () => {
+          const t = tasks.find(x => x.id === c.closest('[data-dbk-task]').dataset.dbkTask);
+          c.closest('.dbk-task').classList.toggle('done', c.checked);
+          try { await dbkToggle(t, c.checked); if (c.checked) haptic(); }
+          catch (err) { showToast('Não foi possível marcar: ' + err.message, { type: 'error' }); renderDaybreakCard(me); }
+        }));
+        document.getElementById('dbk-plan').addEventListener('click', () => openDbkPlan(me, today, () => renderDaybreakCard(me)));
+        document.getElementById('dbk-start').addEventListener('click', () => openDaybreak());
+        document.getElementById('dbk-close-prev')?.addEventListener('click', () => openDbkClose(me, prev, () => renderDaybreakCard(me)));
+        document.getElementById('dbk-link')?.addEventListener('click', () => openDbkLink(() => renderDaybreakCard(me)));
+      } catch (err) {
+        box.hidden = false;
+        box.innerHTML = /daybreak/.test(err.message || '') ? '<div class="gantt-empty">Para usar o Daybreak, corre daybreak_ausencias.sql no Supabase.</div>' : `<div class="error-box">Daybreak: ${escapeHtml(err.message)}</div>`;
+      }
+    }
+    // Link Teams posto à mão (enquanto o Office 365 não cria a reunião sozinho)
+    function openDbkLink(after) {
+      openQuickModal('Link Teams do Daybreak', `
+        <div class="field-hint" style="margin-top:0">A app cria sozinha uma reunião Teams fixa (sem aparecer no calendário) quando o Office 365 está ligado com a permissão de reuniões online. Enquanto isso não acontece, cola aqui o link de uma reunião Teams.</div>
+        <input type="url" id="dl-url" class="form-input" placeholder="https://teams.microsoft.com/l/meetup-join/…">
+        <button type="button" class="primary-btn" id="dl-save">Guardar</button><div id="dl-msg" class="form-msg"></div>`);
+      document.getElementById('dl-save').addEventListener('click', async () => {
+        const url = document.getElementById('dl-url').value.trim();
+        if (!/^https:\/\/teams\.microsoft\.com\//.test(url)) return formError('dl-msg', 'Cola um link do Teams (começa por https://teams.microsoft.com/).');
+        try {
+          const cur = await loadDbkCfg();
+          if (devMode) mockDbkCfg = { ...cur, join_url: url };
+          else { const r = await supabase.from('app_settings').upsert({ key: 'daybreak', value: { ...cur, join_url: url, manual: true }, updated_at: new Date().toISOString() }); if (r.error) throw r.error; }
+          closeQuickModal(); showToast('Link guardado'); if (after) after();
+        } catch (err) { formError('dl-msg', 'Não foi possível guardar: ' + err.message); }
+      });
+    }
+
+    // ---------- Plano do dia ----------
+    async function openDbkPlan(memberId, day, after) {
+      const [members, phases] = await Promise.all([loadAllMembers(), fetchActivePhases().catch(() => [])]);
+      const who = members.find(m => m.id === memberId);
+      const myPhases = phases.filter(p => (p.assignee_ids || []).includes(memberId) && !isStageDone(p));
+      const ck = await loadChecklistItemsFor(myPhases.map(p => p.id)).catch(() => []);
+      let tasks = (await loadDbTasks(day, day)).filter(t => t.member_id === memberId);
+      const me = await getCurrentMember();
+      openQuickModal(memberId === me?.id ? `Plano de ${dbkWeekday(day).toLowerCase()}` : `Plano de ${attFirst(who?.name)}`, `
+        <div class="dbk-sub"><b>Plano</b><span id="dp-count"></span></div>
+        <div class="dbk-plan" id="dp-list"></div>
+        <div class="dbk-add"><input type="text" id="dp-new" class="form-input" maxlength="200" placeholder="Escrever uma tarefa…"><button type="button" class="secondary-btn" id="dp-add">Adicionar</button></div>
+        ${myPhases.length ? `<div class="section-label" style="margin:16px 0 6px">Das ${memberId === me?.id ? 'minhas' : 'suas'} fases</div><div class="dbk-pick" id="dp-pick">${myPhases.map(p => {
+          const items = ck.filter(i => i.stage_id === p.id && !i.done);
+          if (!items.length) return '';
+          return `<div class="dbk-pg"><b>${escapeHtml(p.projects?.name || '')} · ${escapeHtml(phaseName(p))}</b>${items.map(i => `<button type="button" class="dbk-pi" data-ck="${escapeHtml(i.id)}" data-stage="${escapeHtml(p.id)}" data-project="${escapeHtml(p.project_id)}"><span>+</span>${escapeHtml(i.title)}${i.kind === 'deliverable' ? ' <em>Entregável</em>' : ''}</button>`).join('')}</div>`;
+        }).join('') || '<div class="field-hint">As checklists das fases estão em dia.</div>'}</div>` : ''}
+        <div class="field-hint">★ marca até 3 prioridades (as que têm mesmo de sair hoje). Arrasta pela pega ⠿ para ordenar. O que ficar por fazer passa sozinho para amanhã.</div>
+        <button type="button" class="primary-btn" id="dp-done">Pronto</button>`);
+      const list = document.getElementById('dp-list');
+      const draw = () => {
+        tasks.sort((a, b) => (b.priority - a.priority) || (a.sort_order - b.sort_order));
+        list.innerHTML = tasks.length ? `<div class="ck-list">${tasks.map(t => `<div class="dbk-prow${t.priority ? ' prio' : ''}${t.done ? ' done' : ''}" data-id="${escapeHtml(t.id)}">
+            <span class="ck-grip" aria-label="Arrastar para ordenar">⠿</span>
+            <button type="button" class="dbk-star-btn${t.priority ? ' on' : ''}" data-star aria-label="Prioridade" title="Prioridade">★</button>
+            <span class="dbk-t"><b>${escapeHtml(t.title)}</b>${t.carry_count ? `<small class="${t.carry_count >= 2 ? 'warn-text' : ''}">↻ ${t.carry_count + 1}.º dia</small>` : ''}${t.is_action ? `<small>ação${t.due_date ? ' · até ' + escapeHtml(fmtDayMonth(t.due_date)) : ''}</small>` : ''}</span>
+            <button type="button" class="ck-x" data-rm aria-label="Tirar do plano" title="Tirar do plano">×</button></div>`).join('')}</div>` : '<div class="gantt-empty">Ainda sem tarefas.</div>';
+        document.getElementById('dp-count').textContent = tasks.length ? `${tasks.length} ${tasks.length === 1 ? 'tarefa' : 'tarefas'} · ${tasks.filter(t => t.priority).length}/3 ★` : '';
+        document.querySelectorAll('#dp-pick [data-ck]').forEach(b => b.classList.toggle('used', tasks.some(t => t.checklist_item_id === b.dataset.ck)));
+        list.querySelectorAll('[data-star]').forEach(b => b.addEventListener('click', async () => {
+          const t = tasks.find(x => x.id === b.closest('[data-id]').dataset.id);
+          if (!t.priority && tasks.filter(x => x.priority).length >= 3) { showToast('Máximo 3 prioridades por dia.'); return; }
+          t.priority = !t.priority; haptic(); draw();
+          try { await dbUpdate('daybreak_tasks', t.id, { priority: t.priority }, mockDbTasks); } catch (err) { showToast(err.message, { type: 'error' }); }
+        }));
+        list.querySelectorAll('[data-rm]').forEach(b => b.addEventListener('click', async () => {
+          const t = tasks.find(x => x.id === b.closest('[data-id]').dataset.id);
+          tasks = tasks.filter(x => x !== t); draw();
+          try { await dbDelete('daybreak_tasks', t.id, mockDbTasks); } catch (err) { showToast(err.message, { type: 'error' }); }
+        }));
+        kSortable(list.querySelector('.ck-list'), '.dbk-prow', async ids => {
+          ids.forEach((id, k) => { const t = tasks.find(x => x.id === id); if (t) t.sort_order = k + 1; });
+          try { await Promise.all(tasks.map(t => dbUpdate('daybreak_tasks', t.id, { sort_order: t.sort_order }, mockDbTasks))); } catch (err) { showToast(err.message, { type: 'error' }); }
+        });
+      };
+      const add = async row => {
+        try {
+          const t = await dbInsert('daybreak_tasks', { member_id: memberId, day, priority: false, done: false, carried: false, carry_count: 0, is_action: false, sort_order: tasks.length + 1, created_by: me?.id || null, created_at: new Date().toISOString(), ...row }, mockDbTasks);
+          tasks.push(t); draw(); haptic();
+        } catch (err) { showToast('Não foi possível adicionar: ' + err.message, { type: 'error' }); }
+      };
+      document.getElementById('dp-add').addEventListener('click', () => { const v = document.getElementById('dp-new').value.trim(); if (!v) return; document.getElementById('dp-new').value = ''; add({ title: v }); });
+      document.getElementById('dp-new').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('dp-add').click(); } });
+      document.querySelectorAll('#dp-pick [data-ck]').forEach(b => b.addEventListener('click', () => {
+        if (b.classList.contains('used')) return;
+        const item = ck.find(i => i.id === b.dataset.ck);
+        add({ title: item.title, checklist_item_id: item.id, stage_id: b.dataset.stage, project_id: b.dataset.project });
+      }));
+      document.getElementById('dp-done').addEventListener('click', async () => {
+        try { if (tasks.length) await saveDbDay({ member_id: memberId, day, plan_ready_at: new Date().toISOString() }); } catch (_) { /* não impede */ }
+        closeQuickModal(); if (after) after();
+      });
+      draw();
+    }
+
+    // ---------- Fecho do dia (ao "Fechar o tasco") ----------
+    async function openDbkClose(memberId, day, after) {
+      let tasks = [], rec = null, auto = null, projects = [];
+      try {
+        const [t, d] = await Promise.all([loadDbTasks(day, day), loadDbDays(day, day)]);
+        tasks = t.filter(x => x.member_id === memberId); rec = d.find(x => x.member_id === memberId) || null;
+        auto = await dbkAutoRework(memberId, day).catch(() => null);
+        projects = devMode ? MOCK_PROJECTS.map(p => ({ id: p.id, name: p.name.replace(/<[^>]*>/g, '') })) : ((await supabase.from('projects').select('id, name, code').is('archived_at', null).order('name')).data || []);
+      } catch (err) { if (after) after(); return; }
+      const st = {
+        un: Number(rec?.unplanned_h || 0), unCause: rec?.unplanned_cause || null, unNote: rec?.unplanned_note || '', unProj: rec?.unplanned_project_id || '',
+        rw: rec?.closed_at ? Number(rec.rework_h || 0) : Number(auto?.hours || 0), rwCause: rec?.rework_cause || auto?.cause || null, rwNote: rec?.rework_note || '',
+        rwProj: rec?.rework_project_id || auto?.project_id || '', rwStage: rec?.rework_stage_id || auto?.stage_id || ''
+      };
+      const chips = (k, val) => DBK_HOURS.map(([v, l]) => `<button type="button" class="dbk-h${v === val || (v === 4 && val > 4) ? ' on' : ''}" data-h="${k}" data-v="${v}">${l}</button>`).join('');
+      const causes = (k, val) => DBK_CAUSES.map(([c, l]) => `<button type="button" class="band-chip${c === val ? ' on' : ''}" data-c="${k}" data-v="${c}">${escapeHtml(l)}</button>`).join('');
+      const projSel = (id, val) => `<select class="form-input" id="${id}"><option value="">Projeto (opcional)</option>${projects.map(p => `<option value="${escapeHtml(p.id)}"${p.id === val ? ' selected' : ''}>${escapeHtml(p.name)}</option>`).join('')}</select>`;
+      openQuickModal(`Fecho de ${dbkWeekday(day).toLowerCase()}`, `
+        ${tasks.length ? `<div class="dbk-sub"><b>O plano de hoje</b><span id="dc-count"></span></div><div class="dbk-list" id="dc-tasks">${tasks.sort((a, b) => (b.priority - a.priority) || (a.sort_order - b.sort_order)).map(t => dbkTaskRow(t, { today: day })).join('')}</div>
+          <div class="field-hint">O que ficar por marcar passa sozinho para amanhã.</div>` : '<div class="field-hint" style="margin-top:0">Hoje não havia plano. Amanhã, antes das 8:40, planeia o dia na Hoje.</div>'}
+        <div class="dbk-q"><b>Horas em tarefas não planeadas</b><span>mais ou menos</span></div>
+        <div class="dbk-hs">${chips('un', st.un)}</div>
+        <div id="dc-un-more"${st.un ? '' : ' hidden'}><div class="band-chips dbk-causes">${causes('un', st.unCause)}</div>
+          <input type="text" class="form-input" id="dc-un-note" maxlength="200" placeholder="O que foi? (opcional)" value="${escapeHtml(st.unNote)}">${projSel('dc-un-proj', st.unProj)}</div>
+        <div class="dbk-q"><b>Horas de retrabalho</b><span>refazer o que já estava feito</span></div>
+        ${auto?.hours ? `<div class="dbk-auto">✦ Preenchido pela app: <b>${escapeHtml(fmtHours(auto.hours))}</b> registadas em fases de retrabalho (${escapeHtml(auto.label)}). Podes mudar.</div>` : ''}
+        <div class="dbk-hs">${chips('rw', st.rw)}</div>
+        <div id="dc-rw-more"${st.rw ? '' : ' hidden'}><div class="band-chips dbk-causes">${causes('rw', st.rwCause)}</div>
+          <input type="text" class="form-input" id="dc-rw-note" maxlength="200" placeholder="O que foi refeito? (opcional)" value="${escapeHtml(st.rwNote)}">${projSel('dc-rw-proj', st.rwProj)}
+          <select class="form-input" id="dc-rw-stage"${st.rwProj ? '' : ' hidden'}><option value="">Fase (opcional)</option></select>
+          <div id="dc-rw-ask"></div></div>
+        <button type="button" class="primary-btn" id="dc-save">Fechar o dia</button>
+        <button type="button" class="text-btn" id="dc-skip" style="margin-top:10px;">Agora não</button>
+        <div id="dc-msg" class="form-msg"></div>`);
+      let finished = false;
+      quickModalCloseHook = () => { if (!finished && after) { finished = true; setTimeout(after, 50); } };
+      const $ = s => document.getElementById(s);
+      const count = () => { if ($('dc-count')) $('dc-count').textContent = `${tasks.filter(t => t.done).length}/${tasks.length} feitas`; };
+      count();
+      document.querySelectorAll('#dc-tasks [data-dbk-done]').forEach(c => c.addEventListener('change', async () => {
+        const t = tasks.find(x => x.id === c.closest('[data-dbk-task]').dataset.dbkTask);
+        c.closest('.dbk-task').classList.toggle('done', c.checked); count();
+        try { await dbkToggle(t, c.checked); } catch (err) { showToast(err.message, { type: 'error' }); }
+      }));
+      document.querySelectorAll('[data-h]').forEach(b => b.addEventListener('click', () => {
+        const k = b.dataset.h; st[k] = Number(b.dataset.v); haptic();
+        document.querySelectorAll(`[data-h="${k}"]`).forEach(x => x.classList.toggle('on', x === b));
+        $(`dc-${k}-more`).hidden = !st[k];
+      }));
+      document.querySelectorAll('[data-c]').forEach(b => b.addEventListener('click', () => {
+        const k = b.dataset.c; st[k + 'Cause'] = b.dataset.v;
+        document.querySelectorAll(`[data-c="${k}"]`).forEach(x => x.classList.toggle('on', x === b));
+      }));
+      // Fases do projeto do retrabalho; numa revisão ainda por classificar, pergunta se é sempre retrabalho
+      let stages = [];
+      const loadStages = async pid => {
+        if (!pid) { stages = []; $('dc-rw-stage').hidden = true; return; }
+        stages = devMode ? MOCK_STAGES.map(s => ({ ...s, project_id: s.project_id || 'mock-1' })).filter(s => s.project_id === pid)
+          : ((await supabase.from('project_stages').select('id, project_id, stage_order, revision_label, base_stage, revision_kind, revision_cause, always_rework, status, stage_types(name)').eq('project_id', pid).order('stage_order')).data || []);
+        $('dc-rw-stage').innerHTML = '<option value="">Fase (opcional)</option>' + stages.map(s => `<option value="${escapeHtml(s.id)}"${s.id === st.rwStage ? ' selected' : ''}>${escapeHtml(phaseName(s))}</option>`).join('');
+        $('dc-rw-stage').hidden = !stages.length;
+        ask();
+      };
+      const ask = () => {
+        const s = stages.find(x => x.id === $('dc-rw-stage').value);
+        $('dc-rw-ask').innerHTML = s && isRevisionStage(s) && s.always_rework == null ? `<div class="dbk-ask"><b>${escapeHtml(phaseName(s))} é toda retrabalho?</b><span>Se sim, as horas registadas nesta fase passam a contar sozinhas como retrabalho no fecho do dia (podes sempre mudar).</span>
+          <div><button type="button" class="secondary-btn" data-ar="1">Sim, conta sempre</button><button type="button" class="text-btn" data-ar="0">Não</button></div></div>` : '';
+        $('dc-rw-ask').querySelectorAll('[data-ar]').forEach(b => b.addEventListener('click', async () => {
+          const v = b.dataset.ar === '1';
+          try { await dbUpdate('project_stages', s.id, { always_rework: v }, MOCK_STAGES); s.always_rework = v; $('dc-rw-ask').innerHTML = v ? '<div class="field-hint">✓ A partir de agora, as horas desta fase contam sozinhas como retrabalho.</div>' : ''; }
+          catch (err) { showToast(err.message, { type: 'error' }); }
+        }));
+      };
+      $('dc-rw-proj').addEventListener('change', e => { st.rwStage = ''; loadStages(e.target.value); });
+      $('dc-rw-stage').addEventListener('change', ask);
+      if (st.rwProj) loadStages(st.rwProj);
+      $('dc-skip').addEventListener('click', () => closeQuickModal());
+      $('dc-save').addEventListener('click', async () => {
+        try {
+          await saveDbDay({ member_id: memberId, day, closed_at: new Date().toISOString(),
+            unplanned_h: st.un, unplanned_cause: st.un ? st.unCause : null, unplanned_note: st.un ? valOrNull($('dc-un-note').value.trim()) : null, unplanned_project_id: st.un ? ($('dc-un-proj').value || null) : null,
+            rework_h: st.rw, rework_cause: st.rw ? st.rwCause : null, rework_note: st.rw ? valOrNull($('dc-rw-note').value.trim()) : null, rework_project_id: st.rw ? ($('dc-rw-proj').value || null) : null,
+            rework_stage_id: st.rw ? ($('dc-rw-stage').value || null) : null, rework_auto: auto?.hours || null });
+          showToast('Dia fechado ✓'); haptic();
+          closeQuickModal();
+        } catch (err) { formError('dc-msg', 'Não foi possível guardar: ' + err.message); }
+      });
+    }
+    // Horas registadas no dia em fases marcadas como "sempre retrabalho"
+    async function dbkAutoRework(memberId, day) {
+      let entries, stages;
+      if (devMode) {
+        entries = mockTimeLog.filter(e => e.date === day && (!e.user_id || e.user_id === memberId) && e.stage_id);
+        stages = MOCK_STAGES.filter(s => s.always_rework);
+      } else {
+        const r = await supabase.from('time_entries').select('stage_id, project_id, hours').eq('user_id', memberId).eq('date', day).not('stage_id', 'is', null);
+        entries = r.data || [];
+        if (!entries.length) return null;
+        const s = await supabase.from('project_stages').select('id, project_id, revision_label, revision_cause, always_rework, stage_types(name), projects(name)').in('id', [...new Set(entries.map(e => e.stage_id))]).eq('always_rework', true);
+        stages = s.data || [];
+      }
+      const by = Object.fromEntries(stages.map(s => [s.id, s]));
+      const hits = entries.filter(e => by[e.stage_id]);
+      if (!hits.length) return null;
+      const hours = hits.reduce((t, e) => t + Number(e.hours || 0), 0);
+      const top = by[hits.sort((a, b) => b.hours - a.hours)[0].stage_id];
+      return { hours: Math.min(4, Math.round(hours * 2) / 2), stage_id: top.id, project_id: top.project_id, cause: REV_CAUSE_MAP[top.revision_cause] || 'ours',
+        label: [...new Set(hits.map(e => `${by[e.stage_id].projects?.name ? by[e.stage_id].projects.name + ' · ' : ''}${phaseName(by[e.stage_id])}`))].join(', ') };
+    }
+
+    // ---------- Ação de melhoria (entra na lista de tarefas do responsável, com prazo) ----------
+    async function openDbkAction(after, preset = {}) {
+      const [members, me] = await Promise.all([loadAllMembers(), getCurrentMember()]);
+      const today = dateKey(new Date());
+      let due = addWorkdays(today, 5);
+      openQuickModal('Ação de melhoria', `
+        <label class="field-label" for="da-t">O que vamos fazer?</label>
+        <input type="text" id="da-t" class="form-input" maxlength="200" placeholder="Ex.: Pedir ao cliente o programa por escrito antes do estudo prévio" value="${escapeHtml(preset.title || '')}">
+        <label class="field-label">Para reduzir</label>
+        <div class="band-chips" id="da-c">${DBK_CAUSES.map(([c, l]) => `<button type="button" class="band-chip${c === preset.cause ? ' on' : ''}" data-v="${c}">${escapeHtml(l)}</button>`).join('')}</div>
+        <div class="ab-dates"><div><label class="field-label" for="da-who">Responsável</label><select id="da-who" class="form-input">${members.map(m => `<option value="${escapeHtml(m.id)}"${m.id === (preset.member || me?.id) ? ' selected' : ''}>${escapeHtml(m.name)}</option>`).join('')}</select></div>
+          <div><label class="field-label" for="da-due">Prazo</label><input type="date" id="da-due" class="form-input" value="${escapeHtml(due)}"></div></div>
+        <div class="field-hint">Entra na lista de tarefas do responsável e aparece no Daybreak até estar feita.</div>
+        <button type="button" class="primary-btn" id="da-save">Criar ação</button><div id="da-msg" class="form-msg"></div>`);
+      let cause = preset.cause || null;
+      document.querySelectorAll('#da-c [data-v]').forEach(b => b.addEventListener('click', () => { cause = b.dataset.v; document.querySelectorAll('#da-c [data-v]').forEach(x => x.classList.toggle('on', x === b)); }));
+      setTimeout(() => document.getElementById('da-t')?.focus(), 80);
+      document.getElementById('da-save').addEventListener('click', async () => {
+        const title = document.getElementById('da-t').value.trim();
+        if (!title) return formError('da-msg', 'Escreve a ação numa frase.');
+        try {
+          await dbInsert('daybreak_tasks', { member_id: document.getElementById('da-who').value, day: today, title, priority: false, done: false, carried: false, carry_count: 0,
+            is_action: true, due_date: document.getElementById('da-due').value || null, cause, sort_order: 0, created_by: me?.id || null, created_at: new Date().toISOString() }, mockDbTasks);
+          closeQuickModal(); showToast('Ação criada'); haptic(); if (after) after();
+        } catch (err) { formError('da-msg', 'Não foi possível criar: ' + err.message); }
+      });
+    }
+
+    // ---------- Modo reunião (ecrã inteiro, pessoa a pessoa) ----------
+    let dbkState = null;
+    async function openDaybreak() {
+      const el = document.getElementById('dbk');
+      const today = dateKey(new Date());
+      try {
+        const away = await absentOn(today).catch(() => []);
+        const soon = (await loadAbsences(addDaysKey(today, 1), addDaysKey(today, 10)).catch(() => [])).filter(a => a.start_date > today);
+        const [tasks, days, members, cfg] = await Promise.all([dbkPrepare(today, away.map(a => a.member_id)), loadDbDays(addDaysKey(today, -40), today), loadAllMembers(), loadDbkCfg()]);
+        const weekTasks = await loadDbTasks(addDaysKey(today, -7), today);
+        const names = await dbkProjectNames([...tasks, ...days.map(d => ({ project_id: d.rework_project_id })), ...days.map(d => ({ project_id: d.unplanned_project_id }))]);
+        const present = members.filter(m => !away.some(a => a.member_id === m.id));
+        // Ordem roda todos os dias, para não ser sempre a mesma pessoa a abrir
+        const doy = Math.floor((parseDateKey(today) - new Date(parseDateKey(today).getFullYear(), 0, 0)) / 864e5);
+        const order = present.map((m, i) => present[(i + doy) % present.length]);
+        dbkState = { i: 0, today, away, soon, tasks: tasks.map(t => ({ ...t, projectName: names[t.project_id] || '' })), days, members, order, cfg, names, weekTasks, timer: null, t0: 0 };
+        el.hidden = false; document.body.classList.add('dbk-open');
+        requestAnimationFrame(() => el.classList.add('on'));
+        dbkShow(0);
+      } catch (err) { showToast('Não foi possível abrir o Daybreak: ' + err.message, { type: 'error' }); }
+    }
+    function closeDaybreak() {
+      const el = document.getElementById('dbk');
+      clearInterval(dbkState?.timer); dbkState = null;
+      el.classList.remove('on'); document.body.classList.remove('dbk-open');
+      setTimeout(() => { el.hidden = true; el.querySelector('.dbk-stage').innerHTML = ''; }, 320);
+      if (currentViewState?.name === 'home') renderToday();
+    }
+    async function dbkReload() {
+      if (!dbkState) return;
+      const s = dbkState;
+      const [tasks, days] = await Promise.all([loadDbTasks(addDaysKey(s.today, -30), s.today), loadDbDays(addDaysKey(s.today, -40), s.today)]);
+      const names = await dbkProjectNames(tasks);
+      s.tasks = tasks.map(t => ({ ...t, projectName: names[t.project_id] || '' })); s.days = days; s.names = { ...s.names, ...names };
+      dbkShow(s.i, true);
+    }
+    function dbkShow(i, keepTimer = false) {
+      const s = dbkState; if (!s) return;
+      const n = s.order.length + 2;
+      s.i = Math.max(0, Math.min(n - 1, i));
+      const stage = document.querySelector('#dbk .dbk-stage');
+      const today = s.today;
+      const backOf = a => { let b = addDaysKey(a.end_date, 1); while (!isWorkday(b)) b = addDaysKey(b, 1); return b; };
+      let html = '';
+      if (s.i === 0) {
+        const join = /^https:\/\//.test(s.cfg.join_url || '') ? s.cfg.join_url : null;
+        html = `<div class="dbk-slide dbk-intro">
+          <div class="dbk-kicker">${escapeHtml(dbkWeekday(today))} · ${DBK_TIME}</div>
+          <h1 class="dbk-title">Daybreak</h1>
+          <p class="dbk-lead">Ontem, hoje e o que nos trava. ${s.order.length} ${s.order.length === 1 ? 'pessoa' : 'pessoas'} · ${s.order.length * 2} minutos.</p>
+          <div class="dbk-faces">${s.order.map(m => `<span style="--c:${escapeHtml(memberColor(m.id))}">${escapeHtml(attFirst(m.name))}</span>`).join('')}</div>
+          ${s.away.length ? `<div class="dbk-out"><b>Fora hoje</b>${s.away.map(a => `<span>${escapeHtml(attFirst(a.member.name))} · ${escapeHtml(absLabel(a))} · volta ${escapeHtml(fmtDayMonth(backOf(a)))}</span>`).join('')}</div>` : ''}
+          ${s.soon.length ? `<div class="dbk-out soon"><b>Próximos dias</b>${s.soon.map(a => `<span>${escapeHtml(attFirst(s.members.find(m => m.id === a.member_id)?.name))} · ${escapeHtml(absLabel(a))} · ${escapeHtml(a.start_date === a.end_date ? fmtDayMonth(a.start_date) : fmtDayMonth(a.start_date) + ' → ' + fmtDayMonth(a.end_date))}</span>`).join('')}</div>` : ''}
+          ${join ? `<a class="dbk-teams" href="${escapeHtml(join)}" target="_blank" rel="noopener">Entrar no Teams</a>` : ''}
+        </div>`;
+      } else if (s.i <= s.order.length) {
+        const m = s.order[s.i - 1];
+        const prev = dbkPrevDay(m.id, today, s.tasks, s.days);
+        const pt = prev ? s.tasks.filter(t => t.member_id === m.id && t.day === prev) : [];
+        const rec = prev ? s.days.find(d => d.member_id === m.id && d.day === prev) : null;
+        const tt = s.tasks.filter(t => t.member_id === m.id && t.day === today).sort((a, b) => (b.priority - a.priority) || (a.sort_order - b.sort_order));
+        const done = pt.filter(t => t.done).length, pct = pt.length ? Math.round(done / pt.length * 100) : null;
+        html = `<div class="dbk-slide dbk-person" style="--c:${escapeHtml(memberColor(m.id))}">
+          <div class="dbk-ph"><span class="dbk-av">${escapeHtml(attFirst(m.name).slice(0, 1))}</span><div><div class="dbk-kicker">${s.i} de ${s.order.length}</div><h2>${escapeHtml(m.name)}</h2></div>
+            <div class="dbk-timer" id="dbk-timer"><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="19"/><circle class="p" cx="22" cy="22" r="19" pathLength="100"/></svg><b>2:00</b></div></div>
+          <div class="dbk-cols">
+            <section><h3>${prev ? escapeHtml(dbkWeekday(prev)) : 'Ontem'}</h3>
+              ${pt.length ? `<div class="dbk-score"><b data-count="${pct}">${pct}</b><span>%</span><em>${done} de ${pt.length} feitas</em></div><div class="dbk-list">${pt.map(t => dbkTaskRow(t, { check: false, today })).join('')}</div>` : '<div class="dbk-empty">Sem plano.</div>'}
+              ${rec?.closed_at ? `<div class="dbk-hrs">
+                  <div class="${rec.unplanned_h ? 'on' : ''}"><span>Não planeado</span><b>${escapeHtml(dbkH(Number(rec.unplanned_h)))}</b>${rec.unplanned_h ? `<small>${escapeHtml([dbkCause(rec.unplanned_cause), s.names[rec.unplanned_project_id], rec.unplanned_note].filter(Boolean).join(' · '))}</small>` : ''}</div>
+                  <div class="${rec.rework_h ? 'on bad' : ''}"><span>Retrabalho</span><b>${escapeHtml(dbkH(Number(rec.rework_h)))}</b>${rec.rework_h ? `<small>${escapeHtml([dbkCause(rec.rework_cause), s.names[rec.rework_project_id], rec.rework_note].filter(Boolean).join(' · '))}${rec.rework_auto ? ' · ✦ automático' : ''}</small>` : ''}</div></div>`
+                : prev ? `<button type="button" class="dbk-btn" data-dbk-close="${escapeHtml(m.id)}|${prev}">Fazer o fecho agora</button>` : ''}
+            </section>
+            <section><h3>Hoje</h3>
+              ${tt.length ? `<div class="dbk-list">${tt.map(t => dbkTaskRow(t, { check: false, today })).join('')}</div>` : '<div class="dbk-empty">Ainda sem plano.</div>'}
+              <button type="button" class="dbk-btn ghost" data-dbk-plan="${escapeHtml(m.id)}">${tt.length ? 'Mudar o plano' : 'Planear agora'}</button>
+            </section>
+          </div>
+          <button type="button" class="dbk-btn ghost dbk-act" data-dbk-action="${escapeHtml(m.id)}">+ Ação de melhoria</button>
+        </div>`;
+      } else {
+        // Fecho: ações em aberto e a semana
+        const acts = s.tasks.filter(t => t.is_action && !t.done && !t.carried).sort((a, b) => String(a.due_date || '9999').localeCompare(String(b.due_date || '9999')));
+        const wk = s.days.filter(d => d.day >= addDaysKey(today, -7) && d.closed_at);
+        const un = wk.reduce((t, d) => t + Number(d.unplanned_h || 0), 0), rw = wk.reduce((t, d) => t + Number(d.rework_h || 0), 0);
+        const wt = s.weekTasks.filter(t => t.day < today), wDone = wt.filter(t => t.done).length;
+        const cz = {}; wk.forEach(d => { if (d.unplanned_h) cz[d.unplanned_cause || 'other'] = (cz[d.unplanned_cause || 'other'] || 0) + Number(d.unplanned_h); if (d.rework_h) cz[d.rework_cause || 'other'] = (cz[d.rework_cause || 'other'] || 0) + Number(d.rework_h); });
+        const top = Object.entries(cz).sort((a, b) => b[1] - a[1]).slice(0, 4), max = top[0]?.[1] || 1;
+        const nm = id => attFirst(s.members.find(m => m.id === id)?.name || '');
+        html = `<div class="dbk-slide dbk-wrap">
+          <div class="dbk-kicker">Últimos 7 dias</div><h2 class="dbk-h2">Como reduzir</h2>
+          <div class="dbk-tiles">
+            <div><b data-count="${wt.length ? Math.round(wDone / wt.length * 100) : 0}">${wt.length ? Math.round(wDone / wt.length * 100) : 0}</b><span>% do plano cumprido</span></div>
+            <div><b>${escapeHtml(fmtHours(un))}</b><span>não planeadas</span></div>
+            <div class="${rw ? 'bad' : ''}"><b>${escapeHtml(fmtHours(rw))}</b><span>de retrabalho</span></div>
+          </div>
+          ${top.length ? `<div class="dbk-causes-bars">${top.map(([c, h]) => `<div><span>${escapeHtml(dbkCause(c) || 'Outra')}</span><i style="--w:${Math.round(h / max * 100)}%"></i><b>${escapeHtml(fmtHours(h))}</b><button type="button" class="dbk-mini" data-dbk-action-cause="${c}">+ ação</button></div>`).join('')}</div>` : ''}
+          <h3 class="dbk-h3">Ações em aberto</h3>
+          ${acts.length ? `<div class="dbk-acts">${acts.map(t => `<div class="dbk-a${t.due_date && t.due_date < today ? ' late' : ''}"><input type="checkbox" data-dbk-act-done="${escapeHtml(t.id)}" aria-label="Feita"><span><b>${escapeHtml(t.title)}</b><small>${escapeHtml(nm(t.member_id))}${t.due_date ? ' · até ' + escapeHtml(fmtDayMonth(t.due_date)) : ''}${t.cause ? ' · ' + escapeHtml(dbkCause(t.cause)) : ''}${t.carry_count ? ` · ↻ ${t.carry_count + 1}.º dia` : ''}</small></span></div>`).join('')}</div>` : '<div class="dbk-empty">Nenhuma ação em aberto.</div>'}
+          <div class="dbk-end"><button type="button" class="dbk-btn ghost" data-dbk-action="">+ Ação de melhoria</button><button type="button" class="dbk-btn" id="dbk-finish">Terminar ✓</button></div>
+        </div>`;
+      }
+      stage.innerHTML = html;
+      document.querySelector('#dbk .dbk-dots').innerHTML = Array.from({ length: n }, (_, k) => `<i class="${k === s.i ? 'on' : k < s.i ? 'past' : ''}"></i>`).join('');
+      document.querySelector('#dbk [data-dbk-prev]').disabled = s.i === 0;
+      document.querySelector('#dbk [data-dbk-next]').textContent = s.i === 0 ? 'Começar →' : s.i === n - 1 ? 'Terminar' : 'Seguinte →';
+      if (!reduceMotion.matches) stage.querySelectorAll('.dbk-slide > *, .dbk-list > *, .dbk-cols > section').forEach((x, k) => { x.style.animationDelay = `${Math.min(k, 14) * 45}ms`; x.classList.add('dbk-in'); });
+      animateNumbers(stage);
+      // Cronómetro de 2 minutos por pessoa
+      if (!keepTimer) { clearInterval(s.timer); s.t0 = Date.now(); }
+      if (s.i >= 1 && s.i <= s.order.length) {
+        const tick = () => {
+          const el = document.getElementById('dbk-timer'); if (!el) return;
+          const left = DBK_SLOT - Math.floor((Date.now() - s.t0) / 1000);
+          el.querySelector('b').textContent = left >= 0 ? `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}` : `+${Math.floor(-left / 60)}:${String(-left % 60).padStart(2, '0')}`;
+          el.style.setProperty('--p', Math.max(0, left / DBK_SLOT * 100));
+          el.classList.toggle('warn', left <= 30 && left >= 0); el.classList.toggle('over', left < 0);
+        };
+        tick(); if (!keepTimer) s.timer = setInterval(tick, 1000);
+      } else if (!keepTimer) clearInterval(s.timer);
+      stage.querySelectorAll('[data-dbk-close]').forEach(b => b.addEventListener('click', () => { const [mid, d] = b.dataset.dbkClose.split('|'); openDbkClose(mid, d, dbkReload); }));
+      stage.querySelectorAll('[data-dbk-plan]').forEach(b => b.addEventListener('click', () => openDbkPlan(b.dataset.dbkPlan, today, dbkReload)));
+      stage.querySelectorAll('[data-dbk-action]').forEach(b => b.addEventListener('click', () => openDbkAction(dbkReload, { member: b.dataset.dbkAction || null })));
+      stage.querySelectorAll('[data-dbk-action-cause]').forEach(b => b.addEventListener('click', () => openDbkAction(dbkReload, { cause: b.dataset.dbkActionCause })));
+      stage.querySelectorAll('[data-dbk-act-done]').forEach(c => c.addEventListener('change', async () => {
+        const t = s.tasks.find(x => x.id === c.dataset.dbkActDone);
+        c.closest('.dbk-a').classList.toggle('done', c.checked);
+        try { await dbkToggle(t, c.checked); haptic(); } catch (err) { showToast(err.message, { type: 'error' }); }
+      }));
+      document.getElementById('dbk-finish')?.addEventListener('click', () => { showToast('Bom dia de trabalho! ☀︎'); closeDaybreak(); });
+    }
+    (() => {
+      const el = document.getElementById('dbk');
+      el.querySelector('[data-dbk-x]').addEventListener('click', closeDaybreak);
+      el.querySelector('[data-dbk-prev]').addEventListener('click', () => dbkShow(dbkState.i - 1));
+      el.querySelector('[data-dbk-next]').addEventListener('click', () => { const n = dbkState.order.length + 2; if (dbkState.i >= n - 1) { closeDaybreak(); return; } dbkShow(dbkState.i + 1); });
+      document.addEventListener('keydown', e => {
+        if (!dbkState || document.querySelector('#quick-modal[style*="flex"]') || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || '')) return;
+        if (e.key === 'Escape') closeDaybreak();
+        else if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); if (dbkState.i < dbkState.order.length + 1) dbkShow(dbkState.i + 1); }
+        else if (e.key === 'ArrowLeft') dbkShow(dbkState.i - 1);
+      });
+    })();
+
+    // ---------- Mission Control → Daybreak ----------
+    async function loadMcDaybreak() {
+      const box = document.getElementById('mc-daybreak');
+      beginLoad(box, 'mc:daybreak:' + mcPeriod, '<div class="gantt-wrap">' + SKELETON(3) + '</div><div class="gantt-wrap">' + SKELETON(5) + '</div>');
+      try {
+        const r = mcRange();
+        const [days, tasks, members] = await Promise.all([loadDbDays(r.from, r.to), loadDbTasks(r.from, r.to), loadAllMembers()]);
+        const today = dateKey(new Date());
+        const closed = days.filter(d => d.closed_at);
+        const un = closed.reduce((t, d) => t + Number(d.unplanned_h || 0), 0), rw = closed.reduce((t, d) => t + Number(d.rework_h || 0), 0);
+        const past = tasks.filter(t => t.day < today), pDone = past.filter(t => t.done).length;
+        const acts = tasks.filter(t => t.is_action), actOpen = acts.filter(t => !t.done && !t.carried), actLate = actOpen.filter(t => t.due_date && t.due_date < today);
+        // Semanas (até 12)
+        const weeks = []; for (let w = mondayOf(r.to); w >= r.from && weeks.length < 12; w = addDaysKey(w, -7)) weeks.unshift(w);
+        const wk = weeks.map(w => { const ds = closed.filter(d => d.day >= w && d.day <= addDaysKey(w, 6)); return { w, un: ds.reduce((t, d) => t + Number(d.unplanned_h || 0), 0), rw: ds.reduce((t, d) => t + Number(d.rework_h || 0), 0) }; });
+        const wMax = Math.max(1, ...wk.map(x => x.un + x.rw));
+        const cz = {}; closed.forEach(d => { [['unplanned_h', 'unplanned_cause', 'un'], ['rework_h', 'rework_cause', 'rw']].forEach(([h, c, k]) => { if (d[h]) { const key = d[c] || 'other'; cz[key] = cz[key] || { un: 0, rw: 0 }; cz[key][k] += Number(d[h]); } }); });
+        const czs = Object.entries(cz).sort((a, b) => (b[1].un + b[1].rw) - (a[1].un + a[1].rw)), czMax = Math.max(1, ...czs.map(([, v]) => v.un + v.rw));
+        box.innerHTML = `
+          <div class="mc-tiles">
+            ${mcTile('Plano cumprido', past.length ? mcPct(pDone, past.length) + '%' : '—', `${pDone} de ${past.length} tarefas`)}
+            ${mcTile('Horas não planeadas', escapeHtml(fmtHours(un)), `${closed.length} fechos de dia`)}
+            ${mcTile('Retrabalho', escapeHtml(fmtHours(rw)), un + rw ? `${Math.round(rw / (un + rw) * 100)}% das horas fora do plano` : '', rw ? 'bad' : '')}
+            ${mcTile('Ações em aberto', actOpen.length, actLate.length ? `${actLate.length} fora de prazo` : `${acts.filter(t => t.done).length} feitas`, actLate.length ? 'bad' : '')}
+          </div>
+          <div class="gantt-wrap"><div class="card-head mc-section-head"><h2>Por semana</h2><span>${escapeHtml(r.label)}</span></div>
+            ${closed.length ? `<div class="dbk-weeks">${wk.map(x => `<div class="dbk-wk" title="${escapeHtml(fmtDayMonth(x.w))}: ${escapeHtml(fmtHours(x.un))} não planeadas, ${escapeHtml(fmtHours(x.rw))} retrabalho"><div class="bar"><i class="rw" style="height:${x.rw / wMax * 100}%"></i><i class="un" style="height:${x.un / wMax * 100}%"></i></div><span>${escapeHtml(fmtDayMonth(x.w))}</span></div>`).join('')}</div>
+              <div class="mc-legend"><span><i class="c-cli"></i>Não planeado</span><span><i class="c-nova"></i>Retrabalho</span></div>` : '<div class="gantt-empty">Ainda sem fechos de dia neste período. Fazem-se ao tocar em «Fechar o tasco».</div>'}
+          </div>
+          ${czs.length ? `<div class="gantt-wrap"><div class="card-head mc-section-head"><h2>Causas</h2><span>onde atacar primeiro</span></div>
+            <div class="dbk-causes-bars mc">${czs.map(([c, v]) => `<div><span>${escapeHtml(dbkCause(c) || 'Outra')}</span><i style="--w:${Math.round((v.un + v.rw) / czMax * 100)}%"></i><b>${escapeHtml(fmtHours(v.un + v.rw))}</b><small>${v.rw ? escapeHtml(fmtHours(v.rw)) + ' retrabalho' : ''}</small></div>`).join('')}</div></div>` : ''}
+          <div class="gantt-wrap"><div class="card-head mc-section-head"><h2>Por pessoa</h2><span>${escapeHtml(r.label)}</span></div>
+            <div class="table-scroll"><table class="mini-table mc-table"><thead><tr><th>Pessoa</th><th class="col-value">Plano cumprido</th><th class="col-value">Tarefas arrastadas</th><th class="col-value">Não planeadas</th><th class="col-value">Retrabalho</th><th class="col-value">Fechos</th><th class="col-value">Ações abertas</th></tr></thead><tbody>
+            ${members.map(m => { const p = past.filter(t => t.member_id === m.id), d = closed.filter(x => x.member_id === m.id), a = actOpen.filter(t => t.member_id === m.id);
+              return `<tr><td>${escapeHtml(m.name)}</td><td class="col-value">${p.length ? mcPct(p.filter(t => t.done).length, p.length) + '%' : '—'}</td><td class="col-value${p.filter(t => t.carry_count >= 2).length ? ' warn-text' : ''}">${p.filter(t => t.carry_count >= 1).length}</td><td class="col-value">${escapeHtml(fmtHours(d.reduce((t, x) => t + Number(x.unplanned_h || 0), 0)))}</td><td class="col-value">${escapeHtml(fmtHours(d.reduce((t, x) => t + Number(x.rework_h || 0), 0)))}</td><td class="col-value">${d.length}</td><td class="col-value${a.some(t => t.due_date && t.due_date < today) ? ' warn-text' : ''}">${a.length}</td></tr>`; }).join('')}
+            </tbody></table></div>
+            <div class="field-hint">Plano cumprido: tarefas planeadas que ficaram feitas no próprio dia (as que passam para o dia seguinte contam como não cumpridas nesse dia). Horas não planeadas e de retrabalho: o que cada um indica no fecho do dia (as fases marcadas como "sempre retrabalho" preenchem-se sozinhas).</div>
+          </div>`;
+      } catch (err) {
+        box.innerHTML = `<div class="error-box">Não foi possível carregar: ${escapeHtml(err.message)}</div>`;
+      }
+    }
+
     // ================= MELHORIAS: tickets da equipa (erros, melhorias, ideias) =================
     // Qualquer pessoa submete de qualquer ecrã (botão 💡 no topo, menu ou ⌘K); a app guarda onde estava e o aparelho.
     // Página "Melhorias": votos (+1), comentários e estados. Quem submeteu é avisado na Hoje quando o estado muda.
@@ -18371,7 +19594,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       finance: ['Mission Control', 'A empresa inteira, num relance.'], horas: ['Horas', 'Para onde vai o nosso tempo.'],
       agenda: ['Agenda', 'Reuniões, prazos e fases da equipa.'], atas: ['Atas', 'O que ficou dito em cada reunião.'],
       despesas: ['Despesas', 'Gastos, recibos e reembolsos.'], settings: ['Definições', 'Como a app trabalha para a NOVA.'], help: ['Ajuda', 'Como é que…'],
-      tickets: ['Melhorias', 'Erros, melhorias e ideias da equipa para a app.']
+      tickets: ['Melhorias', 'Erros, melhorias e ideias da equipa para a app.'],
+      absences: ['Ausências', 'Férias, faltas e formação. Quem está fora, e quando.']
     };
     const kLargeIO = typeof IntersectionObserver === 'function' ? new IntersectionObserver(([en]) => {
       const box = document.getElementById('k-large');
@@ -18535,7 +19759,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     // Passagem entre páginas: pushCurrentView diz a direção (entrar numa ficha → da direita; voltar → da esquerda)
     var kNavDir = null;
     var K_DEEP = new Set(['detail', 'client', 'plot', 'proposal', 'feas', 'investorView']);
-    var K_VIEWS = ['home-view', 'projects-view', 'clients-view', 'client-view', 'opps-view', 'plot-view', 'feas-view', 'proposal-view', 'billing-view', 'finance-view', 'agenda-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view', 'despesas-view', 'help-view', 'tickets-view'];
+    var K_VIEWS = ['home-view', 'projects-view', 'clients-view', 'client-view', 'opps-view', 'plot-view', 'feas-view', 'proposal-view', 'billing-view', 'finance-view', 'agenda-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view', 'despesas-view', 'help-view', 'tickets-view', 'absences-view'];
     function kGhostOut() {
       const dir = kNavDir; kNavDir = null;
       if (dir === null || reduceMotion.matches || document.getElementById('app-screen')?.style.display === 'none') return;
@@ -19132,6 +20356,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { group: 'Ir para', label: 'Definições', keys: 'categorias tipos configuracao', run: () => NAV_ACTIONS.settings() },
       { group: 'Ir para', label: 'Modo apresentação', keys: 'apresentacao apresentar socios slides demo explicar', run: () => openPresentation() },
       { group: 'Criar', label: 'Sugerir melhoria ou reportar erro', keys: 'melhoria ticket erro bug ideia sugestao pedido feedback reportar', run: () => openTicketModal() },
+      { group: 'Ir para', label: 'Ausências', keys: 'ferias ausencias faltas folga doenca baixa consulta formacao mapa de ferias', run: () => NAV_ACTIONS.absences() },
+      { group: 'Criar', label: 'Marcar férias ou ausência', keys: 'ferias marcar ausencia falta doenca consulta formacao', run: () => openAbsenceModal({}) },
+      { group: 'Ir para', label: 'Começar o Daybreak', keys: 'daybreak reuniao diaria kaizen 8:40 standup plano do dia', run: () => openDaybreak() },
+      { group: 'Criar', label: 'Planear o meu dia (Daybreak)', keys: 'plano do dia tarefas daybreak prioridades', run: async () => { const m = await getCurrentMember(); if (m) openDbkPlan(m.id, dateKey(new Date()), () => { if (currentViewState?.name === 'home') renderToday(); }); } },
       { group: 'Ir para', label: 'Melhorias', keys: 'melhorias tickets pedidos erros ideias votos', run: () => NAV_ACTIONS.tickets() },
       { group: 'Ir para', label: 'Ajuda', keys: 'manual ajuda como guia instrucoes', run: () => NAV_ACTIONS.help() }
     ];
