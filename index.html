@@ -3546,6 +3546,28 @@
   .sig-how span { color: var(--text-2); }
   .sig-how code { font-size: var(--fs-xs); background: var(--surface-2); padding: 1px 4px; border-radius: var(--r-xs); }
   @media (max-width: 760px) { .sig-how { grid-template-columns: 1fr; gap: 2px; } .sig-how b { margin-top: var(--sp-2); } }
+  /* Trabalhos a mais */
+  .co-row { display: grid; grid-template-columns: auto 1fr auto auto; gap: var(--sp-3); align-items: center; padding: var(--sp-2-5) 0; border-top: 1px solid var(--border); cursor: pointer; }
+  .co-row:first-of-type { border-top: 0; }
+  .co-code { font-size: var(--fs-xs); font-weight: var(--fw-bold); color: var(--accent); background: var(--accent-soft); border-radius: var(--r-sm); padding: 2px 6px; }
+  .co-main { display: flex; flex-direction: column; min-width: 0; }
+  .co-main small { color: var(--text-2); }
+  .co-st { font-size: var(--fs-xs); font-weight: var(--fw-semibold); border-radius: var(--r-full); padding: 2px 10px; background: var(--surface-2); color: var(--text-2); white-space: nowrap; }
+  .co-st.s-wait { background: var(--warning-soft); color: var(--warning); }
+  .co-st.s-ok { background: var(--success-soft); color: var(--success); }
+  .co-st.s-no { background: var(--surface-2); color: var(--text-3); text-decoration: line-through; }
+  .co-val { font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .co-total { font-size: var(--fs-xs); color: var(--success); font-weight: var(--fw-semibold); margin-right: var(--sp-2); }
+  .co-btns { display: flex; gap: var(--sp-2); flex-wrap: wrap; margin-top: var(--sp-4); }
+  .co-btns .primary-btn, .co-btns .secondary-btn { width: auto; margin: 0; padding: 0 var(--sp-4); min-height: 42px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+  .co-link { display: flex; gap: var(--sp-2); }
+  .co-link .form-input { margin: 0; font-size: var(--fs-sm); }
+  .co-link .secondary-btn { width: auto; margin: 0; }
+  .co-facts > div { display: flex; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-2) 0; border-bottom: 1px solid var(--border); font-size: var(--fs-sm); }
+  .co-facts span { color: var(--text-2); }
+  .co-facts b { text-align: right; }
+  .rv-co { background: var(--accent-soft); border-radius: var(--r-md); padding: var(--sp-2) var(--sp-3); margin-top: var(--sp-2); }
+  @media (max-width: 760px) { .co-row { grid-template-columns: auto 1fr auto; } .co-st { grid-column: 2; justify-self: start; } .co-val { grid-row: 1; grid-column: 3; } }
   /* PM do cliente */
   .pm-pick { display: flex; flex-direction: column; gap: var(--sp-1-5); }
   .pm-opt { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; border: 1px solid var(--border); background: var(--surface); border-radius: var(--r-lg); padding: var(--sp-2-5) var(--sp-3); font: inherit; font-weight: var(--fw-semibold); color: var(--text); cursor: pointer; transition: border-color var(--t), background var(--t); }
@@ -6395,6 +6417,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
 
         // --- Participação: colaboradores por percentagem de horas no projeto ---
         const projectPm = await loadPm(project.pm_id).catch(() => null);
+        const changeOrders = await loadChangeOrders(project.id).catch(() => []);
         let participacaoHtml = '<div class="gantt-empty">Sem horas registadas neste projeto.</div>';
         const pessoasNomes = Object.keys(hoursByPerson);
         if (pessoasNomes.length > 0) {
@@ -6687,6 +6710,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               ${stagesTableHtml}
               ${npsClose ? `<div class="nps-close-row"><span>Fecho do projeto</span>${npsPillHtml(npsClose, npsCfgDet)}</div>` : ''}
             </div>
+            ${changeOrdersCardHtml(changeOrders)}
           </section>
 
           <section data-dpanel="camara" hidden><div id="camara-panel"></div></section>
@@ -6769,6 +6793,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         }));
         detailBody.querySelectorAll('[data-nps-id]').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); openNpsModal(b.dataset.npsId, reopen); }));
         document.getElementById('add-break-btn').addEventListener('click', () => openBreakModal(null, project, breaks, reopen, stages));
+        document.getElementById('co-add')?.addEventListener('click', () => openChangeOrderModal(project.id, { after: reopen }));
+        detailBody.querySelectorAll('[data-co]').forEach(r => r.addEventListener('click', () => { const c = changeOrders.find(x => x.id === r.dataset.co); if (c) { if (!c.team_seen) dbUpdate('change_orders', c.id, { team_seen: true }, mockChangeOrders).catch(() => {}); openCoActions(c, reopen); } }));
         detailBody.querySelectorAll('[data-break-id]').forEach(r => r.addEventListener('click', (e) => {
           if (e.target.closest('.drag-handle') || r.classList.contains('drag-settling')) return;
           openBreakModal(breaks.find(b => String(b.id) === r.dataset.breakId), project, breaks, reopen, stages);
@@ -7012,7 +7038,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <div id="revision-cause"><label class="field-label">Porquê esta revisão?</label>
             <label class="check-row"><input type="radio" name="rv-cause" value="cliente"> Pedido do cliente</label>
             <label class="check-row"><input type="radio" name="rv-cause" value="nova"> Retrabalho nosso (erro, omissão, melhoria interna)</label>
-            <label class="check-row"><input type="radio" name="rv-cause" value="camara"> Exigência da Câmara</label></div>
+            <label class="check-row"><input type="radio" name="rv-cause" value="camara"> Exigência da Câmara</label>
+            <label class="check-row rv-co" id="rv-co-wrap" hidden><input type="checkbox" id="rv-co"> Cobrar ao cliente como <b>trabalho a mais</b> (o cliente aprova num link e a fase é criada quando aprovar)</label></div>
           <label class="field-label">Rótulo da revisão (opcional)</label>
           <input type="text" id="revision-label" class="form-input" placeholder="ex: R02">
           <label class="field-label">Tipo de valor</label>
@@ -7087,6 +7114,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         };
         typeSel.addEventListener('change', drawRevCamara);
 
+        document.querySelectorAll('[name="rv-cause"]').forEach(r => r.addEventListener('change', () => { document.getElementById('rv-co-wrap').hidden = document.querySelector('[name="rv-cause"]:checked')?.value !== 'cliente'; }));
         let revisionValueType = 'percentage';
         document.getElementById('revision-value-type-toggle').addEventListener('click', (e) => {
           const btn = e.target.closest('[data-value-type]');
@@ -7122,6 +7150,13 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           const causeEl = document.querySelector('[name="rv-cause"]:checked');
           if (!isOficioRev && !causeEl) { msgEl.textContent = 'Diz porquê: pedido do cliente, retrabalho nosso ou exigência da Câmara.'; msgEl.className = 'form-msg error'; return; }
           const revCause = isOficioRev ? 'camara' : causeEl.value;
+          // Pedido do cliente a cobrar: em vez de criar já a fase, abre o trabalho a mais (a fase nasce quando o cliente aprovar)
+          if (!isOficioRev && revCause === 'cliente' && document.getElementById('rv-co')?.checked) {
+            wrap.style.display = 'none'; wrap.innerHTML = '';
+            const after = stages.filter(s => s.stage_type_id === stageTypeId).sort((a, b) => (b.stage_order ?? 0) - (a.stage_order ?? 0))[0];
+            openChangeOrderModal(projectId, { preset: { stage_type_id: stageTypeId, after_stage_id: after?.id, source: 'revision', pricing: revisionValueType === 'fixed' && valueRaw > 0 ? 'fixed' : 'hours', value: revisionValueType === 'fixed' && valueRaw > 0 ? valueRaw : '' }, after: () => openDetail(projectId) });
+            return;
+          }
           if (!isOficioRev && (isNaN(valueRaw) || valueRaw < 0)) {
             msgEl.textContent = 'Indica um valor válido.';
             msgEl.className = 'form-msg error';
@@ -7463,10 +7498,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       return `<div class="ata-entry-meta"><span class="rev-badge">${revLabel(n.revision)}</span> ${escapeHtml(text)}</div>`;
     }
     function ataActionsHtml(n) {
-      if (n.revision === undefined || n.revision === null) return '';
+      const ver = n.revision !== undefined && n.revision !== null;
+      if (!ver && !n.project_id) return '';
       return `<div class="ata-entry-actions">
-          <button type="button" class="text-btn" data-ata-edit="${escapeHtml(n.id)}">Editar</button>
-          ${n.revision > 0 ? `<button type="button" class="text-btn" data-ata-versions="${escapeHtml(n.id)}">Versões anteriores (${n.revision})</button>` : ''}
+          ${ver ? `<button type="button" class="text-btn" data-ata-edit="${escapeHtml(n.id)}">Editar</button>` : ''}
+          ${ver && n.revision > 0 ? `<button type="button" class="text-btn" data-ata-versions="${escapeHtml(n.id)}">Versões anteriores (${n.revision})</button>` : ''}
+          ${n.project_id ? `<button type="button" class="text-btn" data-ata-co="${escapeHtml(n.id)}" title="Algo pedido nesta reunião que está fora do âmbito">+ Trabalho a mais</button>` : ''}
         </div>`;
     }
     function attachAtaActions(root, notes, onChanged) {
@@ -7478,6 +7515,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       root.querySelectorAll('[data-ata-versions]').forEach(btn => btn.addEventListener('click', (ev) => {
         ev.stopPropagation();
         openAtaVersionsModal(byId[btn.dataset.ataVersions]);
+      }));
+      root.querySelectorAll('[data-ata-co]').forEach(btn => btn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const n = byId[btn.dataset.ataCo];
+        const sel = String(getSelection?.() || '').trim();
+        openChangeOrderModal(n.project_id, { preset: { title: '', description: sel || `Pedido na reunião de ${fmtDayMonth(n.meeting_date)}${n.title ? ' (' + n.title + ')' : ''}.`, source: 'ata', source_id: n.id }, after: onChanged });
       }));
     }
 
@@ -13911,8 +13954,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       teamRows.forEach(r => {
         const urgent = r.late ? 'late' : (r.kind === 'camara' || r.kind === 'debt' || r.kind === 'meet' || (r.kind === 'bday' && r.today)) ? 'soon' : '';
         items.push({ pri: r.late || r.kind === 'meet' ? 0 : urgent ? 1 : 2, date: r.due || '9999', html: `
-          <div class="alert-row team${urgent ? ' ' + urgent : ''}" data-alert-team="${r.kind}"${r.note ? ` data-note="${escapeHtml(r.note.id)}"` : ''}${r.project ? ` data-project="${escapeHtml(r.project)}"` : ''}${r.nps ? ` data-nps="${escapeHtml(r.nps)}"` : ''}${r.client ? ` data-client="${escapeHtml(r.client)}"` : ''}${r.ticket ? ` data-ticket="${escapeHtml(r.ticket)}"` : ''}${r.invoice ? ` data-invoice="${escapeHtml(r.invoice)}"` : ''}${r.url ? ` data-url="${escapeHtml(r.url)}" role="link" tabindex="0"` : ''}>
-            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : r.kind === 'nps' ? '★' : r.kind === 'debt' ? '€' : r.kind === 'law' ? '§' : r.kind === 'radar' ? '◎' : r.kind === 'meet' ? '▶' : r.kind === 'transcript' ? '≡' : r.kind === 'bday' ? '✦' : r.kind === 'ticket' ? '💡' : r.kind === 'absence' ? '◐' : r.kind === 'data' ? '!' : r.kind === 'payrem' ? '€' : '+'}</span>
+          <div class="alert-row team${urgent ? ' ' + urgent : ''}" data-alert-team="${r.kind}"${r.note ? ` data-note="${escapeHtml(r.note.id)}"` : ''}${r.project ? ` data-project="${escapeHtml(r.project)}"` : ''}${r.nps ? ` data-nps="${escapeHtml(r.nps)}"` : ''}${r.client ? ` data-client="${escapeHtml(r.client)}"` : ''}${r.ticket ? ` data-ticket="${escapeHtml(r.ticket)}"` : ''}${r.invoice ? ` data-invoice="${escapeHtml(r.invoice)}"` : ''}${r.co ? ` data-co-alert="${escapeHtml(r.co)}"` : ''}${r.url ? ` data-url="${escapeHtml(r.url)}" role="link" tabindex="0"` : ''}>
+            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : r.kind === 'nps' ? '★' : r.kind === 'debt' ? '€' : r.kind === 'law' ? '§' : r.kind === 'radar' ? '◎' : r.kind === 'meet' ? '▶' : r.kind === 'transcript' ? '≡' : r.kind === 'bday' ? '✦' : r.kind === 'ticket' ? '💡' : r.kind === 'absence' ? '◐' : r.kind === 'data' ? '!' : r.kind === 'payrem' ? '€' : r.kind === 'co' ? 'Ⓣ' : '+'}</span>
             <span class="alert-text"><b>${escapeHtml(r.title)}</b><span>${escapeHtml(r.sub)}</span></span>
             <span class="alert-when">${escapeHtml(r.when)}</span>
           </div>` });
@@ -13965,6 +14008,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         else if (k === 'bday') openClientDetail(r.dataset.client);
         else if (k === 'ticket') openTicketDetail(r.dataset.ticket);
         else if (k === 'absence') { navStack = []; openAbsencesModule(); }
+        else if (k === 'co') openCoFromAlert(r.dataset.coAlert);
         else if (k === 'payrem') openPayRemPause(r.dataset.invoice, () => renderToday());
         else if (k === 'data') { detailTabByProject[r.dataset.project] = 'fases'; openDetail(r.dataset.project); }
         else if (k === 'transcript') { const n = teamRows.find(x => x.note && String(x.note.id) === r.dataset.note)?.note; if (n) openNewAtaModal(null, null, n, () => renderToday()); }
@@ -14430,7 +14474,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         renderWeekHours(hoursEl, hours, tg);
         // Avisos de organização: horas em falta (a partir de sexta), projetos sem responsável,
         // fases em curso/seguintes sem ninguém nos projetos de que sou responsável
-        const teamAlerts = [...await meetingAlerts(milestones, me, todayKey).catch(() => []), ...await transcriptAlerts(me).catch(() => []), ...await birthdayAlerts().catch(() => []), ...await ticketAlerts(me).catch(() => []), ...await absenceAlerts(me).catch(() => []), ...await loadMissingDataAlerts(me).catch(() => []), ...await payReminderAlerts(me).catch(() => []), ...radarAlerts, ...lawAlerts, ...debtAlerts, ...npsAlerts, ...camaraAlerts];
+        const teamAlerts = [...await meetingAlerts(milestones, me, todayKey).catch(() => []), ...await transcriptAlerts(me).catch(() => []), ...await birthdayAlerts().catch(() => []), ...await ticketAlerts(me).catch(() => []), ...await absenceAlerts(me).catch(() => []), ...await loadMissingDataAlerts(me).catch(() => []), ...await payReminderAlerts(me).catch(() => []), ...await changeOrderAlerts(me).catch(() => []), ...radarAlerts, ...lawAlerts, ...debtAlerts, ...npsAlerts, ...camaraAlerts];
         const wd = new Date().getDay();
         const missing = missingHourDays(hours, tg);
         if ((wd === 5 || wd === 6 || wd === 0) && missing.length)
@@ -15196,6 +15240,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         steps: ['Carrega em **Ctrl+K** (⌘K no Mac) e escreve **modo leve**.', 'Escolhe **Modo leve: ligar / desligar**. Fica guardado nesse computador.', 'No modo leve saem as luzes de fundo, os brilhos e o vidro desfocado; tudo o resto fica igual.', 'Em qualquer computador, enquanto escreves num campo, as animações param para a escrita ser imediata.'],
         kw: 'lento lenta rapido rapida modo leve computador antigo velho performance desempenho animacoes travar escrever',
         tour: [{ go: 'nav:home', sel: '.side-search, [data-open-cmdk]', text: 'Ctrl+K → «modo leve».' }] },
+      { id: 'trabalhos-a-mais', cat: 'money', ctx: ['detail', 'home'],
+        q: 'cobro um trabalho a mais pedido pelo cliente',
+        a: 'No projeto → Fases → «+ Trabalho a mais»: o que é, horas × taxa ou valor fixo, prazo adicional. Envia o link: o cliente aprova e a fase TA aparece no projeto, pronta a faturar.',
+        steps: ['Abre o projeto → [[Fases]] → **+ Trabalho a mais** (ou numa ata **+ Trabalho a mais**, ou ao criar uma revisão «Pedido do cliente» marca **Cobrar como trabalho a mais**).', 'Escreve o que é e escolhe **Por horas** (horas estimadas × taxa, por defeito o objetivo de 150 €/h) ou **Valor fixo**. Indica o **prazo adicional** e a fase a seguir à qual entra.', '**Guardar e enviar ao cliente**: copia o link ou envia por **email** ou **WhatsApp** (o texto vem pronto, em PT ou EN).', 'O cliente abre o link, vê o pedido e o valor e toca em **Aprovar** ou **Recusar** (com o nome).', 'Ao aprovar, a app cria logo a fase **TA01 — …** no projeto: entra na **Faturação**, as horas registam-se nela e o prazo adicional empurra as fases seguintes.', 'A [[Hoje]] avisa o responsável quando o cliente responde e lembra quando passam 5 dias sem resposta.'],
+        kw: 'trabalho a mais trabalhos a mais extra alteracao pedido cliente orcamento adicional aprovacao aprovar link cobrar change order revisao',
+        tour: [{ go: 'project:fases', sel: '#co-card', text: 'Os trabalhos a mais do projeto, com o estado de cada um.' }] },
       { id: 'lembretes-pagamento', cat: 'money', ctx: ['billing', 'detail', 'home', 'settings'],
         q: 'a app lembra os clientes das faturas por pagar',
         a: 'Faturas a pronto pagamento ainda por pagar aos 15 e 30 dias: a app envia um email automático ao cliente (ou ao PM). Na véspera, o responsável do projeto vê na Hoje e pode travar.',
@@ -19004,7 +19054,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     const DBK_HOURS = [[0, '0'], [0.5, '½'], [1, '1'], [2, '2'], [3, '3'], [4, '4+']];
     const dbkCause = k => DBK_CAUSES.find(c => c[0] === k)?.[1] || '';
     const dbkH = h => !h ? '0 h' : h >= 4 ? '4+ h' : `${String(h).replace('.5', ',5').replace(/^0,5$/, '½')} h`;
-    const REV_CAUSE_MAP = { client: 'client', nova: 'ours', camara: 'camara' };
+    const REV_CAUSE_MAP = { cliente: 'client', client: 'client', nova: 'ours', camara: 'camara' };
     let mockDbTasks = (() => {
       const t = dateKey(new Date()); let y = addDaysKey(t, -1); while (!isWorkday(y)) y = addDaysKey(y, -1);
       const mk = (id, m, day, title, x = {}) => ({ id, member_id: m, day, title, priority: false, done: false, carried: false, carry_count: 0, is_action: false, sort_order: 0, created_at: new Date().toISOString(), ...x });
@@ -19815,6 +19865,206 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         fill();
       } catch (err) { box.innerHTML = `<div class="error-box">${escapeHtml(err.message)}</div>`; }
     }
+    // ================= TRABALHOS A MAIS (pedidos do cliente fora do âmbito) =================
+    // Valor por horas (horas × taxa, objetivo 150 €/h) ou fixo. O cliente aprova num link (aprovacao.html).
+    // Ao aprovar, a base de dados cria a fase "TA01 — …" a seguir à fase relacionada: entra na Faturação,
+    // o prazo adicional é o lead time (as fases seguintes andam) e as horas registam-se nela.
+    const CO_PAGE = 'https://rodrinova.github.io/nova-compass/aprovacao.html';
+    const CO_STATUS = { draft: ['Rascunho', ''], sent: ['À espera do cliente', 'wait'], approved: ['Aprovado', 'ok'], rejected: ['Recusado', 'no'], cancelled: ['Cancelado', 'no'] };
+    let mockChangeOrders = [];
+    async function loadChangeOrders(projectId) {
+      if (devMode) return mockChangeOrders.filter(c => !projectId || c.project_id === projectId);
+      let q = supabase.from('change_orders').select('*').order('number');
+      if (projectId) q = q.eq('project_id', projectId);
+      const r = await q;
+      return r.error ? [] : (r.data || []);
+    }
+    const coCode = c => 'TA' + String(c.number).padStart(2, '0');
+    const coLink = c => `${CO_PAGE}?t=${encodeURIComponent(c.token)}`;
+    function changeOrdersCardHtml(list) {
+      const tot = list.filter(c => c.status === 'approved').reduce((t, c) => t + Number(c.value || 0), 0);
+      return `<div class="gantt-wrap" id="co-card">
+        <div class="card-head"><h2>Trabalhos a mais</h2><span class="card-head-actions">${tot ? `<span class="co-total">${escapeHtml(fmtEUR(tot))} aprovados</span>` : ''}<button type="button" class="text-btn" id="co-add">+ Trabalho a mais</button></span></div>
+        ${list.length ? list.slice().reverse().map(c => { const [lbl, cls] = CO_STATUS[c.status] || ['', '']; return `
+          <div class="co-row" data-co="${escapeHtml(c.id)}" role="button" tabindex="0">
+            <span class="co-code">${escapeHtml(coCode(c))}</span>
+            <span class="co-main"><b>${escapeHtml(c.title)}</b><small>${escapeHtml([c.pricing === 'hours' && c.est_hours ? `${fmtNum(c.est_hours)} h × ${fmtEUR(c.rate)}/h` : 'valor fixo', c.extra_days ? `+${c.extra_days} dias úteis` : '', c.status === 'sent' ? (c.viewed_at ? 'visto pelo cliente' : 'ainda não aberto') + ` · enviado ${fmtDayMonth(String(c.sent_at || c.created_at).slice(0, 10))}` : '', c.decided_at ? `${c.decided_by_name || ''} · ${fmtDayMonth(String(c.decided_at).slice(0, 10))}` : ''].filter(Boolean).join(' · '))}</small></span>
+            <span class="co-st s-${cls}">${escapeHtml(lbl)}</span>
+            <span class="co-val">${escapeHtml(fmtEUR(c.value))}</span>
+          </div>`; }).join('') : '<div class="gantt-empty">Pedidos do cliente fora do âmbito: regista aqui, o cliente aprova num link e passa a fase a faturar.</div>'}
+      </div>`;
+    }
+    // Criar / editar (rascunho ou enviado)
+    async function openChangeOrderModal(projectId, { co = null, preset = {}, after = null } = {}) {
+      let stages, project, cfg;
+      try {
+        [stages, cfg] = await Promise.all([
+          devMode ? Promise.resolve(MOCK_STAGES.map(s => ({ ...s, project_id: s.project_id || 'mock-1' }))) : supabase.from('project_stages').select('id, stage_order, stage_type_id, revision_label, status, stage_types(name)').eq('project_id', projectId).order('stage_order').then(r => r.data || []),
+          loadProposalCfg().catch(() => ({ target_rate: 150 }))
+        ]);
+        project = devMode ? MOCK_PROJECTS.find(p => p.id === projectId) : (await supabase.from('projects').select('id, name, client_id').eq('id', projectId).single()).data;
+      } catch (err) { showToast('Não foi possível abrir: ' + err.message, { type: 'error' }); return; }
+      const isEdit = !!co;
+      const v = { title: co?.title ?? preset.title ?? '', description: co?.description ?? preset.description ?? '', pricing: co?.pricing ?? preset.pricing ?? 'hours',
+        est_hours: co?.est_hours ?? '', rate: co?.rate ?? cfg?.target_rate ?? 150, value: co?.value ?? preset.value ?? '', extra_days: co?.extra_days ?? 0,
+        after: co?.after_stage_id ?? preset.after_stage_id ?? (stages.filter(s => !isStageDone(s)).slice(-1)[0]?.id || stages.slice(-1)[0]?.id || ''),
+        typeId: co?.stage_type_id ?? preset.stage_type_id ?? null };
+      openQuickModal(isEdit ? `Editar ${coCode(co)}` : 'Novo trabalho a mais', `
+        <div class="field-hint" style="margin-top:0">${escapeHtml(String(project?.name || '').replace(/<[^>]*>/g, ''))}</div>
+        <label class="field-label" for="co-title">O que é</label>
+        <input type="text" id="co-title" class="form-input" maxlength="140" value="${escapeHtml(v.title)}" placeholder="ex.: Alteração da cozinha para open space">
+        <label class="field-label" for="co-desc">Descrição para o cliente <span class="muted">(opcional)</span></label>
+        <textarea id="co-desc" class="form-input" rows="3" maxlength="1500" placeholder="O que inclui, o que muda nas peças…">${escapeHtml(v.description)}</textarea>
+        <label class="field-label">Valor</label>
+        <div class="segmented" id="co-pricing"><button type="button" data-p="hours"${v.pricing === 'hours' ? ' class="active"' : ''}>Por horas</button><button type="button" data-p="fixed"${v.pricing === 'fixed' ? ' class="active"' : ''}>Valor fixo</button></div>
+        <div class="ab-dates" id="co-hours-row">
+          <div><label class="field-label" for="co-h">Horas estimadas</label><input type="text" inputmode="decimal" id="co-h" class="form-input" value="${escapeHtml(String(v.est_hours).replace('.', ','))}" placeholder="ex.: 12"></div>
+          <div><label class="field-label" for="co-rate">Taxa (€/h)</label><input type="text" inputmode="decimal" id="co-rate" class="form-input" value="${escapeHtml(String(v.rate).replace('.', ','))}"></div>
+        </div>
+        <div class="ab-dates">
+          <div><label class="field-label" for="co-val">Valor sem IVA (€)</label><input type="text" inputmode="decimal" id="co-val" class="form-input" value="${escapeHtml(String(v.value).replace('.', ','))}"></div>
+          <div><label class="field-label" for="co-days">Prazo adicional (dias úteis)</label><input type="text" inputmode="numeric" id="co-days" class="form-input" value="${escapeHtml(String(v.extra_days || 0))}"></div>
+        </div>
+        <label class="field-label" for="co-after">Entra no projeto a seguir a</label>
+        <select id="co-after" class="form-input">${stages.map(s => `<option value="${escapeHtml(s.id)}" data-type="${escapeHtml(s.stage_type_id || '')}"${s.id === v.after ? ' selected' : ''}>${escapeHtml(phaseName(s))}</option>`).join('')}</select>
+        <div class="field-hint">Quando o cliente aprovar, a app cria a fase <b>TA</b> logo a seguir, com este valor (para faturar) e o prazo adicional (as fases seguintes andam). As horas registam-se nela.</div>
+        <div class="co-btns"><button type="button" class="secondary-btn" id="co-draft">Guardar rascunho</button><button type="button" class="primary-btn" id="co-send">${co?.status === 'sent' ? 'Guardar' : 'Guardar e enviar ao cliente'}</button></div>
+        <div id="co-msg" class="form-msg"></div>`);
+      const $ = id => document.getElementById(id);
+      let pricing = v.pricing;
+      const sync = () => {
+        document.querySelectorAll('#co-pricing [data-p]').forEach(b => b.classList.toggle('active', b.dataset.p === pricing));
+        $('co-hours-row').hidden = pricing !== 'hours';
+        $('co-val').readOnly = pricing === 'hours';
+        if (pricing === 'hours') { const h = numOrNull($('co-h').value), r = numOrNull($('co-rate').value); $('co-val').value = h && r ? String(Math.round(h * r * 100) / 100).replace('.', ',') : ''; }
+      };
+      document.querySelectorAll('#co-pricing [data-p]').forEach(b => b.addEventListener('click', () => { pricing = b.dataset.p; sync(); }));
+      ['co-h', 'co-rate'].forEach(id => $(id).addEventListener('input', sync));
+      sync();
+      const save = async send => {
+        const title = $('co-title').value.trim();
+        const value = numOrNull($('co-val').value), days = parseInt($('co-days').value, 10) || 0;
+        if (!title) return formError('co-msg', 'Escreve o que é o trabalho a mais.');
+        if (!(value > 0)) return formError('co-msg', pricing === 'hours' ? 'Indica as horas e a taxa.' : 'Indica o valor.');
+        const opt = $('co-after').selectedOptions[0];
+        const row = { title, description: valOrNull($('co-desc').value.trim()), pricing, est_hours: pricing === 'hours' ? numOrNull($('co-h').value) : null,
+          rate: pricing === 'hours' ? numOrNull($('co-rate').value) : null, value, extra_days: Math.max(0, days),
+          after_stage_id: opt?.value || null, stage_type_id: v.typeId || opt?.dataset.type || null, updated_at: new Date().toISOString() };
+        if (send && (!co || co.status === 'draft')) { row.status = 'sent'; row.sent_at = new Date().toISOString(); }
+        try {
+          let saved;
+          if (isEdit) { await dbUpdate('change_orders', co.id, row, mockChangeOrders); saved = { ...co, ...row }; }
+          else {
+            const all = await loadChangeOrders(projectId);
+            const me = await getCurrentMember();
+            saved = await dbInsert('change_orders', { ...row, project_id: projectId, number: all.reduce((m, c) => Math.max(m, c.number || 0), 0) + 1, status: row.status || 'draft',
+              source: preset.source || 'manual', source_id: preset.source_id || null, created_by: me?.id || null, created_at: new Date().toISOString(),
+              ...(devMode ? { token: 'exemplo' } : {}) }, mockChangeOrders);
+          }
+          closeQuickModal();
+          if (send && saved.status === 'sent') openCoSend(saved, after);
+          else { showToast(isEdit ? 'Guardado' : 'Rascunho guardado'); after && after(); }
+        } catch (err) { formError('co-msg', /change_orders/.test(err.message || '') ? 'Corre trabalhos_a_mais.sql no Supabase.' : 'Não foi possível guardar: ' + err.message); }
+      };
+      $('co-draft').hidden = !!co && co.status !== 'draft';
+      $('co-draft').addEventListener('click', () => save(false));
+      $('co-send').addEventListener('click', () => save(true));
+    }
+    // Enviar: link para o cliente (copiar, email, WhatsApp)
+    async function openCoSend(co, after) {
+      let client = null, pm = null, project = null;
+      try {
+        project = devMode ? MOCK_PROJECTS.find(p => p.id === co.project_id) : (await supabase.from('projects').select('name, client_id, pm_id, pay_reminder_to').eq('id', co.project_id).single()).data;
+        if (!devMode && project?.client_id) client = (await supabase.from('clients').select('name, email, phone, language').eq('id', project.client_id).single()).data;
+        pm = await loadPm(project?.pm_id).catch(() => null);
+      } catch (_) { /* sem dados de contacto */ }
+      const link = coLink(co);
+      const en = client?.language === 'en';
+      const pname = String(project?.name || '').replace(/<[^>]*>/g, '');
+      const subject = en ? `Additional work ${coCode(co)} — ${pname}: approval` : `Trabalho a mais ${coCode(co)} — ${pname}: aprovação`;
+      const body = en
+        ? `Hello,\n\nAs discussed, here is the additional work "${co.title}" for ${pname} (${fmtEUR(co.value)} + VAT${co.extra_days ? `, +${co.extra_days} working days` : ''}).\n\nYou can review and approve it here:\n${link}\n\nKind regards,\nNOVA Associates`
+        : `Olá,\n\nConforme falámos, segue o trabalho a mais "${co.title}" do projeto ${pname} (${fmtEUR(co.value)} + IVA${co.extra_days ? `, +${co.extra_days} dias úteis de prazo` : ''}).\n\nPode ver e aprovar aqui:\n${link}\n\nCom os melhores cumprimentos,\nNOVA Associates`;
+      const to = [client?.email, pm?.email].filter(Boolean).join(',');
+      const phone = String(pm?.phone || client?.phone || '').replace(/[^\d]/g, '');
+      openQuickModal(`Enviar ${coCode(co)} ao cliente`, `
+        <p style="margin:0 0 10px">O cliente abre o link, vê o pedido e o valor e toca em <b>Aprovar</b> ou <b>Recusar</b>. A resposta aparece na Hoje.</p>
+        <div class="co-link"><input type="text" class="form-input" id="cs-link" value="${escapeHtml(link)}" readonly><button type="button" class="secondary-btn" id="cs-copy">Copiar</button></div>
+        <div class="co-btns">
+          <a class="primary-btn co-a" href="mailto:${escapeHtml(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}">Enviar por email${to ? '' : '…'}</a>
+          <a class="secondary-btn co-a" target="_blank" rel="noopener" href="https://wa.me/${phone}?text=${encodeURIComponent(body)}">WhatsApp</a>
+        </div>
+        <div class="field-hint">${to ? `Para: ${escapeHtml(to)}` : 'O cliente não tem email na ficha: escreve-o no email ou envia o link por WhatsApp.'}</div>
+        <button type="button" class="text-btn" id="cs-done" style="margin-top:8px">Feito</button>`);
+      document.getElementById('cs-copy').addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(link); } catch (_) { document.getElementById('cs-link').select(); document.execCommand('copy'); }
+        showToast('Link copiado'); haptic();
+      });
+      document.getElementById('cs-done').addEventListener('click', () => closeQuickModal());
+      quickModalCloseHook = () => { if (after) setTimeout(after, 50); };
+    }
+    // Ações de um trabalho a mais
+    function openCoActions(co, after) {
+      const [lbl] = CO_STATUS[co.status] || [''];
+      openQuickModal(`${coCode(co)} · ${co.title}`, `
+        <div class="co-facts">
+          <div><span>Estado</span><b>${escapeHtml(lbl)}</b></div>
+          <div><span>Valor</span><b>${escapeHtml(fmtEUR(co.value))}${co.pricing === 'hours' && co.est_hours ? ` <small>(${escapeHtml(fmtNum(co.est_hours))} h × ${escapeHtml(fmtEUR(co.rate))}/h)</small>` : ''}</b></div>
+          <div><span>Prazo adicional</span><b>${co.extra_days ? `${co.extra_days} dias úteis` : '—'}</b></div>
+          ${co.sent_at ? `<div><span>Enviado</span><b>${escapeHtml(fmtDayMonth(String(co.sent_at).slice(0, 10)))}${co.viewed_at ? ' · visto' : ''}</b></div>` : ''}
+          ${co.decided_at ? `<div><span>${co.status === 'approved' ? 'Aprovado' : 'Recusado'} por</span><b>${escapeHtml(co.decided_by_name || '—')} · ${escapeHtml(fmtDayMonth(String(co.decided_at).slice(0, 10)))}</b></div>` : ''}
+          ${co.decision_note ? `<div><span>Comentário</span><b style="white-space:pre-wrap">${escapeHtml(co.decision_note)}</b></div>` : ''}
+        </div>
+        ${co.description ? `<p class="field-hint" style="white-space:pre-wrap">${escapeHtml(co.description)}</p>` : ''}
+        <div class="co-btns">
+          ${['draft', 'sent'].includes(co.status) ? '<button type="button" class="secondary-btn" id="ca-edit">Editar</button>' : ''}
+          ${co.status === 'draft' ? '<button type="button" class="primary-btn" id="ca-send">Enviar ao cliente</button>' : ''}
+          ${co.status === 'sent' ? '<button type="button" class="primary-btn" id="ca-resend">Reenviar o link</button>' : ''}
+        </div>
+        ${['draft', 'sent'].includes(co.status) ? '<button type="button" class="text-btn danger-text" id="ca-cancel" style="margin-top:10px">Cancelar este trabalho a mais</button>' : ''}
+        ${co.status === 'approved' ? '<div class="field-hint">A fase TA foi criada no separador Fases: fatura-a em Faturação e regista lá as horas.</div>' : ''}
+        <div id="ca-msg" class="form-msg"></div>`);
+      document.getElementById('ca-edit')?.addEventListener('click', () => { closeQuickModal(); openChangeOrderModal(co.project_id, { co, after }); });
+      document.getElementById('ca-resend')?.addEventListener('click', () => { closeQuickModal(); openCoSend(co, after); });
+      document.getElementById('ca-send')?.addEventListener('click', async () => {
+        try { const p = { status: 'sent', sent_at: new Date().toISOString() }; await dbUpdate('change_orders', co.id, p, mockChangeOrders); closeQuickModal(); openCoSend({ ...co, ...p }, after); }
+        catch (err) { formError('ca-msg', err.message); }
+      });
+      document.getElementById('ca-cancel')?.addEventListener('click', async () => {
+        if (!window.confirm(`Cancelar ${coCode(co)}? O link deixa de permitir aprovar.`)) return;
+        try { await dbUpdate('change_orders', co.id, { status: 'cancelled', updated_at: new Date().toISOString() }, mockChangeOrders); closeQuickModal(); showToast('Cancelado'); after && after(); }
+        catch (err) { formError('ca-msg', err.message); }
+      });
+    }
+    // Hoje: decisões do cliente por ver e pedidos sem resposta há 5+ dias (para o responsável do projeto ou quem criou)
+    async function changeOrderAlerts(me) {
+      const list = (await loadChangeOrders()).filter(c => (c.status === 'sent') || (['approved', 'rejected'].includes(c.status) && !c.team_seen));
+      if (!list.length) return [];
+      let projs = {};
+      if (devMode) projs = Object.fromEntries(MOCK_PROJECTS.map(p => [p.id, p]));
+      else { const r = await supabase.from('projects').select('id, name, owner_id').in('id', [...new Set(list.map(c => c.project_id))]); projs = Object.fromEntries((r.data || []).map(p => [p.id, p])); }
+      const mine = c => { const o = projs[c.project_id]?.owner_id; return o ? o === me : (!c.created_by || c.created_by === me); };
+      const pn = c => String(projs[c.project_id]?.name || '').replace(/<[^>]*>/g, '');
+      const out = [];
+      list.filter(mine).forEach(c => {
+        if (c.status === 'approved') out.push({ kind: 'co', co: c.id, project: c.project_id, title: `${c.decided_by_name || 'O cliente'} aprovou ${coCode(c)} · ${fmtEUR(c.value)}`, sub: `${pn(c)} · ${c.title}. A fase TA já está no projeto, pronta a faturar.`, when: 'Ver' });
+        else if (c.status === 'rejected') out.push({ kind: 'co', co: c.id, project: c.project_id, title: `${c.decided_by_name || 'O cliente'} recusou ${coCode(c)}`, sub: `${pn(c)} · ${c.title}${c.decision_note ? ' · “' + c.decision_note.slice(0, 80) + '”' : ''}`, when: 'Ver' });
+        else {
+          const days = diffDays(String(c.sent_at || c.created_at).slice(0, 10), dateKey(new Date()));
+          if (days >= 5) out.push({ kind: 'co', co: c.id, project: c.project_id, late: days >= 10, title: `${coCode(c)} sem resposta do cliente há ${days} dias`, sub: `${pn(c)} · ${c.title} · ${fmtEUR(c.value)}${c.viewed_at ? ' · já viu o link' : ' · ainda não abriu o link'}`, when: 'Lembrar' });
+        }
+      });
+      return out;
+    }
+    async function openCoFromAlert(id) {
+      const c = (await loadChangeOrders()).find(x => x.id === id);
+      if (!c) return;
+      if (!c.team_seen) dbUpdate('change_orders', c.id, { team_seen: true }, mockChangeOrders).catch(() => {});
+      if (c.status === 'sent') return openCoSend(c, () => renderToday());
+      detailTabByProject[c.project_id] = 'fases';
+      openDetail(c.project_id);
+    }
+
     // ================= MELHORIAS: tickets da equipa (erros, melhorias, ideias) =================
     // Qualquer pessoa submete de qualquer ecrã (botão 💡 no topo, menu ou ⌘K); a app guarda onde estava e o aparelho.
     // Página "Melhorias": votos (+1), comentários e estados. Quem submeteu é avisado na Hoje quando o estado muda.
