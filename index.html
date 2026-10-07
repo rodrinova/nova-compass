@@ -1886,7 +1886,8 @@
 
   /* Barra fina no topo enquanto a página se atualiza por baixo */
   #top-progress { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: var(--z-tour); pointer-events: none; overflow: hidden; opacity: 0; transition: opacity var(--t) var(--ease-io); }
-  #top-progress::before { content: ''; position: absolute; inset: 0; background: var(--accent); transform-origin: left; animation: progressRun 1.1s var(--ease-io) infinite; }
+  #top-progress::before { content: ''; position: absolute; inset: 0; background: var(--accent); transform-origin: left; }
+  #top-progress.on::before { animation: progressRun 1.1s var(--ease-io) infinite; }   /* só anima quando se vê */
   #top-progress.on { opacity: 1; }
   #top-progress.done { opacity: 0; transition-duration: .35s; }
   .is-refreshing { transition: opacity var(--t) var(--ease-io); opacity: .96; }
@@ -3605,6 +3606,32 @@
   .ab-sum { margin: var(--sp-3) 0 var(--sp-1); font-size: var(--fs-md); }
   .ab-w { font-size: var(--fs-sm); color: var(--warning); background: var(--warning-soft); border-radius: var(--r-sm); padding: var(--sp-1-5) var(--sp-2-5); margin-top: var(--sp-1-5); }
   @media (max-width: 760px) { .ab-people { grid-template-columns: 1fr; } }
+
+
+  /* Brilhos e "empurrões": algumas passagens quando aparecem e depois param (zero custo com a página parada) */
+  :is(.punch-bar, .fg-bar, .ind-bar, .dinner-bar, .mt-track) > span, .time-bar-seg, .seg-thumb::after, .nav-ind::after { animation-iteration-count: 2 !important; }
+  .punch-btn.late { animation-iteration-count: 3; }
+  .punch-btn:not(.late) { animation-iteration-count: 4; }
+  .gantt-today-line { animation-iteration-count: 6; }
+  /* =================== LEVE E RÁPIDO =================== */
+  /* Enquanto se escreve num campo, tudo o que mexe sozinho fica em pausa (o fundo deixa de repintar e a tecla responde já) */
+  html.k-typing *, html.k-typing *::before, html.k-typing *::after { animation-play-state: paused !important; }
+  /* Modo leve (computadores mais fracos, automático ou à escolha): sem luzes a derivar, sem brilhos em loop,
+     sem vidro desfocado (fundos sólidos), transições mais curtas. A app fica igual, só mais leve. */
+  html.k-lite #k-ambient { display: none; }
+  html.k-lite :is(.punch-bar, .fg-bar, .ind-bar, .dinner-bar, .mt-track) > span, html.k-lite .time-bar-seg,
+  html.k-lite .gantt-today-line, html.k-lite .punch-btn, html.k-lite .seg-thumb::after, html.k-lite .nav-ind::after,
+  html.k-lite .skel-line, html.k-lite #dbk::before { animation: none !important; }
+  html.k-lite * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+  html.k-lite .nav-bar { background: var(--bg); }
+  html.k-lite .tabbar, html.k-lite .more-sheet { background: var(--surface); }
+  html.k-lite #quick-modal-overlay { background: rgba(0, 0, 0, 0.42); }
+  html.k-lite #cmdk-overlay { background: rgba(0, 0, 0, 0.42); }
+  html.k-lite .toast { background: var(--text); }
+  html.k-lite .k-lit { background-image: none !important; }
+  html.k-lite .k-ghost { display: none; }
+  html.k-lite .content-area > * { animation-name: kPageLite !important; animation-duration: .18s !important; }
+  @keyframes kPageLite { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 </style>
 </head>
 <body>
@@ -15145,6 +15172,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         steps: ['Ao chegar, abre [[Hoje]] e toca em [[Cheguei]]. O horário é das 8h às 14h, com 5 minutos de tolerância.', 'Ao sair, toca em [[Fechar o tasco]].', 'Dia em obra, na Câmara ou no cliente? Toca em **Hoje estou fora** e escreve onde: conta como a horas.', 'Folga ou férias? Toca em **Folga / férias**: esse dia não conta.', 'Esqueceste-te de marcar? Toca em [[Corrigir]] e põe a hora certa. Fica assinalado com ✎.'],
         kw: 'ponto entrada saida chegar cheguei sair picar pontualidade horario presenca atraso reuniao',
         tour: [{ go: 'nav:home', sel: '#today-punch .punch, #today-punch', text: 'Toca em «Cheguei» ao chegar e em «Fechar o tasco» ao sair.' }] },
+      { id: 'modo-leve', cat: 'start', ctx: ['home', 'settings'],
+        q: 'ponho a app mais rápida num computador antigo (modo leve)',
+        a: 'A app liga sozinha o modo leve em computadores mais fracos. Para ligar ou desligar à mão: ⌘K (Ctrl+K) → «Modo leve».',
+        steps: ['Carrega em **Ctrl+K** (⌘K no Mac) e escreve **modo leve**.', 'Escolhe **Modo leve: ligar / desligar**. Fica guardado nesse computador.', 'No modo leve saem as luzes de fundo, os brilhos e o vidro desfocado; tudo o resto fica igual.', 'Em qualquer computador, enquanto escreves num campo, as animações param para a escrita ser imediata.'],
+        kw: 'lento lenta rapido rapida modo leve computador antigo velho performance desempenho animacoes travar escrever',
+        tour: [{ go: 'nav:home', sel: '.side-search, [data-open-cmdk]', text: 'Ctrl+K → «modo leve».' }] },
       { id: 'lembretes-pagamento', cat: 'money', ctx: ['billing', 'detail', 'home', 'settings'],
         q: 'a app lembra os clientes das faturas por pagar',
         a: 'Faturas a pronto pagamento ainda por pagar aos 15 e 30 dias: a app envia um email automático ao cliente (ou ao PM). Na véspera, o responsável do projeto vê na Hoje e pode travar.',
@@ -19618,6 +19651,37 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         document.getElementById('pr-go-nps')?.addEventListener('click', () => showSettingsSection('nps'));
       } catch (err) { box.innerHTML = `<div class="error-box">${escapeHtml(err.message)}</div>`; }
     }
+
+    // ================= LEVE E RÁPIDO =================
+    // Escrever é prioridade: com um campo de texto em foco, as animações em loop pausam (ver CSS html.k-typing)
+    (() => {
+      const isText = el => el && (el.tagName === 'TEXTAREA' || el.isContentEditable || (el.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|range|color|file|date|time|month|week)$/i.test(el.type)));
+      const root = document.documentElement;
+      document.addEventListener('focusin', e => { if (isText(e.target)) root.classList.add('k-typing'); });
+      document.addEventListener('focusout', () => setTimeout(() => { if (!isText(document.activeElement)) root.classList.remove('k-typing'); }, 0));
+    })();
+    // Modo leve: escolha guardada, ou automático em computadores fracos (poucos núcleos/memória, ou fotogramas lentos)
+    const kLite = {
+      get pref() { try { return localStorage.getItem('nova.lite'); } catch { return null; } },
+      set(on, remember = true) {
+        document.documentElement.classList.toggle('k-lite', !!on);
+        if (remember) { try { localStorage.setItem('nova.lite', on ? '1' : '0'); } catch { /* sem armazenamento */ } }
+      }
+    };
+    (() => {
+      const p = kLite.pref;
+      if (p === '1' || p === '0') { kLite.set(p === '1', false); return; }
+      if ((navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4) { kLite.set(true, false); return; }
+      // mede 60 fotogramas depois de a app assentar; mediana acima de 22 ms → modo leve automático
+      setTimeout(() => {
+        const ts = []; let last = performance.now();
+        const tick = now => { ts.push(now - last); last = now; if (ts.length < 60) requestAnimationFrame(tick); else {
+          ts.sort((a, b) => a - b);
+          if (ts[30] > 22 && document.visibilityState === 'visible') kLite.set(true, false);
+        } };
+        requestAnimationFrame(tick);
+      }, 4000);
+    })();
     // ================= MELHORIAS: tickets da equipa (erros, melhorias, ideias) =================
     // Qualquer pessoa submete de qualquer ecrã (botão 💡 no topo, menu ou ⌘K); a app guarda onde estava e o aparelho.
     // Página "Melhorias": votos (+1), comentários e estados. Quem submeteu é avisado na Hoje quando o estado muda.
@@ -20638,6 +20702,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { group: 'Ir para', label: 'Definições', keys: 'categorias tipos configuracao', run: () => NAV_ACTIONS.settings() },
       { group: 'Ir para', label: 'Modo apresentação', keys: 'apresentacao apresentar socios slides demo explicar', run: () => openPresentation() },
       { group: 'Criar', label: 'Sugerir melhoria ou reportar erro', keys: 'melhoria ticket erro bug ideia sugestao pedido feedback reportar', run: () => openTicketModal() },
+      { group: 'Ajustes', label: 'Modo leve (computadores mais antigos): ligar / desligar', keys: 'modo leve lento rapido performance desempenho animacoes computador antigo', run: () => { const on = !document.documentElement.classList.contains('k-lite'); kLite.set(on); showToast(on ? 'Modo leve ligado: menos efeitos, mais rapidez.' : 'Modo leve desligado.'); } },
       { group: 'Ir para', label: 'Ausências', keys: 'ferias ausencias faltas folga doenca baixa consulta formacao mapa de ferias', run: () => NAV_ACTIONS.absences() },
       { group: 'Criar', label: 'Marcar férias ou ausência', keys: 'ferias marcar ausencia falta doenca consulta formacao', run: () => openAbsenceModal({}) },
       { group: 'Ir para', label: 'Começar o Daybreak', keys: 'daybreak reuniao diaria kaizen 8:40 standup plano do dia', run: () => openDaybreak() },
@@ -20678,14 +20743,20 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       cmdk.hidden = true;
       document.getElementById('cmdk-overlay').hidden = true;
     }
+    let cmdkHelpCache = { q: null, r: [] }, cmdkHelpTimer = null;
     function renderCmdk() {
       const q = normText(cmdkInput.value.trim());
-      const acts = CMDK_ACTIONS.filter(a => !q || normText(a.label + ' ' + a.keys).includes(q));
-      const projs = q ? (cmdkProjects || []).filter(p => normText((p.code || '') + ' ' + p.name).includes(q)).slice(0, 8) : [];
-      const guides = q.length >= 3 ? helpSearch(cmdkInput.value).slice(0, /^como\b/.test(q) ? 5 : 3) : [];
+      const acts = CMDK_ACTIONS.filter(a => !q || (a._n ??= normText(a.label + ' ' + a.keys)).includes(q));
+      const projs = q ? (cmdkProjects || []).filter(p => (p._n ??= normText((p.code || '') + ' ' + p.name)).includes(q)).slice(0, 8) : [];
+      // a pesquisa da ajuda (tolerante a erros) é pesada: só corre quando se pára de escrever
+      let guides = [];
+      if (q.length >= 3) {
+        if (cmdkHelpCache.q === q) guides = cmdkHelpCache.r;
+        else { clearTimeout(cmdkHelpTimer); cmdkHelpTimer = setTimeout(() => { if (normText(cmdkInput.value.trim()) !== q) return; cmdkHelpCache = { q, r: helpSearch(cmdkInput.value).slice(0, /^como\b/.test(q) ? 5 : 3) }; renderCmdk(); }, 180); }
+      }
       const guideItems = guides.map(g => ({ group: 'Ajuda', label: helpTitle(g), run: () => openHelpModule(g.q) }));
       const projItems = projs.map(p => ({ group: 'Projetos', label: p.name, sub: p.code || '', run: () => openDetail(p.id) }));
-      const plotItems = q ? (cmdkPlots || []).filter(p => normText([p.name, p.municipality].join(' ')).includes(q)).slice(0, 6)
+      const plotItems = q ? (cmdkPlots || []).filter(p => (p._n ??= normText([p.name, p.municipality].join(' '))).includes(q)).slice(0, 6)
         .map(p => ({ group: 'Oportunidades', label: p.name, sub: [p.municipality, optLabel(PLOT_STATUSES, p.status)].filter(Boolean).join(' · '), run: () => openPlotView(p.id) })) : [];
       cmdkItems = /^como\b/.test(q) ? [...guideItems, ...projItems, ...plotItems, ...acts] : [...projItems, ...plotItems, ...acts, ...guideItems];
       if (cmdkIndex >= cmdkItems.length) cmdkIndex = Math.max(0, cmdkItems.length - 1);
@@ -20705,7 +20776,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       navStack = [];
       it.run();
     }
-    cmdkInput.addEventListener('input', () => { cmdkIndex = 0; renderCmdk(); });
+    // várias teclas no mesmo fotograma: desenha a lista uma só vez
+    let cmdkRaf = 0;
+    cmdkInput.addEventListener('input', () => { cmdkIndex = 0; if (!cmdkRaf) cmdkRaf = requestAnimationFrame(() => { cmdkRaf = 0; renderCmdk(); }); });
     cmdkInput.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowDown') { e.preventDefault(); cmdkIndex = Math.min(cmdkItems.length - 1, cmdkIndex + 1); renderCmdk(); }
       else if (e.key === 'ArrowUp') { e.preventDefault(); cmdkIndex = Math.max(0, cmdkIndex - 1); renderCmdk(); }
