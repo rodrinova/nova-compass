@@ -19706,11 +19706,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     // (sem SVG, sem fontes externas, sem imagens de fundo). Cópia como texto formatado ou ficheiro .htm.
     const SIG_LOGO = 'https://rodrinova.github.io/nova-compass/assets/nova-logo-plum-cropped.png';   // 621×180 → 110×32
     const SIG_NOTE = 'Esta mensagem e os anexos são confidenciais e destinam-se apenas ao destinatário. Se a recebeu por engano, avise-nos e apague-a. · This message and any attachments are confidential and intended solely for the addressee. If received in error, please notify us and delete it.';
-    function signatureHtml({ name, title, phone, prof, oa, office }) {
+    function signatureHtml({ name, title, phone, prof, office }) {
       const e = escapeHtml, tl = x => String(x || '').replace(/[^\d+]/g, '');
       const link = (lbl, n) => `<span style="color:#8C8780;">${lbl}</span>&nbsp;<a href="tel:${e(tl(n))}" style="color:#714D79;text-decoration:none;">${e(n)}</a>`;
       const phones = [phone ? link('M', phone) : '', office ? link('T', office) : ''].filter(Boolean).join('&nbsp;&nbsp;·&nbsp;&nbsp;');
-      const profLine = [prof, oa ? `OA n.º ${oa}` : ''].filter(Boolean).map(e).join(' · ');
+      const roleLine = [title, prof].filter(Boolean).map(e).join('&nbsp;|&nbsp;');
       const row = (txt, style) => `<tr><td style="padding:0;${style}">${txt}</td></tr>`;
       return `<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;font-family:Arial,Helvetica,sans-serif;color:#1B1A19;">
 <tr>
@@ -19718,8 +19718,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
 <td valign="middle" style="padding:0 0 0 14px;vertical-align:middle;">
 <table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;">
 ${row(e(name || ''), 'font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:18px;font-weight:bold;color:#1B1A19;')}
-${profLine ? row(profLine, 'font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:17px;color:#1B1A19;') : ''}
-${row(title ? `${e(title)} · NOVA Associates` : 'NOVA Associates', 'font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:17px;color:#6B6660;')}
+${row(roleLine || 'NOVA Associates', 'font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:17px;color:#6B6660;')}
 ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:17px;color:#714D79;') : ''}
 </table>
 </td>
@@ -19727,7 +19726,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
 <tr><td colspan="2" style="padding:12px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:10px;line-height:13px;color:#8C8780;max-width:480px;">${e(SIG_NOTE)}</td></tr>
 </table>`;
     }
-    const signatureText = s => [s.name, [s.prof, s.oa ? 'OA n.º ' + s.oa : ''].filter(Boolean).join(' · ') || null, (s.title ? s.title + ' · ' : '') + 'NOVA Associates', [s.phone ? 'M ' + s.phone : '', s.office ? 'T ' + s.office : ''].filter(Boolean).join('  ·  ') || null, '', SIG_NOTE].filter(x => x != null).join('\n');
+    const signatureText = s => [s.name, [s.title, s.prof].filter(Boolean).join(' | ') || 'NOVA Associates', [s.phone ? 'M ' + s.phone : '', s.office ? 'T ' + s.office : ''].filter(Boolean).join('  ·  ') || null, '', SIG_NOTE].filter(x => x != null).join('\n');
     async function copyRichHtml(html, text) {
       try {
         if (window.ClipboardItem && navigator.clipboard?.write) {
@@ -19756,30 +19755,27 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         const fill = () => {
           const m = members.find(x => x.id === who) || {};
           const s = saved[who] || {};
-          document.getElementById('sg-title').value = s.title ?? (m.role || 'Partner');
+          document.getElementById('sg-title').value = s.title ?? (m.role === 'Partner' ? 'Managing Partner' : (m.role || ''));
           document.getElementById('sg-phone').value = s.phone || '';
-          document.getElementById('sg-prof').value = s.prof || '';
-          document.getElementById('sg-oa').value = s.oa || '';
+          document.getElementById('sg-prof').value = s.prof ?? 'Architect';
           document.getElementById('sg-office').value = saved._office || '';
           draw();
         };
         const v = id => document.getElementById(id).value.trim();
-        const cur = () => ({ name: (members.find(x => x.id === who) || {}).name || '', title: v('sg-title'), phone: v('sg-phone'), prof: v('sg-prof'), oa: v('sg-oa'), office: v('sg-office') });
+        const cur = () => ({ name: (members.find(x => x.id === who) || {}).name || '', title: v('sg-title'), phone: v('sg-phone'), prof: v('sg-prof'), office: v('sg-office') });
         const draw = () => { document.getElementById('sg-preview').innerHTML = signatureHtml(cur()); };
         box.innerHTML = `
           <div class="field-hint" style="margin-top:0">Escolhe a pessoa, confirma o cargo e o telefone e copia. A assinatura é feita para não se desformatar em nenhum Outlook (computador, web, telemóvel) nem no email de quem a recebe.</div>
           <div class="ab-dates">
             <div><label class="field-label" for="sg-who">Pessoa</label><select id="sg-who" class="form-input">${members.map(m => `<option value="${escapeHtml(m.id)}"${m.id === who ? ' selected' : ''}>${escapeHtml(m.name)}</option>`).join('')}</select></div>
-            <div><label class="field-label" for="sg-title">Cargo</label><input type="text" id="sg-title" class="form-input" maxlength="60"></div>
+            <div><label class="field-label" for="sg-title">Cargo</label><input type="text" id="sg-title" class="form-input" maxlength="60" placeholder="ex.: Managing Partner"></div>
           </div>
           <div class="ab-dates">
-            <div><label class="field-label" for="sg-prof">Designação</label><select id="sg-prof" class="form-input"><option value="">Sem designação</option><option>Arquiteto</option><option>Arquiteta</option></select></div>
-            <div><label class="field-label" for="sg-oa">N.º de membro da Ordem dos Arquitectos <span class="muted">(opcional)</span></label><input type="text" id="sg-oa" class="form-input" inputmode="numeric" maxlength="12" placeholder="ex.: 12345"></div>
-          </div>
-          <div class="ab-dates">
+            <div><label class="field-label" for="sg-prof">Designação</label><select id="sg-prof" class="form-input"><option>Architect</option><option>Arquiteto</option><option>Arquiteta</option><option value="">Sem designação</option></select></div>
             <div><label class="field-label" for="sg-phone">Telemóvel</label><input type="tel" id="sg-phone" class="form-input" maxlength="30" placeholder="+351 912 345 678"></div>
-            <div><label class="field-label" for="sg-office">Telefone do escritório <span class="muted">(igual para todos)</span></label><input type="tel" id="sg-office" class="form-input" maxlength="30" placeholder="+351 220 000 000"></div>
           </div>
+          <label class="field-label" for="sg-office">Telefone do escritório <span class="muted">(igual para todos)</span></label>
+          <input type="tel" id="sg-office" class="form-input" maxlength="30" placeholder="+351 220 000 000">
           <div class="section-label" style="margin:16px 0 6px">Pré-visualização</div>
           <div class="sig-preview" id="sg-preview"></div>
           <div class="sig-actions"><button type="button" class="primary-btn" id="sg-copy">Copiar assinatura</button><button type="button" class="secondary-btn" id="sg-dl">Descarregar .htm</button></div>
@@ -19791,11 +19787,11 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
             <b>iPhone (app Outlook)</b><span>Definições da app → Assinatura → colar. A app de Mail do iPhone não guarda imagens nas assinaturas de forma fiável: usa a app Outlook.</span>
           </div>`;
         document.getElementById('sg-who').addEventListener('change', e => { who = e.target.value; fill(); });
-        ['sg-title', 'sg-phone', 'sg-oa', 'sg-office'].forEach(id => document.getElementById(id).addEventListener('input', draw));
+        ['sg-title', 'sg-phone', 'sg-office'].forEach(id => document.getElementById(id).addEventListener('input', draw));
         document.getElementById('sg-prof').addEventListener('change', draw);
         const persist = async () => {
           const c = cur();
-          saved = { ...saved, _office: c.office, [who]: { title: c.title, phone: c.phone, prof: c.prof, oa: c.oa } };
+          saved = { ...saved, _office: c.office, [who]: { title: c.title, phone: c.phone, prof: c.prof } };
           if (devMode) { mockSigs = saved; return; }
           await supabase.from('app_settings').upsert({ key: 'email_signatures', value: saved, updated_at: new Date().toISOString() });
         };
