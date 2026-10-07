@@ -3539,6 +3539,13 @@
   .pr-status.ok { background: var(--success-soft); }
   .pr-status.warn { background: var(--warning-soft); }
   .pr-status small { display: block; color: var(--text-2); margin-top: 2px; }
+  .sig-preview { background: #fff; border: 1px solid var(--border); border-radius: var(--r-lg); padding: var(--sp-5); overflow-x: auto; color: #1B1A19; }
+  .sig-actions { display: flex; gap: var(--sp-2); flex-wrap: wrap; margin-top: var(--sp-3); }
+  .sig-actions .primary-btn, .sig-actions .secondary-btn { width: auto; margin: 0; padding: 0 var(--sp-4); min-height: 40px; }
+  .sig-how { display: grid; grid-template-columns: minmax(150px, 210px) 1fr; gap: var(--sp-2) var(--sp-4); margin-top: var(--sp-5); font-size: var(--fs-sm); }
+  .sig-how span { color: var(--text-2); }
+  .sig-how code { font-size: var(--fs-xs); background: var(--surface-2); padding: 1px 4px; border-radius: var(--r-xs); }
+  @media (max-width: 760px) { .sig-how { grid-template-columns: 1fr; gap: 2px; } .sig-how b { margin-top: var(--sp-2); } }
   /* PM do cliente */
   .pm-pick { display: flex; flex-direction: column; gap: var(--sp-1-5); }
   .pm-opt { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; border: 1px solid var(--border); background: var(--surface); border-radius: var(--r-lg); padding: var(--sp-2-5) var(--sp-3); font: inherit; font-weight: var(--fw-semibold); color: var(--text); cursor: pointer; transition: border-color var(--t), background var(--t); }
@@ -3960,6 +3967,7 @@
             <button type="button" class="settings-link" data-sec="payroll"><span>Pessoas, salários e custo/hora</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button type="button" class="settings-link" data-sec="finance"><span>Impostos e categorias de despesa</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <div class="settings-group">Clientes</div>
+            <button type="button" class="settings-link" data-sec="sig"><span>Assinatura de email</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button type="button" class="settings-link" data-sec="payrem"><span>Lembretes de pagamento</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button type="button" class="settings-link" data-sec="nps"><span>Satisfação (NPS)</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button type="button" class="settings-link" data-sec="feas"><span>Viabilidade de terrenos</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
@@ -4006,6 +4014,10 @@
           <section class="settings-sec" data-sec-panel="ms365" hidden>
             <h2 class="settings-title">Office 365 (calendário Teams)</h2>
             <div class="gantt-wrap" id="settings-ms365-container"><div class="detail-loading">A carregar...</div></div>
+          </section>
+          <section class="settings-sec" data-sec-panel="sig" hidden>
+            <h2 class="settings-title">Assinatura de email</h2>
+            <div class="gantt-wrap" id="settings-sig-container"><div class="detail-loading">A carregar...</div></div>
           </section>
           <section class="settings-sec" data-sec-panel="payrem" hidden>
             <h2 class="settings-title">Lembretes de pagamento</h2>
@@ -5043,7 +5055,7 @@
       checklists: () => loadChecklistTemplateSettings(), categories: () => loadCategories(),
       mtypes: () => loadMilestoneTypeSettings(), clientscore: () => loadClientScoreSettings(),
       finance: () => loadFinanceSettingsPanel(), camara: () => loadCamaraSettings(),
-      nps: () => loadNpsSettings(), payrem: () => loadPayRemSettings(), ms365: () => loadMs365Settings(), proposals: () => loadProposalSettings(), payroll: () => loadPayrollSettings(), feas: () => loadFeasSettings()
+      nps: () => loadNpsSettings(), payrem: () => loadPayRemSettings(), sig: () => loadSignatureSettings(), ms365: () => loadMs365Settings(), proposals: () => loadProposalSettings(), payroll: () => loadPayrollSettings(), feas: () => loadFeasSettings()
     };
     let settingsSection = 'models';
     async function loadMs365Settings() {
@@ -15172,6 +15184,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         steps: ['Ao chegar, abre [[Hoje]] e toca em [[Cheguei]]. O horário é das 8h às 14h, com 5 minutos de tolerância.', 'Ao sair, toca em [[Fechar o tasco]].', 'Dia em obra, na Câmara ou no cliente? Toca em **Hoje estou fora** e escreve onde: conta como a horas.', 'Folga ou férias? Toca em **Folga / férias**: esse dia não conta.', 'Esqueceste-te de marcar? Toca em [[Corrigir]] e põe a hora certa. Fica assinalado com ✎.'],
         kw: 'ponto entrada saida chegar cheguei sair picar pontualidade horario presenca atraso reuniao',
         tour: [{ go: 'nav:home', sel: '#today-punch .punch, #today-punch', text: 'Toca em «Cheguei» ao chegar e em «Fechar o tasco» ao sair.' }] },
+      { id: 'assinatura', cat: 'start', ctx: ['settings'],
+        q: 'crio a minha assinatura de email do Outlook',
+        a: 'Definições → Assinatura de email: escolhe-te, confirma cargo e telefone, «Copiar assinatura» e cola nas assinaturas do Outlook.',
+        steps: ['Abre [[Definições]] → **Assinatura de email** (ou ⌘K → «assinatura»).', 'Escolhe o teu nome e confirma o **cargo** e o **telefone** (ficam guardados).', 'Toca em **Copiar assinatura**.', 'No Outlook: **Definições → Contas → Assinaturas → + Nova**, cola com **Ctrl+V** e escolhe-a para mensagens novas e respostas.', 'No Outlook clássico, se o logo aparecer grande, usa **Descarregar .htm** e guarda o ficheiro na pasta das assinaturas (as instruções estão na página).'],
+        kw: 'assinatura email outlook signature logotipo logo telefone cargo copiar',
+        tour: [{ go: 'settings:sig', sel: '#settings-sig-container', text: 'Aqui geras e copias a assinatura.' }] },
       { id: 'modo-leve', cat: 'start', ctx: ['home', 'settings'],
         q: 'ponho a app mais rápida num computador antigo (modo leve)',
         a: 'A app liga sozinha o modo leve em computadores mais fracos. Para ligar ou desligar à mão: ⌘K (Ctrl+K) → «Modo leve».',
@@ -19682,6 +19700,109 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         requestAnimationFrame(tick);
       }, 4000);
     })();
+
+    // ================= ASSINATURA DE EMAIL (Outlook) =================
+    // HTML "à prova de Outlook": tabelas, estilos em linha, Arial, logo PNG alojado com largura e altura fixas
+    // (sem SVG, sem fontes externas, sem imagens de fundo). Cópia como texto formatado ou ficheiro .htm.
+    const SIG_LOGO = 'https://rodrinova.github.io/nova-compass/assets/nova-logo-plum-cropped.png';   // 621×180 → 110×32
+    const SIG_NOTE = 'Esta mensagem e os anexos são confidenciais e destinam-se apenas ao destinatário. Se a recebeu por engano, avise-nos e apague-a. · This message and any attachments are confidential and intended solely for the addressee. If received in error, please notify us and delete it.';
+    function signatureHtml({ name, title, phone }) {
+      const e = escapeHtml, tel = String(phone || '').replace(/[^\d+]/g, '');
+      const row = (txt, style) => `<tr><td style="padding:0;${style}">${txt}</td></tr>`;
+      return `<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;font-family:Arial,Helvetica,sans-serif;color:#1B1A19;">
+<tr>
+<td valign="middle" style="padding:0 14px 0 0;border-right:1px solid #D3D1CA;vertical-align:middle;"><img src="${SIG_LOGO}" width="110" height="32" alt="NOVA Associates" style="display:block;width:110px;height:32px;border:0;outline:none;text-decoration:none;"></td>
+<td valign="middle" style="padding:0 0 0 14px;vertical-align:middle;">
+<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;">
+${row(e(name || ''), 'font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:18px;font-weight:bold;color:#1B1A19;')}
+${title ? row(`${e(title)} · NOVA Associates`, 'font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:17px;color:#6B6660;') : row('NOVA Associates', 'font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:17px;color:#6B6660;')}
+${phone ? row(`<a href="tel:${e(tel)}" style="color:#714D79;text-decoration:none;">${e(phone)}</a>`, 'font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:17px;color:#714D79;') : ''}
+</table>
+</td>
+</tr>
+<tr><td colspan="2" style="padding:12px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:10px;line-height:13px;color:#8C8780;max-width:480px;">${e(SIG_NOTE)}</td></tr>
+</table>`;
+    }
+    const signatureText = s => [s.name, (s.title ? s.title + ' · ' : '') + 'NOVA Associates', s.phone, '', SIG_NOTE].filter(x => x != null).join('\n');
+    async function copyRichHtml(html, text) {
+      try {
+        if (window.ClipboardItem && navigator.clipboard?.write) {
+          await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([text], { type: 'text/plain' }) })]);
+          return true;
+        }
+      } catch (_) { /* tenta pela seleção */ }
+      const box = document.createElement('div');
+      box.contentEditable = 'true'; box.style.cssText = 'position:fixed;left:-9999px;top:0;background:#fff;';
+      box.innerHTML = html; document.body.appendChild(box);
+      const r = document.createRange(); r.selectNodeContents(box);
+      const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      let ok = false; try { ok = document.execCommand('copy'); } catch (_) { ok = false; }
+      sel.removeAllRanges(); box.remove();
+      return ok;
+    }
+    let mockSigs = {};
+    async function loadSignatureSettings() {
+      const box = document.getElementById('settings-sig-container');
+      try {
+        const [members, me] = await Promise.all([loadAllMembers(), getCurrentMember()]);
+        let saved = {};
+        if (devMode) saved = mockSigs;
+        else { const r = await supabase.from('app_settings').select('value').eq('key', 'email_signatures').maybeSingle(); saved = r.data?.value || {}; }
+        let who = me?.id && members.some(m => m.id === me.id) ? me.id : members[0]?.id;
+        const fill = () => {
+          const m = members.find(x => x.id === who) || {};
+          const s = saved[who] || {};
+          document.getElementById('sg-title').value = s.title ?? (m.role || 'Partner');
+          document.getElementById('sg-phone').value = s.phone || '';
+          draw();
+        };
+        const cur = () => ({ name: (members.find(x => x.id === who) || {}).name || '', title: document.getElementById('sg-title').value.trim(), phone: document.getElementById('sg-phone').value.trim() });
+        const draw = () => { document.getElementById('sg-preview').innerHTML = signatureHtml(cur()); };
+        box.innerHTML = `
+          <div class="field-hint" style="margin-top:0">Escolhe a pessoa, confirma o cargo e o telefone e copia. A assinatura é feita para não se desformatar em nenhum Outlook (computador, web, telemóvel) nem no email de quem a recebe.</div>
+          <div class="ab-dates">
+            <div><label class="field-label" for="sg-who">Pessoa</label><select id="sg-who" class="form-input">${members.map(m => `<option value="${escapeHtml(m.id)}"${m.id === who ? ' selected' : ''}>${escapeHtml(m.name)}</option>`).join('')}</select></div>
+            <div><label class="field-label" for="sg-title">Cargo</label><input type="text" id="sg-title" class="form-input" maxlength="60"></div>
+          </div>
+          <label class="field-label" for="sg-phone">Telefone</label>
+          <input type="tel" id="sg-phone" class="form-input" maxlength="30" placeholder="+351 912 345 678">
+          <div class="section-label" style="margin:16px 0 6px">Pré-visualização</div>
+          <div class="sig-preview" id="sg-preview"></div>
+          <div class="sig-actions"><button type="button" class="primary-btn" id="sg-copy">Copiar assinatura</button><button type="button" class="secondary-btn" id="sg-dl">Descarregar .htm</button></div>
+          <div id="sg-msg" class="form-msg"></div>
+          <div class="sig-how">
+            <b>Outlook novo e Outlook na web</b><span>Definições ⚙ → Contas → Assinaturas → + Nova assinatura → colar (Ctrl+V) → escolher-a para mensagens novas e respostas → Guardar.</span>
+            <b>Outlook clássico (Windows)</b><span>Ficheiro → Opções → Correio → Assinaturas… → Nova → colar no quadro de edição → OK. Se o logo aparecer grande, usa o ficheiro .htm: guarda-o em <code>%APPDATA%\\Microsoft\\Signatures</code> e escolhe-o na mesma janela.</span>
+            <b>Outlook para Mac</b><span>Outlook → Definições → Assinaturas → + → colar → guardar.</span>
+            <b>iPhone (app Outlook)</b><span>Definições da app → Assinatura → colar. A app de Mail do iPhone não guarda imagens nas assinaturas de forma fiável: usa a app Outlook.</span>
+          </div>`;
+        document.getElementById('sg-who').addEventListener('change', e => { who = e.target.value; fill(); });
+        ['sg-title', 'sg-phone'].forEach(id => document.getElementById(id).addEventListener('input', draw));
+        const persist = async () => {
+          saved = { ...saved, [who]: { title: cur().title, phone: cur().phone } };
+          if (devMode) { mockSigs = saved; return; }
+          await supabase.from('app_settings').upsert({ key: 'email_signatures', value: saved, updated_at: new Date().toISOString() });
+        };
+        document.getElementById('sg-copy').addEventListener('click', async () => {
+          const s = cur();
+          const ok = await copyRichHtml(signatureHtml(s), signatureText(s));
+          persist().catch(() => {});
+          if (ok) { showToast('Assinatura copiada. Cola-a no Outlook (Ctrl+V).'); haptic(); }
+          else formError('sg-msg', 'O browser não deixou copiar. Seleciona a pré-visualização com o rato e copia (Ctrl+C), ou usa o ficheiro .htm.');
+        });
+        document.getElementById('sg-dl').addEventListener('click', () => {
+          const s = cur();
+          const doc = `<!DOCTYPE html><html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>NOVA Associates</title></head><body style="margin:0;">${signatureHtml(s)}</body></html>`;
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(new Blob(['﻿' + doc], { type: 'text/html;charset=utf-8' }));
+          a.download = `NOVA - ${s.name || 'assinatura'}.htm`;
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+          persist().catch(() => {});
+        });
+        fill();
+      } catch (err) { box.innerHTML = `<div class="error-box">${escapeHtml(err.message)}</div>`; }
+    }
     // ================= MELHORIAS: tickets da equipa (erros, melhorias, ideias) =================
     // Qualquer pessoa submete de qualquer ecrã (botão 💡 no topo, menu ou ⌘K); a app guarda onde estava e o aparelho.
     // Página "Melhorias": votos (+1), comentários e estados. Quem submeteu é avisado na Hoje quando o estado muda.
@@ -20703,6 +20824,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { group: 'Ir para', label: 'Modo apresentação', keys: 'apresentacao apresentar socios slides demo explicar', run: () => openPresentation() },
       { group: 'Criar', label: 'Sugerir melhoria ou reportar erro', keys: 'melhoria ticket erro bug ideia sugestao pedido feedback reportar', run: () => openTicketModal() },
       { group: 'Ajustes', label: 'Modo leve (computadores mais antigos): ligar / desligar', keys: 'modo leve lento rapido performance desempenho animacoes computador antigo', run: () => { const on = !document.documentElement.classList.contains('k-lite'); kLite.set(on); showToast(on ? 'Modo leve ligado: menos efeitos, mais rapidez.' : 'Modo leve desligado.'); } },
+      { group: 'Ir para', label: 'Assinatura de email (Outlook)', keys: 'assinatura email outlook signature mail', run: () => { navStack = []; openSettingsModule(); showSettingsSection('sig'); } },
       { group: 'Ir para', label: 'Ausências', keys: 'ferias ausencias faltas folga doenca baixa consulta formacao mapa de ferias', run: () => NAV_ACTIONS.absences() },
       { group: 'Criar', label: 'Marcar férias ou ausência', keys: 'ferias marcar ausencia falta doenca consulta formacao', run: () => openAbsenceModal({}) },
       { group: 'Ir para', label: 'Começar o Daybreak', keys: 'daybreak reuniao diaria kaizen 8:40 standup plano do dia', run: () => openDaybreak() },
