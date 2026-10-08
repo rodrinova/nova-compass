@@ -115,3 +115,26 @@ end $$;
 
 -- A biblioteca inicial (capítulos, elementos, variantes e verificações) está em mqt_biblioteca.json:
 -- a app carrega-a sozinha na primeira vez que se abre o MQT Studio (ou em Biblioteca → Repor).
+
+-- ---------- MQT por projeto: textos próprios e revisões ----------
+-- texts: descritivos ajustados neste projeto { "PRD01": "texto do artigo", "PRD01.A": "texto do subartigo" }
+alter table public.mqt_project add column if not exists texts jsonb not null default '{}';
+alter table public.mqt_project add column if not exists created_at timestamptz not null default now();
+alter table public.mqt_project add column if not exists created_by uuid references public.team_members(id) on delete set null;
+-- Revisões emitidas (R00, R01…): fotografia fixa de cada bloco, numeração fixa dos artigos e contagens
+create table if not exists public.mqt_revisions (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects(id) on delete cascade,
+  rev integer not null,
+  note text,
+  blocks jsonb not null default '{}',              -- { "<bloco>": [linhas] }  ("*" quando não há blocos)
+  numbering jsonb not null default '{}',           -- { "<bloco>": { ch: {}, art: {}, sub: {} } }
+  counts jsonb not null default '{}',              -- { new, rev, del }
+  created_by uuid references public.team_members(id) on delete set null,
+  created_at timestamptz not null default now(),
+  unique (project_id, rev)
+);
+alter table public.mqt_revisions enable row level security;
+drop policy if exists "team_only" on public.mqt_revisions;
+create policy "team_only" on public.mqt_revisions for all to authenticated using (private.is_team_member()) with check (private.is_team_member());
+revoke all on public.mqt_revisions from anon;
