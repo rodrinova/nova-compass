@@ -3682,6 +3682,10 @@
   .mqt-grid .g-act { text-align: center; white-space: nowrap; }
   .mqt-grid .g-act button { border: none; background: none; cursor: pointer; color: var(--text-3); font-size: 15px; padding: 6px 5px; line-height: 1; }
   .mqt-grid .g-act .g-del:hover { color: var(--danger); }
+  .mqt-grid .g-act .g-add { font-size: 17px; font-weight: var(--fw-semibold); }
+  .mqt-grid .g-act .g-add:hover { color: var(--accent); }
+  .mqt-grid tr.g-newvar td { background: var(--accent-soft); }
+  .mqt-grid tr.g-newvar .g-label::placeholder { color: var(--accent); }
   .mqt-grid .g-act .g-more:hover { color: var(--accent); }
   .mqt-grid tr.off td { opacity: .5; }
   .mqt-grid tr[hidden] { display: none; }
@@ -21194,14 +21198,14 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
             <td><select class="g-in" data-f="unit" aria-label="Unidade">${unitOpts(e.unit)}</select></td>
             <td><textarea class="g-in g-text" data-f="text" rows="1" aria-label="Descritivo do artigo" placeholder="Descritivo do artigo — {var} = subartigo; {marca}, {cor}… completam-se no projeto">${escapeHtml(e.text)}</textarea></td>
             <td><select class="g-in g-src" data-f="qty_source" aria-label="Medição">${srcOpts(e.qty_source)}</select></td>
-            <td class="g-act"><button type="button" class="g-more" data-more aria-label="Mais opções" title="Perdas, categoria do Revit, cálculo…">⋯</button><button type="button" class="g-del" data-del aria-label="Apagar elemento" title="Apagar elemento e subartigos">×</button></td></tr>`);
+            <td class="g-act"><button type="button" class="g-add" data-addvar="${escapeHtml(e.code)}" aria-label="Acrescentar subtipo" title="Acrescentar subtipo (Ctrl+Enter)">+</button><button type="button" class="g-more" data-more aria-label="Mais opções" title="Perdas, categoria do Revit, cálculo…">⋯</button><button type="button" class="g-del" data-del aria-label="Apagar elemento" title="Apagar elemento e subartigos">×</button></td></tr>`);
           vs.forEach(v => rows.push(`<tr class="g-var" data-kind="var" data-id="${escapeHtml(v.id)}" data-el="${escapeHtml(e.code)}" data-ch="${escapeHtml(ch.code)}" data-s="${escapeHtml([e.code + '.' + v.letter, e.name, v.label, v.text].join(' '))}">
             <td><span class="g-pre">${escapeHtml(e.code)}.</span><input class="g-in g-suf" data-f="letter" value="${escapeHtml(v.letter)}" aria-label="Sufixo do subartigo"></td>
             <td><input class="g-in g-label" data-f="label" value="${escapeHtml(v.label)}" aria-label="Subartigo"></td>
             <td class="g-inh">${escapeHtml(e.unit)}</td>
             <td><textarea class="g-in g-text" data-f="text" rows="1" aria-label="Texto próprio do subartigo" placeholder="(usa o descritivo do artigo)">${escapeHtml(v.text || '')}</textarea></td>
             <td></td>
-            <td class="g-act"><button type="button" class="g-del" data-del aria-label="Apagar subartigo" title="Apagar subartigo">×</button></td></tr>`));
+            <td class="g-act"><button type="button" class="g-add" data-addvar="${escapeHtml(e.code)}" aria-label="Acrescentar subtipo" title="Acrescentar subtipo (Ctrl+Enter)">+</button><button type="button" class="g-del" data-del aria-label="Apagar subartigo" title="Apagar subartigo">×</button></td></tr>`));
         });
         rows.push(`<tr class="g-new" data-kind="new" data-ch="${escapeHtml(ch.code)}">
           <td><input class="g-in g-code" data-f="code" placeholder="+ keynote" aria-label="Novo keynote em ${escapeHtml(ch.name)}"></td>
@@ -21212,9 +21216,9 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       });
       rows.push(`<tr class="g-newch" data-kind="newch"><td><input class="g-in g-code" data-f="code" placeholder="+ cap." aria-label="Código do novo capítulo"></td><td colspan="4"><input class="g-in" data-f="name" placeholder="nome do novo capítulo · Enter cria"></td><td></td></tr>`);
       return `<div class="mqt-libbar"><input type="text" id="mqt-lib-search" class="search-input op-search" placeholder="Procurar keynote, designação ou texto…" autocomplete="off"><span class="mqt-saved" id="mqt-saved" aria-live="polite"></span></div>
-        <div class="field-hint" style="margin:0 0 10px">Escreve nas células — grava sozinho. Para criar, escreve o keynote na linha <b>+ keynote</b> do capítulo: <b>PRD05</b> cria um elemento, <b>PRD05.D</b> cria o subartigo D. Podes colar várias linhas do Excel (Keynote, Designação, Un., Descritivo). Enter e ↑ ↓ mudam de linha.</div>
+        <div class="field-hint" style="margin:0 0 10px">Escreve nas células — grava sozinho. Para criar, escreve o keynote na linha <b>+ keynote</b> do capítulo: <b>PRD05</b> cria um elemento, <b>PRD05.D</b> cria o subartigo D. Podes colar várias linhas do Excel (Keynote, Designação, Un., Descritivo). Enter e ↑ ↓ mudam de linha. <b>+</b> (ou Ctrl+Enter) numa linha acrescenta um subtipo por baixo — ex.: outra espessura.</div>
         <div class="gantt-wrap mqt-gridwrap"><table class="mqt-grid">
-          <colgroup><col style="width:150px"><col style="width:260px"><col style="width:74px"><col><col style="width:150px"><col style="width:64px"></colgroup>
+          <colgroup><col style="width:150px"><col style="width:260px"><col style="width:74px"><col><col style="width:150px"><col style="width:84px"></colgroup>
           <thead><tr><th>Keynote</th><th>Designação</th><th>Un.</th><th>Descritivo</th><th>Medição</th><th></th></tr></thead>
           <tbody>${rows.join('')}</tbody></table></div>
         <div class="gantt-wrap"><div class="card-head"><h2>Não te esqueças: típicos e regras</h2><button type="button" class="text-btn" id="mqt-ck-new">+ Regra</button></div>
@@ -21230,7 +21234,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       const varById = id => lib.variants.find(x => x.id === id);
       const elByCodeAny = c => lib.elByCode[String(c).toUpperCase()];
       // redesenha mantendo o sítio (e foca a célula pedida)
-      const rerender = (focusSel) => {
+      const rerender = (focusSel, after) => {
         mqtLibCache = null;
         const y = window.scrollY, q = document.getElementById('mqt-lib-search')?.value || '';
         return mqtLoadLib(true).then(l2 => {
@@ -21239,6 +21243,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
           const s = document.getElementById('mqt-lib-search'); if (q) { s.value = q; s.dispatchEvent(new Event('input')); }
           window.scrollTo(0, y);
           if (focusSel) { const f = drop.querySelector(focusSel); if (f) { f.focus(); f.scrollIntoView({ block: 'nearest' }); } }
+          if (after) after(drop);
         });
       };
       // auto-altura dos descritivos (encolhem quando não estão a ser editados)
@@ -21315,6 +21320,52 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         lib.elements.push(e); lib.elByCode[code.toUpperCase()] = e;
         return e;
       };
+      // + subtipo: linha nova logo por baixo do elemento (sufixo seguinte já proposto); Enter cria e abre outra
+      const nextSuffix = code => {
+        const used = (lib.varsOf[String(code).toUpperCase()] || []).map(v => String(v.letter).toUpperCase());
+        if (used.length && used.every(s => /^\d+$/.test(s))) { const w = Math.max(...used.map(s => s.length)); return String(Math.max(...used.map(Number)) + 1).padStart(w, '0'); }
+        return 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').find(l => !used.includes(l)) || '';
+      };
+      const openNewVar = (drop, code) => {
+        const g = drop.querySelector('.mqt-grid'); if (!g) return;
+        g.querySelector('tr.g-newvar')?.remove();
+        const C = String(code).toUpperCase();
+        const rows = [...g.querySelectorAll('tbody tr')].filter(r => (r.dataset.kind === 'el' && r.querySelector('[data-f="code"]').value.toUpperCase() === C) || (r.dataset.kind === 'var' && String(r.dataset.el).toUpperCase() === C));
+        const last = rows[rows.length - 1]; if (!last) return;
+        const e = lib.elByCode[C] || (mqtLibCache && mqtLibCache.elByCode[C]); if (!e) return;
+        const tr = document.createElement('tr');
+        tr.className = 'g-var g-newvar'; tr.dataset.kind = 'newvar'; tr.dataset.el = e.code; tr.dataset.ch = last.dataset.ch;
+        tr.innerHTML = `<td><span class="g-pre">${escapeHtml(e.code)}.</span><input class="g-in g-suf" data-f="letter" value="${escapeHtml(nextSuffix(e.code))}" aria-label="Sufixo"></td>
+          <td><input class="g-in g-label" data-f="label" placeholder="novo subtipo (ex.: 300 mm) · Enter"></td>
+          <td class="g-inh">${escapeHtml(e.unit)}</td>
+          <td><textarea class="g-in g-text" data-f="text" rows="1" placeholder="texto próprio (opcional)"></textarea></td>
+          <td></td><td class="g-act"><button type="button" class="g-del" aria-label="Cancelar" title="Cancelar (Esc)">×</button></td>`;
+        last.after(tr);
+        const lab = tr.querySelector('[data-f="label"]'); lab.focus(); tr.scrollIntoView({ block: 'nearest' });
+        const cancel = () => { tr.remove(); };
+        tr.querySelector('.g-del').addEventListener('click', cancel);
+        tr.addEventListener('keydown', async ev => {
+          if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); cancel(); last.querySelector('.g-in')?.focus(); return; }
+          if (ev.key !== 'Enter' || ev.shiftKey) return;
+          ev.preventDefault(); ev.stopPropagation();
+          const suf = tr.querySelector('[data-f="letter"]').value.trim(), label = lab.value.trim();
+          if (!suf || !label) { err('Escreve o sufixo e a designação do subtipo.'); (suf ? lab : tr.querySelector('[data-f="letter"]')).focus(); return; }
+          try {
+            await createRow(tr.dataset.ch, `${e.code}.${suf}`, label, e.unit, tr.querySelector('[data-f="text"]').value);
+            saved('Criado'); haptic();
+            await rerender(null, d => d.__openNewVar?.(e.code));
+          } catch (e2) { err(e2.message); }
+        });
+      };
+      box.__openNewVar = code => openNewVar(box, code);
+      grid.querySelectorAll('[data-addvar]').forEach(b => b.addEventListener('click', () => openNewVar(box, b.dataset.addvar)));
+      grid.addEventListener('keydown', ev => {
+        if (ev.key !== 'Enter' || !(ev.ctrlKey || ev.metaKey)) return;
+        const tr = ev.target.closest?.('tr'); if (!tr || !['el', 'var'].includes(tr.dataset.kind)) return;
+        ev.preventDefault(); ev.stopImmediatePropagation();
+        ev.target.dispatchEvent(new Event('change'));
+        openNewVar(box, tr.dataset.kind === 'el' ? tr.querySelector('[data-f="code"]').value : tr.dataset.el);
+      }, true);
       grid.querySelectorAll('tr.g-new').forEach(tr => {
         const get = f => tr.querySelector(`[data-f="${f}"]`);
         const commit = async () => {
@@ -21363,6 +21414,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       grid.addEventListener('keydown', ev => {
         const inp = ev.target.closest?.('.g-in'); if (!inp) return;
         const tr = inp.closest('tr');
+        if (tr.classList.contains('g-newvar')) return;
         if (tr.classList.contains('g-new') || tr.classList.contains('g-newch')) { if (ev.key !== 'ArrowUp' && ev.key !== 'ArrowDown') return; }
         const isText = inp.tagName === 'TEXTAREA', isSel = inp.tagName === 'SELECT';
         let dir = 0;
