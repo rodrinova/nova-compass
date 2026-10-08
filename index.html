@@ -3684,6 +3684,12 @@
   .mqt-grid .g-act button { border: none; background: none; cursor: pointer; color: var(--text-3); font-size: 15px; padding: 6px 5px; line-height: 1; }
   .mqt-grid .g-act .g-del:hover { color: var(--danger); }
   .mqt-grid .g-act .g-add { font-size: 17px; font-weight: var(--fw-semibold); }
+  .mqt-phbar { position: absolute; z-index: var(--z-popover); display: flex; flex-wrap: wrap; align-items: center; gap: 4px; max-width: 560px; padding: 5px 7px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: var(--shadow-pop); font-size: var(--fs-xs); color: var(--text-3); }
+  .mqt-phbar[hidden] { display: none; }
+  .mqt-phbar span { margin-right: 2px; }
+  .mqt-phbar button { border: 1px solid var(--border); background: var(--accent-soft); color: var(--accent); border-radius: var(--r-full); padding: 2px 9px; font: inherit; font-weight: var(--fw-semibold); cursor: pointer; }
+  .mqt-phbar button:hover { border-color: var(--accent); }
+  .mqt-phbar button.new { background: none; color: var(--text-2); }
   .mqt-grid .g-act .g-add:hover { color: var(--accent); }
   .mqt-grid tr.g-newvar td { background: var(--accent-soft); }
   .mqt-grid tr.g-newvar .g-label::placeholder { color: var(--accent); }
@@ -20541,12 +20547,27 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       if (field === 'n') return r.n ?? 1;
       return r[field] ?? null;
     }
+    // Subtipos com vários campos: no descritivo {var} e outros campos ({cor}…); no subtipo os valores pela mesma ordem,
+    // separados por "|" — ex.: "60 mm | branca" → {var} = 60 mm, {cor} = branca. Sem {var} no texto, a 1.ª parte é só a designação.
+    const mqtReEsc = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const mqtPhNames = t => { const out = []; String(t || '').replace(/\{([^}]+)\}/g, (a, f) => { f = f.trim(); if (!out.some(x => x.toLowerCase() === f.toLowerCase())) out.push(f); return a; }); return out; };
+    const mqtParts = label => { const p = String(label ?? '').split('|').map(s => s.trim()); return p.length > 1 ? p : [String(label ?? '').trim()]; };
+    const mqtVarLabel = v => mqtParts(v?.label).filter(Boolean).join(' · ');
+    function mqtSubFields(lib, el) {
+      const vs = lib?.varsOf[el.code.toUpperCase()] || []; if (!vs.length) return [];
+      const n = Math.max(1, ...vs.map(v => mqtParts(v.label).length));
+      const names = mqtPhNames(el.text), hasVar = names.some(x => x.toLowerCase() === 'var');
+      const others = names.filter(x => x.toLowerCase() !== 'var');
+      return (hasVar ? ['var', ...others] : [null, ...others]).slice(0, n);
+    }
+    function mqtVarVals(lib, el, v) { const f = mqtSubFields(lib, el), p = mqtParts(v?.label), o = {}; f.forEach((k, i) => { if (k && p[i]) o[k] = p[i]; }); return o; }
     function mqtDescribe(lib, el, letter, specs, extra = '') {
       const vars = lib.varsOf[el.code.toUpperCase()] || [];
       const v = letter ? vars.find(x => x.letter.toUpperCase() === letter) : null;
+      const vals = v ? mqtVarVals(lib, el, v) : {};
       let t = (v && v.text) || el.text || el.name;
-      t = t.replace(/\{var\}/gi, v ? v.label : vars.length ? '[variante]' : '').replace(/ (de|em|com) ,/g, ',').replace(/\s+,/g, ',').replace(/\s{2,}/g, ' ').trim();
-      const sp = { ...(specs?.[el.code.toUpperCase()] || {}), ...(specs?.[mqtFull(el.code.toUpperCase(), letter)] || {}) };
+      t = t.replace(/\{var\}/gi, v ? (vals.var || mqtParts(v.label)[0]) : vars.length ? '[variante]' : '').replace(/ (de|em|com) ,/g, ',').replace(/\s+,/g, ',').replace(/\s{2,}/g, ' ').trim();
+      const sp = { ...(specs?.[el.code.toUpperCase()] || {}), ...(specs?.[mqtFull(el.code.toUpperCase(), letter)] || {}), ...vals };
       const missing = [];
       t = t.replace(/\{([^}]+)\}/g, (all, f) => { const val = sp[f.trim()]; if (val) return val; missing.push(f.trim()); return `[${f.trim()}]`; });
       return { text: t + extra, missing, variant: v };
@@ -20558,9 +20579,15 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
     function mqtFillFields(t, sp, missing) {
       return t.replace(/\{([^}]+)\}/g, (all, f) => { f = f.trim(); if (sp[f]) return sp[f]; if (!missing.includes(f)) missing.push(f); return `[${f}]`; });
     }
-    function mqtArticleText(el, specs) {
+    function mqtArticleText(el, specs, lib = mqtLibCache, present = null) {
       const missing = [];
-      let t = mqtClean((el.text || el.name).replace(/\s*\b(de|em|com)?\s*\{var\}/gi, ''));
+      let t0 = (el.text || el.name).replace(/\s*\b(de|em|com)?\s*\{var\}/gi, '');
+      mqtSubFields(lib, el).filter(f => f && f.toLowerCase() !== 'var').forEach(f => {
+        const vals = (present || []).map(v => mqtVarVals(lib, el, v)[f]).filter(Boolean);
+        const common = vals.length && vals.every(x => x === vals[0]) ? vals[0] : null;
+        t0 = t0.replace(new RegExp('\\{\\s*' + mqtReEsc(f) + '\\s*\\}', 'gi'), common || '(conforme subartigo)');
+      });
+      let t = mqtClean(t0);
       // se, sem a variante, a frase fica curta ("Pavimento, assente…"), começa pelo nome do elemento
       const i = t.indexOf(','), head = i > -1 ? t.slice(0, i) : t;
       if (/\{var\}/i.test(el.text || '') && head.trim().split(/\s+/).length <= 3) {
@@ -20574,7 +20601,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       const vars = lib.varsOf[it.el.code.toUpperCase()] || [];
       const v = it.variant, missing = [];
       const sp = { ...(specs?.[it.el.code.toUpperCase()] || {}), ...(specs?.[it.full.toUpperCase()] || {}) };
-      let t = v && v.text ? mqtFillFields(mqtClean(v.text.replace(/\{var\}/gi, v.label)), sp, missing) : mqtCap(v ? v.label : vars.length ? '[variante]' : '');
+      let t = v && v.text ? mqtFillFields(mqtClean(v.text.replace(/\{var\}/gi, mqtParts(v.label)[0])), { ...sp, ...mqtVarVals(lib, it.el, v) }, missing) : mqtCap(v ? mqtVarLabel(v) : vars.length ? '[variante]' : '');
       if (it.extra) t = t ? t + it.extra : mqtCap(it.extra.replace(/^ — /, ''));
       return { text: t || it.el.name, missing };
     }
@@ -20599,7 +20626,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
           const EL = a.el.code.toUpperCase(), spEl = specs?.[EL] || {};
           a.subs = mqtHasSubs(lib, a.el) || a.items.length > 1;
           if (a.subs) {
-            const ov = own(EL, spEl), at = ov || mqtArticleText(a.el, specs); a.text = at.text; a.missing = at.missing; a.own = !!ov;
+            const ov = own(EL, spEl), at = ov || mqtArticleText(a.el, specs, lib, a.items.map(it => it.variant).filter(Boolean)); a.text = at.text; a.missing = at.missing; a.own = !!ov;
             a.rows = a.items.map((it, k) => { const o = own(it.key, { ...spEl, ...(specs?.[it.full.toUpperCase()] || {}) }); const st = o || mqtSubText(lib, it, specs); return { it, art: `${a.art}.${k + 1}`, q: q(it), text: st.text, missing: st.missing, own: !!o }; });
           } else {
             const it = a.items[0], o = own(EL, spEl);
@@ -20765,7 +20792,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       const seenMiss = new Set();
       Object.values(items).forEach(it => {
         if (!it.qty) return;
-        const m = mqtHasSubs(lib, it.el) ? [...mqtArticleText(it.el, specs).missing, ...mqtSubText(lib, it, specs).missing] : it.missing;
+        const m = mqtHasSubs(lib, it.el) ? [...mqtArticleText(it.el, specs, lib).missing, ...mqtSubText(lib, it, specs).missing] : it.missing;
         const k = it.el.code.toUpperCase();
         if (!m.length) return;
         const ex = issues.missing.find(x => x.key.toUpperCase() === k);
@@ -21185,7 +21212,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
           <span class="amount">${q.total ? escapeHtml(fmtEURShort(q.total)) : ''}</span>
         </div>`).join('') : '<div class="gantt-empty">Ainda não há propostas. Exporta o <b>Excel para concurso</b>, envia aos empreiteiros e, quando voltar preenchido, toca em <b>Carregar proposta</b>.</div>';
       const keys = Object.keys(stats).sort();
-      const nameOf = k => { const pk = mqtParseKey(k); const el = pk && lib.elByCode[pk.code]; if (!el) return k; const v = pk.letter ? (lib.varsOf[pk.code] || []).find(x => x.letter.toUpperCase() === pk.letter) : null; return el.name + (v ? ' — ' + v.label : ''); };
+      const nameOf = k => { const pk = mqtParseKey(k); const el = pk && lib.elByCode[pk.code]; if (!el) return k; const v = pk.letter ? (lib.varsOf[pk.code] || []).find(x => x.letter.toUpperCase() === pk.letter) : null; return el.name + (v ? ' — ' + mqtVarLabel(v) : ''); };
       const unitOf = k => { const pk = mqtParseKey(k); return (pk && lib.elByCode[pk.code]?.unit) || ''; };
       const dk = k => { const pk = mqtParseKey(k); const el = pk && lib.elByCode[pk.code]; return el ? mqtFull(el.code, pk.letter) : k; };
       const table = keys.length ? `<table class="mqt-table mqt-ptable"><thead><tr><th>Keynote</th><th>Elemento</th><th class="num">Ref. (hoje)</th><th class="num">Mín.</th><th class="num">Máx.</th><th class="num">N.º</th><th>Último</th></tr></thead><tbody>${keys.map(k => { const s = stats[k]; return `<tr class="mqt-it" data-mqt-pricek="${escapeHtml(k)}" tabindex="0"><td class="art">${escapeHtml(dk(k))}</td><td>${escapeHtml(nameOf(k))}</td><td class="num"><b>${escapeHtml(fmtEUR(s.med))}</b>/${escapeHtml(unitOf(k))}</td><td class="num">${escapeHtml(fmtEUR(s.min))}</td><td class="num">${escapeHtml(fmtEUR(s.max))}</td><td class="num">${s.n}</td><td>${escapeHtml(s.last)}</td></tr>`; }).join('')}</tbody></table>` : '<div class="gantt-empty">Os preços de referência aparecem aqui quando houver propostas.</div>';
@@ -21235,7 +21262,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       });
       rows.push(`<tr class="g-newch" data-kind="newch"><td><input class="g-in g-code" data-f="code" placeholder="+ cap." aria-label="Código do novo capítulo"></td><td colspan="4"><input class="g-in" data-f="name" placeholder="nome do novo capítulo · Enter cria"></td><td></td></tr>`);
       return `<div class="mqt-libbar"><input type="text" id="mqt-lib-search" class="search-input op-search" placeholder="Procurar keynote, designação ou texto…" autocomplete="off"><span class="mqt-saved" id="mqt-saved" aria-live="polite"></span></div>
-        <div class="field-hint" style="margin:0 0 10px">Escreve nas células — grava sozinho. Para criar, escreve o keynote na linha <b>+ keynote</b> do capítulo: <b>PRD 05</b> cria um elemento, <b>PRD 05d</b> cria o subartigo d. Podes colar várias linhas do Excel (Keynote, Designação, Un., Descritivo). Enter e ↑ ↓ mudam de linha. <b>+</b> (ou Ctrl+Enter) numa linha acrescenta um subtipo por baixo — ex.: outra espessura.</div>
+        <div class="field-hint" style="margin:0 0 10px">Escreve nas células — grava sozinho. Para criar, escreve o keynote na linha <b>+ keynote</b> do capítulo: <b>PRD 05</b> cria um elemento, <b>PRD 05d</b> cria o subartigo d. Podes colar várias linhas do Excel (Keynote, Designação, Un., Descritivo). Enter e ↑ ↓ mudam de linha. <b>+</b> (ou Ctrl+Enter) numa linha acrescenta um subtipo por baixo — ex.: outra espessura. Vários campos por subtipo (ex.: espessura e cor): no descritivo usa <b>{var}</b> e <b>{cor}</b>; no subtipo escreve <b>60 mm | branca</b>.</div>
         <div class="gantt-wrap mqt-gridwrap"><table class="mqt-grid">
           <colgroup><col style="width:150px"><col style="width:260px"><col style="width:74px"><col><col style="width:150px"><col style="width:84px"></colgroup>
           <thead><tr><th>Keynote</th><th>Designação</th><th>Un.</th><th>Descritivo</th><th>Medição</th><th></th></tr></thead>
@@ -21267,7 +21294,31 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       };
       // auto-altura dos descritivos (encolhem quando não estão a ser editados)
       const grow = t => { t.style.height = 'auto'; t.style.height = (t.scrollHeight + 2) + 'px'; };
-      grid.querySelectorAll('textarea.g-text').forEach(t => { t.addEventListener('focus', () => { t.classList.add('open'); grow(t); }); t.addEventListener('input', () => grow(t)); t.addEventListener('blur', () => { t.classList.remove('open'); t.style.height = ''; }); });
+      // barra para inserir campos variáveis no descritivo ({var}, {cor}…) onde está o cursor
+      let bar = document.getElementById('mqt-phbar');
+      if (!bar) { bar = document.createElement('div'); bar.id = 'mqt-phbar'; bar.className = 'mqt-phbar'; bar.hidden = true; document.body.appendChild(bar); }
+      const known = () => { const s = ['var', 'cor', 'marca', 'acabamento', 'dimensões']; lib.elements.forEach(e => mqtPhNames(e.text).forEach(n => { if (!s.some(x => x.toLowerCase() === n.toLowerCase())) s.push(n); })); return s; };
+      const placeBar = t => { const r = t.getBoundingClientRect(); bar.style.left = Math.max(8, Math.min(r.left + window.scrollX, window.scrollX + document.documentElement.clientWidth - bar.offsetWidth - 8)) + 'px'; bar.style.top = (r.bottom + window.scrollY + 4) + 'px'; };
+      const showBar = t => {
+        bar.innerHTML = `<span>Inserir campo:</span>${known().map(n => `<button type="button" data-ph="${escapeHtml(n)}" title="${n.toLowerCase() === 'var' ? 'Valor principal do subtipo (ex.: espessura)' : 'Campo variável: preenche-se no subtipo (60 mm | branca) ou em cada projeto'}">{${escapeHtml(n)}}</button>`).join('')}<button type="button" class="new" data-ph-new>+ outro…</button>`;
+        bar.__t = t; bar.hidden = false; placeBar(t);
+      };
+      bar.onmousedown = ev => {
+        const b = ev.target.closest('button'); if (!b) return;
+        ev.preventDefault();
+        const t = bar.__t; if (!t) return;
+        let name = b.dataset.ph;
+        if (b.hasAttribute('data-ph-new')) { name = (prompt('Nome do campo variável (ex.: acabamento, cor do caixilho)', '') || '').replace(/[{}]/g, '').trim(); if (!name) { t.focus(); return; } }
+        const s = t.selectionStart ?? t.value.length, e2 = t.selectionEnd ?? s;
+        const before = t.value.slice(0, s), sp = before && !/\s$/.test(before) ? ' ' : '';
+        t.focus(); t.setRangeText(`${sp}{${name}}`, s, e2, 'end'); t.dispatchEvent(new Event('input'));
+        placeBar(t);
+      };
+      grid.querySelectorAll('textarea.g-text').forEach(t => {
+        t.addEventListener('focus', () => { t.classList.add('open'); grow(t); showBar(t); });
+        t.addEventListener('input', () => { grow(t); if (!bar.hidden && bar.__t === t) placeBar(t); });
+        t.addEventListener('blur', () => { t.classList.remove('open'); t.style.height = ''; setTimeout(() => { if (document.activeElement !== t) bar.hidden = true; }, 120); });
+      });
       // gravar uma célula
       const saveCell = async (inp) => {
         const tr = inp.closest('tr'), kind = tr.dataset.kind, f = inp.dataset.f;
@@ -21366,7 +21417,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         const tr = document.createElement('tr');
         tr.className = 'g-var g-newvar'; tr.dataset.kind = 'newvar'; tr.dataset.el = e.code; tr.dataset.ch = last.dataset.ch;
         tr.innerHTML = `<td><span class="g-pre">${escapeHtml(mqtCodeDisp(e.code))}</span><input class="g-in g-suf" data-f="letter" value="${escapeHtml(mqtSufDisp(nextSuffix(e.code)))}" aria-label="Sufixo"></td>
-          <td><input class="g-in g-label" data-f="label" placeholder="novo subtipo (ex.: 300 mm) · Enter"></td>
+          <td><input class="g-in g-label" data-f="label" placeholder="${escapeHtml((() => { const f = mqtSubFields({ varsOf: { [e.code.toUpperCase()]: [{ label: 'x|' + 'x|'.repeat(9) }] } }, e).filter(Boolean); return f.length > 1 ? 'ex.: ' + f.map(k => k.toLowerCase() === 'var' ? '300 mm' : k).join(' | ') + ' · Enter' : 'novo subtipo (ex.: 300 mm) · Enter'; })())}"></td>
           <td class="g-inh">${escapeHtml(e.unit)}</td>
           <td><textarea class="g-in g-text" data-f="text" rows="1" placeholder="texto próprio (opcional)"></textarea></td>
           <td></td><td class="g-act"><button type="button" class="g-del" aria-label="Cancelar" title="Cancelar (Esc)">×</button></td>`;
@@ -21549,7 +21600,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
     function openMqtArtModal(lib, cfg, mq, code) {
       const el = lib.elByCode[String(code).toUpperCase()]; if (!el) return;
       const EL = el.code.toUpperCase();
-      const std = mqtArticleText(el, cfg.specs || {}).text;
+      const std = mqtArticleText(el, cfg.specs || {}, lib).text;
       const own = cfg.texts?.[EL];
       const fields = [...new Set([...String(own || el.text || '').matchAll(/\{([^}]+)\}/g)].map(m => m[1].trim()).filter(f => f.toLowerCase() !== 'var'))];
       const sp = cfg.specs?.[EL] || {};
@@ -21625,7 +21676,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
     }
     // Acrescentar artigo à mão (estaleiro, especialidades, peitoris…)
     function mqtKeyOptions(lib, filter = () => true) {
-      return lib.chapters.map(ch => ({ ch, list: lib.elements.filter(e => e.chapter_code === ch.code && e.active !== false && filter(e)).sort((a, b) => a.sort_order - b.sort_order).flatMap(e => { const vs = lib.varsOf[e.code.toUpperCase()] || []; return vs.length ? vs.map(v => [mqtFull(e.code, v.letter), `${mqtFull(e.code, v.letter)} · ${e.name} — ${v.label} (${e.unit})`]) : [[e.code, `${e.code} · ${e.name} (${e.unit})`]]; }) })).filter(g => g.list.length);
+      return lib.chapters.map(ch => ({ ch, list: lib.elements.filter(e => e.chapter_code === ch.code && e.active !== false && filter(e)).sort((a, b) => a.sort_order - b.sort_order).flatMap(e => { const vs = lib.varsOf[e.code.toUpperCase()] || []; return vs.length ? vs.map(v => [mqtFull(e.code, v.letter), `${mqtFull(e.code, v.letter)} · ${e.name} — ${mqtVarLabel(v)} (${e.unit})`]) : [[e.code, `${e.code} · ${e.name} (${e.unit})`]]; }) })).filter(g => g.list.length);
     }
     // Procurar um artigo da biblioteca: escreve-se qualquer palavra ou código (todas as palavras têm de aparecer,
     // sem ligar a acentos); ↑ ↓ e Enter escolhem. Os códigos que começam pelo que se escreveu aparecem primeiro.
@@ -21637,7 +21688,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       const all = mqtKeyOptions(lib).flatMap(g => g.list.map(([k]) => {
         const pk = mqtParseKey(k, lib), el = lib.elByCode[pk.code];
         const v = pk.letter ? (lib.varsOf[pk.code] || []).find(x => x.letter.toUpperCase() === pk.letter) : null;
-        const label = el.name + (v ? ' — ' + v.label : '');
+        const label = el.name + (v ? ' — ' + mqtVarLabel(v) : '');
         return { k, label, ch: g.ch, unit: el.unit, K: k.toUpperCase().replace(/\s+/g, ''), L: normTxt(label), s: normTxt([k, k.replace(/\s+/g, ''), el.name, v?.label, v?.text, el.text, g.ch.name].join(' ')) };
       }));
       let hits = [], idx = 0, chosen = null;
@@ -21819,7 +21870,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         lines.push(`${ch.code}\t${clean(ch.name)}`);
         lib.elements.filter(e => e.chapter_code === ch.code && e.active !== false).sort((a, b) => a.sort_order - b.sort_order).forEach(e => {
           lines.push(`${mqtCodeDisp(e.code)}\t${clean(e.name)}\t${ch.code}`);
-          (lib.varsOf[e.code.toUpperCase()] || []).forEach(v => lines.push(`${mqtFull(e.code, v.letter)}\t${clean(e.name + ' — ' + v.label)}\t${mqtCodeDisp(e.code)}`));
+          (lib.varsOf[e.code.toUpperCase()] || []).forEach(v => lines.push(`${mqtFull(e.code, v.letter)}\t${clean(e.name + ' — ' + mqtVarLabel(v))}\t${mqtCodeDisp(e.code)}`));
         });
       });
       const txt = lines.join('\r\n') + '\r\n';
