@@ -15490,7 +15490,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { id: 'mqt-studio', cat: 'proj', ctx: ['mqt', 'detail'],
         q: 'faço o MQT a partir do Revit e emito revisões',
         a: 'MQT Studio: cada projeto tem o seu MQT (abre-se antes das tabelas, em «+ Novo MQT» ou no ⋯ da ficha do projeto). As tabelas do Revit (.txt) montam os artigos pelos keynotes. Os descritivos vêm da biblioteca e podem ajustar-se em cada projeto. Fechas R00, R01…: novos a azul, revistos a verde, retirados a vermelho e rasurados.',
-        steps: ['**MQT Studio → + Novo MQT** e escolhe o projeto (ou, na ficha do projeto, **⋯ → MQT**).', 'No Revit, cada tipo tem o **Keynote** da biblioteca (ex.: PRD01.A = bloco térmico 250 mm). Exporta as tabelas (Ficheiro → Exportar → Relatórios → Tabela) e toca em **Carregar tabelas**.', 'Toca num artigo ou subartigo para **ajustar o descritivo neste projeto** (a biblioteca não muda) ou repor o standard.', 'Quando estiver pronto, **Fechar R00**: a numeração fica fixa. Nas revisões seguintes (R01, R02…) aparecem os novos (azul), revistos (verde) e retirados (vermelho, rasurados — desaparecem na revisão seguinte), com a nota em itálico.', 'A biblioteca global é uma tabela em **MQT Studio → Biblioteca de keynotes**: escreve nas células (grava sozinho); na linha **+ keynote** escreve PRD05 para um elemento ou PRD05.D para um subartigo; também podes colar linhas do Excel.', 'Exporta o **Excel** (um por bloco); as propostas dos empreiteiros entram em **Preços** e alimentam a estimativa.'],
+        steps: ['**MQT Studio → + Novo MQT** e escolhe o projeto (ou, na ficha do projeto, **⋯ → MQT**).', 'No Revit, cada tipo tem o **Keynote** da biblioteca (ex.: PRD 01a = bloco térmico 250 mm). Exporta as tabelas (Ficheiro → Exportar → Relatórios → Tabela) e toca em **Carregar tabelas**.', 'Toca num artigo ou subartigo para **ajustar o descritivo neste projeto** (a biblioteca não muda) ou repor o standard.', 'Quando estiver pronto, **Fechar R00**: a numeração fica fixa. Nas revisões seguintes (R01, R02…) aparecem os novos (azul), revistos (verde) e retirados (vermelho, rasurados — desaparecem na revisão seguinte), com a nota em itálico.', 'A biblioteca global é uma tabela em **MQT Studio → Biblioteca de keynotes**: escreve nas células (grava sozinho); na linha **+ keynote** escreve PRD 05 para um elemento ou PRD 05d para um subartigo; também podes colar linhas do Excel.', 'Exporta o **Excel** (um por bloco); as propostas dos empreiteiros entram em **Preços** e alimentam a estimativa.'],
         kw: 'mqt mapa quantidades trabalhos medicoes revit lt keynote notas chave tabelas schedules revisao r00 r01 revisoes descritivo override texto proprio biblioteca subartigo artigo novo revisto retirado estimativa empreiteiro proposta concurso bloco',
         tour: [{ go: 'nav:mqt', sel: '#mqt-htabs', text: 'MQT de todos os projetos, preços dos empreiteiros e a biblioteca de keynotes.' }] },
       { id: 'trabalhos-a-mais', cat: 'money', ctx: ['detail', 'home'],
@@ -20319,7 +20319,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
     }
 
     // ================= MQT STUDIO (mapa de quantidades e trabalhos a partir das tabelas do Revit) =================
-    // Biblioteca fixa: capítulo → elemento com keynote fixo (PRD01) → variantes (PRD01.A, .B…).
+    // Biblioteca fixa: capítulo → elemento com keynote fixo (PRD01) → subartigos (PRD01a, PRD01b…).
     // No Revit (LT): uma tabela por categoria com a coluna Keynote; Exportar → Relatórios → Tabela (.txt).
     // A app soma por keynote (e por bloco, se houver a coluna Bloco) e monta o MQT por capítulos.
     // Cada projeto tem o seu MQT (pode abrir-se antes das tabelas); descritivos ajustáveis por projeto (texts).
@@ -20400,10 +20400,9 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
     }
 
     // ---------- Keynotes ----------
-    // Aceita PRD01.A, PRD01A, PRD01-A, prd 01 a, PAVi01.B… → { code: 'PRD01', letter: 'A' } (comparação sem maiúsculas)
     // Keynote → { code (elemento), letter (sufixo do subartigo) }, tudo em maiúsculas para comparar.
     // Códigos livres: primeiro o código exato da biblioteca; depois "BASE.SUFIXO" (subartigo SUFIXO do elemento BASE);
-    // por fim a forma curta antiga (PRD1A → PRD01.A).
+    // colado (PRD01a, "PRD 01a", PRD01A); por fim a forma curta (PRD1a → PRD01a).
     function mqtParseKey(raw, lib = mqtLibCache) {
       const s = String(raw || '').trim().replace(/\s+/g, '');
       if (!s) return null;
@@ -20411,14 +20410,20 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       if (lib) {
         if (lib.elByCode[U]) return { code: U, letter: '' };
         if (dot > 0 && lib.elByCode[U.slice(0, dot)]) return { code: U.slice(0, dot), letter: U.slice(dot + 1) };
+        // colado (PRD01a, PRD01A): o elemento mais comprido que exista + o resto como sufixo do subartigo
+        for (let i = U.length - 1; i > 0; i--) { const base = U.slice(0, i); if (lib.elByCode[base]) return { code: base, letter: U.slice(i) }; }
       }
       const m = s.match(/^([A-Za-z]{2,6})-?(\d{1,3})(?:[.\-_]?([A-Za-z]))?$/);
       if (m) { const code = (m[1] + m[2].padStart(2, '0')).toUpperCase(); if (!lib || lib.elByCode[code]) return { code, letter: (m[3] || '').toUpperCase() }; }
       return dot > 0 ? { code: U.slice(0, dot), letter: U.slice(dot + 1), bad: !lib } : { code: U, letter: '', bad: !lib };
     }
-    const mqtFull = (code, letter) => letter ? `${code}.${letter}` : code;
+    // Keynote completo no formato da NOVA: PRD01a (sufixo em letras, colado e em minúscula); sufixos não-letra com ponto (PRD01.250)
+    const mqtSufDisp = s => /^[A-Za-z]+$/.test(String(s)) ? String(s).toLowerCase() : String(s);
+    // Formato: "PRD 01a" — espaço entre as letras e o número (só ao mostrar/exportar; guarda-se PRD01), subtipo colado em minúscula
+    const mqtCodeDisp = c => String(c ?? '').replace(/^([A-Za-z]+)(\d.*)$/, '$1 $2');
+    const mqtFull = (code, letter) => { const c = mqtCodeDisp(code); return letter ? (/^[A-Za-z]+$/.test(String(letter)) ? `${c}${String(letter).toLowerCase()}` : `${c}.${letter}`) : c; };
     // padrão das verificações: igual ou prefixo (PAVi → PAVi01.A; BET06.A só essa variante)
-    const mqtMatch = (pattern, key) => { const p = String(pattern).toUpperCase(), k = String(key).toUpperCase(); return p.includes('.') ? k === p : k.startsWith(p); };
+    const mqtMatch = (pattern, key) => { const p = String(pattern).toUpperCase().replace(/\s+/g, ''), k = String(key).toUpperCase().replace(/\s+/g, ''); return p.includes('.') ? k === p : k.startsWith(p); };
 
     // ---------- Ler as tabelas exportadas do Revit ----------
     function mqtDecode(buf) {
@@ -20682,6 +20687,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       const items = {};        // chave → item
       const blocksSet = new Set();
       const byKey = {};        // keynote completo → linhas
+      const keyInfo = {};      // keynote completo → { code, letter }
       rows.forEach(r => {
         const pk = mqtParseKey(r.k);
         if (!pk) { const g = `${r.c || ''}|${r.t || '(sem tipo)'}`; (issues.noKey[g] ||= { c: r.c, t: r.t, n: 0 }).n++; return; }
@@ -20690,7 +20696,8 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         const vars = lib.varsOf[pk.code] || [];
         if (vars.length && !pk.letter) { (issues.noVariant[pk.code] ||= { k: el.code, t: r.t, n: 0, vars }).n++; }
         if (pk.letter && !vars.some(v => v.letter.toUpperCase() === pk.letter)) { (issues.badVariant[r.k] ||= { k: r.k, t: r.t, n: 0 }).n++; }
-        const full = mqtFull(pk.code, pk.letter);
+        const full = mqtFull(el.code, pk.letter);
+        keyInfo[full] = { code: pk.code, letter: pk.letter };
         (byKey[full] ||= []).push(r);
         if (r.b) blocksSet.add(r.b);
       });
@@ -20701,7 +20708,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         it.qb[block] = (it.qb[block] || 0) + qty;
       };
       Object.entries(byKey).forEach(([full, rs]) => {
-        const [code, letter = ''] = full.split('.');
+        const { code, letter } = keyInfo[full];
         const el = lib.elByCode[code];
         const field = mqtElementField(el, rs);
         if (!field) { issues.noField[full] = { k: full, need: MQT_SOURCES.find(s => s[0] === el.qty_source)?.[1] || el.unit }; return; }
@@ -21068,7 +21075,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       const rows = lines.map(l => {
         const cls = l.st ? ` st-${l.st}` : '';
         if (l.t === 'ch') return `<tr class="mqt-ch${cls}"><td class="art">${escapeHtml(l.num)}</td><td colspan="4">${escapeHtml(l.text)}</td><td class="num tt">${chSub[l.num] ? escapeHtml(fmtEUR(chSub[l.num])) : ''}</td></tr>`;
-        if (l.t === 'art') return `<tr class="mqt-it mqt-art${cls}${l.miss ? ' miss' : ''}"${editable && l.st !== 'del' ? ` data-mqt-art="${escapeHtml(l.key)}" tabindex="0"` : ''}><td class="art">${escapeHtml(l.num)}</td><td class="ds" colspan="5"><span class="kn">${escapeHtml(l.code)}${tags(l)}</span><span class="tx">${md(l.text)}</span>${notes(l)}</td></tr>`;
+        if (l.t === 'art') return `<tr class="mqt-it mqt-art${cls}${l.miss ? ' miss' : ''}"${editable && l.st !== 'del' ? ` data-mqt-art="${escapeHtml(l.key)}" tabindex="0"` : ''}><td class="art">${escapeHtml(l.num)}</td><td class="ds" colspan="5"><span class="kn">${escapeHtml(mqtCodeDisp(l.code))}${tags(l)}</span><span class="tx">${md(l.text)}</span>${notes(l)}</td></tr>`;
         const st = l.st === 'del' ? null : stats[String(l.full).toUpperCase()];
         const val = st ? Math.round(st.med * l.q * 100) / 100 : null;
         return `<tr class="mqt-it ${l.lvl === 2 ? 'mqt-sub' : 'mqt-art'}${cls}${l.miss ? ' miss' : ''}"${editable && l.st !== 'del' ? ` data-mqt-item="${escapeHtml(l.key)}" tabindex="0"` : ''}>
@@ -21138,7 +21145,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       const model = [
         ...Object.values(I.noKey).sort((a, b) => b.n - a.n).map(x => row('warn', `Sem keynote: ${escapeHtml(x.t || '(sem tipo)')}`, `${escapeHtml(x.c || '')} · ${x.n} elemento${x.n > 1 ? 's' : ''} — não entra no MQT`)),
         ...Object.values(I.unknown).map(x => row('warn', `Keynote desconhecido: ${escapeHtml(x.k)}`, `${escapeHtml(x.t || '')} · ${x.n} elemento${x.n > 1 ? 's' : ''} — acrescenta-o na Biblioteca ou corrige no Revit`)),
-        ...Object.values(I.noVariant).map(x => row('warn', `Falta a variante: ${escapeHtml(x.k)}`, `${escapeHtml(x.t || '')} · usa ${x.vars.map(v => escapeHtml(`${x.k}.${v.letter} (${v.label})`)).join(', ')}`)),
+        ...Object.values(I.noVariant).map(x => row('warn', `Falta a variante: ${escapeHtml(mqtCodeDisp(x.k))}`, `${escapeHtml(x.t || '')} · usa ${x.vars.map(v => escapeHtml(`${mqtFull(x.k, v.letter)} (${v.label})`)).join(', ')}`)),
         ...Object.values(I.badVariant).map(x => row('warn', `Variante que não existe: ${escapeHtml(x.k)}`, `${escapeHtml(x.t || '')} · ${x.n} elemento${x.n > 1 ? 's' : ''}`)),
         ...Object.values(I.noField).map(x => row('warn', `Falta a medição: ${escapeHtml(x.k)}`, `A tabela não tem a coluna ${escapeHtml(x.need)}`))
       ];
@@ -21147,7 +21154,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         const st = x.ok ? 'ok' : x.na != null ? 'na' : 'warn';
         const sub = x.ok ? '' : x.na != null ? `Não se aplica${x.na ? ': ' + escapeHtml(x.na) : ''}` : [x.c.hint ? escapeHtml(x.c.hint) : '', `procura ${x.c.codes.map(escapeHtml).join(' / ')}`].filter(Boolean).join(' · ');
         const act = x.ok ? '' : x.na != null ? `<button type="button" class="text-btn" data-mqt-na="${escapeHtml(x.c.id)}" data-on="0">Repor</button>`
-          : `<span class="mqt-ckacts">${(() => { const c0 = x.c.codes[0]; const el = c0 && lib.elByCode[String(c0).split('.')[0].toUpperCase()]; return el && el.qty_source === 'manual' ? `<button type="button" class="text-btn" data-mqt-addcode="${escapeHtml(c0)}">Pôr à mão</button>` : ''; })()}<button type="button" class="text-btn" data-mqt-na="${escapeHtml(x.c.id)}" data-on="1">Não se aplica</button></span>`;
+          : `<span class="mqt-ckacts">${(() => { const c0 = x.c.codes[0]; const pk0 = c0 && mqtParseKey(c0, lib); const el = pk0 && lib.elByCode[pk0.code]; return el && el.qty_source === 'manual' ? `<button type="button" class="text-btn" data-mqt-addcode="${escapeHtml(c0)}">Pôr à mão</button>` : ''; })()}<button type="button" class="text-btn" data-mqt-na="${escapeHtml(x.c.id)}" data-on="1">Não se aplica</button></span>`;
         return row(st, escapeHtml(x.c.name), sub, act);
       };
       const ordered = arr => arr.slice().sort((a, b) => (a.ok || a.na != null ? 1 : 0) - (b.ok || b.na != null ? 1 : 0));
@@ -21175,7 +21182,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
     }
     // ---------- Biblioteca global: tabela (tipo Excel) ----------
     // Uma linha por capítulo, elemento e subartigo. Escreve-se nas células; grava ao sair de cada célula.
-    // Criar: na linha vazia do capítulo escreve o keynote — "PRD05" cria o elemento; "PRD05.D" cria o subartigo D
+    // Criar: na linha vazia do capítulo escreve o keynote — "PRD 05" cria o elemento; "PRD 05d" cria o subartigo d
     // (e o elemento, se não existir). Colar várias linhas do Excel (Keynote ⇥ Designação ⇥ Un. ⇥ Descritivo) cria tudo.
     // Enter / ↑ ↓ mudam de linha; Shift+Enter faz parágrafo no descritivo.
     const MQT_CODE_RE = /^[^\s.]{1,24}$/;          // keynote do elemento: livre, sem espaços nem ponto
@@ -21192,15 +21199,15 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
           <td class="g-act">${els.length ? '' : `<button type="button" class="g-del" data-del aria-label="Apagar capítulo" title="Apagar capítulo">×</button>`}</td></tr>`);
         els.forEach(e => {
           const vs = lib.varsOf[e.code.toUpperCase()] || [];
-          rows.push(`<tr class="g-el${e.active === false ? ' off' : ''}" data-kind="el" data-id="${escapeHtml(e.id)}" data-ch="${escapeHtml(ch.code)}" data-s="${escapeHtml([e.code, e.name, e.text, vs.map(v => v.label).join(' ')].join(' '))}">
-            <td><input class="g-in g-code" data-f="code" value="${escapeHtml(e.code)}" aria-label="Keynote"></td>
+          rows.push(`<tr class="g-el${e.active === false ? ' off' : ''}" data-kind="el" data-id="${escapeHtml(e.id)}" data-ch="${escapeHtml(ch.code)}" data-s="${escapeHtml([e.code, mqtCodeDisp(e.code), e.name, e.text, vs.map(v => mqtFull(e.code, v.letter) + ' ' + v.label).join(' ')].join(' '))}">
+            <td><input class="g-in g-code" data-f="code" value="${escapeHtml(mqtCodeDisp(e.code))}" aria-label="Keynote"></td>
             <td><input class="g-in g-name" data-f="name" value="${escapeHtml(e.name)}" aria-label="Designação"></td>
             <td><select class="g-in" data-f="unit" aria-label="Unidade">${unitOpts(e.unit)}</select></td>
             <td><textarea class="g-in g-text" data-f="text" rows="1" aria-label="Descritivo do artigo" placeholder="Descritivo do artigo — {var} = subartigo; {marca}, {cor}… completam-se no projeto">${escapeHtml(e.text)}</textarea></td>
             <td><select class="g-in g-src" data-f="qty_source" aria-label="Medição">${srcOpts(e.qty_source)}</select></td>
             <td class="g-act"><button type="button" class="g-add" data-addvar="${escapeHtml(e.code)}" aria-label="Acrescentar subtipo" title="Acrescentar subtipo (Ctrl+Enter)">+</button><button type="button" class="g-more" data-more aria-label="Mais opções" title="Perdas, categoria do Revit, cálculo…">⋯</button><button type="button" class="g-del" data-del aria-label="Apagar elemento" title="Apagar elemento e subartigos">×</button></td></tr>`);
           vs.forEach(v => rows.push(`<tr class="g-var" data-kind="var" data-id="${escapeHtml(v.id)}" data-el="${escapeHtml(e.code)}" data-ch="${escapeHtml(ch.code)}" data-s="${escapeHtml([e.code + '.' + v.letter, e.name, v.label, v.text].join(' '))}">
-            <td><span class="g-pre">${escapeHtml(e.code)}.</span><input class="g-in g-suf" data-f="letter" value="${escapeHtml(v.letter)}" aria-label="Sufixo do subartigo"></td>
+            <td><span class="g-pre">${escapeHtml(mqtCodeDisp(e.code))}</span><input class="g-in g-suf" data-f="letter" value="${escapeHtml(mqtSufDisp(v.letter))}" aria-label="Sufixo do subartigo"></td>
             <td><input class="g-in g-label" data-f="label" value="${escapeHtml(v.label)}" aria-label="Subartigo"></td>
             <td class="g-inh">${escapeHtml(e.unit)}</td>
             <td><textarea class="g-in g-text" data-f="text" rows="1" aria-label="Texto próprio do subartigo" placeholder="(usa o descritivo do artigo)">${escapeHtml(v.text || '')}</textarea></td>
@@ -21216,7 +21223,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       });
       rows.push(`<tr class="g-newch" data-kind="newch"><td><input class="g-in g-code" data-f="code" placeholder="+ cap." aria-label="Código do novo capítulo"></td><td colspan="4"><input class="g-in" data-f="name" placeholder="nome do novo capítulo · Enter cria"></td><td></td></tr>`);
       return `<div class="mqt-libbar"><input type="text" id="mqt-lib-search" class="search-input op-search" placeholder="Procurar keynote, designação ou texto…" autocomplete="off"><span class="mqt-saved" id="mqt-saved" aria-live="polite"></span></div>
-        <div class="field-hint" style="margin:0 0 10px">Escreve nas células — grava sozinho. Para criar, escreve o keynote na linha <b>+ keynote</b> do capítulo: <b>PRD05</b> cria um elemento, <b>PRD05.D</b> cria o subartigo D. Podes colar várias linhas do Excel (Keynote, Designação, Un., Descritivo). Enter e ↑ ↓ mudam de linha. <b>+</b> (ou Ctrl+Enter) numa linha acrescenta um subtipo por baixo — ex.: outra espessura.</div>
+        <div class="field-hint" style="margin:0 0 10px">Escreve nas células — grava sozinho. Para criar, escreve o keynote na linha <b>+ keynote</b> do capítulo: <b>PRD 05</b> cria um elemento, <b>PRD 05d</b> cria o subartigo d. Podes colar várias linhas do Excel (Keynote, Designação, Un., Descritivo). Enter e ↑ ↓ mudam de linha. <b>+</b> (ou Ctrl+Enter) numa linha acrescenta um subtipo por baixo — ex.: outra espessura.</div>
         <div class="gantt-wrap mqt-gridwrap"><table class="mqt-grid">
           <colgroup><col style="width:150px"><col style="width:260px"><col style="width:74px"><col><col style="width:150px"><col style="width:84px"></colgroup>
           <thead><tr><th>Keynote</th><th>Designação</th><th>Un.</th><th>Descritivo</th><th>Medição</th><th></th></tr></thead>
@@ -21267,6 +21274,8 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
             if (f === 'text') v = v.trim();
             if ((e[f] ?? '') === v) return;
             if (f === 'code') {
+              v = v.replace(/\s+/g, '');
+              if (v === e.code) { inp.value = mqtCodeDisp(v); return; }
               if (!MQT_CODE_RE.test(v)) { err('Keynote: sem espaços nem ponto (o ponto separa o subartigo).'); inp.value = e.code; return; }
               const other = elByCodeAny(v); if (other && other.id !== e.id) { err('Já existe um elemento com esse keynote.'); inp.value = e.code; return; }
             }
@@ -21275,7 +21284,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
             await dbUpdate('mqt_elements', e.id, { [f]: v, updated_at: new Date().toISOString() }, MOCK_MQT.elements);
             if (devMode && f === 'code') MOCK_MQT.variants.filter(x => x.element_code === old).forEach(x => { x.element_code = v; });
             e[f] = v; saved('Guardado');
-            if (f === 'code') { showToast(`Keynote ${old} → ${v}. No Revit, os tipos com ${old} também têm de mudar.`, { ms: 5000 }); rerender(); }
+            if (f === 'code') { showToast(`Keynote ${mqtCodeDisp(old)} → ${mqtCodeDisp(v)}. No Revit, os tipos com ${mqtCodeDisp(old)} também têm de mudar.`, { ms: 5000 }); rerender(); }
             else if (f === 'unit') tr.parentNode.querySelectorAll(`tr.g-var[data-el="${CSS.escape(e.code)}"] .g-inh`).forEach(td => { td.textContent = v; });
             return;
           }
@@ -21284,24 +21293,33 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
             if (f === 'text') v = v.trim();
             if ((vv[f] ?? '') === v) return;
             if (f === 'letter') {
+              if (/^[A-Za-z]+$/.test(v)) v = v.toUpperCase();
+              if ((vv.letter ?? '') === v) { inp.value = mqtSufDisp(v); return; }
               if (!MQT_SUF_RE.test(v)) { err('Sufixo: sem espaços nem ponto (ex.: A, 01, 250).'); inp.value = vv.letter; return; }
               if ((lib.varsOf[vv.element_code.toUpperCase()] || []).some(x => x.id !== vv.id && x.letter.toUpperCase() === v.toUpperCase())) { err('Esse sufixo já existe neste elemento.'); inp.value = vv.letter; return; }
             }
             if (f === 'label' && !v) { inp.value = vv.label; return; }
             await dbUpdate('mqt_variants', vv.id, { [f]: f === 'text' ? (v || null) : v }, MOCK_MQT.variants);
             vv[f] = f === 'text' ? (v || null) : v; saved('Guardado');
+            if (f === 'letter') inp.value = mqtSufDisp(v);
           }
         } catch (e2) { showError('guardar', e2); }
       };
       grid.querySelectorAll('tr[data-kind="ch"] .g-in, tr[data-kind="el"] .g-in, tr[data-kind="var"] .g-in').forEach(inp => inp.addEventListener('change', () => saveCell(inp)));
       // criar a partir do keynote escrito (ou de várias linhas coladas)
       const createRow = async (chCode, code, name, unit, text) => {
-        code = String(code || '').trim(); name = String(name || '').trim(); text = String(text || '').trim();
+        code = String(code || '').replace(/\s+/g, ''); name = String(name || '').trim(); text = String(text || '').trim();
         if (!code) return null;
         unit = MQT_UNITS.includes(unit) ? unit : (unit === 'm2' ? 'm²' : unit === 'm3' ? 'm³' : unit === 'm' ? 'ml' : 'm²');
+        let base = null, suf = null;
         const dot = code.lastIndexOf('.');
-        if (dot > 0) {
-          const base = code.slice(0, dot), suf = code.slice(dot + 1);
+        if (dot > 0) { base = code.slice(0, dot); suf = code.slice(dot + 1); }
+        else {
+          const m = code.match(/^(.*\d)([a-z]{1,2})$/) || (() => { const m2 = code.match(/^(.+?)([a-z]{1,2})$/); return m2 && elByCodeAny(m2[1]) ? m2 : null; })();
+          if (m) { base = m[1]; suf = m[2]; }
+        }
+        if (base) {
+          if (/^[A-Za-z]+$/.test(suf)) suf = suf.toUpperCase();
           if (!MQT_CODE_RE.test(base) || !MQT_SUF_RE.test(suf)) throw new Error(`Keynote inválido: ${code}`);
           let e = elByCodeAny(base);
           if (!e) {
@@ -21330,12 +21348,12 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         const g = drop.querySelector('.mqt-grid'); if (!g) return;
         g.querySelector('tr.g-newvar')?.remove();
         const C = String(code).toUpperCase();
-        const rows = [...g.querySelectorAll('tbody tr')].filter(r => (r.dataset.kind === 'el' && r.querySelector('[data-f="code"]').value.toUpperCase() === C) || (r.dataset.kind === 'var' && String(r.dataset.el).toUpperCase() === C));
+        const rows = [...g.querySelectorAll('tbody tr')].filter(r => (r.dataset.kind === 'el' && r.querySelector('[data-f="code"]').value.replace(/\s+/g, '').toUpperCase() === C) || (r.dataset.kind === 'var' && String(r.dataset.el).toUpperCase() === C));
         const last = rows[rows.length - 1]; if (!last) return;
         const e = lib.elByCode[C] || (mqtLibCache && mqtLibCache.elByCode[C]); if (!e) return;
         const tr = document.createElement('tr');
         tr.className = 'g-var g-newvar'; tr.dataset.kind = 'newvar'; tr.dataset.el = e.code; tr.dataset.ch = last.dataset.ch;
-        tr.innerHTML = `<td><span class="g-pre">${escapeHtml(e.code)}.</span><input class="g-in g-suf" data-f="letter" value="${escapeHtml(nextSuffix(e.code))}" aria-label="Sufixo"></td>
+        tr.innerHTML = `<td><span class="g-pre">${escapeHtml(mqtCodeDisp(e.code))}</span><input class="g-in g-suf" data-f="letter" value="${escapeHtml(mqtSufDisp(nextSuffix(e.code)))}" aria-label="Sufixo"></td>
           <td><input class="g-in g-label" data-f="label" placeholder="novo subtipo (ex.: 300 mm) · Enter"></td>
           <td class="g-inh">${escapeHtml(e.unit)}</td>
           <td><textarea class="g-in g-text" data-f="text" rows="1" placeholder="texto próprio (opcional)"></textarea></td>
@@ -21364,7 +21382,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         const tr = ev.target.closest?.('tr'); if (!tr || !['el', 'var'].includes(tr.dataset.kind)) return;
         ev.preventDefault(); ev.stopImmediatePropagation();
         ev.target.dispatchEvent(new Event('change'));
-        openNewVar(box, tr.dataset.kind === 'el' ? tr.querySelector('[data-f="code"]').value : tr.dataset.el);
+        openNewVar(box, tr.dataset.kind === 'el' ? tr.querySelector('[data-f="code"]').value.replace(/\s+/g, '') : tr.dataset.el);
       }, true);
       grid.querySelectorAll('tr.g-new').forEach(tr => {
         const get = f => tr.querySelector(`[data-f="${f}"]`);
@@ -21398,13 +21416,13 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       grid.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', async () => {
         const tr = b.closest('tr'), kind = tr.dataset.kind;
         try {
-          if (kind === 'var') { const v = varById(tr.dataset.id); await dbDelete('mqt_variants', v.id, MOCK_MQT.variants); showToast(`${v.element_code}.${v.letter} apagado`); }
+          if (kind === 'var') { const v = varById(tr.dataset.id); await dbDelete('mqt_variants', v.id, MOCK_MQT.variants); showToast(`${mqtFull(v.element_code, v.letter)} apagado`); }
           else if (kind === 'el') {
             const e = elById(tr.dataset.id), n = (lib.varsOf[e.code.toUpperCase()] || []).length;
-            if (!confirm(`Apagar ${e.code} · ${e.name}${n ? ` e os seus ${n} subartigos` : ''}?`)) return;
+            if (!confirm(`Apagar ${mqtCodeDisp(e.code)} · ${e.name}${n ? ` e os seus ${n} subartigos` : ''}?`)) return;
             await dbDelete('mqt_elements', e.id, MOCK_MQT.elements);
             if (devMode) for (let i = MOCK_MQT.variants.length - 1; i >= 0; i--) if (MOCK_MQT.variants[i].element_code === e.code) MOCK_MQT.variants.splice(i, 1);
-            showToast(`${e.code} apagado`);
+            showToast(`${mqtCodeDisp(e.code)} apagado`);
           } else if (kind === 'ch') { const ch = lib.chapters.find(x => x.id === tr.dataset.id); await dbDelete('mqt_chapters', ch.id, MOCK_MQT.chapters); }
           rerender();
         } catch (e2) { showError('apagar', e2); }
@@ -21440,11 +21458,11 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         const rows = [...grid.querySelectorAll('tbody tr')];
         if (!q) { rows.forEach(r => { r.hidden = false; }); return; }
         const hitEl = new Set(), hitCh = new Set();
-        rows.forEach(r => { if ((r.dataset.kind === 'el' || r.dataset.kind === 'var') && normTxt(r.dataset.s).includes(q)) { hitEl.add(r.dataset.kind === 'el' ? r.querySelector('[data-f="code"]').value.toUpperCase() : String(r.dataset.el).toUpperCase()); hitCh.add(r.dataset.ch); } });
+        rows.forEach(r => { if ((r.dataset.kind === 'el' || r.dataset.kind === 'var') && normTxt(r.dataset.s).includes(q)) { hitEl.add(r.dataset.kind === 'el' ? r.querySelector('[data-f="code"]').value.replace(/\s+/g, '').toUpperCase() : String(r.dataset.el).toUpperCase()); hitCh.add(r.dataset.ch); } });
         rows.forEach(r => {
           const k = r.dataset.kind;
           if (k === 'ch' || k === 'new') r.hidden = !hitCh.has(r.dataset.ch);
-          else if (k === 'el') r.hidden = !hitEl.has(r.querySelector('[data-f="code"]').value.toUpperCase());
+          else if (k === 'el') r.hidden = !hitEl.has(r.querySelector('[data-f="code"]').value.replace(/\s+/g, '').toUpperCase());
           else if (k === 'var') r.hidden = !hitEl.has(String(r.dataset.el).toUpperCase());
           else r.hidden = true;
         });
@@ -21523,7 +21541,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       const own = cfg.texts?.[EL];
       const fields = [...new Set([...String(own || el.text || '').matchAll(/\{([^}]+)\}/g)].map(m => m[1].trim()).filter(f => f.toLowerCase() !== 'var'))];
       const sp = cfg.specs?.[EL] || {};
-      openQuickModal(`${el.code} · ${el.name}`, `
+      openQuickModal(`${mqtCodeDisp(el.code)} · ${el.name}`, `
         ${mqtOwnTextHtml(own ? mqtFillFields(own, sp, []) : std, std, !!own)}
         ${fields.length ? `<label class="field-label">Completar o texto</label>${fields.map(f => `<input type="text" class="form-input mqt-spec-in" data-f="${escapeHtml(f)}" placeholder="${escapeHtml(f)}" value="${escapeHtml(sp[f] || '')}" style="margin-bottom:6px">`).join('')}` : ''}
         <div id="mqt-it-msg" class="form-msg"></div>
@@ -21595,11 +21613,11 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
     }
     // Acrescentar artigo à mão (estaleiro, especialidades, peitoris…)
     function mqtKeyOptions(lib, filter = () => true) {
-      return lib.chapters.map(ch => ({ ch, list: lib.elements.filter(e => e.chapter_code === ch.code && e.active !== false && filter(e)).sort((a, b) => a.sort_order - b.sort_order).flatMap(e => { const vs = lib.varsOf[e.code.toUpperCase()] || []; return vs.length ? vs.map(v => [mqtFull(e.code, v.letter), `${e.code}.${v.letter} · ${e.name} — ${v.label} (${e.unit})`]) : [[e.code, `${e.code} · ${e.name} (${e.unit})`]]; }) })).filter(g => g.list.length);
+      return lib.chapters.map(ch => ({ ch, list: lib.elements.filter(e => e.chapter_code === ch.code && e.active !== false && filter(e)).sort((a, b) => a.sort_order - b.sort_order).flatMap(e => { const vs = lib.varsOf[e.code.toUpperCase()] || []; return vs.length ? vs.map(v => [mqtFull(e.code, v.letter), `${mqtFull(e.code, v.letter)} · ${e.name} — ${v.label} (${e.unit})`]) : [[e.code, `${e.code} · ${e.name} (${e.unit})`]]; }) })).filter(g => g.list.length);
     }
     // Procurar um artigo da biblioteca: escreve-se qualquer palavra ou código (todas as palavras têm de aparecer,
     // sem ligar a acentos); ↑ ↓ e Enter escolhem. Os códigos que começam pelo que se escreveu aparecem primeiro.
-    function mqtPickerHtml(id, placeholder = 'Escreve uma palavra ou código: peitoril, PRD01, 250 mm…') {
+    function mqtPickerHtml(id, placeholder = 'Escreve uma palavra ou código: peitoril, PRD 01, 250 mm…') {
       return `<div class="mqt-pick" id="${id}"><input type="text" class="form-input mqt-pick-q" placeholder="${escapeHtml(placeholder)}" autocomplete="off" role="combobox" aria-expanded="false" aria-autocomplete="list"><div class="mqt-pick-list" role="listbox" hidden></div></div>`;
     }
     function attachMqtPicker(id, lib, { preset = null, onPick = () => {} } = {}) {
@@ -21608,7 +21626,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         const pk = mqtParseKey(k, lib), el = lib.elByCode[pk.code];
         const v = pk.letter ? (lib.varsOf[pk.code] || []).find(x => x.letter.toUpperCase() === pk.letter) : null;
         const label = el.name + (v ? ' — ' + v.label : '');
-        return { k, label, ch: g.ch, unit: el.unit, K: k.toUpperCase(), L: normTxt(label), s: normTxt([k, el.name, v?.label, v?.text, el.text, g.ch.name].join(' ')) };
+        return { k, label, ch: g.ch, unit: el.unit, K: k.toUpperCase().replace(/\s+/g, ''), L: normTxt(label), s: normTxt([k, k.replace(/\s+/g, ''), el.name, v?.label, v?.text, el.text, g.ch.name].join(' ')) };
       }));
       let hits = [], idx = 0, chosen = null;
       const render = () => {
@@ -21618,10 +21636,10 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         list.querySelector('.on')?.scrollIntoView({ block: 'nearest' });
       };
       const search = () => {
-        const raw = q.value.trim(), Q = raw.toUpperCase(), words = normTxt(raw).split(/\s+/).filter(Boolean);
+        const raw = q.value.trim(), Q = raw.toUpperCase().replace(/\s+/g, ''), words = normTxt(raw).split(/\s+/).filter(Boolean);
         hits = words.length ? all.filter(o => words.every(w => o.s.includes(w))) : all.slice();
         if (words.length) {
-          const rank = o => o.K === Q ? 0 : o.K.startsWith(Q) ? 1 : o.L.startsWith(normTxt(raw)) ? 2 : words.every(w => (o.K.toLowerCase() + ' ' + o.L).includes(w)) ? 3 : 4;
+          const rank = o => o.K === Q ? 0 : o.K.startsWith(Q) ? 1 : o.L.startsWith(normTxt(raw)) ? 2 : words.every(w => (o.k.toLowerCase() + ' ' + o.L).includes(w)) ? 3 : 4;
           hits = hits.map((o, i) => [rank(o), i, o]).sort((a, b) => a[0] - b[0] || a[1] - b[1]).map(x => x[2]);
         }
         idx = 0; render();
@@ -21686,7 +21704,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       ];
       openQuickModal('Como preparar o Revit', `
         <ol class="mqt-how">
-          <li><b>Keynotes:</b> em Biblioteca → <b>Ficheiro de keynotes (Revit)</b>. No Revit: Anotar → Etiqueta → Definições de notas-chave → escolher esse ficheiro. Em cada tipo (Editar tipo), o parâmetro <b>Keynote</b> = código da biblioteca (ex.: PRD01.A).</li>
+          <li><b>Keynotes:</b> em Biblioteca → <b>Ficheiro de keynotes (Revit)</b>. No Revit: Anotar → Etiqueta → Definições de notas-chave → escolher esse ficheiro. Em cada tipo (Editar tipo), o parâmetro <b>Keynote</b> = código da biblioteca (ex.: PRD 01a).</li>
           <li><b>Bloco</b> (só se o edifício tiver blocos): Gerir → Parâmetros do projeto → novo parâmetro de <b>instância</b>, texto, chamado <b>Bloco</b>, nas categorias abaixo.</li>
           <li><b>Uma tabela por categoria</b> (Vista → Tabelas → Tabela/Quantidades) com estes campos:</li>
         </ol>
@@ -21705,8 +21723,8 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       const isNew = !el;
       const e = el || { code: '', chapter_code: chCode || lib.chapters[0]?.code, name: '', unit: 'm²', qty_source: 'area', text: '', revit_category: '', waste_pct: 0, split_by_type: false, derive_from: [], derive_field: 'area', derive_factor: 1, active: true };
       const vs = isNew ? [] : (lib.varsOf[e.code.toUpperCase()] || []);
-      openQuickModal(isNew ? 'Novo elemento' : `${e.code} · ${e.name}`, `
-        <div class="mqt-g2"><div><label class="field-label" for="mel-code">Keynote</label><input type="text" id="mel-code" class="form-input" maxlength="12" value="${escapeHtml(e.code)}" placeholder="PRD05"></div>
+      openQuickModal(isNew ? 'Novo elemento' : `${mqtCodeDisp(e.code)} · ${e.name}`, `
+        <div class="mqt-g2"><div><label class="field-label" for="mel-code">Keynote</label><input type="text" id="mel-code" class="form-input" maxlength="12" value="${escapeHtml(mqtCodeDisp(e.code))}" placeholder="PRD 05"></div>
         <div><label class="field-label" for="mel-ch">Capítulo</label><select id="mel-ch" class="form-input">${lib.chapters.map(c => `<option value="${escapeHtml(c.code)}"${c.code === e.chapter_code ? ' selected' : ''}>${escapeHtml(c.code + ' · ' + c.name)}</option>`).join('')}</select></div></div>
         <label class="field-label" for="mel-name">Nome</label><input type="text" id="mel-name" class="form-input" maxlength="120" value="${escapeHtml(e.name)}">
         <div class="mqt-g2"><div><label class="field-label" for="mel-unit">Unidade</label><select id="mel-unit" class="form-input">${MQT_UNITS.map(u => `<option${u === e.unit ? ' selected' : ''}>${u}</option>`).join('')}</select><div class="field-hint">m³ só no movimento de terras.</div></div>
@@ -21718,7 +21736,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         <textarea id="mel-text" class="form-input" rows="5">${escapeHtml(e.text)}</textarea>
         <div class="field-hint"><b>{var}</b> = variante (ex.: espessura, sempre em mm). Outros campos entre chavetas, como <b>{marca}</b> ou <b>{cor}</b>, completam-se em cada projeto.</div>
         <label class="field-label" for="mel-vars">Variantes <span class="muted">(uma por linha: letra | descrição)</span></label>
-        <textarea id="mel-vars" class="form-input" rows="3" placeholder="A | 250 mm&#10;B | 300 mm">${escapeHtml(vs.map(v => `${v.letter} | ${v.label}`).join('\n'))}</textarea>
+        <textarea id="mel-vars" class="form-input" rows="3" placeholder="a | 250 mm&#10;b | 300 mm">${escapeHtml(vs.map(v => `${mqtSufDisp(v.letter)} | ${v.label}`).join('\n'))}</textarea>
         <div class="mqt-g2"><div><label class="field-label" for="mel-waste">Perdas (%)</label><input type="text" inputmode="decimal" id="mel-waste" class="form-input" value="${escapeHtml(String(e.waste_pct || 0).replace('.', ','))}"></div>
         <div><label class="field-label" for="mel-cat">Categoria do Revit</label><input type="text" id="mel-cat" class="form-input" value="${escapeHtml(e.revit_category || '')}" placeholder="Walls"></div></div>
         <label class="mqt-chk"><input type="checkbox" id="mel-split"${e.split_by_type ? ' checked' : ''}> Um artigo por tipo do Revit (janelas J1, J2…)</label>
@@ -21788,8 +21806,8 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       lib.chapters.forEach(ch => {
         lines.push(`${ch.code}\t${clean(ch.name)}`);
         lib.elements.filter(e => e.chapter_code === ch.code && e.active !== false).sort((a, b) => a.sort_order - b.sort_order).forEach(e => {
-          lines.push(`${e.code}\t${clean(e.name)}\t${ch.code}`);
-          (lib.varsOf[e.code.toUpperCase()] || []).forEach(v => lines.push(`${e.code}.${v.letter}\t${clean(e.name + ' — ' + v.label)}\t${e.code}`));
+          lines.push(`${mqtCodeDisp(e.code)}\t${clean(e.name)}\t${ch.code}`);
+          (lib.varsOf[e.code.toUpperCase()] || []).forEach(v => lines.push(`${mqtFull(e.code, v.letter)}\t${clean(e.name + ' — ' + v.label)}\t${mqtCodeDisp(e.code)}`));
         });
       });
       const txt = lines.join('\r\n') + '\r\n';
