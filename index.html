@@ -15341,7 +15341,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { id: 'mqt-studio', cat: 'proj', ctx: ['mqt'],
         q: 'faço o MQT a partir do Revit',
         a: 'MQT Studio: no Revit, cada tipo tem um keynote da biblioteca (ex.: PRD01.A). Exportas as tabelas (.txt), carregas na app e o MQT sai montado por capítulos, com os textos. O separador «Não te esqueças» mostra o que falta.',
-        steps: ['Em **MQT Studio → Biblioteca** descarrega o **Ficheiro de keynotes (Revit)** e liga-o no Revit (Anotar → Definições de notas-chave).', 'Em cada tipo do Revit preenche o **Keynote** (ex.: PRD01.A = bloco térmico 25 cm).', 'Faz uma tabela por categoria com Keynote e a medição (toca em **Como preparar o Revit** para ver os campos) e exporta: Ficheiro → Exportar → Relatórios → Tabela.', 'Escolhe o projeto, toca em **Carregar tabelas** e arrasta os .txt: fica uma versão nova.', 'Vê **Não te esqueças** (elementos sem keynote, regras, típicos) e completa os textos (marca, cor…).', 'Exporta o **Excel para concurso**; quando os empreiteiros o devolverem preenchido, carrega-o em **Preços**: a app guarda os preços com data e faz a **estimativa** dos próximos projetos.'],
+        steps: ['Em **MQT Studio → Biblioteca** descarrega o **Ficheiro de keynotes (Revit)** e liga-o no Revit (Anotar → Definições de notas-chave).', 'Em cada tipo do Revit preenche o **Keynote** (ex.: PRD01.A = bloco térmico 250 mm).', 'Faz uma tabela por categoria com Keynote e a medição (toca em **Como preparar o Revit** para ver os campos) e exporta: Ficheiro → Exportar → Relatórios → Tabela.', 'Escolhe o projeto, toca em **Carregar tabelas** e arrasta os .txt: fica uma versão nova.', 'Vê **Não te esqueças** (elementos sem keynote, regras, típicos) e completa os textos (marca, cor…).', 'Exporta o **Excel para concurso**; quando os empreiteiros o devolverem preenchido, carrega-o em **Preços**: a app guarda os preços com data e faz a **estimativa** dos próximos projetos.'],
         kw: 'mqt mapa quantidades trabalhos medicoes medição revit lt keynote notas chave tabelas schedules exportar orcamento estimativa empreiteiro proposta concurso precos caderno encargos bloco',
         tour: [{ go: 'nav:mqt', sel: '#mqt-tabs', text: 'MQT, o que falta verificar, versões, preços dos empreiteiros e a biblioteca de keynotes.' }, { go: 'nav:mqt', sel: '#mqt-how', text: 'As tabelas certas para criar no Revit LT.' }] },
       { id: 'trabalhos-a-mais', cat: 'money', ctx: ['detail', 'home'],
@@ -20177,11 +20177,12 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
     // Preços: as propostas dos empreiteiros preenchidas no nosso Excel voltam a entrar e fazem um registo datado.
     const MQT_LIB_URL = 'mqt_biblioteca.json';
     const EXCELJS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';
-    const MQT_UNITS = ['m²', 'm³', 'm', 'un', 'vg', 'kg'];
+    // Unidades da NOVA: m², ml, un, vg (m³ só no betão e no movimento de terras). Espessuras sempre em mm.
+    const MQT_UNITS = ['m²', 'ml', 'un', 'vg', 'm³'];
     const MQT_SOURCES = [['area', 'Área'], ['volume', 'Volume'], ['length', 'Comprimento'], ['count', 'Contagem'], ['perimeter', 'Perímetro'], ['opening', 'Largura × altura (vãos)'], ['manual', 'À mão (não se modela)'], ['derived', 'Calculado a partir de outros']];
     const MQT_FIELD_LABEL = { a: 'Área', v: 'Volume', len: 'Comprimento', n: 'Contagem', p: 'Perímetro', w: 'Largura', h: 'Altura' };
     const MQT_SRC_FIELD = { area: 'a', volume: 'v', length: 'len', count: 'n', perimeter: 'p' };
-    const MQT_UNIT_FIELD = { 'm²': 'a', 'm³': 'v', 'm': 'len', 'un': 'n' };
+    const MQT_UNIT_FIELD = { 'm²': 'a', 'm³': 'v', 'ml': 'len', 'un': 'n' };
     let mqtProjectId = (() => { try { return localStorage.getItem('mqt.project') || ''; } catch (e) { return ''; } })();
     let mqtTab = 'mqt';
     let mqtBlock = null;
@@ -20226,6 +20227,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         if (!chapters.length) { await mqtSeedLibrary(); [chapters, elements, variants, checks] = await Promise.all(['mqt_chapters', 'mqt_elements', 'mqt_variants', 'mqt_checks'].map(get)); }
         lib = { chapters, elements, variants, checks };
       }
+      lib.elements.forEach(e => { if (e.unit === 'm') e.unit = 'ml'; });
       lib.chapters.sort((a, b) => a.code.localeCompare(b.code));
       lib.elByCode = {}; lib.elements.forEach(e => { lib.elByCode[e.code.toUpperCase()] = e; });
       lib.varsOf = {}; lib.variants.slice().sort((a, b) => (a.sort_order - b.sort_order) || a.letter.localeCompare(b.letter)).forEach(v => { (lib.varsOf[v.element_code.toUpperCase()] ||= []).push(v); });
@@ -20977,16 +20979,16 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         <div class="mqt-g2"><div><label class="field-label" for="mel-code">Keynote</label><input type="text" id="mel-code" class="form-input" maxlength="12" value="${escapeHtml(e.code)}" placeholder="PRD05"></div>
         <div><label class="field-label" for="mel-ch">Capítulo</label><select id="mel-ch" class="form-input">${lib.chapters.map(c => `<option value="${escapeHtml(c.code)}"${c.code === e.chapter_code ? ' selected' : ''}>${escapeHtml(c.code + ' · ' + c.name)}</option>`).join('')}</select></div></div>
         <label class="field-label" for="mel-name">Nome</label><input type="text" id="mel-name" class="form-input" maxlength="120" value="${escapeHtml(e.name)}">
-        <div class="mqt-g2"><div><label class="field-label" for="mel-unit">Unidade</label><select id="mel-unit" class="form-input">${MQT_UNITS.map(u => `<option${u === e.unit ? ' selected' : ''}>${u}</option>`).join('')}</select></div>
+        <div class="mqt-g2"><div><label class="field-label" for="mel-unit">Unidade</label><select id="mel-unit" class="form-input">${MQT_UNITS.map(u => `<option${u === e.unit ? ' selected' : ''}>${u}</option>`).join('')}</select><div class="field-hint">m³ só no betão e no movimento de terras.</div></div>
         <div><label class="field-label" for="mel-src">Quantidade vem de</label><select id="mel-src" class="form-input">${MQT_SOURCES.map(([k, l]) => `<option value="${k}"${k === e.qty_source ? ' selected' : ''}>${l}</option>`).join('')}</select></div></div>
         <div id="mel-derive" class="mqt-g3"${e.qty_source === 'derived' ? '' : ' hidden'}><div><label class="field-label" for="mel-df">A partir de (códigos)</label><input type="text" id="mel-df" class="form-input" value="${escapeHtml((e.derive_from || []).join(', '))}" placeholder="REVi01, REVi02"></div>
           <div><label class="field-label" for="mel-dfl">Medição</label><select id="mel-dfl" class="form-input">${[['area', 'Área'], ['length', 'Comprimento'], ['perimeter', 'Perímetro'], ['count', 'Contagem'], ['volume', 'Volume']].map(([k, l]) => `<option value="${k}"${k === e.derive_field ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
           <div><label class="field-label" for="mel-dx">× fator</label><input type="text" inputmode="decimal" id="mel-dx" class="form-input" value="${escapeHtml(String(e.derive_factor ?? 1).replace('.', ','))}"></div></div>
         <label class="field-label" for="mel-text">Texto do artigo</label>
         <textarea id="mel-text" class="form-input" rows="5">${escapeHtml(e.text)}</textarea>
-        <div class="field-hint"><b>{var}</b> = variante (ex.: espessura). Outros campos entre chavetas, como <b>{marca}</b> ou <b>{cor}</b>, completam-se em cada projeto.</div>
+        <div class="field-hint"><b>{var}</b> = variante (ex.: espessura, sempre em mm). Outros campos entre chavetas, como <b>{marca}</b> ou <b>{cor}</b>, completam-se em cada projeto.</div>
         <label class="field-label" for="mel-vars">Variantes <span class="muted">(uma por linha: letra | descrição)</span></label>
-        <textarea id="mel-vars" class="form-input" rows="3" placeholder="A | 25 cm&#10;B | 30 cm">${escapeHtml(vs.map(v => `${v.letter} | ${v.label}`).join('\n'))}</textarea>
+        <textarea id="mel-vars" class="form-input" rows="3" placeholder="A | 250 mm&#10;B | 300 mm">${escapeHtml(vs.map(v => `${v.letter} | ${v.label}`).join('\n'))}</textarea>
         <div class="mqt-g2"><div><label class="field-label" for="mel-waste">Perdas (%)</label><input type="text" inputmode="decimal" id="mel-waste" class="form-input" value="${escapeHtml(String(e.waste_pct || 0).replace('.', ','))}"></div>
         <div><label class="field-label" for="mel-cat">Categoria do Revit</label><input type="text" id="mel-cat" class="form-input" value="${escapeHtml(e.revit_category || '')}" placeholder="Walls"></div></div>
         <label class="mqt-chk"><input type="checkbox" id="mel-split"${e.split_by_type ? ' checked' : ''}> Um artigo por tipo do Revit (janelas J1, J2…)</label>
