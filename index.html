@@ -2818,7 +2818,7 @@
   /* ---- páginas: entram a subir e a focar ---- */
   @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
   @keyframes kPage { from { opacity: 0; transform: translateY(16px) scale(.995); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
-  #home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #feas-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view, #help-view, #tickets-view, #absences-view {
+  #home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #feas-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view, #help-view, #tickets-view, #absences-view, #mqt-view {
     animation: kPage .5s var(--expo) both; }
   .anim-in :is(.gantt-wrap, .hero-card, .fg, .tax-card, .stat-tile, .hs-tile, .kpi, .project-row, .tx-row, .rec-row, .ata-entry, .client-card, .hrow) { animation-duration: .55s; animation-timing-function: var(--expo); }
   .anim-in :is(.gantt-wrap, .hero-card, .fg, .tax-card, .stat-tile, .hs-tile, .kpi, .project-row, .tx-row, .rec-row, .ata-entry, .hrow):nth-child(n+7) { animation-delay: 200ms; }
@@ -2949,8 +2949,8 @@
   @keyframes kGhostOut { to { opacity: 0; transform: scale(.975); filter: blur(6px); } }
   @keyframes kGhostLeft { to { opacity: 0; transform: translateX(-48px) scale(.98); filter: blur(5px); } }
   @keyframes kGhostRight { to { opacity: 0; transform: translateX(48px) scale(.98); filter: blur(5px); } }
-  .content-area[data-kdir="1"] > :is(#home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #feas-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view, #help-view, #tickets-view, #absences-view) { animation-name: kPageR; }
-  .content-area[data-kdir="-1"] > :is(#home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #feas-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view, #help-view, #tickets-view, #absences-view) { animation-name: kPageL; }
+  .content-area[data-kdir="1"] > :is(#home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #feas-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view, #help-view, #tickets-view, #absences-view, #mqt-view) { animation-name: kPageR; }
+  .content-area[data-kdir="-1"] > :is(#home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #feas-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view, #help-view, #tickets-view, #absences-view, #mqt-view) { animation-name: kPageL; }
   @keyframes kPageR { from { opacity: 0; transform: translateX(56px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
   @keyframes kPageL { from { opacity: 0; transform: translateX(-56px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
 
@@ -3568,6 +3568,91 @@
   .co-facts b { text-align: right; }
   .rv-co { background: var(--accent-soft); border-radius: var(--r-md); padding: var(--sp-2) var(--sp-3); margin-top: var(--sp-2); }
   @media (max-width: 760px) { .co-row { grid-template-columns: auto 1fr auto; } .co-st { grid-column: 2; justify-self: start; } .co-val { grid-row: 1; grid-column: 3; } }
+  /* MQT Studio */
+  .mqt-top { display: flex; gap: var(--sp-2-5); align-items: center; flex-wrap: wrap; margin: var(--sp-1) 0 var(--sp-2); }
+  .mqt-proj { flex: 1 1 260px; max-width: 460px; margin: 0; }
+  .mqt-actions, .mqt-tabacts { display: flex; gap: var(--sp-2); flex-wrap: wrap; align-items: center; }
+  .mqt-meta { font-size: var(--fs-sm); color: var(--text-2); margin-bottom: var(--sp-1); }
+  .mqt-meta b { color: var(--warning); font-weight: var(--fw-semibold); }
+  .mqt-meta b.ok { color: var(--success); }
+  #mqt-drop.drag { outline: 2px dashed var(--accent); outline-offset: 4px; border-radius: var(--r-lg); }
+  .mqt-empty h2 { font-size: var(--fs-lg); margin-bottom: var(--sp-2); }
+  .mqt-empty ol, .mqt-how { padding-left: 20px; display: grid; gap: var(--sp-1-5); font-size: var(--fs-md); color: var(--text-2); line-height: 1.5; }
+  .mqt-empty-acts, .mqt-modal-acts { display: flex; gap: var(--sp-2); flex-wrap: wrap; margin-top: var(--sp-4); }
+  .mqt-modal-acts > button { flex: 1 1 140px; margin: 0; }
+  .mqt-sum { display: flex; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; align-items: center; font-size: var(--fs-md); color: var(--text-2); }
+  .mqt-sum b { color: var(--text); }
+  .mqt-sum small { display: block; font-size: var(--fs-xs); color: var(--text-3); text-align: right; }
+  .mqt-wrap { overflow-x: auto; }
+  .mqt-table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+  .mqt-table th { text-align: left; font-weight: var(--fw-semibold); color: var(--text-2); font-size: var(--fs-xs); padding: var(--sp-1-5) var(--sp-2); border-bottom: 1px solid var(--border-strong); white-space: nowrap; position: sticky; top: 0; background: var(--surface); }
+  .mqt-table td { padding: var(--sp-2) var(--sp-2); border-bottom: 1px solid var(--border); vertical-align: top; }
+  .mqt-table .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .mqt-table .art { white-space: nowrap; color: var(--text-2); font-variant-numeric: tabular-nums; width: 1%; }
+  .mqt-table .un { white-space: nowrap; color: var(--text-2); }
+  .mqt-table .ds { min-width: 280px; line-height: 1.45; }
+  .mqt-table .kn { display: block; font-size: var(--fs-xs); color: var(--accent); font-weight: var(--fw-semibold); margin-bottom: 2px; }
+  .mqt-table .bl { color: var(--text-2); }
+  .mqt-table .qt { font-weight: var(--fw-semibold); }
+  .mqt-table mark { background: var(--warning-soft); color: var(--warning); border-radius: 3px; padding: 0 2px; }
+  .mqt-ch td { background: var(--surface-2); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: .02em; font-size: var(--fs-xs); color: var(--text); }
+  .mqt-it { cursor: pointer; }
+  .mqt-it:hover td { background: var(--accent-soft); }
+  .mqt-it.miss .ds { box-shadow: inset 3px 0 0 var(--warning); padding-left: var(--sp-2-5); }
+  .mqt-table tfoot td { font-weight: var(--fw-bold); border-bottom: none; padding-top: var(--sp-3); }
+  .mqt-ptable td:nth-child(2) { min-width: 220px; }
+  .mqt-howt td { font-size: var(--fs-sm); }
+  .mqt-howt td:first-child { white-space: nowrap; width: 1%; }
+  .mqt-prog { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-md); color: var(--text-2); }
+  .mqt-prog b { color: var(--text); }
+  .mqt-bar { flex: 1; height: 8px; border-radius: var(--r-full); background: var(--track); overflow: hidden; }
+  .mqt-bar i { display: block; height: 100%; border-radius: inherit; background: var(--success); transition: width .4s; }
+  .mqt-ck { display: grid; grid-template-columns: 22px 1fr auto; gap: var(--sp-2-5); align-items: center; padding: var(--sp-2) 0; border-top: 1px solid var(--border); }
+  .mqt-ck:first-of-type { border-top: none; }
+  .mqt-ico { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: var(--fw-bold); }
+  .mqt-ck.s-ok .mqt-ico { background: var(--success-soft); color: var(--success); }
+  .mqt-ck.s-warn .mqt-ico { background: var(--warning-soft); color: var(--warning); }
+  .mqt-ck.s-na .mqt-ico { background: var(--surface-3); color: var(--text-3); }
+  .mqt-ck.s-ok b, .mqt-ck.s-na b { font-weight: var(--fw-medium); color: var(--text-2); }
+  .mqt-ckm { min-width: 0; }
+  .mqt-ckm b { display: block; font-size: var(--fs-md); }
+  .mqt-ckm small { display: block; font-size: var(--fs-xs); color: var(--text-3); margin-top: 1px; }
+  .mqt-ckacts { display: inline-flex; gap: var(--sp-3); flex-wrap: wrap; justify-content: flex-end; }
+  .mqt-ok { color: var(--success); }
+  .mqt-runacts { display: inline-flex; gap: var(--sp-3); }
+  .danger-text { color: var(--danger) !important; }
+  .mqt-files { display: grid; gap: var(--sp-2); }
+  .mqt-file { border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--sp-2) var(--sp-3); }
+  .mqt-file b { display: block; font-size: var(--fs-md); }
+  .mqt-file small { display: block; font-size: var(--fs-xs); color: var(--text-2); }
+  .mqt-file small.warn { color: var(--warning); }
+  .mqt-imp-sum { display: flex; gap: var(--sp-4); flex-wrap: wrap; margin-top: var(--sp-3); font-size: var(--fs-sm); color: var(--text-2); }
+  .mqt-imp-sum b { color: var(--text); font-size: var(--fs-lg); }
+  .mqt-diff { display: grid; }
+  .mqt-dr { display: grid; grid-template-columns: auto 1fr auto; gap: var(--sp-2-5); padding: var(--sp-2) 0; border-bottom: 1px solid var(--border); font-size: var(--fs-sm); align-items: baseline; }
+  .mqt-dr .kn { font-weight: var(--fw-semibold); color: var(--accent); white-space: nowrap; }
+  .mqt-dr .nm { color: var(--text-2); min-width: 0; }
+  .mqt-dr .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: var(--fw-semibold); }
+  .mqt-dr .num small { color: var(--text-3); font-weight: var(--fw-regular); }
+  .mqt-dr.add .num, .mqt-dr.up .num { color: var(--success); }
+  .mqt-dr.del .num, .mqt-dr.down .num { color: var(--danger); }
+  .mqt-desc { font-size: var(--fs-md); line-height: 1.5; background: var(--surface-2); border-radius: var(--r-md); padding: var(--sp-2-5) var(--sp-3); }
+  .mqt-qrow { display: grid; grid-template-columns: minmax(80px, 1fr) 2fr; gap: var(--sp-2-5); align-items: center; margin-bottom: var(--sp-1-5); font-size: var(--fs-sm); color: var(--text-2); }
+  .mqt-qrow .form-input { margin: 0; }
+  .mqt-chk { display: flex; gap: var(--sp-2); align-items: center; margin-top: var(--sp-3); font-size: var(--fs-md); cursor: pointer; }
+  .mqt-g2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+  .mqt-g3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: var(--sp-3); }
+  .mqt-el { grid-template-columns: auto 1fr; display: grid; gap: var(--sp-3); align-items: start; }
+  .mqt-el .mqt-code, .mqt-code { font-weight: var(--fw-semibold); color: var(--accent); min-width: 58px; font-variant-numeric: tabular-nums; }
+  .mqt-el[hidden], .mqt-libch[hidden] { display: none !important; }
+  .invoice-row.off { opacity: .5; }
+  @media (max-width: 760px) {
+    .mqt-g2, .mqt-g3 { grid-template-columns: 1fr; }
+    .mqt-tabacts { width: 100%; }
+    .mqt-ck { grid-template-columns: 22px 1fr; }
+    .mqt-ckacts { grid-column: 2; justify-content: flex-start; }
+    .mqt-table .ds { min-width: 220px; }
+  }
   /* PM do cliente */
   .pm-pick { display: flex; flex-direction: column; gap: var(--sp-1-5); }
   .pm-opt { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; border: 1px solid var(--border); background: var(--surface); border-radius: var(--r-lg); padding: var(--sp-2-5) var(--sp-3); font: inherit; font-weight: var(--fw-semibold); color: var(--text); cursor: pointer; transition: border-color var(--t), background var(--t); }
@@ -3728,6 +3813,7 @@
         <button type="button" class="nav-item" data-nav="agenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Agenda</span></button>
         <button type="button" class="nav-item" data-nav="absences"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16"/><path d="M7 18a5 5 0 0110 0"/><path d="M12 6v2M5.6 9.6l1.4 1.4M18.4 9.6L17 11M3 14h2M19 14h2"/></svg><span>Ausências</span></button>
         <button type="button" class="nav-item" data-nav="atas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h7l4 4v12a1 1 0 01-1 1H7a1 1 0 01-1-1v-15a1 1 0 011-1z"/><path d="M9 11h6M9 14.5h6M9 18h3.5"/></svg><span>Atas</span></button>
+        <button type="button" class="nav-item" data-nav="mqt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9l8-5 8 5v11"/><path d="M4 20h16"/><path d="M9 20v-6h6v6"/><path d="M8 11h.01M16 11h.01"/></svg><span>MQT Studio</span></button>
         <button type="button" class="nav-item" data-nav="despesas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12v17l-3-2-3 2-3-2-3 2z"/><path d="M9 8.5h6M9 12h6M9 15.5h3"/></svg><span>Despesas</span></button>
       </nav>
       <div class="side-foot">
@@ -3758,6 +3844,7 @@
       <button type="button" class="nav-item" data-nav="billing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 6.5A7 7 0 1 0 17.5 17.5"/><path d="M4.5 10.5h9M4.5 13.5h9"/></svg><span>Faturação</span></button>
         <button type="button" class="nav-item" data-nav="finance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5h16"/><path d="M6.5 16v-4M11 16V8M15.5 16v-6M20 16V5"/></svg><span>Mission Control</span></button>
       <button type="button" class="nav-item" data-nav="atas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h7l4 4v12a1 1 0 01-1 1H7a1 1 0 01-1-1v-15a1 1 0 011-1z"/><path d="M9 11h6M9 14.5h6M9 18h3.5"/></svg><span>Atas</span></button>
+      <button type="button" class="nav-item" data-nav="mqt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9l8-5 8 5v11"/><path d="M4 20h16"/><path d="M9 20v-6h6v6"/><path d="M8 11h.01M16 11h.01"/></svg><span>MQT Studio</span></button>
       <button type="button" class="nav-item" data-nav="despesas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12v17l-3-2-3 2-3-2-3 2z"/><path d="M9 8.5h6M9 12h6M9 15.5h3"/></svg><span>Despesas</span></button>
       <button type="button" class="nav-item" data-nav="tickets"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 00-3.6 10.8c.6.5 1 1.2 1 2V16h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0012 3z"/></svg><span>Melhorias</span></button>
       <button type="button" class="nav-item" data-open-pres><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8.5 20h7"/><path d="M10 8.2v3.6l3.2-1.8z" fill="currentColor"/></svg><span>Modo apresentação</span></button>
@@ -3829,6 +3916,7 @@
       <div id="help-view" style="display:none;"></div>
       <div id="tickets-view" style="display:none;"></div>
       <div id="absences-view" style="display:none;"></div>
+      <div id="mqt-view" style="display:none;"></div>
       <div id="billing-view" style="display:none;"><div id="billing-container"></div></div>
       <div id="finance-view" style="display:none;">
         <div class="mc-head">
@@ -4563,7 +4651,7 @@
       const navKey = newState.name === 'detail' ? 'projects' : newState.name === 'client' ? 'clients' : ['plot', 'proposal', 'feas'].includes(newState.name) ? 'opps' : newState.name;
       document.querySelectorAll('[data-nav]').forEach(el => el.classList.toggle('active', el.dataset.nav === navKey));
       document.getElementById('more-sheet').classList.remove('open');
-      document.getElementById('tab-more').classList.toggle('active', ['clients', 'opps', 'billing', 'finance', 'atas', 'despesas', 'settings', 'help', 'tickets', 'absences'].includes(navKey));
+      document.getElementById('tab-more').classList.toggle('active', ['clients', 'opps', 'billing', 'finance', 'atas', 'despesas', 'settings', 'help', 'tickets', 'absences', 'mqt'].includes(navKey));
       requestAnimationFrame(() => syncNavInd());
       syncLargeTitle(newState.name);
       if (!sameView) window.scrollTo(0, 0);   // voltar a carregar a mesma página não salta para o topo
@@ -4590,6 +4678,7 @@
       else if (prev.name === 'feas') openFeasView(prev.plotId);
       else if (prev.name === 'proposal') prev.proposalId ? openProposalView(prev.proposalId) : openOppsModule();
       else if (prev.name === 'agenda') openAgendaModule(prev.mode);
+      else if (prev.name === 'mqt') openMqtModule();
       else if (prev.name === 'detail') openDetail(prev.projectId);
       else showHome();
     }
@@ -4701,7 +4790,7 @@
 
     function hideAllViews() {
       kGhostOut();
-      ['home-view', 'projects-view', 'clients-view', 'client-view', 'opps-view', 'plot-view', 'feas-view', 'proposal-view', 'billing-view', 'finance-view', 'agenda-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view', 'despesas-view', 'help-view', 'tickets-view', 'absences-view'].forEach(id => {
+      ['home-view', 'projects-view', 'clients-view', 'client-view', 'opps-view', 'plot-view', 'feas-view', 'proposal-view', 'billing-view', 'finance-view', 'agenda-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view', 'despesas-view', 'help-view', 'tickets-view', 'absences-view', 'mqt-view'].forEach(id => {
         document.getElementById(id).style.display = 'none';
       });
     }
@@ -5859,7 +5948,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       agenda: () => openAgendaModule(),
       opps: () => openOppsModule(),
       tickets: () => openTicketsModule(),
-      absences: () => openAbsencesModule()
+      absences: () => openAbsencesModule(),
+      mqt: () => openMqtModule()
     };
     document.querySelectorAll('[data-nav]').forEach(el => el.addEventListener('click', () => {
       navStack = [];
@@ -15240,6 +15330,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         steps: ['Carrega em **Ctrl+K** (⌘K no Mac) e escreve **modo leve**.', 'Escolhe **Modo leve: ligar / desligar**. Fica guardado nesse computador.', 'No modo leve saem as luzes de fundo, os brilhos e o vidro desfocado; tudo o resto fica igual.', 'Em qualquer computador, enquanto escreves num campo, as animações param para a escrita ser imediata.'],
         kw: 'lento lenta rapido rapida modo leve computador antigo velho performance desempenho animacoes travar escrever',
         tour: [{ go: 'nav:home', sel: '.side-search, [data-open-cmdk]', text: 'Ctrl+K → «modo leve».' }] },
+      { id: 'mqt-studio', cat: 'proj', ctx: ['mqt'],
+        q: 'faço o MQT a partir do Revit',
+        a: 'MQT Studio: no Revit, cada tipo tem um keynote da biblioteca (ex.: PRD01.A). Exportas as tabelas (.txt), carregas na app e o MQT sai montado por capítulos, com os textos. O separador «Não te esqueças» mostra o que falta.',
+        steps: ['Em **MQT Studio → Biblioteca** descarrega o **Ficheiro de keynotes (Revit)** e liga-o no Revit (Anotar → Definições de notas-chave).', 'Em cada tipo do Revit preenche o **Keynote** (ex.: PRD01.A = bloco térmico 25 cm).', 'Faz uma tabela por categoria com Keynote e a medição (toca em **Como preparar o Revit** para ver os campos) e exporta: Ficheiro → Exportar → Relatórios → Tabela.', 'Escolhe o projeto, toca em **Carregar tabelas** e arrasta os .txt: fica uma versão nova.', 'Vê **Não te esqueças** (elementos sem keynote, regras, típicos) e completa os textos (marca, cor…).', 'Exporta o **Excel para concurso**; quando os empreiteiros o devolverem preenchido, carrega-o em **Preços**: a app guarda os preços com data e faz a **estimativa** dos próximos projetos.'],
+        kw: 'mqt mapa quantidades trabalhos medicoes medição revit lt keynote notas chave tabelas schedules exportar orcamento estimativa empreiteiro proposta concurso precos caderno encargos bloco',
+        tour: [{ go: 'nav:mqt', sel: '#mqt-tabs', text: 'MQT, o que falta verificar, versões, preços dos empreiteiros e a biblioteca de keynotes.' }, { go: 'nav:mqt', sel: '#mqt-how', text: 'As tabelas certas para criar no Revit LT.' }] },
       { id: 'trabalhos-a-mais', cat: 'money', ctx: ['detail', 'home'],
         q: 'cobro um trabalho a mais pedido pelo cliente',
         a: 'No projeto → Fases → «+ Trabalho a mais»: o que é, horas × taxa ou valor fixo, prazo adicional. Envia o link: o cliente aprova e a fase TA aparece no projeto, pronta a faturar.',
@@ -20065,6 +20161,1038 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       openDetail(c.project_id);
     }
 
+    // ================= MQT STUDIO (mapa de quantidades e trabalhos a partir das tabelas do Revit) =================
+    // Biblioteca fixa: capítulo → elemento com keynote fixo (PRD01) → variantes (PRD01.A, .B…).
+    // No Revit (LT): uma tabela por categoria com a coluna Keynote; Exportar → Relatórios → Tabela (.txt).
+    // A app soma por keynote (e por bloco, se houver a coluna Bloco) e monta o MQT por capítulos.
+    // Cada carregamento é uma versão; "Não te esqueças" cruza o que veio do modelo com elementos típicos e regras.
+    // Preços: as propostas dos empreiteiros preenchidas no nosso Excel voltam a entrar e fazem um registo datado.
+    const MQT_LIB_URL = 'mqt_biblioteca.json';
+    const EXCELJS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';
+    const MQT_UNITS = ['m²', 'm³', 'm', 'un', 'vg', 'kg'];
+    const MQT_SOURCES = [['area', 'Área'], ['volume', 'Volume'], ['length', 'Comprimento'], ['count', 'Contagem'], ['perimeter', 'Perímetro'], ['opening', 'Largura × altura (vãos)'], ['manual', 'À mão (não se modela)'], ['derived', 'Calculado a partir de outros']];
+    const MQT_FIELD_LABEL = { a: 'Área', v: 'Volume', len: 'Comprimento', n: 'Contagem', p: 'Perímetro', w: 'Largura', h: 'Altura' };
+    const MQT_SRC_FIELD = { area: 'a', volume: 'v', length: 'len', count: 'n', perimeter: 'p' };
+    const MQT_UNIT_FIELD = { 'm²': 'a', 'm³': 'v', 'm': 'len', 'un': 'n' };
+    let mqtProjectId = (() => { try { return localStorage.getItem('mqt.project') || ''; } catch (e) { return ''; } })();
+    let mqtTab = 'mqt';
+    let mqtLibCache = null;
+    const MOCK_MQT = { chapters: [], elements: [], variants: [], checks: [], runs: [], project: [], quotes: [], prices: [], settings: { rate: 3, months: 60 } };
+
+    // ---------- Biblioteca ----------
+    async function mqtFetchSeed() {
+      const r = await fetch(MQT_LIB_URL, { cache: 'no-cache' });
+      if (!r.ok) throw new Error('Não foi possível ler a biblioteca de referência.');
+      return r.json();
+    }
+    // Carrega a biblioteca de referência: só acrescenta o que falta (não mexe no que já foi editado)
+    async function mqtSeedLibrary({ checks = true } = {}) {
+      const d = await mqtFetchSeed();
+      if (devMode) {
+        const has = (arr, f) => x => arr.some(y => f(y) === f(x));
+        d.chapters.filter(x => !has(MOCK_MQT.chapters, c => c.code)(x)).forEach(c => MOCK_MQT.chapters.push({ id: 'mch-' + c.code, ...c }));
+        d.elements.filter(x => !has(MOCK_MQT.elements, e => e.code)(x)).forEach(e => MOCK_MQT.elements.push({ id: 'mel-' + e.code, ...e }));
+        d.variants.filter(x => !has(MOCK_MQT.variants, v => v.element_code + v.letter)(x)).forEach(v => MOCK_MQT.variants.push({ id: 'mv-' + v.element_code + v.letter, ...v }));
+        if (checks && !MOCK_MQT.checks.length) d.checks.forEach((c, i) => MOCK_MQT.checks.push({ id: 'mck-' + i, ...c }));
+        return;
+      }
+      const up = async (t, rows, onConflict) => { const r = await supabase.from(t).upsert(rows, { onConflict, ignoreDuplicates: true }); if (r.error) throw r.error; };
+      await up('mqt_chapters', d.chapters, 'code');
+      await up('mqt_elements', d.elements, 'code');
+      await up('mqt_variants', d.variants, 'element_code,letter');
+      if (checks) {
+        const c = await supabase.from('mqt_checks').select('id', { count: 'exact', head: true });
+        if (!c.error && !c.count) { const r = await supabase.from('mqt_checks').insert(d.checks); if (r.error) throw r.error; }
+      }
+    }
+    async function mqtLoadLib(force = false) {
+      if (mqtLibCache && !force) return mqtLibCache;
+      let lib;
+      if (devMode) {
+        if (!MOCK_MQT.chapters.length) await mqtSeedLibrary();
+        lib = { chapters: MOCK_MQT.chapters.slice(), elements: MOCK_MQT.elements.slice(), variants: MOCK_MQT.variants.slice(), checks: MOCK_MQT.checks.slice() };
+      } else {
+        const get = t => supabase.from(t).select('*').order('sort_order').then(r => { if (r.error) throw r.error; return r.data || []; });
+        let [chapters, elements, variants, checks] = await Promise.all(['mqt_chapters', 'mqt_elements', 'mqt_variants', 'mqt_checks'].map(get));
+        if (!chapters.length) { await mqtSeedLibrary(); [chapters, elements, variants, checks] = await Promise.all(['mqt_chapters', 'mqt_elements', 'mqt_variants', 'mqt_checks'].map(get)); }
+        lib = { chapters, elements, variants, checks };
+      }
+      lib.chapters.sort((a, b) => a.code.localeCompare(b.code));
+      lib.elByCode = {}; lib.elements.forEach(e => { lib.elByCode[e.code.toUpperCase()] = e; });
+      lib.varsOf = {}; lib.variants.slice().sort((a, b) => (a.sort_order - b.sort_order) || a.letter.localeCompare(b.letter)).forEach(v => { (lib.varsOf[v.element_code.toUpperCase()] ||= []).push(v); });
+      lib.chByCode = {}; lib.chapters.forEach(c => { lib.chByCode[c.code] = c; });
+      mqtLibCache = lib;
+      return lib;
+    }
+
+    // ---------- Keynotes ----------
+    // Aceita PRD01.A, PRD01A, PRD01-A, prd 01 a, PAVi01.B… → { code: 'PRD01', letter: 'A' } (comparação sem maiúsculas)
+    function mqtParseKey(raw) {
+      const s = String(raw || '').trim().replace(/\s+/g, '');
+      const m = s.match(/^([A-Za-z]{2,6})-?(\d{1,3})(?:[.\-_]?([A-Za-z]))?$/);
+      if (!m) return s ? { code: s.toUpperCase(), letter: '', bad: true } : null;
+      return { code: (m[1] + m[2].padStart(2, '0')).toUpperCase(), letter: (m[3] || '').toUpperCase() };
+    }
+    const mqtFull = (code, letter) => letter ? `${code}.${letter}` : code;
+    // padrão das verificações: igual ou prefixo (PAVi → PAVi01.A; BET06.A só essa variante)
+    const mqtMatch = (pattern, key) => { const p = String(pattern).toUpperCase(), k = String(key).toUpperCase(); return p.includes('.') ? k === p : k.startsWith(p); };
+
+    // ---------- Ler as tabelas exportadas do Revit ----------
+    function mqtDecode(buf) {
+      const b = new Uint8Array(buf);
+      if (b[0] === 0xFF && b[1] === 0xFE) return new TextDecoder('utf-16le').decode(b.subarray(2));
+      if (b[0] === 0xFE && b[1] === 0xFF) return new TextDecoder('utf-16be').decode(b.subarray(2));
+      // UTF-16 sem BOM: muitos zeros nas posições ímpares
+      let z = 0; for (let i = 1; i < Math.min(b.length, 400); i += 2) if (b[i] === 0) z++;
+      if (b.length > 4 && z > Math.min(b.length, 400) / 4) return new TextDecoder('utf-16le').decode(b);
+      try { return new TextDecoder('utf-8', { fatal: true }).decode(b[0] === 0xEF && b[1] === 0xBB ? b.subarray(3) : b); }
+      catch (e) { return new TextDecoder('windows-1252').decode(b); }
+    }
+    function mqtSplitLine(line, sep) {
+      const out = []; let cur = '', q = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (q) { if (ch === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+        else if (ch === '"') q = true;
+        else if (ch === sep) { out.push(cur); cur = ''; }
+        else cur += ch;
+      }
+      out.push(cur);
+      return out.map(c => c.trim());
+    }
+    const mqtNormHead = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\(.*?\)/g, '').replace(/[^a-z0-9]/g, '');
+    const MQT_HEADS = {
+      k: ['keynote', 'notachave', 'notadechave', 'chavedenota', 'keynotes', 'codigomqt', 'mqt'],
+      tm: ['typemark', 'marcadetipo', 'marcatipo', 'marcadotipo'],
+      t: ['type', 'tipo', 'familyandtype', 'familiaetipo', 'familiaytipo', 'family', 'familia'],
+      c: ['category', 'categoria'],
+      l: ['level', 'nivel', 'baselevel', 'nivelbase', 'baseconstraint', 'restricaodebase', 'restricaobase', 'referencelevel', 'niveldereferencia'],
+      b: ['bloco', 'block', 'edificio', 'building'],
+      a: ['area'],
+      v: ['volume'],
+      len: ['length', 'comprimento'],
+      n: ['count', 'contagem', 'quantidade', 'qty', 'quantity'],
+      p: ['perimeter', 'perimetro'],
+      w: ['width', 'largura', 'roughwidth', 'larguraembruto'],
+      h: ['height', 'altura', 'roughheight', 'alturaembruto']
+    };
+    function mqtHeadKey(h) {
+      const n = mqtNormHead(h);
+      if (!n) return null;
+      for (const [k, list] of Object.entries(MQT_HEADS)) if (list.includes(n)) return k;
+      if (n.includes('keynote') || n.includes('notachave')) return 'k';
+      return null;
+    }
+    // "12,35 m²" / "1 234.5" / "12500 mm" → número na unidade base (m, m², m³)
+    function mqtNum(raw, field, headUnit) {
+      let s = String(raw ?? '').trim();
+      if (!s) return null;
+      const unit = (s.match(/(mm|cm|m)\s*[²³23]?\s*$/i) || [])[0] || headUnit || '';
+      s = s.replace(/[^\d.,\-]/g, '');
+      if (!s || !/\d/.test(s)) return null;
+      const lc = s.lastIndexOf(','), ld = s.lastIndexOf('.');
+      if (lc > -1 && ld > -1) s = lc > ld ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+      else if (lc > -1) s = (s.match(/,/g).length > 1 ? s.replace(/,/g, '') : s.replace(',', '.'));
+      else if ((s.match(/\./g) || []).length > 1) s = s.replace(/\./g, '');
+      let v = Number(s);
+      if (!isFinite(v)) return null;
+      const u = unit.toLowerCase().replace(/\s/g, '');
+      if (field === 'len' || field === 'p' || field === 'w' || field === 'h') { if (u.startsWith('mm')) v /= 1000; else if (u.startsWith('cm')) v /= 100; }
+      if (field === 'a') { if (u.startsWith('mm')) v /= 1e6; else if (u.startsWith('cm')) v /= 1e4; }
+      if (field === 'v') { if (u.startsWith('mm')) v /= 1e9; else if (u.startsWith('cm')) v /= 1e6; }
+      return v;
+    }
+    // Lê uma tabela (.txt do Revit, .csv) → { rows, cols, warnings, title }
+    function mqtParseSchedule(text, fileName = '') {
+      const lines = String(text).replace(/\r\n?/g, '\n').split('\n');
+      const sample = lines.slice(0, 6).join('\n');
+      const sep = (sample.match(/\t/g) || []).length ? '\t' : (sample.match(/;/g) || []).length >= (sample.match(/,/g) || []).length ? ';' : ',';
+      const cells = lines.map(l => mqtSplitLine(l, sep));
+      let hi = cells.findIndex(r => r.some(c => mqtHeadKey(c) === 'k'));
+      const warnings = [];
+      if (hi < 0) return { rows: [], cols: {}, warnings: ['Não encontrei a coluna Keynote. Acrescenta o campo "Keynote" à tabela no Revit.'], title: fileName };
+      const head = cells[hi], cols = {}, headUnit = {};
+      head.forEach((h, i) => { const k = mqtHeadKey(h); if (k && cols[k] == null) { cols[k] = i; const mu = String(h).match(/\((mm|cm|m)[²³23]?\)/i); if (mu) headUnit[k] = mu[1]; } });
+      const title = cells.slice(0, hi).map(r => r.filter(Boolean).join(' ')).filter(Boolean)[0] || fileName.replace(/\.[^.]+$/, '');
+      const rows = [];
+      for (let i = hi + 1; i < cells.length; i++) {
+        const r = cells[i];
+        if (!r.some(c => c)) continue;
+        if (r.every((c, j) => !c || j === cols.k) && !r[cols.k]) continue;
+        // linhas de totais / cabeçalhos de grupo do Revit
+        const first = r.find(c => c) || '';
+        if (/^(grand total|total geral|total|totais)\b/i.test(first) && (!r[cols.k] || r[cols.k] === first)) continue;
+        if (r.filter(c => c).length === 1 && !r[cols.k] && cols.a == null) continue;
+        const g = k => cols[k] == null ? '' : (r[cols[k]] || '');
+        const o = { k: g('k'), t: g('t'), tm: g('tm'), c: g('c') || title, l: g('l'), b: g('b') };
+        ['a', 'v', 'len', 'n', 'p', 'w', 'h'].forEach(f => { if (cols[f] != null) { const v = mqtNum(r[cols[f]], f, headUnit[f]); if (v != null) o[f] = Math.round(v * 10000) / 10000; } });
+        if (cols.n == null) o.n = 1;
+        if (!o.k && !o.t && ['a', 'v', 'len', 'p'].every(f => o[f] == null)) continue;
+        rows.push(o);
+      }
+      if (cols.b == null) warnings.push('Sem coluna Bloco (tudo conta como um só bloco).');
+      const lenVals = rows.map(r => r.len).filter(v => v != null).sort((a, b) => a - b);
+      if (lenVals.length && lenVals[Math.floor(lenVals.length / 2)] > 200) warnings.push('Os comprimentos parecem estar em mm sem unidade: ativa "Mostrar símbolo de unidade" no Revit.');
+      return { rows, cols, warnings, title };
+    }
+
+    // ---------- Montar o MQT ----------
+    function mqtElementField(el, rowsOfKey) {
+      if (MQT_SRC_FIELD[el.qty_source]) return MQT_SRC_FIELD[el.qty_source];
+      if (el.qty_source === 'opening') return 'opening';
+      // elemento "à mão" que aparece no modelo: usa o campo da unidade
+      const f = MQT_UNIT_FIELD[el.unit];
+      return f && rowsOfKey.some(r => r[f] != null) ? f : null;
+    }
+    function mqtRowQty(r, field) {
+      if (field === 'opening') return r.w != null && r.h != null ? r.w * r.h * (r.n || 1) : (r.a ?? null);
+      if (field === 'n') return r.n ?? 1;
+      return r[field] ?? null;
+    }
+    function mqtDescribe(lib, el, letter, specs, extra = '') {
+      const vars = lib.varsOf[el.code.toUpperCase()] || [];
+      const v = letter ? vars.find(x => x.letter.toUpperCase() === letter) : null;
+      let t = (v && v.text) || el.text || el.name;
+      t = t.replace(/\{var\}/gi, v ? v.label : vars.length ? '[variante]' : '').replace(/ (de|em|com) ,/g, ',').replace(/\s+,/g, ',').replace(/\s{2,}/g, ' ').trim();
+      const sp = { ...(specs?.[el.code.toUpperCase()] || {}), ...(specs?.[mqtFull(el.code.toUpperCase(), letter)] || {}) };
+      const missing = [];
+      t = t.replace(/\{([^}]+)\}/g, (all, f) => { const val = sp[f.trim()]; if (val) return val; missing.push(f.trim()); return `[${f.trim()}]`; });
+      return { text: t + extra, missing, variant: v };
+    }
+    // rows: linhas das tabelas; cfg: { manual, specs, na } do projeto → MQT completo + problemas
+    function mqtCompute(lib, rows, cfg = {}) {
+      const manual = cfg.manual || {}, specs = cfg.specs || {}, derivedCfg = specs.__derived || {};
+      const issues = { noKey: {}, unknown: {}, noVariant: {}, badVariant: {}, noField: {}, missing: [] };
+      const items = {};        // chave → item
+      const blocksSet = new Set();
+      const byKey = {};        // keynote completo → linhas
+      rows.forEach(r => {
+        const pk = mqtParseKey(r.k);
+        if (!pk) { const g = `${r.c || ''}|${r.t || '(sem tipo)'}`; (issues.noKey[g] ||= { c: r.c, t: r.t, n: 0 }).n++; return; }
+        const el = lib.elByCode[pk.code];
+        if (!el || pk.bad) { (issues.unknown[r.k] ||= { k: r.k, t: r.t, n: 0 }).n++; return; }
+        const vars = lib.varsOf[pk.code] || [];
+        if (vars.length && !pk.letter) { (issues.noVariant[pk.code] ||= { k: el.code, t: r.t, n: 0, vars }).n++; }
+        if (pk.letter && !vars.some(v => v.letter.toUpperCase() === pk.letter)) { (issues.badVariant[r.k] ||= { k: r.k, t: r.t, n: 0 }).n++; }
+        const full = mqtFull(pk.code, pk.letter);
+        (byKey[full] ||= []).push(r);
+        if (r.b) blocksSet.add(r.b);
+      });
+      const add = (el, letter, typeKey, block, qty, source, extra) => {
+        const full = mqtFull(el.code, letter);
+        const key = full.toUpperCase() + (typeKey ? '|' + typeKey : '');
+        const it = items[key] ||= { key, full, code: el.code, letter, el, typeKey, source, qb: {}, qty: 0, extra };
+        it.qb[block] = (it.qb[block] || 0) + qty;
+      };
+      Object.entries(byKey).forEach(([full, rs]) => {
+        const [code, letter = ''] = full.split('.');
+        const el = lib.elByCode[code];
+        const field = mqtElementField(el, rs);
+        if (!field) { issues.noField[full] = { k: full, need: MQT_SOURCES.find(s => s[0] === el.qty_source)?.[1] || el.unit }; return; }
+        rs.forEach(r => {
+          let q = mqtRowQty(r, field);
+          if (q == null) { issues.noField[full] = { k: full, need: MQT_FIELD_LABEL[field] || 'Largura e altura' }; return; }
+          let typeKey = '', extra = '';
+          if (el.split_by_type) {
+            typeKey = r.tm || r.t || '';
+            if (typeKey) extra = ` — tipo ${typeKey}${r.w != null && r.h != null ? ` (${fmtNum(r.w)} × ${fmtNum(r.h)} m)` : ''}`;
+          }
+          add(el, letter, typeKey, r.b || '', q, 'model', extra);
+        });
+      });
+      // calculados a partir de outros (pintura = área dos rebocos/estuques…)
+      lib.elements.filter(e => e.active !== false && e.qty_source === 'derived' && (e.derive_from || []).length).forEach(el => {
+        const opt = derivedCfg[el.code.toUpperCase()];
+        if (opt === 'off') return;
+        const vars = lib.varsOf[el.code.toUpperCase()] || [];
+        const letter = (opt && opt !== 'off') ? opt : (vars[0]?.letter || '').toUpperCase();
+        const fld = { area: 'a', length: 'len', perimeter: 'p', count: 'n', volume: 'v' }[el.derive_field] || 'a';
+        Object.entries(byKey).forEach(([full, rs]) => {
+          if (!(el.derive_from || []).some(p => mqtMatch(p, full))) return;
+          rs.forEach(r => { const q = mqtRowQty(r, fld); if (q) add(el, letter, '', r.b || '', q * Number(el.derive_factor || 1), 'derived', ''); });
+        });
+      });
+      // à mão
+      Object.entries(manual).forEach(([full, qb]) => {
+        const pk = mqtParseKey(full); const el = pk && lib.elByCode[pk.code];
+        if (!el || !qb) return;
+        Object.entries(qb).forEach(([b, q]) => { if (Number(q) > 0) { add(el, pk.letter, '', b, Number(q), 'manual', ''); if (b) blocksSet.add(b); } });
+      });
+      const blocks = [...blocksSet].sort((a, b) => a.localeCompare(b, 'pt', { numeric: true }));
+      const hasCommon = Object.values(items).some(it => it.qb[''] > 0);
+      const cols = blocks.length ? (hasCommon ? ['', ...blocks] : blocks) : [''];
+      // perdas, arredondamento, texto
+      Object.values(items).forEach(it => {
+        const w = 1 + Number(it.el.waste_pct || 0) / 100;
+        Object.keys(it.qb).forEach(b => { it.qb[b] = Math.round(it.qb[b] * w * 100) / 100; });
+        it.qty = Math.round(Object.values(it.qb).reduce((t, q) => t + q, 0) * 100) / 100;
+        const d = mqtDescribe(lib, it.el, it.letter, specs, it.extra);
+        it.desc = d.text; it.missing = d.missing; it.variant = d.variant;
+        if (d.missing.length) issues.missing.push({ key: it.full, fields: d.missing });
+      });
+      // por capítulo, pela ordem da biblioteca
+      const chapters = [];
+      lib.chapters.forEach(ch => {
+        const list = Object.values(items).filter(it => it.el.chapter_code === ch.code && it.qty > 0)
+          .sort((a, b) => (a.el.sort_order - b.el.sort_order) || a.code.localeCompare(b.code) || a.letter.localeCompare(b.letter) || String(a.typeKey).localeCompare(String(b.typeKey), 'pt', { numeric: true }));
+        if (list.length) chapters.push({ ch, items: list });
+      });
+      chapters.forEach((c, i) => { c.num = i + 1; c.items.forEach((it, j) => { it.art = `${i + 1}.${j + 1}`; }); });
+      const present = new Set(Object.values(items).filter(it => it.qty > 0).map(it => it.full.toUpperCase()));
+      return { chapters, cols, blocks, items, issues, present, rowsCount: rows.length, keyed: Object.values(byKey).reduce((t, r) => t + r.length, 0) };
+    }
+    // "Não te esqueças": elementos típicos e regras
+    function mqtChecks(lib, mq, na = {}) {
+      const has = codes => (codes || []).some(p => [...mq.present].some(k => mqtMatch(p, k)));
+      const typical = lib.checks.filter(c => c.active !== false && c.kind === 'typical').map(c => ({ c, ok: has(c.codes), na: na[c.id] }));
+      const rules = lib.checks.filter(c => c.active !== false && c.kind === 'rule' && has(c.if_codes)).map(c => ({ c, ok: has(c.codes), na: na[c.id] }));
+      const all = [...typical, ...rules];
+      const done = all.filter(x => x.ok || x.na != null).length;
+      return { typical, rules, pct: all.length ? Math.round(done / all.length * 100) : 100, open: all.filter(x => !x.ok && x.na == null).length };
+    }
+
+    // ---------- Preços (propostas de empreiteiros) ----------
+    async function mqtLoadPrices() {
+      if (devMode) return { quotes: MOCK_MQT.quotes.slice(), prices: MOCK_MQT.prices.slice(), settings: MOCK_MQT.settings };
+      const [q, p, s] = await Promise.all([
+        supabase.from('mqt_quotes').select('*').order('quote_date', { ascending: false }),
+        selectAll(() => supabase.from('mqt_prices').select('id, quote_id, keynote, unit, unit_price, qty').order('id')),
+        supabase.from('app_settings').select('value').eq('key', 'mqt').maybeSingle()
+      ]);
+      if (q.error) throw q.error;
+      return { quotes: q.data || [], prices: p.data || [], settings: { rate: 3, months: 60, ...(s.data?.value || {}) } };
+    }
+    // preço de referência por keynote: mediana dos preços atualizados à data de hoje (taxa anual)
+    function mqtPriceStats(pr, today = dateKey(new Date())) {
+      const qById = {}; pr.quotes.forEach(q => { qById[q.id] = q; });
+      const rate = Number(pr.settings.rate || 0) / 100, months = Number(pr.settings.months || 60);
+      const minDate = addDaysKey(today, -Math.round(months * 30.44));
+      const by = {};
+      pr.prices.forEach(p => {
+        const q = qById[p.quote_id];
+        if (!q || q.excluded || q.quote_date < minDate || !(Number(p.unit_price) > 0)) return;
+        const years = Math.max(0, diffDays(q.quote_date, today) / 365.25);
+        const adj = Number(p.unit_price) * Math.pow(1 + rate, years);
+        const k = String(p.keynote).toUpperCase();
+        (by[k] ||= []).push({ v: adj, raw: Number(p.unit_price), date: q.quote_date, who: q.contractor });
+      });
+      const stats = {};
+      Object.entries(by).forEach(([k, arr]) => {
+        const s = arr.map(x => x.v).sort((a, b) => a - b);
+        const med = s.length % 2 ? s[(s.length - 1) / 2] : (s[s.length / 2 - 1] + s[s.length / 2]) / 2;
+        stats[k] = { n: s.length, med: Math.round(med * 100) / 100, min: s[0], max: s[s.length - 1], last: arr.map(x => x.date).sort().pop(), list: arr };
+      });
+      return stats;
+    }
+
+    // ---------- Dados do projeto ----------
+    async function mqtLoadProject(pid) {
+      if (!pid) return { runs: [], cfg: { manual: {}, na: {}, specs: {} } };
+      if (devMode) {
+        const runs = MOCK_MQT.runs.filter(r => r.project_id === pid).sort((a, b) => b.version - a.version);
+        const cfg = MOCK_MQT.project.find(p => p.project_id === pid) || { project_id: pid, manual: {}, na: {}, specs: {} };
+        return { runs, cfg };
+      }
+      const [r, c] = await Promise.all([
+        supabase.from('mqt_runs').select('id, project_id, version, label, files, created_by, created_at').eq('project_id', pid).order('version', { ascending: false }),
+        supabase.from('mqt_project').select('*').eq('project_id', pid).maybeSingle()
+      ]);
+      if (r.error) throw r.error;
+      return { runs: r.data || [], cfg: c.data || { project_id: pid, manual: {}, na: {}, specs: {} } };
+    }
+    const mqtRunRowsCache = {};
+    async function mqtRunRows(run) {
+      if (!run) return [];
+      if (devMode) return run.rows || [];
+      if (mqtRunRowsCache[run.id]) return mqtRunRowsCache[run.id];
+      const r = await supabase.from('mqt_runs').select('rows').eq('id', run.id).single();
+      if (r.error) throw r.error;
+      return (mqtRunRowsCache[run.id] = r.data.rows || []);
+    }
+    async function mqtSaveCfg(pid, patch) {
+      if (devMode) {
+        let o = MOCK_MQT.project.find(p => p.project_id === pid);
+        if (!o) MOCK_MQT.project.push(o = { project_id: pid, manual: {}, na: {}, specs: {} });
+        Object.assign(o, patch); return;
+      }
+      const cur = await supabase.from('mqt_project').select('*').eq('project_id', pid).maybeSingle();
+      const row = { project_id: pid, manual: {}, na: {}, specs: {}, ...(cur.data || {}), ...patch, updated_at: new Date().toISOString() };
+      const r = await supabase.from('mqt_project').upsert(row, { onConflict: 'project_id' });
+      if (r.error) throw r.error;
+    }
+    async function mqtProjectsList() {
+      if (devMode) return MOCK_PROJECTS.map(p => ({ id: p.id, name: p.name, code: p.code, archived_at: null }));
+      const r = await supabase.from('projects').select('id, name, code, archived_at').order('name');
+      if (r.error) throw r.error;
+      return r.data || [];
+    }
+
+    // ---------- Página ----------
+    function openMqtModule(tab) {
+      if (tab) mqtTab = tab;
+      pushCurrentView({ name: 'mqt' });
+      document.getElementById('nav-title').textContent = 'MQT Studio';
+      hideAllViews();
+      document.getElementById('mqt-view').style.display = 'block';
+      renderMqt();
+    }
+    async function renderMqt() {
+      const box = document.getElementById('mqt-view');
+      beginLoad(box, 'mqt', '<div class="gantt-wrap">' + SKELETON(3) + '</div><div class="gantt-wrap">' + SKELETON(6) + '</div>');
+      try {
+        const [lib, projects] = await Promise.all([mqtLoadLib(), mqtProjectsList()]);
+        const live = projects.filter(p => !p.archived_at);
+        if (mqtProjectId && !projects.some(p => p.id === mqtProjectId)) mqtProjectId = '';
+        const { runs, cfg } = await mqtLoadProject(mqtProjectId);
+        const latest = runs[0] || null;
+        const rows = await mqtRunRows(latest);
+        const mq = mqtCompute(lib, rows, cfg);
+        const ck = mqtChecks(lib, mq, cfg.na || {});
+        const needPrices = mqtTab === 'prices' || mqtTab === 'mqt';
+        const pr = needPrices ? await mqtLoadPrices().catch(() => ({ quotes: [], prices: [], settings: { rate: 3, months: 60 } })) : null;
+        const stats = pr ? mqtPriceStats(pr) : {};
+        const nIssues = Object.keys(mq.issues.noKey).length + Object.keys(mq.issues.unknown).length + Object.keys(mq.issues.noVariant).length + Object.keys(mq.issues.badVariant).length + Object.keys(mq.issues.noField).length + mq.issues.missing.length;
+        const projOpts = `<option value="">Escolher projeto…</option>${live.map(p => `<option value="${escapeHtml(p.id)}"${p.id === mqtProjectId ? ' selected' : ''}>${escapeHtml([p.code, p.name].filter(Boolean).join(' · '))}</option>`).join('')}`;
+        const tabs = [['mqt', 'MQT', 0], ['check', 'Não te esqueças', mqtProjectId && latest ? ck.open + nIssues : 0], ['versions', 'Versões', 0], ['prices', 'Preços', 0], ['lib', 'Biblioteca', 0]];
+        let body = '';
+        const needProject = ['mqt', 'check', 'versions'].includes(mqtTab);
+        if (needProject && !mqtProjectId) body = `<div class="gantt-wrap"><div class="gantt-empty">Escolhe o projeto em cima. Depois carrega as tabelas exportadas do Revit (.txt).</div></div>`;
+        else if (needProject && !latest && mqtTab !== 'versions') body = mqtEmptyHtml();
+        else if (mqtTab === 'mqt') body = mqtTableHtml(mq, stats, latest);
+        else if (mqtTab === 'check') body = mqtCheckHtml(lib, mq, ck, cfg);
+        else if (mqtTab === 'versions') body = mqtVersionsHtml(runs);
+        else if (mqtTab === 'prices') body = mqtPricesHtml(lib, pr, stats, projects);
+        else body = mqtLibHtml(lib);
+        box.innerHTML = `
+          <div class="mqt-top">
+            <select id="mqt-project" class="form-input mqt-proj" aria-label="Projeto">${projOpts}</select>
+            <div class="mqt-actions">
+              <button type="button" class="secondary-btn toolbar-btn" id="mqt-how">Como preparar o Revit</button>
+              <button type="button" class="primary-btn toolbar-btn" id="mqt-upload"${mqtProjectId ? '' : ' disabled'}>Carregar tabelas</button>
+              <input type="file" id="mqt-file" accept=".txt,.csv,.tsv" multiple hidden>
+            </div>
+          </div>
+          ${latest && needProject ? `<div class="mqt-meta">Versão ${latest.version}${latest.label ? ' · ' + escapeHtml(latest.label) : ''} · ${escapeHtml(fmtDayMonth(String(latest.created_at).slice(0, 10)))} · ${mq.keyed} de ${mq.rowsCount} elementos com keynote${mqtProjectId ? ` · <b class="${ck.pct === 100 ? 'ok' : ''}">${ck.pct}% verificado</b>` : ''}</div>` : ''}
+          <div class="billing-bar"><div class="segmented" id="mqt-tabs">${tabs.map(([k, l, n]) => `<button type="button" data-mtab="${k}" class="${k === mqtTab ? 'active' : ''}">${l}${n ? `<em class="alert">${n}</em>` : ''}</button>`).join('')}</div>
+            <span class="mqt-tabacts">${mqtTab === 'mqt' && latest ? `<button type="button" class="secondary-btn toolbar-btn" id="mqt-xls">Excel para concurso</button><button type="button" class="secondary-btn toolbar-btn" id="mqt-xls-est">Excel com estimativa</button><button type="button" class="text-btn" id="mqt-add-manual">+ Artigo à mão</button>` : ''}${mqtTab === 'prices' ? `<button type="button" class="secondary-btn toolbar-btn" id="mqt-quote-import">Carregar proposta</button><button type="button" class="text-btn" id="mqt-price-manual">+ Preço à mão</button>` : ''}${mqtTab === 'lib' ? `<button type="button" class="secondary-btn toolbar-btn" id="mqt-kn-export">Ficheiro de keynotes (Revit)</button><button type="button" class="text-btn" id="mqt-el-new">+ Elemento</button>` : ''}</span>
+          </div>
+          <div id="mqt-drop">${body}</div>`;
+        // eventos
+        document.getElementById('mqt-project').addEventListener('change', e => { mqtProjectId = e.target.value; try { localStorage.setItem('mqt.project', mqtProjectId); } catch (er) {} renderMqt(); });
+        box.querySelectorAll('[data-mtab]').forEach(b => b.addEventListener('click', () => { mqtTab = b.dataset.mtab; renderMqt(); }));
+        document.getElementById('mqt-how').addEventListener('click', openMqtHowTo);
+        const fileIn = document.getElementById('mqt-file');
+        document.getElementById('mqt-upload').addEventListener('click', () => fileIn.click());
+        fileIn.addEventListener('change', () => { if (fileIn.files.length) mqtImportFiles([...fileIn.files], lib, runs); });
+        const drop = document.getElementById('mqt-drop');
+        if (mqtProjectId) {
+          drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag'); });
+          drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
+          drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('drag'); const f = [...(e.dataTransfer?.files || [])].filter(f => /\.(txt|csv|tsv)$/i.test(f.name)); if (f.length) mqtImportFiles(f, lib, runs); });
+        }
+        document.getElementById('mqt-empty-upload')?.addEventListener('click', () => fileIn.click());
+        document.getElementById('mqt-empty-how')?.addEventListener('click', openMqtHowTo);
+        const pname = projects.find(p => p.id === mqtProjectId);
+        document.getElementById('mqt-xls')?.addEventListener('click', () => mqtExportExcel(mq, pname, latest, null));
+        document.getElementById('mqt-xls-est')?.addEventListener('click', () => mqtExportExcel(mq, pname, latest, stats));
+        document.getElementById('mqt-add-manual')?.addEventListener('click', () => openMqtManualModal(lib, cfg, mq, null));
+        box.querySelectorAll('[data-mqt-item]').forEach(r => r.addEventListener('click', () => { const it = mq.items[r.dataset.mqtItem]; if (it) openMqtItemModal(lib, cfg, mq, it, stats); }));
+        box.querySelectorAll('[data-mqt-na]').forEach(b => b.addEventListener('click', () => mqtToggleNa(cfg, b.dataset.mqtNa, b.dataset.on === '1')));
+        box.querySelectorAll('[data-mqt-addcode]').forEach(b => b.addEventListener('click', () => openMqtManualModal(lib, cfg, mq, b.dataset.mqtAddcode)));
+        box.querySelectorAll('[data-mqt-spec]').forEach(b => b.addEventListener('click', () => { const it = Object.values(mq.items).find(i => i.full === b.dataset.mqtSpec); if (it) openMqtItemModal(lib, cfg, mq, it, stats); }));
+        box.querySelectorAll('[data-mqt-run-del]').forEach(b => b.addEventListener('click', () => mqtDeleteRun(runs.find(r => r.id === b.dataset.mqtRunDel))));
+        box.querySelectorAll('[data-mqt-run-cmp]').forEach(b => b.addEventListener('click', () => openMqtCompare(lib, cfg, runs, b.dataset.mqtRunCmp)));
+        box.querySelectorAll('[data-mqt-el]').forEach(r => r.addEventListener('click', () => openMqtElementModal(lib, lib.elements.find(e => e.id === r.dataset.mqtEl))));
+        box.querySelectorAll('[data-mqt-ck]').forEach(r => r.addEventListener('click', () => openMqtCheckModal(lib, lib.checks.find(c => c.id === r.dataset.mqtCk))));
+        document.getElementById('mqt-ck-new')?.addEventListener('click', () => openMqtCheckModal(lib, null));
+        document.getElementById('mqt-el-new')?.addEventListener('click', () => openMqtElementModal(lib, null));
+        document.getElementById('mqt-kn-export')?.addEventListener('click', () => mqtExportKeynotes(lib));
+        document.getElementById('mqt-lib-reseed')?.addEventListener('click', async () => { try { await mqtSeedLibrary({ checks: true }); mqtLibCache = null; showToast('Biblioteca de referência reposta (só o que faltava)'); renderMqt(); } catch (e) { showError('repor a biblioteca', e); } });
+        document.getElementById('mqt-quote-import')?.addEventListener('click', () => openMqtQuoteImport(projects));
+        document.getElementById('mqt-price-manual')?.addEventListener('click', () => openMqtPriceManual(lib, projects));
+        box.querySelectorAll('[data-mqt-quote]').forEach(r => r.addEventListener('click', () => openMqtQuoteActions(pr.quotes.find(q => q.id === r.dataset.mqtQuote), projects)));
+        box.querySelectorAll('[data-mqt-pricek]').forEach(r => r.addEventListener('click', () => openMqtPriceDetail(lib, pr, stats, r.dataset.mqtPricek)));
+        document.getElementById('mqt-price-cfg')?.addEventListener('click', () => openMqtPriceCfg(pr.settings));
+        const ls = document.getElementById('mqt-lib-search');
+        if (ls) ls.addEventListener('input', () => { const q = normTxt(ls.value); box.querySelectorAll('[data-mqt-el]').forEach(r => { r.hidden = q && !normTxt(r.dataset.s).includes(q); }); box.querySelectorAll('.mqt-libch').forEach(c => { c.hidden = q && !c.querySelector('[data-mqt-el]:not([hidden])'); }); });
+      } catch (err) {
+        console.error(err);
+        box.innerHTML = `<div class="gantt-wrap"><div class="gantt-empty">Não foi possível abrir o MQT Studio: ${escapeHtml(plainError(err.message || String(err)))}</div></div>`;
+      }
+    }
+    function mqtEmptyHtml() {
+      return `<div class="gantt-wrap mqt-empty">
+        <h2>Ainda não há tabelas carregadas neste projeto</h2>
+        <ol>
+          <li>No Revit, cria uma tabela por categoria (Paredes, Pavimentos, Tetos, Coberturas, Janelas, Portas, Guardas, Equipamento sanitário…) com a coluna <b>Keynote</b> e a medição.</li>
+          <li><b>Ficheiro → Exportar → Relatórios → Tabela</b> (um .txt por tabela).</li>
+          <li>Arrasta os ficheiros para aqui, ou toca em <b>Carregar tabelas</b>.</li>
+        </ol>
+        <div class="mqt-empty-acts"><button type="button" class="primary-btn toolbar-btn" id="mqt-empty-upload">Carregar tabelas</button><button type="button" class="secondary-btn toolbar-btn" id="mqt-empty-how">Ver as tabelas certas</button></div>
+      </div>`;
+    }
+    const mqtQ = n => n == null || n === '' ? '' : Number(n).toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const mqtBlockLabel = b => b || (b === '' ? 'Comum' : b);
+    function mqtTableHtml(mq, stats, run) {
+      if (!mq.chapters.length) return `<div class="gantt-wrap"><div class="gantt-empty">Nenhum elemento com keynote reconhecido nesta versão. Vê <b>Não te esqueças</b> para perceber porquê.</div></div>`;
+      const multi = mq.cols.length > 1 || mq.cols[0] !== '';
+      let grand = 0, covered = 0, total = 0;
+      const chHtml = mq.chapters.map(c => {
+        let sub = 0;
+        const rows = c.items.map(it => {
+          total++;
+          const st = stats[it.full.toUpperCase()];
+          const val = st ? st.med * it.qty : null;
+          if (val != null) { sub += val; covered++; }
+          return `<tr class="mqt-it${it.missing.length ? ' miss' : ''}" data-mqt-item="${escapeHtml(it.key)}" tabindex="0">
+            <td class="art">${escapeHtml(it.art)}</td>
+            <td class="ds"><span class="kn">${escapeHtml(it.full)}${it.source === 'manual' ? ' · à mão' : it.source === 'derived' ? ' · calculado' : ''}</span>${escapeHtml(it.desc).replace(/\[([^\]]+)\]/g, '<mark>[$1]</mark>')}</td>
+            <td class="un">${escapeHtml(it.el.unit)}</td>
+            ${multi ? mq.cols.map(b => `<td class="num bl">${mqtQ(it.qb[b] || null)}</td>`).join('') : ''}
+            <td class="num qt">${mqtQ(it.qty)}</td>
+            <td class="num pu">${st ? escapeHtml(fmtEUR(st.med)) : '<span class="muted">—</span>'}</td>
+            <td class="num tt">${val != null ? escapeHtml(fmtEUR(val)) : ''}</td>
+          </tr>`;
+        }).join('');
+        grand += sub;
+        return `<tbody><tr class="mqt-ch"><td class="art">${c.num}</td><td colspan="${2 + (multi ? mq.cols.length : 0) + 2}">${escapeHtml(c.ch.name)}</td><td class="num tt">${sub ? escapeHtml(fmtEUR(sub)) : ''}</td></tr>${rows}</tbody>`;
+      }).join('');
+      return `<div class="gantt-wrap mqt-sum"><span><b>${total}</b> artigos em <b>${mq.chapters.length}</b> capítulos${multi ? ` · ${mq.blocks.length} blocos` : ''}</span><span>Estimativa <b>${grand ? escapeHtml(fmtEUR(grand)) : '—'}</b><small>${covered} de ${total} artigos com preço de referência</small></span></div>
+        <div class="gantt-wrap mqt-wrap"><table class="mqt-table">
+          <thead><tr><th>Art.</th><th>Designação</th><th>Un.</th>${multi ? mq.cols.map(b => `<th class="num">${escapeHtml(mqtBlockLabel(b))}</th>`).join('') : ''}<th class="num">Quant.</th><th class="num">P. ref.</th><th class="num">Estimativa</th></tr></thead>
+          ${chHtml}
+          <tfoot><tr><td></td><td colspan="${2 + (multi ? mq.cols.length : 0) + 2}">Total (sem IVA)</td><td class="num tt">${grand ? escapeHtml(fmtEUR(grand)) : '—'}</td></tr></tfoot>
+        </table></div>
+        <div class="field-hint">Toca num artigo para completar o texto (marca, cor…), mudar a quantidade à mão ou ver os preços. P. ref. = mediana das propostas dos empreiteiros, atualizada para hoje.</div>`;
+    }
+    function mqtCheckHtml(lib, mq, ck, cfg) {
+      const I = mq.issues;
+      const sec = (title, list, empty) => `<div class="gantt-wrap"><div class="card-head"><h2>${title}</h2></div>${list.length ? list.join('') : `<div class="gantt-empty mqt-ok">✓ ${empty}</div>`}</div>`;
+      const row = (st, main, sub, act = '') => `<div class="mqt-ck s-${st}"><span class="mqt-ico">${st === 'ok' ? '✓' : st === 'na' ? '⊘' : '!'}</span><span class="mqt-ckm"><b>${main}</b>${sub ? `<small>${sub}</small>` : ''}</span>${act}</div>`;
+      const model = [
+        ...Object.values(I.noKey).sort((a, b) => b.n - a.n).map(x => row('warn', `Sem keynote: ${escapeHtml(x.t || '(sem tipo)')}`, `${escapeHtml(x.c || '')} · ${x.n} elemento${x.n > 1 ? 's' : ''} — não entra no MQT`)),
+        ...Object.values(I.unknown).map(x => row('warn', `Keynote desconhecido: ${escapeHtml(x.k)}`, `${escapeHtml(x.t || '')} · ${x.n} elemento${x.n > 1 ? 's' : ''} — acrescenta-o na Biblioteca ou corrige no Revit`)),
+        ...Object.values(I.noVariant).map(x => row('warn', `Falta a variante: ${escapeHtml(x.k)}`, `${escapeHtml(x.t || '')} · usa ${x.vars.map(v => escapeHtml(`${x.k}.${v.letter} (${v.label})`)).join(', ')}`)),
+        ...Object.values(I.badVariant).map(x => row('warn', `Variante que não existe: ${escapeHtml(x.k)}`, `${escapeHtml(x.t || '')} · ${x.n} elemento${x.n > 1 ? 's' : ''}`)),
+        ...Object.values(I.noField).map(x => row('warn', `Falta a medição: ${escapeHtml(x.k)}`, `A tabela não tem a coluna ${escapeHtml(x.need)}`))
+      ];
+      const spec = I.missing.map(m => row('warn', `Por definir: ${escapeHtml(m.key)}`, escapeHtml(m.fields.join(', ')), `<button type="button" class="text-btn" data-mqt-spec="${escapeHtml(m.key)}">Definir</button>`));
+      const ckRow = x => {
+        const st = x.ok ? 'ok' : x.na != null ? 'na' : 'warn';
+        const sub = x.ok ? '' : x.na != null ? `Não se aplica${x.na ? ': ' + escapeHtml(x.na) : ''}` : [x.c.hint ? escapeHtml(x.c.hint) : '', `procura ${x.c.codes.map(escapeHtml).join(' / ')}`].filter(Boolean).join(' · ');
+        const act = x.ok ? '' : x.na != null ? `<button type="button" class="text-btn" data-mqt-na="${escapeHtml(x.c.id)}" data-on="0">Repor</button>`
+          : `<span class="mqt-ckacts">${(() => { const c0 = x.c.codes[0]; const el = c0 && lib.elByCode[String(c0).split('.')[0].toUpperCase()]; return el && el.qty_source === 'manual' ? `<button type="button" class="text-btn" data-mqt-addcode="${escapeHtml(c0)}">Pôr à mão</button>` : ''; })()}<button type="button" class="text-btn" data-mqt-na="${escapeHtml(x.c.id)}" data-on="1">Não se aplica</button></span>`;
+        return row(st, escapeHtml(x.c.name), sub, act);
+      };
+      const ordered = arr => arr.slice().sort((a, b) => (a.ok || a.na != null ? 1 : 0) - (b.ok || b.na != null ? 1 : 0));
+      return `<div class="gantt-wrap mqt-prog"><div class="mqt-bar"><i style="width:${ck.pct}%"></i></div><span><b>${ck.pct}%</b> verificado · ${ck.open ? `${ck.open} por ver` : 'nada em falta'}</span></div>
+        ${sec('Modelo', model, 'Todos os elementos têm keynote válido e medição.')}
+        ${sec('Textos por completar', spec, 'Todos os textos estão completos.')}
+        ${sec('Regras: se há isto, falta aquilo?', ordered(ck.rules).map(ckRow), 'Nenhuma regra em falta.')}
+        ${sec('Elementos típicos de um edifício', ordered(ck.typical).map(ckRow), 'Tudo presente.')}`;
+    }
+    function mqtVersionsHtml(runs) {
+      if (!runs.length) return `<div class="gantt-wrap"><div class="gantt-empty">Ainda não há versões. Cada vez que carregas as tabelas fica uma versão nova.</div></div>`;
+      return `<div class="gantt-wrap">${runs.map((r, i) => `
+        <div class="invoice-row mqt-run">
+          <span><b>Versão ${r.version}</b>${r.label ? ' · ' + escapeHtml(r.label) : ''}<br><small>${escapeHtml(new Date(r.created_at).toLocaleString('pt-PT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))} · ${(r.files || []).map(f => escapeHtml(f.name)).join(', ')}</small></span>
+          <span class="mqt-runacts">${i < runs.length - 1 ? `<button type="button" class="text-btn" data-mqt-run-cmp="${escapeHtml(r.id)}">O que mudou</button>` : ''}<button type="button" class="text-btn danger-text" data-mqt-run-del="${escapeHtml(r.id)}">Apagar</button></span>
+        </div>`).join('')}</div>`;
+    }
+    function mqtPricesHtml(lib, pr, stats, projects) {
+      const pName = id => projects.find(p => p.id === id)?.name || '';
+      const cnt = {}; pr.prices.forEach(p => { cnt[p.quote_id] = (cnt[p.quote_id] || 0) + 1; });
+      const quotes = pr.quotes.length ? pr.quotes.map(q => `
+        <div class="invoice-row click-row" data-mqt-quote="${escapeHtml(q.id)}">
+          <span><b class="bl-title">${escapeHtml(q.contractor)}</b>${q.excluded ? ' <span class="invoice-status neutral">fora das médias</span>' : ''}<br><small>${escapeHtml([fmtDayMonth(q.quote_date) + ' ' + q.quote_date.slice(0, 4), pName(q.project_id), `${cnt[q.id] || 0} preço${cnt[q.id] === 1 ? '' : 's'}`].filter(Boolean).join(' · '))}</small></span>
+          <span class="amount">${q.total ? escapeHtml(fmtEURShort(q.total)) : ''}</span>
+        </div>`).join('') : '<div class="gantt-empty">Ainda não há propostas. Exporta o <b>Excel para concurso</b>, envia aos empreiteiros e, quando voltar preenchido, toca em <b>Carregar proposta</b>.</div>';
+      const keys = Object.keys(stats).sort();
+      const nameOf = k => { const pk = mqtParseKey(k); const el = pk && lib.elByCode[pk.code]; if (!el) return k; const v = pk.letter ? (lib.varsOf[pk.code] || []).find(x => x.letter.toUpperCase() === pk.letter) : null; return el.name + (v ? ' — ' + v.label : ''); };
+      const unitOf = k => { const pk = mqtParseKey(k); return (pk && lib.elByCode[pk.code]?.unit) || ''; };
+      const dk = k => { const pk = mqtParseKey(k); const el = pk && lib.elByCode[pk.code]; return el ? mqtFull(el.code, pk.letter) : k; };
+      const table = keys.length ? `<table class="mqt-table mqt-ptable"><thead><tr><th>Keynote</th><th>Elemento</th><th class="num">Ref. (hoje)</th><th class="num">Mín.</th><th class="num">Máx.</th><th class="num">N.º</th><th>Último</th></tr></thead><tbody>${keys.map(k => { const s = stats[k]; return `<tr class="mqt-it" data-mqt-pricek="${escapeHtml(k)}" tabindex="0"><td class="art">${escapeHtml(dk(k))}</td><td>${escapeHtml(nameOf(k))}</td><td class="num"><b>${escapeHtml(fmtEUR(s.med))}</b>/${escapeHtml(unitOf(k))}</td><td class="num">${escapeHtml(fmtEUR(s.min))}</td><td class="num">${escapeHtml(fmtEUR(s.max))}</td><td class="num">${s.n}</td><td>${escapeHtml(s.last)}</td></tr>`; }).join('')}</tbody></table>` : '<div class="gantt-empty">Os preços de referência aparecem aqui quando houver propostas.</div>';
+      return `<div class="gantt-wrap"><div class="card-head"><h2>Propostas dos empreiteiros</h2><span>${pr.quotes.length}</span></div>${quotes}</div>
+        <div class="gantt-wrap mqt-wrap"><div class="card-head"><h2>Preços de referência</h2><button type="button" class="text-btn" id="mqt-price-cfg">Atualização ${escapeHtml(String(pr.settings.rate))}%/ano · últimos ${escapeHtml(String(pr.settings.months))} meses</button></div>${table}</div>`;
+    }
+    function mqtLibHtml(lib) {
+      const src = s => MQT_SOURCES.find(x => x[0] === s)?.[1] || s;
+      return `<input type="text" id="mqt-lib-search" class="search-input op-search" placeholder="Procurar elemento ou keynote…" autocomplete="off">
+        ${lib.chapters.map(ch => { const els = lib.elements.filter(e => e.chapter_code === ch.code).sort((a, b) => a.sort_order - b.sort_order || a.code.localeCompare(b.code)); return `
+        <div class="gantt-wrap mqt-libch"><div class="card-head"><h2>${escapeHtml(ch.code)} · ${escapeHtml(ch.name)}</h2><span>${els.length}</span></div>
+          ${els.map(e => { const vs = lib.varsOf[e.code.toUpperCase()] || []; return `<div class="invoice-row click-row mqt-el${e.active === false ? ' off' : ''}" data-mqt-el="${escapeHtml(e.id)}" data-s="${escapeHtml([e.code, e.name, vs.map(v => v.label).join(' ')].join(' '))}">
+            <span class="mqt-code">${escapeHtml(e.code)}</span>
+            <span><b>${escapeHtml(e.name)}</b><br><small>${escapeHtml([e.unit, src(e.qty_source), e.revit_category, vs.length ? vs.map(v => `${v.letter}: ${v.label}`).join(' · ') : ''].filter(Boolean).join(' · '))}</small></span>
+          </div>`; }).join('') || '<div class="gantt-empty">Sem elementos.</div>'}
+        </div>`; }).join('')}
+        <div class="gantt-wrap"><div class="card-head"><h2>Não te esqueças: típicos e regras</h2><button type="button" class="text-btn" id="mqt-ck-new">+ Regra</button></div>
+          ${lib.checks.map(c => `<div class="invoice-row click-row${c.active === false ? ' off' : ''}" data-mqt-ck="${escapeHtml(c.id)}"><span><b>${escapeHtml(c.name)}</b><br><small>${c.kind === 'rule' ? `se há ${c.if_codes.map(escapeHtml).join(' / ')} → ${c.codes.map(escapeHtml).join(' / ')}` : `típico: ${c.codes.map(escapeHtml).join(' / ')}`}</small></span></div>`).join('')}
+        </div>
+        <div class="field-hint">Os códigos são fixos: muda-os só se ainda não estiverem em uso no Revit. <button type="button" class="text-btn" id="mqt-lib-reseed">Repor a biblioteca de referência</button> (só acrescenta o que faltar).</div>`;
+    }
+
+    // ---------- Carregar tabelas ----------
+    async function mqtImportFiles(files, lib, runs) {
+      const parsed = [];
+      for (const f of files) {
+        try { const text = mqtDecode(await f.arrayBuffer()); parsed.push({ name: f.name, ...mqtParseSchedule(text, f.name) }); }
+        catch (e) { parsed.push({ name: f.name, rows: [], cols: {}, warnings: ['Não consegui ler: ' + e.message] }); }
+      }
+      const rows = parsed.flatMap(p => p.rows);
+      const keyed = rows.filter(r => mqtParseKey(r.k)).length;
+      const mq = mqtCompute(lib, rows, {});
+      const next = (runs[0]?.version || 0) + 1;
+      openQuickModal(`Carregar tabelas · versão ${next}`, `
+        <div class="mqt-files">${parsed.map(p => `<div class="mqt-file"><b>${escapeHtml(p.title || p.name)}</b><small>${escapeHtml(p.name)} · ${p.rows.length} linhas · ${Object.keys(p.cols).map(k => k === 'k' ? 'Keynote' : k === 't' ? 'Tipo' : k === 'tm' ? 'Marca de tipo' : k === 'l' ? 'Nível' : k === 'b' ? 'Bloco' : k === 'c' ? 'Categoria' : MQT_FIELD_LABEL[k] || k).join(', ') || '—'}</small>${p.warnings.map(w => `<small class="warn">${escapeHtml(w)}</small>`).join('')}</div>`).join('')}</div>
+        <div class="mqt-imp-sum"><span><b>${rows.length}</b> elementos</span><span><b>${keyed}</b> com keynote</span><span><b>${Object.keys(mq.items).length}</b> artigos</span>${mq.blocks.length ? `<span><b>${mq.blocks.length}</b> blocos</span>` : ''}</div>
+        <label class="field-label" for="mqt-run-label">Nota desta versão <span class="muted">(opcional)</span></label>
+        <input type="text" id="mqt-run-label" class="form-input" maxlength="80" placeholder="ex.: depois da revisão da cozinha">
+        <div id="mqt-imp-msg" class="form-msg"></div>
+        <button type="button" class="primary-btn" id="mqt-imp-save"${rows.length ? '' : ' disabled'}>Guardar versão ${next}</button>`);
+      document.getElementById('mqt-imp-save').addEventListener('click', async () => {
+        const btn = document.getElementById('mqt-imp-save'); btn.disabled = true;
+        try {
+          const me = await getCurrentMember();
+          const row = { project_id: mqtProjectId, version: next, label: document.getElementById('mqt-run-label').value.trim() || null, files: parsed.map(p => ({ name: p.name, title: p.title, rows: p.rows.length })), rows, created_by: me?.id || null, created_at: new Date().toISOString() };
+          if (devMode) MOCK_MQT.runs.push({ id: 'mrun-' + Date.now(), ...row });
+          else { const r = await supabase.from('mqt_runs').insert(row); if (r.error) throw r.error; }
+          closeQuickModal(); haptic(); showToast(`Versão ${next} guardada`);
+          mqtTab = 'mqt'; renderMqt();
+        } catch (e) { btn.disabled = false; formError('mqt-imp-msg', 'Não foi possível guardar: ' + e.message); }
+      });
+    }
+    async function mqtDeleteRun(run) {
+      if (!run || !confirm(`Apagar a versão ${run.version}? As tabelas desta versão deixam de estar guardadas.`)) return;
+      try {
+        if (devMode) MOCK_MQT.runs.splice(MOCK_MQT.runs.indexOf(run), 1);
+        else await dbDelete('mqt_runs', run.id);
+        showToast(`Versão ${run.version} apagada`); renderMqt();
+      } catch (e) { showError('apagar a versão', e); }
+    }
+    async function openMqtCompare(lib, cfg, runs, runId) {
+      const i = runs.findIndex(r => r.id === runId);
+      const a = runs[i + 1], b = runs[i];
+      try {
+        const [ra, rb] = await Promise.all([mqtRunRows(a), mqtRunRows(b)]);
+        const A = mqtCompute(lib, ra, cfg), B = mqtCompute(lib, rb, cfg);
+        const keys = [...new Set([...Object.keys(A.items), ...Object.keys(B.items)])];
+        const ch = keys.map(k => { const x = A.items[k], y = B.items[k]; const qa = x?.qty || 0, qb = y?.qty || 0; return { k, it: y || x, qa, qb, d: qb - qa }; })
+          .filter(r => Math.abs(r.d) > 0.005 && Math.abs(r.d) / Math.max(r.qa, r.qb, 0.01) > 0.001)
+          .sort((p, q) => (p.qa === 0 ? 0 : p.qb === 0 ? 1 : 2) - (q.qa === 0 ? 0 : q.qb === 0 ? 1 : 2) || p.it.full.localeCompare(q.it.full));
+        openQuickModal(`Versão ${a.version} → ${b.version}`, ch.length ? `<div class="mqt-diff">${ch.map(r => `<div class="mqt-dr ${r.qa === 0 ? 'add' : r.qb === 0 ? 'del' : r.d > 0 ? 'up' : 'down'}"><span class="kn">${escapeHtml(r.it.full)}${r.it.typeKey ? ' · ' + escapeHtml(r.it.typeKey) : ''}</span><span class="nm">${escapeHtml(r.it.el.name)}</span><span class="num">${r.qa === 0 ? `novo · ${mqtQ(r.qb)} ${escapeHtml(r.it.el.unit)}` : r.qb === 0 ? 'saiu' : `${r.d > 0 ? '+' : ''}${mqtQ(r.d)} ${escapeHtml(r.it.el.unit)}`}</span></div>`).join('')}</div>` : '<div class="gantt-empty">Sem diferenças nas quantidades.</div>');
+      } catch (e) { showError('comparar versões', e); }
+    }
+
+    // ---------- Artigo: completar texto, quantidade à mão, variante dos calculados ----------
+    function openMqtItemModal(lib, cfg, mq, it, stats) {
+      const el = it.el, code = el.code.toUpperCase();
+      const fields = [...new Set([...(String((it.variant && it.variant.text) || el.text).matchAll(/\{([^}]+)\}/g))].map(m => m[1].trim()).filter(f => f.toLowerCase() !== 'var'))];
+      const sp = { ...(cfg.specs?.[code] || {}), ...(cfg.specs?.[it.full.toUpperCase()] || {}) };
+      const vars = lib.varsOf[code] || [];
+      const st = stats?.[it.full.toUpperCase()];
+      const man = it.source === 'manual' ? (cfg.manual?.[it.full] || cfg.manual?.[it.full.toUpperCase()] || {}) : null;
+      const derived = it.source === 'derived';
+      openQuickModal(`${it.art} · ${it.full}`, `
+        <div class="mqt-desc">${escapeHtml(it.desc)}</div>
+        <div class="field-hint">${escapeHtml(el.unit)} · ${mqtQ(it.qty)} ${it.source === 'model' ? '· vem do Revit' : it.source === 'derived' ? `· calculado a partir de ${escapeHtml((el.derive_from || []).join(', '))}` : '· à mão'}${st ? ` · referência ${escapeHtml(fmtEUR(st.med))} (${st.n} preço${st.n > 1 ? 's' : ''})` : ''}</div>
+        ${fields.length ? `<label class="field-label">Completar o texto neste projeto</label>${fields.map(f => `<input type="text" class="form-input mqt-spec-in" data-f="${escapeHtml(f)}" placeholder="${escapeHtml(f)}" value="${escapeHtml(sp[f] || '')}" style="margin-bottom:6px">`).join('')}` : ''}
+        ${derived && vars.length ? `<label class="field-label" for="mqt-dv">Variante</label><select id="mqt-dv" class="form-input">${vars.map(v => `<option value="${escapeHtml(v.letter.toUpperCase())}"${v.letter.toUpperCase() === it.letter ? ' selected' : ''}>${escapeHtml(v.letter + ' · ' + v.label)}</option>`).join('')}<option value="off">Não entra neste projeto</option></select>` : derived ? `<label class="mqt-chk"><input type="checkbox" id="mqt-doff"> Não entra neste projeto</label>` : ''}
+        ${man ? `<label class="field-label">Quantidade (${escapeHtml(el.unit)})</label>${mq.cols.map(b => `<div class="mqt-qrow"><span>${escapeHtml(mq.cols.length > 1 || b ? mqtBlockLabel(b) : 'Total')}</span><input type="text" inputmode="decimal" class="form-input mqt-man-in" data-b="${escapeHtml(b)}" value="${man[b] != null ? escapeHtml(String(man[b]).replace('.', ',')) : ''}"></div>`).join('')}` : ''}
+        <div id="mqt-it-msg" class="form-msg"></div>
+        <div class="mqt-modal-acts">${man ? '<button type="button" class="secondary-btn" id="mqt-it-del">Tirar do MQT</button>' : ''}<button type="button" class="primary-btn" id="mqt-it-save">Guardar</button></div>`);
+      document.getElementById('mqt-it-save').addEventListener('click', async () => {
+        try {
+          const specs = JSON.parse(JSON.stringify(cfg.specs || {}));
+          if (fields.length) {
+            const target = it.letter ? it.full.toUpperCase() : code;
+            const o = specs[target] ||= {};
+            document.querySelectorAll('.mqt-spec-in').forEach(i => { const v = i.value.trim(); if (v) o[i.dataset.f] = v; else delete o[i.dataset.f]; });
+          }
+          if (derived) { specs.__derived ||= {}; const dv = document.getElementById('mqt-dv'); specs.__derived[code] = dv ? dv.value : (document.getElementById('mqt-doff')?.checked ? 'off' : ''); if (!specs.__derived[code]) delete specs.__derived[code]; }
+          const patch = { specs };
+          if (man) {
+            const manual = JSON.parse(JSON.stringify(cfg.manual || {}));
+            const q = {}; document.querySelectorAll('.mqt-man-in').forEach(i => { const v = numOrNull(i.value.replace(/\s/g, '')); if (v) q[i.dataset.b] = v; });
+            delete manual[it.full.toUpperCase()]; delete manual[it.full];
+            if (Object.keys(q).length) manual[it.full] = q;
+            patch.manual = manual;
+          }
+          await mqtSaveCfg(mqtProjectId, patch);
+          closeQuickModal(); showToast('Guardado'); renderMqt();
+        } catch (e) { formError('mqt-it-msg', 'Não foi possível guardar: ' + e.message); }
+      });
+      document.getElementById('mqt-it-del')?.addEventListener('click', async () => {
+        try { const manual = JSON.parse(JSON.stringify(cfg.manual || {})); delete manual[it.full]; delete manual[it.full.toUpperCase()]; await mqtSaveCfg(mqtProjectId, { manual }); closeQuickModal(); showToast('Tirado do MQT'); renderMqt(); }
+        catch (e) { formError('mqt-it-msg', e.message); }
+      });
+    }
+    // Acrescentar artigo à mão (estaleiro, especialidades, peitoris…)
+    function mqtKeyOptions(lib, filter = () => true) {
+      return lib.chapters.map(ch => ({ ch, list: lib.elements.filter(e => e.chapter_code === ch.code && e.active !== false && filter(e)).sort((a, b) => a.sort_order - b.sort_order).flatMap(e => { const vs = lib.varsOf[e.code.toUpperCase()] || []; return vs.length ? vs.map(v => [mqtFull(e.code, v.letter), `${e.code}.${v.letter} · ${e.name} — ${v.label} (${e.unit})`]) : [[e.code, `${e.code} · ${e.name} (${e.unit})`]]; }) })).filter(g => g.list.length);
+    }
+    function mqtKeySelectHtml(groups, preset) {
+      const p = String(preset || '').toUpperCase();
+      const sel = p ? (groups.flatMap(g => g.list).find(([k]) => mqtMatch(p, k)) || [])[0] : null;
+      return groups.map(g => `<optgroup label="${escapeHtml(g.ch.code + ' · ' + g.ch.name)}">${g.list.map(([k, l]) => `<option value="${escapeHtml(k)}"${k === sel ? ' selected' : ''}>${escapeHtml(l)}</option>`).join('')}</optgroup>`).join('');
+    }
+    function openMqtManualModal(lib, cfg, mq, presetCode) {
+      const opts = mqtKeySelectHtml(mqtKeyOptions(lib), presetCode);
+      openQuickModal('Artigo à mão', `
+        <div class="field-hint" style="margin-top:0">Para o que não se modela: estaleiro, especialidades, peitoris, impermeabilizações…</div>
+        <label class="field-label" for="mqt-man-k">Elemento</label>
+        <select id="mqt-man-k" class="form-input">${opts}</select>
+        <label class="field-label">Quantidade</label>
+        ${mq.cols.map(b => `<div class="mqt-qrow"><span>${escapeHtml(mq.cols.length > 1 || b ? mqtBlockLabel(b) : 'Total')}</span><input type="text" inputmode="decimal" class="form-input mqt-man-in" data-b="${escapeHtml(b)}" placeholder="0"></div>`).join('')}
+        <div class="field-hint" id="mqt-man-unit"></div>
+        <div id="mqt-man-msg" class="form-msg"></div>
+        <button type="button" class="primary-btn" id="mqt-man-save">Acrescentar</button>`);
+      const sel = document.getElementById('mqt-man-k');
+      const showUnit = () => { const pk = mqtParseKey(sel.value); const el = pk && lib.elByCode[pk.code]; document.getElementById('mqt-man-unit').textContent = el ? `Unidade: ${el.unit}${el.unit === 'vg' ? ' (põe 1)' : ''}` : ''; };
+      sel.addEventListener('change', showUnit); showUnit();
+      document.getElementById('mqt-man-save').addEventListener('click', async () => {
+        const q = {}; document.querySelectorAll('.mqt-man-in').forEach(i => { const v = numOrNull(i.value.replace(/\s/g, '')); if (v) q[i.dataset.b] = v; });
+        if (!Object.keys(q).length) { formError('mqt-man-msg', 'Indica a quantidade.'); return; }
+        try { const manual = JSON.parse(JSON.stringify(cfg.manual || {})); manual[sel.value] = q; await mqtSaveCfg(mqtProjectId, { manual }); closeQuickModal(); showToast('Artigo acrescentado'); renderMqt(); }
+        catch (e) { formError('mqt-man-msg', 'Não foi possível guardar: ' + e.message); }
+      });
+    }
+    async function mqtToggleNa(cfg, id, on) {
+      let reason = '';
+      if (on) { reason = prompt('Porque não se aplica? (opcional)', ''); if (reason === null) return; }
+      try { const na = { ...(cfg.na || {}) }; if (on) na[id] = reason.trim(); else delete na[id]; await mqtSaveCfg(mqtProjectId, { na }); renderMqt(); }
+      catch (e) { showError('guardar', e); }
+    }
+
+    // ---------- Como preparar o Revit (LT) ----------
+    function openMqtHowTo() {
+      const T = [
+        ['Paredes', 'Keynote · Tipo · Bloco · Restrição de base · Área · Volume · Comprimento', 'Cada camada é uma parede própria (bloco térmico, placa colada, capote) com o seu keynote.'],
+        ['Pavimentos', 'Keynote · Tipo · Bloco · Nível · Área · Perímetro · Volume', 'O perímetro serve para o rodapé.'],
+        ['Tetos', 'Keynote · Tipo · Bloco · Nível · Área · Perímetro', ''],
+        ['Coberturas', 'Keynote · Tipo · Bloco · Área · Volume', ''],
+        ['Janelas e Portas', 'Keynote · Marca de tipo · Tipo · Bloco · Nível · Largura · Altura · Contagem', 'Um artigo por tipo (J1, J2, P1…).'],
+        ['Guardas', 'Keynote · Tipo · Bloco · Comprimento', ''],
+        ['Equipamento sanitário', 'Keynote · Marca de tipo · Tipo · Bloco · Contagem', ''],
+        ['Estrutura / Modelos genéricos', 'Keynote · Tipo · Bloco · Volume · Área · Comprimento · Contagem', 'Use os campos que fizerem sentido.']
+      ];
+      openQuickModal('Como preparar o Revit', `
+        <ol class="mqt-how">
+          <li><b>Keynotes:</b> em Biblioteca → <b>Ficheiro de keynotes (Revit)</b>. No Revit: Anotar → Etiqueta → Definições de notas-chave → escolher esse ficheiro. Em cada tipo (Editar tipo), o parâmetro <b>Keynote</b> = código da biblioteca (ex.: PRD01.A).</li>
+          <li><b>Bloco</b> (só se o edifício tiver blocos): Gerir → Parâmetros do projeto → novo parâmetro de <b>instância</b>, texto, chamado <b>Bloco</b>, nas categorias abaixo.</li>
+          <li><b>Uma tabela por categoria</b> (Vista → Tabelas → Tabela/Quantidades) com estes campos:</li>
+        </ol>
+        <table class="mqt-table mqt-howt"><tbody>${T.map(([c, f, n]) => `<tr><td><b>${c}</b></td><td>${f}${n ? `<br><small>${n}</small>` : ''}</td></tr>`).join('')}</tbody></table>
+        <ol class="mqt-how" start="4">
+          <li>Em <b>Formatação</b> de cada campo de medição: <b>Mostrar símbolo de unidade</b> (a app percebe m, cm, mm).</li>
+          <li>Podes <b>discriminar todas as instâncias</b> ou agrupar por tipo: a app soma na mesma.</li>
+          <li><b>Ficheiro → Exportar → Relatórios → Tabela</b>, com as opções por omissão (tabulação, aspas). Um .txt por tabela.</li>
+          <li>Na app: escolhe o projeto e arrasta os .txt todos de uma vez. Fica uma versão nova.</li>
+        </ol>
+        <div class="field-hint">Os nomes dos campos podem estar em português ou inglês. Dica: guarda estas tabelas no vosso modelo-base do Revit para não as fazer de novo em cada projeto.</div>`);
+    }
+
+    // ---------- Biblioteca: editar ----------
+    function openMqtElementModal(lib, el) {
+      const isNew = !el;
+      const e = el || { code: '', chapter_code: lib.chapters[0]?.code, name: '', unit: 'm²', qty_source: 'area', text: '', revit_category: '', waste_pct: 0, split_by_type: false, derive_from: [], derive_field: 'area', derive_factor: 1, active: true };
+      const vs = isNew ? [] : (lib.varsOf[e.code.toUpperCase()] || []);
+      openQuickModal(isNew ? 'Novo elemento' : `${e.code} · ${e.name}`, `
+        <div class="mqt-g2"><div><label class="field-label" for="mel-code">Keynote</label><input type="text" id="mel-code" class="form-input" maxlength="12" value="${escapeHtml(e.code)}" placeholder="PRD05"></div>
+        <div><label class="field-label" for="mel-ch">Capítulo</label><select id="mel-ch" class="form-input">${lib.chapters.map(c => `<option value="${escapeHtml(c.code)}"${c.code === e.chapter_code ? ' selected' : ''}>${escapeHtml(c.code + ' · ' + c.name)}</option>`).join('')}</select></div></div>
+        <label class="field-label" for="mel-name">Nome</label><input type="text" id="mel-name" class="form-input" maxlength="120" value="${escapeHtml(e.name)}">
+        <div class="mqt-g2"><div><label class="field-label" for="mel-unit">Unidade</label><select id="mel-unit" class="form-input">${MQT_UNITS.map(u => `<option${u === e.unit ? ' selected' : ''}>${u}</option>`).join('')}</select></div>
+        <div><label class="field-label" for="mel-src">Quantidade vem de</label><select id="mel-src" class="form-input">${MQT_SOURCES.map(([k, l]) => `<option value="${k}"${k === e.qty_source ? ' selected' : ''}>${l}</option>`).join('')}</select></div></div>
+        <div id="mel-derive" class="mqt-g3"${e.qty_source === 'derived' ? '' : ' hidden'}><div><label class="field-label" for="mel-df">A partir de (códigos)</label><input type="text" id="mel-df" class="form-input" value="${escapeHtml((e.derive_from || []).join(', '))}" placeholder="REVi01, REVi02"></div>
+          <div><label class="field-label" for="mel-dfl">Medição</label><select id="mel-dfl" class="form-input">${[['area', 'Área'], ['length', 'Comprimento'], ['perimeter', 'Perímetro'], ['count', 'Contagem'], ['volume', 'Volume']].map(([k, l]) => `<option value="${k}"${k === e.derive_field ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
+          <div><label class="field-label" for="mel-dx">× fator</label><input type="text" inputmode="decimal" id="mel-dx" class="form-input" value="${escapeHtml(String(e.derive_factor ?? 1).replace('.', ','))}"></div></div>
+        <label class="field-label" for="mel-text">Texto do artigo</label>
+        <textarea id="mel-text" class="form-input" rows="5">${escapeHtml(e.text)}</textarea>
+        <div class="field-hint"><b>{var}</b> = variante (ex.: espessura). Outros campos entre chavetas, como <b>{marca}</b> ou <b>{cor}</b>, completam-se em cada projeto.</div>
+        <label class="field-label" for="mel-vars">Variantes <span class="muted">(uma por linha: letra | descrição)</span></label>
+        <textarea id="mel-vars" class="form-input" rows="3" placeholder="A | 25 cm&#10;B | 30 cm">${escapeHtml(vs.map(v => `${v.letter} | ${v.label}`).join('\n'))}</textarea>
+        <div class="mqt-g2"><div><label class="field-label" for="mel-waste">Perdas (%)</label><input type="text" inputmode="decimal" id="mel-waste" class="form-input" value="${escapeHtml(String(e.waste_pct || 0).replace('.', ','))}"></div>
+        <div><label class="field-label" for="mel-cat">Categoria do Revit</label><input type="text" id="mel-cat" class="form-input" value="${escapeHtml(e.revit_category || '')}" placeholder="Walls"></div></div>
+        <label class="mqt-chk"><input type="checkbox" id="mel-split"${e.split_by_type ? ' checked' : ''}> Um artigo por tipo do Revit (janelas J1, J2…)</label>
+        <label class="mqt-chk"><input type="checkbox" id="mel-active"${e.active !== false ? ' checked' : ''}> Ativo</label>
+        <div id="mel-msg" class="form-msg"></div>
+        <button type="button" class="primary-btn" id="mel-save">${isNew ? 'Criar' : 'Guardar'}</button>`);
+      document.getElementById('mel-src').addEventListener('change', ev => { document.getElementById('mel-derive').hidden = ev.target.value !== 'derived'; });
+      document.getElementById('mel-save').addEventListener('click', async () => {
+        const code = document.getElementById('mel-code').value.trim().replace(/\s+/g, '');
+        const pk = mqtParseKey(code);
+        if (!pk || pk.bad || pk.letter) { formError('mel-msg', 'Keynote inválido: letras + número (ex.: PRD05, PAVi07). As variantes ficam em baixo.'); return; }
+        if (lib.elements.some(x => x.code.toUpperCase() === pk.code && x.id !== e.id)) { formError('mel-msg', 'Já existe um elemento com esse keynote.'); return; }
+        const name = document.getElementById('mel-name').value.trim();
+        if (!name) { formError('mel-msg', 'Falta o nome.'); return; }
+        const vars = document.getElementById('mel-vars').value.split('\n').map(l => l.trim()).filter(Boolean).map((l, i) => { const [a, ...b] = l.split('|'); return { letter: a.trim().toUpperCase().slice(0, 2), label: b.join('|').trim() || a.trim(), sort_order: i }; });
+        if (vars.some(v => !/^[A-Z]{1,2}$/.test(v.letter))) { formError('mel-msg', 'Cada variante começa por uma letra (A, B, C…).'); return; }
+        if (new Set(vars.map(v => v.letter)).size !== vars.length) { formError('mel-msg', 'Há letras de variante repetidas.'); return; }
+        const row = { code, chapter_code: document.getElementById('mel-ch').value, name, unit: document.getElementById('mel-unit').value, qty_source: document.getElementById('mel-src').value,
+          text: document.getElementById('mel-text').value.trim(), revit_category: document.getElementById('mel-cat').value.trim() || null, waste_pct: numOrNull(document.getElementById('mel-waste').value) || 0,
+          split_by_type: document.getElementById('mel-split').checked, active: document.getElementById('mel-active').checked,
+          derive_from: document.getElementById('mel-df').value.split(/[,;\s]+/).map(s => s.trim()).filter(Boolean), derive_field: document.getElementById('mel-dfl').value, derive_factor: numOrNull(document.getElementById('mel-dx').value) || 1, updated_at: new Date().toISOString() };
+        try {
+          let saved;
+          if (isNew) saved = await dbInsert('mqt_elements', { ...row, sort_order: lib.elements.length }, MOCK_MQT.elements);
+          else { await dbUpdate('mqt_elements', e.id, row, MOCK_MQT.elements); saved = { ...e, ...row }; }
+          // variantes: apaga as que saíram, grava as outras
+          const old = isNew ? [] : (lib.varsOf[e.code.toUpperCase()] || []);
+          const keep = new Set(vars.map(v => v.letter));
+          for (const v of old) if (!keep.has(v.letter.toUpperCase())) await dbDelete('mqt_variants', v.id, MOCK_MQT.variants);
+          for (const v of vars) {
+            const o = old.find(x => x.letter.toUpperCase() === v.letter);
+            if (o) await dbUpdate('mqt_variants', o.id, { label: v.label, sort_order: v.sort_order }, MOCK_MQT.variants);
+            else await dbInsert('mqt_variants', { element_code: saved.code, ...v }, MOCK_MQT.variants);
+          }
+          if (devMode && !isNew && e.code !== code) MOCK_MQT.variants.filter(v => v.element_code === e.code).forEach(v => { v.element_code = code; });
+          mqtLibCache = null; closeQuickModal(); showToast(isNew ? 'Elemento criado' : 'Elemento guardado'); renderMqt();
+        } catch (err) { formError('mel-msg', 'Não foi possível guardar: ' + err.message); }
+      });
+    }
+    function openMqtCheckModal(lib, c) {
+      const isNew = !c;
+      const x = c || { kind: 'rule', name: '', if_codes: [], codes: [], hint: '', active: true };
+      openQuickModal(isNew ? 'Nova verificação' : x.name, `
+        <div class="segmented" id="mck-kind"><button type="button" data-k="rule" class="${x.kind === 'rule' ? 'active' : ''}">Regra (se há… tem de haver…)</button><button type="button" data-k="typical" class="${x.kind === 'typical' ? 'active' : ''}">Elemento típico</button></div>
+        <label class="field-label" for="mck-name">Nome</label><input type="text" id="mck-name" class="form-input" maxlength="120" value="${escapeHtml(x.name)}" placeholder="ex.: Capote pede peitoris">
+        <div id="mck-if-w"${x.kind === 'rule' ? '' : ' hidden'}><label class="field-label" for="mck-if">Se o MQT tiver (códigos ou prefixos)</label><input type="text" id="mck-if" class="form-input" value="${escapeHtml(x.if_codes.join(', '))}" placeholder="REVe01"></div>
+        <label class="field-label" for="mck-codes">Tem de ter algum destes</label><input type="text" id="mck-codes" class="form-input" value="${escapeHtml(x.codes.join(', '))}" placeholder="CAN01">
+        <div class="field-hint">Um prefixo apanha todos: <b>PAVi</b> = qualquer pavimento interior; <b>BET06.A</b> = só essa variante.</div>
+        <label class="field-label" for="mck-hint">Nota <span class="muted">(opcional)</span></label><input type="text" id="mck-hint" class="form-input" maxlength="200" value="${escapeHtml(x.hint || '')}">
+        <label class="mqt-chk"><input type="checkbox" id="mck-active"${x.active !== false ? ' checked' : ''}> Ativa</label>
+        <div id="mck-msg" class="form-msg"></div>
+        <div class="mqt-modal-acts">${isNew ? '' : '<button type="button" class="secondary-btn" id="mck-del">Apagar</button>'}<button type="button" class="primary-btn" id="mck-save">Guardar</button></div>`);
+      let kind = x.kind;
+      document.querySelectorAll('#mck-kind button').forEach(b => b.addEventListener('click', () => { kind = b.dataset.k; document.querySelectorAll('#mck-kind button').forEach(y => y.classList.toggle('active', y === b)); document.getElementById('mck-if-w').hidden = kind !== 'rule'; }));
+      const list = id => document.getElementById(id).value.split(/[,;\s]+/).map(s => s.trim()).filter(Boolean);
+      document.getElementById('mck-save').addEventListener('click', async () => {
+        const row = { kind, name: document.getElementById('mck-name').value.trim(), if_codes: kind === 'rule' ? list('mck-if') : [], codes: list('mck-codes'), hint: document.getElementById('mck-hint').value.trim() || null, active: document.getElementById('mck-active').checked };
+        if (!row.name || !row.codes.length || (kind === 'rule' && !row.if_codes.length)) { formError('mck-msg', 'Preenche o nome e os códigos.'); return; }
+        try { if (isNew) await dbInsert('mqt_checks', { ...row, sort_order: lib.checks.length }, MOCK_MQT.checks); else await dbUpdate('mqt_checks', x.id, row, MOCK_MQT.checks); mqtLibCache = null; closeQuickModal(); showToast('Guardado'); renderMqt(); }
+        catch (e) { formError('mck-msg', 'Não foi possível guardar: ' + e.message); }
+      });
+      document.getElementById('mck-del')?.addEventListener('click', async () => { if (!confirm('Apagar esta verificação?')) return; try { await dbDelete('mqt_checks', x.id, MOCK_MQT.checks); mqtLibCache = null; closeQuickModal(); renderMqt(); } catch (e) { formError('mck-msg', e.message); } });
+    }
+    // Ficheiro de keynotes para o Revit: chave ⇥ texto ⇥ pai (UTF-16 com BOM, como o Revit gosta)
+    function mqtExportKeynotes(lib) {
+      const clean = s => String(s || '').replace(/[\t\r\n]+/g, ' ');
+      const lines = [];
+      lib.chapters.forEach(ch => {
+        lines.push(`${ch.code}\t${clean(ch.name)}`);
+        lib.elements.filter(e => e.chapter_code === ch.code && e.active !== false).sort((a, b) => a.sort_order - b.sort_order).forEach(e => {
+          lines.push(`${e.code}\t${clean(e.name)}\t${ch.code}`);
+          (lib.varsOf[e.code.toUpperCase()] || []).forEach(v => lines.push(`${e.code}.${v.letter}\t${clean(e.name + ' — ' + v.label)}\t${e.code}`));
+        });
+      });
+      const txt = lines.join('\r\n') + '\r\n';
+      const buf = new Uint8Array(2 + txt.length * 2); buf[0] = 0xFF; buf[1] = 0xFE;
+      for (let i = 0; i < txt.length; i++) { const c = txt.charCodeAt(i); buf[2 + i * 2] = c & 0xFF; buf[3 + i * 2] = c >> 8; }
+      mqtDownload(new Blob([buf], { type: 'text/plain' }), 'NOVA_keynotes.txt');
+      showToast('Ficheiro de keynotes descarregado');
+    }
+    function mqtDownload(blob, name) {
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+      document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+    }
+
+    // ---------- Excel (ExcelJS só é carregado quando é preciso) ----------
+    let exceljsPromise = null;
+    function loadExcelJs() {
+      if (window.ExcelJS) return Promise.resolve(window.ExcelJS);
+      if (!exceljsPromise) exceljsPromise = new Promise((res, rej) => {
+        const s = document.createElement('script'); s.src = EXCELJS_URL; s.async = true;
+        s.onload = () => window.ExcelJS ? res(window.ExcelJS) : rej(new Error('ExcelJS não carregou'));
+        s.onerror = () => { exceljsPromise = null; rej(new Error('Não foi possível abrir o gerador de Excel (sem internet?).')); };
+        document.head.appendChild(s);
+      });
+      return exceljsPromise;
+    }
+    const mqtSafeName = s => String(s || 'projeto').replace(/<[^>]*>/g, '').replace(/[\\/:*?"<>|]+/g, '').trim().slice(0, 60) || 'projeto';
+    async function mqtExportExcel(mq, project, run, stats) {
+      try {
+        showToast('A preparar o Excel…', { ms: 1800 });
+        const ExcelJS = await loadExcelJs();
+        const wb = new ExcelJS.Workbook(); wb.creator = 'NOVA Compass';
+        const ws = wb.addWorksheet(stats ? 'Estimativa' : 'MQT', { views: [{ state: 'frozen', ySplit: 6 }], pageSetup: { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: .5, right: .5, top: .6, bottom: .6, header: .3, footer: .3 } } });
+        const multi = mq.cols.length > 1 || mq.cols[0] !== '';
+        const bc = multi ? mq.cols : [];
+        const cQ = 4 + bc.length, cP = cQ + 1, cT = cQ + 2, cK = cQ + 3;
+        const L = n => { let s = ''; while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; };
+        ws.columns = [{ width: 8 }, { width: 70 }, { width: 6 }, ...bc.map(() => ({ width: 11 })), { width: 12 }, { width: 13 }, { width: 15 }, { width: 12, hidden: true }];
+        const pname = String(project?.name || '').replace(/<[^>]*>/g, '');
+        ws.getCell('A1').value = 'NOVA Associates'; ws.getCell('A1').font = { bold: true, size: 14 };
+        ws.getCell('A2').value = stats ? 'Estimativa orçamental — Mapa de Quantidades e Trabalhos' : 'Mapa de Quantidades e Trabalhos'; ws.getCell('A2').font = { bold: true, size: 12 };
+        ws.getCell('A3').value = [project?.code, pname].filter(Boolean).join(' · ');
+        ws.getCell('A4').value = `Versão ${run?.version || ''} · ${new Date().toLocaleDateString('pt-PT')}${stats ? ' · preços de referência atualizados à data' : ' · preencher os preços unitários (colunas a amarelo)'}`;
+        ws.getCell('A4').font = { color: { argb: 'FF666666' }, size: 9 };
+        const hr = ws.getRow(6);
+        hr.values = ['Art.', 'Designação', 'Un.', ...bc.map(mqtBlockLabel), 'Quantidade', 'Preço unit. (€)', 'Total (€)', 'Keynote'];
+        hr.font = { bold: true, color: { argb: 'FFFFFFFF' } }; hr.alignment = { vertical: 'middle', wrapText: true };
+        hr.eachCell(c => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF3A2E39' } }; });
+        const border = { bottom: { style: 'hair', color: { argb: 'FFBBBBBB' } } };
+        const money = '#,##0.00 €', qfmt = '#,##0.00';
+        let r = 7; const subCells = [];
+        mq.chapters.forEach(c => {
+          const chr = ws.getRow(r); chr.values = [String(c.num), c.ch.name.toUpperCase()]; chr.font = { bold: true };
+          chr.eachCell({ includeEmpty: true }, cell => { cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFEAEE' } }; });
+          for (let k = 1; k <= cT; k++) ws.getCell(r, k).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFEAEE' } };
+          r++; const first = r;
+          c.items.forEach(it => {
+            const row = ws.getRow(r);
+            row.getCell(1).value = it.art; row.getCell(2).value = it.desc; row.getCell(3).value = it.el.unit;
+            bc.forEach((b, j) => { const v = it.qb[b]; if (v) { row.getCell(4 + j).value = v; row.getCell(4 + j).numFmt = qfmt; } });
+            row.getCell(cQ).value = it.qty; row.getCell(cQ).numFmt = qfmt;
+            const st = stats?.[it.full.toUpperCase()];
+            const pu = row.getCell(cP);
+            if (st) pu.value = st.med;
+            else pu.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: stats ? 'FFFCE8E8' : 'FFFFF6D5' } };
+            pu.numFmt = money; pu.protection = { locked: false };
+            row.getCell(cT).value = { formula: `IF(${L(cP)}${r}="","",${L(cQ)}${r}*${L(cP)}${r})` }; row.getCell(cT).numFmt = money;
+            row.getCell(cK).value = it.full + (it.typeKey ? '|' + it.typeKey : '');
+            row.getCell(2).alignment = { wrapText: true, vertical: 'top' }; row.getCell(1).alignment = { vertical: 'top' };
+            for (let k = 1; k <= cT; k++) row.getCell(k).border = border;
+            r++;
+          });
+          const sr = ws.getRow(r); sr.getCell(2).value = `Total do capítulo ${c.num}`; sr.getCell(2).alignment = { horizontal: 'right' }; sr.font = { bold: true };
+          sr.getCell(cT).value = { formula: `SUM(${L(cT)}${first}:${L(cT)}${r - 1})` }; sr.getCell(cT).numFmt = money;
+          subCells.push([c, `${L(cT)}${r}`]); r += 2;
+        });
+        // resumo
+        ws.getCell(r, 2).value = 'RESUMO'; ws.getCell(r, 2).font = { bold: true }; r++;
+        subCells.forEach(([c, ref]) => { ws.getCell(r, 1).value = String(c.num); ws.getCell(r, 2).value = c.ch.name; ws.getCell(r, cT).value = { formula: ref }; ws.getCell(r, cT).numFmt = money; r++; });
+        ws.getCell(r, 2).value = 'TOTAL (sem IVA)'; ws.getCell(r, 2).font = { bold: true };
+        ws.getCell(r, cT).value = { formula: subCells.map(x => x[1]).join('+') || '0' }; ws.getCell(r, cT).numFmt = money; ws.getCell(r, cT).font = { bold: true };
+        ws.getCell(r + 1, 2).value = 'Aos valores acresce IVA à taxa legal em vigor.'; ws.getCell(r + 1, 2).font = { italic: true, size: 9 };
+        if (!stats) { ws.getCell(r + 3, 2).value = 'Empreiteiro:'; ws.getCell(r + 4, 2).value = 'Data:'; ws.getCell(r + 5, 2).value = 'Assinatura:'; }
+        ws.headerFooter.oddFooter = '&L' + pname.replace(/&/g, '&&') + '&RPágina &P de &N';
+        const buf = await wb.xlsx.writeBuffer();
+        mqtDownload(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `MQT_${mqtSafeName(project?.code || pname)}_v${run?.version || 0}${stats ? '_estimativa' : ''}.xlsx`);
+        haptic();
+      } catch (e) { showError('gerar o Excel', e); }
+    }
+
+    // ---------- Propostas dos empreiteiros ----------
+    const mqtCellVal = v => v == null ? null : typeof v === 'object' ? (v.result ?? v.text ?? (v.richText ? v.richText.map(t => t.text).join('') : null)) : v;
+    async function mqtReadQuote(file) {
+      const ExcelJS = await loadExcelJs();
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.load(await file.arrayBuffer());
+      const out = [];
+      wb.eachSheet(ws => {
+        let hrow = null, cols = {};
+        ws.eachRow((row, ri) => {
+          const vals = (row.values || []).map(mqtCellVal);
+          if (!hrow) {
+            const idx = vals.findIndex(v => /^keynote$/i.test(String(v || '').trim()));
+            if (idx > -1) {
+              hrow = ri; cols.k = idx;
+              vals.forEach((v, i) => { const t = mqtNormHead(v); if (t.startsWith('precounit') || t.startsWith('precounitario') || t === 'pu') cols.p = i; else if (t.startsWith('quant')) cols.q = i; else if (t.startsWith('total')) cols.t = i; else if (t === 'un' || t === 'unid' || t === 'unidade') cols.u = i; else if (t.startsWith('designa')) cols.d = i; });
+            }
+            return;
+          }
+          const k = String(vals[cols.k] || '').trim();
+          if (!k) return;
+          const num = x => { if (x == null || x === '') return null; if (typeof x === 'number') return x; return mqtNum(x, 'n'); };
+          const q = num(vals[cols.q]), p = num(vals[cols.p]), t = num(vals[cols.t]);
+          const pu = p != null && p > 0 ? p : (t && q ? t / q : null);
+          if (pu == null) return;
+          out.push({ keynote: k.split('|')[0].toUpperCase(), unit: cols.u != null ? String(vals[cols.u] || '') : null, unit_price: Math.round(pu * 100) / 100, qty: q, description: cols.d != null ? String(vals[cols.d] || '').slice(0, 500) : null });
+        });
+      });
+      return out;
+    }
+    function openMqtQuoteImport(projects) {
+      openQuickModal('Carregar proposta', `
+        <div class="field-hint" style="margin-top:0">O Excel que o empreiteiro devolveu preenchido (exportado daqui em <b>Excel para concurso</b>). A app lê o preço de cada artigo pelo keynote.</div>
+        <label class="field-label" for="mq-file">Ficheiro (.xlsx)</label><input type="file" id="mq-file" class="form-input" accept=".xlsx">
+        <label class="field-label" for="mq-who">Empreiteiro</label><input type="text" id="mq-who" class="form-input" maxlength="120">
+        <div class="mqt-g2"><div><label class="field-label" for="mq-date">Data da proposta</label><input type="date" id="mq-date" class="form-input" value="${dateKey(new Date())}"></div>
+        <div><label class="field-label" for="mq-proj">Projeto</label><select id="mq-proj" class="form-input"><option value="">—</option>${projects.map(p => `<option value="${escapeHtml(p.id)}"${p.id === mqtProjectId ? ' selected' : ''}>${escapeHtml(p.name)}</option>`).join('')}</select></div></div>
+        <div id="mq-prev" class="field-hint"></div>
+        <div id="mq-msg" class="form-msg"></div>
+        <button type="button" class="primary-btn" id="mq-save" disabled>Guardar preços</button>`);
+      let lines = [];
+      document.getElementById('mq-file').addEventListener('change', async ev => {
+        const f = ev.target.files[0]; if (!f) return;
+        const prev = document.getElementById('mq-prev'); prev.textContent = 'A ler…';
+        try {
+          lines = await mqtReadQuote(f);
+          if (!lines.length) { prev.textContent = ''; formError('mq-msg', 'Não encontrei preços. Por agora só leio propostas preenchidas no Excel exportado pelo MQT Studio (com a coluna Keynote).'); document.getElementById('mq-save').disabled = true; return; }
+          const tot = lines.reduce((t, l) => t + (l.qty || 0) * l.unit_price, 0);
+          prev.innerHTML = `<b>${lines.length}</b> preços lidos · total ${escapeHtml(fmtEUR(tot))}`;
+          document.getElementById('mq-msg').textContent = '';
+          document.getElementById('mq-save').disabled = false;
+          if (!document.getElementById('mq-who').value) document.getElementById('mq-who').value = f.name.replace(/\.xlsx$/i, '').replace(/^MQT_[^_]*_v\d+_?/i, '').replace(/[_-]+/g, ' ').trim();
+        } catch (e) { prev.textContent = ''; formError('mq-msg', 'Não foi possível ler: ' + e.message); }
+      });
+      document.getElementById('mq-save').addEventListener('click', async () => {
+        const who = document.getElementById('mq-who').value.trim(), date = document.getElementById('mq-date').value;
+        if (!who || !date) { formError('mq-msg', 'Indica o empreiteiro e a data.'); return; }
+        await mqtSaveQuote({ contractor: who, quote_date: date, project_id: document.getElementById('mq-proj').value || null, total: Math.round(lines.reduce((t, l) => t + (l.qty || 0) * l.unit_price, 0) * 100) / 100, file_name: document.getElementById('mq-file').files[0]?.name || null }, lines, 'mq-msg');
+      });
+    }
+    async function mqtSaveQuote(q, lines, msgId) {
+      try {
+        const me = await getCurrentMember();
+        const saved = await dbInsert('mqt_quotes', { ...q, created_by: me?.id || null }, MOCK_MQT.quotes);
+        if (devMode) lines.forEach((l, i) => MOCK_MQT.prices.push({ id: 'mpr-' + Date.now() + i, quote_id: saved.id, ...l }));
+        else { const r = await supabase.from('mqt_prices').insert(lines.map(l => ({ quote_id: saved.id, ...l }))); if (r.error) { await supabase.from('mqt_quotes').delete().eq('id', saved.id); throw r.error; } }
+        closeQuickModal(); haptic(); showToast(`${lines.length} preço${lines.length > 1 ? 's' : ''} guardado${lines.length > 1 ? 's' : ''}`); mqtTab = 'prices'; renderMqt();
+      } catch (e) { formError(msgId, 'Não foi possível guardar: ' + e.message); }
+    }
+    function openMqtPriceManual(lib, projects) {
+      openQuickModal('Preço à mão', `
+        <label class="field-label" for="mp-k">Elemento</label><select id="mp-k" class="form-input">${mqtKeySelectHtml(mqtKeyOptions(lib))}</select>
+        <div class="mqt-g2"><div><label class="field-label" for="mp-p">Preço unitário (€)</label><input type="text" inputmode="decimal" id="mp-p" class="form-input"></div>
+        <div><label class="field-label" for="mp-d">Data</label><input type="date" id="mp-d" class="form-input" value="${dateKey(new Date())}"></div></div>
+        <label class="field-label" for="mp-w">De quem (empreiteiro / fornecedor)</label><input type="text" id="mp-w" class="form-input" maxlength="120">
+        <label class="field-label" for="mp-proj">Projeto <span class="muted">(opcional)</span></label><select id="mp-proj" class="form-input"><option value="">—</option>${projects.map(p => `<option value="${escapeHtml(p.id)}"${p.id === mqtProjectId ? ' selected' : ''}>${escapeHtml(p.name)}</option>`).join('')}</select>
+        <div id="mp-msg" class="form-msg"></div>
+        <button type="button" class="primary-btn" id="mp-save">Guardar</button>`);
+      document.getElementById('mp-save').addEventListener('click', () => {
+        const k = document.getElementById('mp-k').value, p = numOrNull(document.getElementById('mp-p').value.replace(/[€\s]/g, '')), d = document.getElementById('mp-d').value, w = document.getElementById('mp-w').value.trim();
+        if (!(p > 0) || !d || !w) { formError('mp-msg', 'Preenche o preço, a data e de quem é.'); return; }
+        const el = lib.elByCode[mqtParseKey(k).code];
+        mqtSaveQuote({ contractor: w, quote_date: d, project_id: document.getElementById('mp-proj').value || null, total: null, file_name: null, notes: 'preço à mão' }, [{ keynote: k.toUpperCase(), unit: el?.unit || null, unit_price: p, qty: null, description: null }], 'mp-msg');
+      });
+    }
+    function openMqtQuoteActions(q, projects) {
+      if (!q) return;
+      openQuickModal(q.contractor, `
+        <div class="field-hint" style="margin-top:0">${escapeHtml([q.quote_date, projects.find(p => p.id === q.project_id)?.name, q.file_name].filter(Boolean).join(' · '))}</div>
+        <label class="mqt-chk"><input type="checkbox" id="mqa-ex"${q.excluded ? ' checked' : ''}> Fora das médias (proposta anormal)</label>
+        <div id="mqa-msg" class="form-msg"></div>
+        <div class="mqt-modal-acts"><button type="button" class="secondary-btn" id="mqa-del">Apagar proposta</button><button type="button" class="primary-btn" id="mqa-save">Guardar</button></div>`);
+      document.getElementById('mqa-save').addEventListener('click', async () => { try { await dbUpdate('mqt_quotes', q.id, { excluded: document.getElementById('mqa-ex').checked }, MOCK_MQT.quotes); closeQuickModal(); renderMqt(); } catch (e) { formError('mqa-msg', e.message); } });
+      document.getElementById('mqa-del').addEventListener('click', async () => {
+        if (!confirm(`Apagar a proposta de ${q.contractor} e os seus preços?`)) return;
+        try { await dbDelete('mqt_quotes', q.id, MOCK_MQT.quotes); if (devMode) for (let i = MOCK_MQT.prices.length - 1; i >= 0; i--) if (MOCK_MQT.prices[i].quote_id === q.id) MOCK_MQT.prices.splice(i, 1); closeQuickModal(); showToast('Proposta apagada'); renderMqt(); }
+        catch (e) { formError('mqa-msg', e.message); }
+      });
+    }
+    function openMqtPriceDetail(lib, pr, stats, k) {
+      const s = stats[k]; if (!s) return;
+      const pk = mqtParseKey(k), el = pk && lib.elByCode[pk.code];
+      openQuickModal(el ? `${mqtFull(el.code, pk.letter)} · ${el.name}` : k, `<div class="mqt-diff">${s.list.slice().sort((a, b) => b.date.localeCompare(a.date)).map(x => `<div class="mqt-dr"><span class="kn">${escapeHtml(x.date)}</span><span class="nm">${escapeHtml(x.who)}</span><span class="num">${escapeHtml(fmtEUR(x.raw))}${Math.abs(x.v - x.raw) > 0.005 ? ` <small>→ ${escapeHtml(fmtEUR(x.v))} hoje</small>` : ''}</span></div>`).join('')}</div>
+        <div class="field-hint">Referência = mediana dos valores atualizados para hoje (${escapeHtml(String(pr.settings.rate))}%/ano).</div>`);
+    }
+    function openMqtPriceCfg(st) {
+      openQuickModal('Preços de referência', `
+        <label class="field-label" for="mpc-r">Atualizar preços antigos (% por ano)</label><input type="text" inputmode="decimal" id="mpc-r" class="form-input" value="${escapeHtml(String(st.rate).replace('.', ','))}">
+        <div class="field-hint">Ex.: 3% → um preço de há 2 anos conta como +6,1% hoje.</div>
+        <label class="field-label" for="mpc-m">Usar só preços dos últimos (meses)</label><input type="text" inputmode="numeric" id="mpc-m" class="form-input" value="${escapeHtml(String(st.months))}">
+        <div id="mpc-msg" class="form-msg"></div>
+        <button type="button" class="primary-btn" id="mpc-save">Guardar</button>`);
+      document.getElementById('mpc-save').addEventListener('click', async () => {
+        const value = { rate: numOrNull(document.getElementById('mpc-r').value) ?? 0, months: Math.max(1, parseInt(document.getElementById('mpc-m').value, 10) || 60) };
+        try {
+          if (devMode) MOCK_MQT.settings = value;
+          else { const r = await supabase.from('app_settings').upsert({ key: 'mqt', value, updated_at: new Date().toISOString() }); if (r.error) throw r.error; }
+          closeQuickModal(); renderMqt();
+        } catch (e) { formError('mpc-msg', e.message); }
+      });
+    }
+
     // ================= MELHORIAS: tickets da equipa (erros, melhorias, ideias) =================
     // Qualquer pessoa submete de qualquer ecrã (botão 💡 no topo, menu ou ⌘K); a app guarda onde estava e o aparelho.
     // Página "Melhorias": votos (+1), comentários e estados. Quem submeteu é avisado na Hoje quando o estado muda.
@@ -20324,7 +21452,8 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       agenda: ['Agenda', 'Reuniões, prazos e fases da equipa.'], atas: ['Atas', 'O que ficou dito em cada reunião.'],
       despesas: ['Despesas', 'Gastos, recibos e reembolsos.'], settings: ['Definições', 'Como a app trabalha para a NOVA.'], help: ['Ajuda', 'Como é que…'],
       tickets: ['Melhorias', 'Erros, melhorias e ideias da equipa para a app.'],
-      absences: ['Ausências', 'Férias, faltas e formação. Quem está fora, e quando.']
+      absences: ['Ausências', 'Férias, faltas e formação. Quem está fora, e quando.'],
+      mqt: ['MQT Studio', 'Do modelo Revit ao mapa de quantidades.']
     };
     const kLargeIO = typeof IntersectionObserver === 'function' ? new IntersectionObserver(([en]) => {
       const box = document.getElementById('k-large');
@@ -20488,7 +21617,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
     // Passagem entre páginas: pushCurrentView diz a direção (entrar numa ficha → da direita; voltar → da esquerda)
     var kNavDir = null;
     var K_DEEP = new Set(['detail', 'client', 'plot', 'proposal', 'feas', 'investorView']);
-    var K_VIEWS = ['home-view', 'projects-view', 'clients-view', 'client-view', 'opps-view', 'plot-view', 'feas-view', 'proposal-view', 'billing-view', 'finance-view', 'agenda-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view', 'despesas-view', 'help-view', 'tickets-view', 'absences-view'];
+    var K_VIEWS = ['home-view', 'projects-view', 'clients-view', 'client-view', 'opps-view', 'plot-view', 'feas-view', 'proposal-view', 'billing-view', 'finance-view', 'agenda-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view', 'despesas-view', 'help-view', 'tickets-view', 'absences-view', 'mqt-view'];
     function kGhostOut() {
       const dir = kNavDir; kNavDir = null;
       if (dir === null || reduceMotion.matches || document.getElementById('app-screen')?.style.display === 'none') return;
@@ -21087,6 +22216,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       { group: 'Criar', label: 'Sugerir melhoria ou reportar erro', keys: 'melhoria ticket erro bug ideia sugestao pedido feedback reportar', run: () => openTicketModal() },
       { group: 'Ajustes', label: 'Modo leve (computadores mais antigos): ligar / desligar', keys: 'modo leve lento rapido performance desempenho animacoes computador antigo', run: () => { const on = !document.documentElement.classList.contains('k-lite'); kLite.set(on); showToast(on ? 'Modo leve ligado: menos efeitos, mais rapidez.' : 'Modo leve desligado.'); } },
       { group: 'Ir para', label: 'Assinatura de email (Outlook)', keys: 'assinatura email outlook signature mail', run: () => { navStack = []; openSettingsModule(); showSettingsSection('sig'); } },
+      { group: 'Ir para', label: 'MQT Studio', keys: 'mqt mapa de quantidades medicoes revit keynotes orcamento estimativa empreiteiros concurso caderno', run: () => NAV_ACTIONS.mqt() },
       { group: 'Ir para', label: 'Ausências', keys: 'ferias ausencias faltas folga doenca baixa consulta formacao mapa de ferias', run: () => NAV_ACTIONS.absences() },
       { group: 'Criar', label: 'Marcar férias ou ausência', keys: 'ferias marcar ausencia falta doenca consulta formacao', run: () => openAbsenceModal({}) },
       { group: 'Ir para', label: 'Começar o Daybreak', keys: 'daybreak reuniao diaria kaizen 8:40 standup plano do dia', run: () => openDaybreak() },
