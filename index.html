@@ -3599,6 +3599,14 @@
   .mqt-it { cursor: pointer; }
   .mqt-it:hover td { background: var(--accent-soft); }
   .mqt-it.miss .ds { box-shadow: inset 3px 0 0 var(--warning); padding-left: var(--sp-2-5); }
+  .mqt-art td { border-bottom: none; }
+  .mqt-art .art { color: var(--text); font-weight: var(--fw-semibold); }
+  .mqt-sub td { padding-top: var(--sp-1); padding-bottom: var(--sp-1-5); }
+  .mqt-sub .ds { padding-left: var(--sp-6); }
+  .mqt-sub .kn { font-weight: var(--fw-medium); }
+  .mqt-art + .mqt-sub td, .mqt-sub + .mqt-sub td { border-top: none; }
+  .mqt-sub:has(+ .mqt-sub) td { border-bottom: 1px dashed var(--border); }
+  .mqt-blocks { margin-bottom: var(--sp-2-5); }
   .mqt-table tfoot td { font-weight: var(--fw-bold); border-bottom: none; padding-top: var(--sp-3); }
   .mqt-ptable td:nth-child(2) { min-width: 220px; }
   .mqt-howt td { font-size: var(--fs-sm); }
@@ -20176,6 +20184,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
     const MQT_UNIT_FIELD = { 'm²': 'a', 'm³': 'v', 'm': 'len', 'un': 'n' };
     let mqtProjectId = (() => { try { return localStorage.getItem('mqt.project') || ''; } catch (e) { return ''; } })();
     let mqtTab = 'mqt';
+    let mqtBlock = null;
     let mqtLibCache = null;
     const MOCK_MQT = { chapters: [], elements: [], variants: [], checks: [], runs: [], project: [], quotes: [], prices: [], settings: { rate: 3, months: 60 } };
 
@@ -20330,7 +20339,6 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         if (!o.k && !o.t && ['a', 'v', 'len', 'p'].every(f => o[f] == null)) continue;
         rows.push(o);
       }
-      if (cols.b == null) warnings.push('Sem coluna Bloco (tudo conta como um só bloco).');
       const lenVals = rows.map(r => r.len).filter(v => v != null).sort((a, b) => a - b);
       if (lenVals.length && lenVals[Math.floor(lenVals.length / 2)] > 200) warnings.push('Os comprimentos parecem estar em mm sem unidade: ativa "Mostrar símbolo de unidade" no Revit.');
       return { rows, cols, warnings, title };
@@ -20358,6 +20366,61 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       const missing = [];
       t = t.replace(/\{([^}]+)\}/g, (all, f) => { const val = sp[f.trim()]; if (val) return val; missing.push(f.trim()); return `[${f.trim()}]`; });
       return { text: t + extra, missing, variant: v };
+    }
+    // Artigo = elemento (texto geral, sem a variante); subartigos = variantes / tipos, com as quantidades
+    const mqtCap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+    const mqtHasSubs = (lib, el) => !!(lib.varsOf[el.code.toUpperCase()] || []).length || !!el.split_by_type;
+    const mqtClean = t => t.replace(/ (de|em|com) ,/g, ',').replace(/\s+,/g, ',').replace(/,\s*,/g, ',').replace(/\s{2,}/g, ' ').trim();
+    function mqtFillFields(t, sp, missing) {
+      return t.replace(/\{([^}]+)\}/g, (all, f) => { f = f.trim(); if (sp[f]) return sp[f]; if (!missing.includes(f)) missing.push(f); return `[${f}]`; });
+    }
+    function mqtArticleText(el, specs) {
+      const missing = [];
+      let t = mqtClean((el.text || el.name).replace(/\s*\b(de|em|com)?\s*\{var\}/gi, ''));
+      // se, sem a variante, a frase fica curta ("Pavimento, assente…"), começa pelo nome do elemento
+      const i = t.indexOf(','), head = i > -1 ? t.slice(0, i) : t;
+      if (/\{var\}/i.test(el.text || '') && head.trim().split(/\s+/).length <= 3) {
+        const nm = /^fornecimento e (montagem|aplica)/i.test(head) ? `${head.trim()} de ${el.name.charAt(0).toLowerCase()}${el.name.slice(1)}` : el.name;
+        t = nm + (i > -1 ? t.slice(i) : '');
+      }
+      t = mqtFillFields(t, specs?.[el.code.toUpperCase()] || {}, missing);
+      return { text: t, missing };
+    }
+    function mqtSubText(lib, it, specs) {
+      const vars = lib.varsOf[it.el.code.toUpperCase()] || [];
+      const v = it.variant, missing = [];
+      const sp = { ...(specs?.[it.el.code.toUpperCase()] || {}), ...(specs?.[it.full.toUpperCase()] || {}) };
+      let t = v && v.text ? mqtFillFields(mqtClean(v.text.replace(/\{var\}/gi, v.label)), sp, missing) : mqtCap(v ? v.label : vars.length ? '[variante]' : '');
+      if (it.extra) t = t ? t + it.extra : mqtCap(it.extra.replace(/^ — /, ''));
+      return { text: t || it.el.name, missing };
+    }
+    // Árvore capítulo → artigo → subartigos, só com o que há no bloco (null = tudo junto)
+    function mqtTree(lib, mq, block, specs) {
+      const q = it => block == null ? it.qty : (it.qb[block] || 0);
+      const out = [];
+      lib.chapters.forEach(ch => {
+        const its = Object.values(mq.items).filter(it => it.el.chapter_code === ch.code && q(it) > 0)
+          .sort((a, b) => (a.el.sort_order - b.el.sort_order) || a.code.localeCompare(b.code) || a.letter.localeCompare(b.letter) || String(a.typeKey).localeCompare(String(b.typeKey), 'pt', { numeric: true }));
+        if (!its.length) return;
+        const arts = [];
+        its.forEach(it => { let a = arts.find(x => x.el.code === it.el.code); if (!a) arts.push(a = { el: it.el, items: [] }); a.items.push(it); });
+        out.push({ ch, arts });
+      });
+      out.forEach((c, i) => {
+        c.num = i + 1;
+        c.arts.forEach((a, j) => {
+          a.art = `${i + 1}.${j + 1}`;
+          a.subs = mqtHasSubs(lib, a.el) || a.items.length > 1;
+          if (a.subs) {
+            const at = mqtArticleText(a.el, specs); a.text = at.text; a.missing = at.missing;
+            a.rows = a.items.map((it, k) => { const st = mqtSubText(lib, it, specs); return { it, art: `${a.art}.${k + 1}`, q: q(it), text: st.text, missing: st.missing }; });
+          } else {
+            const it = a.items[0]; a.text = it.desc; a.missing = it.missing;
+            a.rows = [{ it, art: a.art, q: q(it), text: it.desc, missing: it.missing, flat: true }];
+          }
+        });
+      });
+      return out;
     }
     // rows: linhas das tabelas; cfg: { manual, specs, na } do projeto → MQT completo + problemas
     function mqtCompute(lib, rows, cfg = {}) {
@@ -20428,7 +20491,16 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         it.qty = Math.round(Object.values(it.qb).reduce((t, q) => t + q, 0) * 100) / 100;
         const d = mqtDescribe(lib, it.el, it.letter, specs, it.extra);
         it.desc = d.text; it.missing = d.missing; it.variant = d.variant;
-        if (d.missing.length) issues.missing.push({ key: it.full, fields: d.missing });
+      });
+      const seenMiss = new Set();
+      Object.values(items).forEach(it => {
+        if (!it.qty) return;
+        const m = mqtHasSubs(lib, it.el) ? [...mqtArticleText(it.el, specs).missing, ...mqtSubText(lib, it, specs).missing] : it.missing;
+        const k = it.el.code.toUpperCase();
+        if (!m.length) return;
+        const ex = issues.missing.find(x => x.key.toUpperCase() === k);
+        if (ex) m.forEach(f => { if (!ex.fields.includes(f)) ex.fields.push(f); });
+        else if (!seenMiss.has(k)) { seenMiss.add(k); issues.missing.push({ key: it.el.code, fields: [...new Set(m)] }); }
       });
       // por capítulo, pela ordem da biblioteca
       const chapters = [];
@@ -20437,7 +20509,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
           .sort((a, b) => (a.el.sort_order - b.el.sort_order) || a.code.localeCompare(b.code) || a.letter.localeCompare(b.letter) || String(a.typeKey).localeCompare(String(b.typeKey), 'pt', { numeric: true }));
         if (list.length) chapters.push({ ch, items: list });
       });
-      chapters.forEach((c, i) => { c.num = i + 1; c.items.forEach((it, j) => { it.art = `${i + 1}.${j + 1}`; }); });
+      chapters.forEach((c, i) => { c.num = i + 1; });
       const present = new Set(Object.values(items).filter(it => it.qty > 0).map(it => it.full.toUpperCase()));
       return { chapters, cols, blocks, items, issues, present, rowsCount: rows.length, keyed: Object.values(byKey).reduce((t, r) => t + r.length, 0) };
     }
@@ -20558,7 +20630,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         const needProject = ['mqt', 'check', 'versions'].includes(mqtTab);
         if (needProject && !mqtProjectId) body = `<div class="gantt-wrap"><div class="gantt-empty">Escolhe o projeto em cima. Depois carrega as tabelas exportadas do Revit (.txt).</div></div>`;
         else if (needProject && !latest && mqtTab !== 'versions') body = mqtEmptyHtml();
-        else if (mqtTab === 'mqt') body = mqtTableHtml(mq, stats, latest);
+        else if (mqtTab === 'mqt') { if (mqtMulti(mq) && !mq.cols.includes(mqtBlock)) mqtBlock = mq.cols[0]; body = mqtTableHtml(lib, mq, stats, cfg.specs || {}); }
         else if (mqtTab === 'check') body = mqtCheckHtml(lib, mq, ck, cfg);
         else if (mqtTab === 'versions') body = mqtVersionsHtml(runs);
         else if (mqtTab === 'prices') body = mqtPricesHtml(lib, pr, stats, projects);
@@ -20574,7 +20646,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
           </div>
           ${latest && needProject ? `<div class="mqt-meta">Versão ${latest.version}${latest.label ? ' · ' + escapeHtml(latest.label) : ''} · ${escapeHtml(fmtDayMonth(String(latest.created_at).slice(0, 10)))} · ${mq.keyed} de ${mq.rowsCount} elementos com keynote${mqtProjectId ? ` · <b class="${ck.pct === 100 ? 'ok' : ''}">${ck.pct}% verificado</b>` : ''}</div>` : ''}
           <div class="billing-bar"><div class="segmented" id="mqt-tabs">${tabs.map(([k, l, n]) => `<button type="button" data-mtab="${k}" class="${k === mqtTab ? 'active' : ''}">${l}${n ? `<em class="alert">${n}</em>` : ''}</button>`).join('')}</div>
-            <span class="mqt-tabacts">${mqtTab === 'mqt' && latest ? `<button type="button" class="secondary-btn toolbar-btn" id="mqt-xls">Excel para concurso</button><button type="button" class="secondary-btn toolbar-btn" id="mqt-xls-est">Excel com estimativa</button><button type="button" class="text-btn" id="mqt-add-manual">+ Artigo à mão</button>` : ''}${mqtTab === 'prices' ? `<button type="button" class="secondary-btn toolbar-btn" id="mqt-quote-import">Carregar proposta</button><button type="button" class="text-btn" id="mqt-price-manual">+ Preço à mão</button>` : ''}${mqtTab === 'lib' ? `<button type="button" class="secondary-btn toolbar-btn" id="mqt-kn-export">Ficheiro de keynotes (Revit)</button><button type="button" class="text-btn" id="mqt-el-new">+ Elemento</button>` : ''}</span>
+            <span class="mqt-tabacts">${mqtTab === 'mqt' && latest ? `<button type="button" class="secondary-btn toolbar-btn" id="mqt-xls">Excel para concurso${mqtMulti(mq) ? ` (${mq.cols.length} ficheiros)` : ''}</button><button type="button" class="secondary-btn toolbar-btn" id="mqt-xls-est">Excel com estimativa</button><button type="button" class="text-btn" id="mqt-add-manual">+ Artigo à mão</button>` : ''}${mqtTab === 'prices' ? `<button type="button" class="secondary-btn toolbar-btn" id="mqt-quote-import">Carregar proposta</button><button type="button" class="text-btn" id="mqt-price-manual">+ Preço à mão</button>` : ''}${mqtTab === 'lib' ? `<button type="button" class="secondary-btn toolbar-btn" id="mqt-kn-export">Ficheiro de keynotes (Revit)</button><button type="button" class="text-btn" id="mqt-el-new">+ Elemento</button>` : ''}</span>
           </div>
           <div id="mqt-drop">${body}</div>`;
         // eventos
@@ -20593,13 +20665,15 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         document.getElementById('mqt-empty-upload')?.addEventListener('click', () => fileIn.click());
         document.getElementById('mqt-empty-how')?.addEventListener('click', openMqtHowTo);
         const pname = projects.find(p => p.id === mqtProjectId);
-        document.getElementById('mqt-xls')?.addEventListener('click', () => mqtExportExcel(mq, pname, latest, null));
-        document.getElementById('mqt-xls-est')?.addEventListener('click', () => mqtExportExcel(mq, pname, latest, stats));
+        const allBlocks = mqtMulti(mq) ? mq.cols : [null];
+        document.getElementById('mqt-xls')?.addEventListener('click', () => mqtExportFiles(lib, mq, cfg.specs || {}, pname, latest, null, allBlocks));
+        document.getElementById('mqt-xls-est')?.addEventListener('click', () => mqtExportFiles(lib, mq, cfg.specs || {}, pname, latest, stats, allBlocks));
+        box.querySelectorAll('[data-mblock]').forEach(b => b.addEventListener('click', () => { mqtBlock = b.dataset.mblock; renderMqt(); }));
         document.getElementById('mqt-add-manual')?.addEventListener('click', () => openMqtManualModal(lib, cfg, mq, null));
         box.querySelectorAll('[data-mqt-item]').forEach(r => r.addEventListener('click', () => { const it = mq.items[r.dataset.mqtItem]; if (it) openMqtItemModal(lib, cfg, mq, it, stats); }));
         box.querySelectorAll('[data-mqt-na]').forEach(b => b.addEventListener('click', () => mqtToggleNa(cfg, b.dataset.mqtNa, b.dataset.on === '1')));
         box.querySelectorAll('[data-mqt-addcode]').forEach(b => b.addEventListener('click', () => openMqtManualModal(lib, cfg, mq, b.dataset.mqtAddcode)));
-        box.querySelectorAll('[data-mqt-spec]').forEach(b => b.addEventListener('click', () => { const it = Object.values(mq.items).find(i => i.full === b.dataset.mqtSpec); if (it) openMqtItemModal(lib, cfg, mq, it, stats); }));
+        box.querySelectorAll('[data-mqt-spec]').forEach(b => b.addEventListener('click', () => { const it = Object.values(mq.items).find(i => i.el.code.toUpperCase() === b.dataset.mqtSpec.toUpperCase() && i.qty > 0); if (it) openMqtItemModal(lib, cfg, mq, it, stats); }));
         box.querySelectorAll('[data-mqt-run-del]').forEach(b => b.addEventListener('click', () => mqtDeleteRun(runs.find(r => r.id === b.dataset.mqtRunDel))));
         box.querySelectorAll('[data-mqt-run-cmp]').forEach(b => b.addEventListener('click', () => openMqtCompare(lib, cfg, runs, b.dataset.mqtRunCmp)));
         box.querySelectorAll('[data-mqt-el]').forEach(r => r.addEventListener('click', () => openMqtElementModal(lib, lib.elements.find(e => e.id === r.dataset.mqtEl))));
@@ -20633,37 +20707,40 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
     }
     const mqtQ = n => n == null || n === '' ? '' : Number(n).toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const mqtBlockLabel = b => b || (b === '' ? 'Comum' : b);
-    function mqtTableHtml(mq, stats, run) {
-      if (!mq.chapters.length) return `<div class="gantt-wrap"><div class="gantt-empty">Nenhum elemento com keynote reconhecido nesta versão. Vê <b>Não te esqueças</b> para perceber porquê.</div></div>`;
-      const multi = mq.cols.length > 1 || mq.cols[0] !== '';
-      let grand = 0, covered = 0, total = 0;
-      const chHtml = mq.chapters.map(c => {
-        let sub = 0;
-        const rows = c.items.map(it => {
-          total++;
-          const st = stats[it.full.toUpperCase()];
-          const val = st ? st.med * it.qty : null;
-          if (val != null) { sub += val; covered++; }
-          return `<tr class="mqt-it${it.missing.length ? ' miss' : ''}" data-mqt-item="${escapeHtml(it.key)}" tabindex="0">
-            <td class="art">${escapeHtml(it.art)}</td>
-            <td class="ds"><span class="kn">${escapeHtml(it.full)}${it.source === 'manual' ? ' · à mão' : it.source === 'derived' ? ' · calculado' : ''}</span>${escapeHtml(it.desc).replace(/\[([^\]]+)\]/g, '<mark>[$1]</mark>')}</td>
-            <td class="un">${escapeHtml(it.el.unit)}</td>
-            ${multi ? mq.cols.map(b => `<td class="num bl">${mqtQ(it.qb[b] || null)}</td>`).join('') : ''}
-            <td class="num qt">${mqtQ(it.qty)}</td>
-            <td class="num pu">${st ? escapeHtml(fmtEUR(st.med)) : '<span class="muted">—</span>'}</td>
-            <td class="num tt">${val != null ? escapeHtml(fmtEUR(val)) : ''}</td>
+    const mqtMulti = mq => mq.cols.length > 1;   // só se fala de blocos quando há mais do que um
+    function mqtTotals(tree, stats) {
+      let total = 0, covered = 0, n = 0;
+      tree.forEach(c => { c.sub = 0; c.arts.forEach(a => a.rows.forEach(r => { n++; const st = stats[r.it.full.toUpperCase()]; r.st = st; r.val = st ? Math.round(st.med * r.q * 100) / 100 : null; if (r.val != null) { c.sub += r.val; covered++; } })); total += c.sub; });
+      return { total, covered, n };
+    }
+    function mqtTableHtml(lib, mq, stats, specs) {
+      if (!Object.keys(mq.items).length) return `<div class="gantt-wrap"><div class="gantt-empty">Nenhum elemento com keynote reconhecido nesta versão. Vê <b>Não te esqueças</b> para perceber porquê.</div></div>`;
+      const multi = mqtMulti(mq);
+      const block = multi ? mqtBlock : null;
+      const tree = mqtTree(lib, mq, block, specs);
+      const tt = mqtTotals(tree, stats);
+      const allTotal = multi ? mq.cols.reduce((t, b) => t + mqtTotals(mqtTree(lib, mq, b, specs), stats).total, 0) : tt.total;
+      const md = s => escapeHtml(s).replace(/\[([^\]]+)\]/g, '<mark>[$1]</mark>');
+      const src = it => it.source === 'manual' ? ' · à mão' : it.source === 'derived' ? ' · calculado' : '';
+      const subRow = (r, cls) => `<tr class="mqt-it ${cls}${r.missing.length ? ' miss' : ''}" data-mqt-item="${escapeHtml(r.it.key)}" tabindex="0">
+            <td class="art">${escapeHtml(r.art)}</td>
+            <td class="ds"><span class="kn">${escapeHtml(r.it.full)}${r.it.typeKey ? ' · ' + escapeHtml(r.it.typeKey) : ''}${src(r.it)}</span>${md(r.text)}</td>
+            <td class="un">${escapeHtml(r.it.el.unit)}</td>
+            <td class="num qt">${mqtQ(r.q)}</td>
+            <td class="num pu">${r.st ? escapeHtml(fmtEUR(r.st.med)) : '<span class="muted">—</span>'}</td>
+            <td class="num tt">${r.val != null ? escapeHtml(fmtEUR(r.val)) : ''}</td>
           </tr>`;
-        }).join('');
-        grand += sub;
-        return `<tbody><tr class="mqt-ch"><td class="art">${c.num}</td><td colspan="${2 + (multi ? mq.cols.length : 0) + 2}">${escapeHtml(c.ch.name)}</td><td class="num tt">${sub ? escapeHtml(fmtEUR(sub)) : ''}</td></tr>${rows}</tbody>`;
-      }).join('');
-      return `<div class="gantt-wrap mqt-sum"><span><b>${total}</b> artigos em <b>${mq.chapters.length}</b> capítulos${multi ? ` · ${mq.blocks.length} blocos` : ''}</span><span>Estimativa <b>${grand ? escapeHtml(fmtEUR(grand)) : '—'}</b><small>${covered} de ${total} artigos com preço de referência</small></span></div>
+      const body = tree.map(c => `<tbody><tr class="mqt-ch"><td class="art">${c.num}</td><td colspan="4">${escapeHtml(c.ch.name)}</td><td class="num tt">${c.sub ? escapeHtml(fmtEUR(c.sub)) : ''}</td></tr>
+        ${c.arts.map(a => a.subs ? `<tr class="mqt-it mqt-art${a.missing.length ? ' miss' : ''}" data-mqt-item="${escapeHtml(a.rows[0].it.key)}" tabindex="0"><td class="art">${escapeHtml(a.art)}</td><td class="ds" colspan="5"><span class="kn">${escapeHtml(a.el.code)}</span>${md(a.text)}</td></tr>${a.rows.map(r => subRow(r, 'mqt-sub')).join('')}` : subRow(a.rows[0], 'mqt-art')).join('')}</tbody>`).join('');
+      const nArts = tree.reduce((t, c) => t + c.arts.length, 0);
+      return `${multi ? `<div class="segmented mqt-blocks" id="mqt-blocks">${mq.cols.map(b => `<button type="button" data-mblock="${escapeHtml(b)}" class="${b === block ? 'active' : ''}">${escapeHtml(mqtBlockLabel(b))}</button>`).join('')}</div>` : ''}
+        <div class="gantt-wrap mqt-sum"><span>${multi ? `<b>${escapeHtml(mqtBlockLabel(block))}</b> · ` : ''}<b>${nArts}</b> artigos, <b>${tt.n}</b> com quantidade, em <b>${tree.length}</b> capítulos</span><span>Estimativa <b>${tt.total ? escapeHtml(fmtEUR(tt.total)) : '—'}</b><small>${tt.covered} de ${tt.n} com preço de referência${multi && allTotal ? ` · todos os blocos ${escapeHtml(fmtEUR(allTotal))}` : ''}</small></span></div>
         <div class="gantt-wrap mqt-wrap"><table class="mqt-table">
-          <thead><tr><th>Art.</th><th>Designação</th><th>Un.</th>${multi ? mq.cols.map(b => `<th class="num">${escapeHtml(mqtBlockLabel(b))}</th>`).join('') : ''}<th class="num">Quant.</th><th class="num">P. ref.</th><th class="num">Estimativa</th></tr></thead>
-          ${chHtml}
-          <tfoot><tr><td></td><td colspan="${2 + (multi ? mq.cols.length : 0) + 2}">Total (sem IVA)</td><td class="num tt">${grand ? escapeHtml(fmtEUR(grand)) : '—'}</td></tr></tfoot>
+          <thead><tr><th>Art.</th><th>Designação</th><th>Un.</th><th class="num">Quant.</th><th class="num">P. ref.</th><th class="num">Estimativa</th></tr></thead>
+          ${body}
+          <tfoot><tr><td></td><td colspan="4">Total${multi ? ' ' + escapeHtml(mqtBlockLabel(block)) : ''} (sem IVA)</td><td class="num tt">${tt.total ? escapeHtml(fmtEUR(tt.total)) : '—'}</td></tr></tfoot>
         </table></div>
-        <div class="field-hint">Toca num artigo para completar o texto (marca, cor…), mudar a quantidade à mão ou ver os preços. P. ref. = mediana das propostas dos empreiteiros, atualizada para hoje.</div>`;
+        <div class="field-hint">Artigo = o elemento; subartigos = variantes e tipos, com as quantidades.${multi ? ' Cada bloco tem o seu MQT (e o seu ficheiro Excel).' : ''} Toca num artigo para completar o texto (marca, cor…), mudar a quantidade à mão ou ver os preços. P. ref. = mediana das propostas dos empreiteiros, atualizada para hoje.</div>`;
     }
     function mqtCheckHtml(lib, mq, ck, cfg) {
       const I = mq.issues;
@@ -20744,7 +20821,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       const next = (runs[0]?.version || 0) + 1;
       openQuickModal(`Carregar tabelas · versão ${next}`, `
         <div class="mqt-files">${parsed.map(p => `<div class="mqt-file"><b>${escapeHtml(p.title || p.name)}</b><small>${escapeHtml(p.name)} · ${p.rows.length} linhas · ${Object.keys(p.cols).map(k => k === 'k' ? 'Keynote' : k === 't' ? 'Tipo' : k === 'tm' ? 'Marca de tipo' : k === 'l' ? 'Nível' : k === 'b' ? 'Bloco' : k === 'c' ? 'Categoria' : MQT_FIELD_LABEL[k] || k).join(', ') || '—'}</small>${p.warnings.map(w => `<small class="warn">${escapeHtml(w)}</small>`).join('')}</div>`).join('')}</div>
-        <div class="mqt-imp-sum"><span><b>${rows.length}</b> elementos</span><span><b>${keyed}</b> com keynote</span><span><b>${Object.keys(mq.items).length}</b> artigos</span>${mq.blocks.length ? `<span><b>${mq.blocks.length}</b> blocos</span>` : ''}</div>
+        <div class="mqt-imp-sum"><span><b>${rows.length}</b> elementos</span><span><b>${keyed}</b> com keynote</span><span><b>${Object.keys(mq.items).length}</b> artigos</span>${mq.blocks.length > 1 ? `<span><b>${mq.blocks.length}</b> blocos</span>` : ''}</div>
         <label class="field-label" for="mqt-run-label">Nota desta versão <span class="muted">(opcional)</span></label>
         <input type="text" id="mqt-run-label" class="form-input" maxlength="80" placeholder="ex.: depois da revisão da cozinha">
         <div id="mqt-imp-msg" class="form-msg"></div>
@@ -20792,19 +20869,19 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       const st = stats?.[it.full.toUpperCase()];
       const man = it.source === 'manual' ? (cfg.manual?.[it.full] || cfg.manual?.[it.full.toUpperCase()] || {}) : null;
       const derived = it.source === 'derived';
-      openQuickModal(`${it.art} · ${it.full}`, `
+      openQuickModal(`${it.full}${it.typeKey ? ' · ' + it.typeKey : ''} · ${it.el.name}`, `
         <div class="mqt-desc">${escapeHtml(it.desc)}</div>
         <div class="field-hint">${escapeHtml(el.unit)} · ${mqtQ(it.qty)} ${it.source === 'model' ? '· vem do Revit' : it.source === 'derived' ? `· calculado a partir de ${escapeHtml((el.derive_from || []).join(', '))}` : '· à mão'}${st ? ` · referência ${escapeHtml(fmtEUR(st.med))} (${st.n} preço${st.n > 1 ? 's' : ''})` : ''}</div>
         ${fields.length ? `<label class="field-label">Completar o texto neste projeto</label>${fields.map(f => `<input type="text" class="form-input mqt-spec-in" data-f="${escapeHtml(f)}" placeholder="${escapeHtml(f)}" value="${escapeHtml(sp[f] || '')}" style="margin-bottom:6px">`).join('')}` : ''}
         ${derived && vars.length ? `<label class="field-label" for="mqt-dv">Variante</label><select id="mqt-dv" class="form-input">${vars.map(v => `<option value="${escapeHtml(v.letter.toUpperCase())}"${v.letter.toUpperCase() === it.letter ? ' selected' : ''}>${escapeHtml(v.letter + ' · ' + v.label)}</option>`).join('')}<option value="off">Não entra neste projeto</option></select>` : derived ? `<label class="mqt-chk"><input type="checkbox" id="mqt-doff"> Não entra neste projeto</label>` : ''}
-        ${man ? `<label class="field-label">Quantidade (${escapeHtml(el.unit)})</label>${mq.cols.map(b => `<div class="mqt-qrow"><span>${escapeHtml(mq.cols.length > 1 || b ? mqtBlockLabel(b) : 'Total')}</span><input type="text" inputmode="decimal" class="form-input mqt-man-in" data-b="${escapeHtml(b)}" value="${man[b] != null ? escapeHtml(String(man[b]).replace('.', ',')) : ''}"></div>`).join('')}` : ''}
+        ${man ? `<label class="field-label">Quantidade (${escapeHtml(el.unit)})</label>${mq.cols.map(b => `<div class="mqt-qrow"><span>${escapeHtml(mqtMulti(mq) ? mqtBlockLabel(b) : 'Quantidade')}</span><input type="text" inputmode="decimal" class="form-input mqt-man-in" data-b="${escapeHtml(b)}" value="${man[b] != null ? escapeHtml(String(man[b]).replace('.', ',')) : ''}"></div>`).join('')}` : ''}
         <div id="mqt-it-msg" class="form-msg"></div>
         <div class="mqt-modal-acts">${man ? '<button type="button" class="secondary-btn" id="mqt-it-del">Tirar do MQT</button>' : ''}<button type="button" class="primary-btn" id="mqt-it-save">Guardar</button></div>`);
       document.getElementById('mqt-it-save').addEventListener('click', async () => {
         try {
           const specs = JSON.parse(JSON.stringify(cfg.specs || {}));
           if (fields.length) {
-            const target = it.letter ? it.full.toUpperCase() : code;
+            const target = code;
             const o = specs[target] ||= {};
             document.querySelectorAll('.mqt-spec-in').forEach(i => { const v = i.value.trim(); if (v) o[i.dataset.f] = v; else delete o[i.dataset.f]; });
           }
@@ -20842,7 +20919,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         <label class="field-label" for="mqt-man-k">Elemento</label>
         <select id="mqt-man-k" class="form-input">${opts}</select>
         <label class="field-label">Quantidade</label>
-        ${mq.cols.map(b => `<div class="mqt-qrow"><span>${escapeHtml(mq.cols.length > 1 || b ? mqtBlockLabel(b) : 'Total')}</span><input type="text" inputmode="decimal" class="form-input mqt-man-in" data-b="${escapeHtml(b)}" placeholder="0"></div>`).join('')}
+        ${mq.cols.map(b => `<div class="mqt-qrow"><span>${escapeHtml(mqtMulti(mq) ? mqtBlockLabel(b) : 'Quantidade')}</span><input type="text" inputmode="decimal" class="form-input mqt-man-in" data-b="${escapeHtml(b)}" placeholder="0"></div>`).join('')}
         <div class="field-hint" id="mqt-man-unit"></div>
         <div id="mqt-man-msg" class="form-msg"></div>
         <button type="button" class="primary-btn" id="mqt-man-save">Acrescentar</button>`);
@@ -21008,65 +21085,79 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       return exceljsPromise;
     }
     const mqtSafeName = s => String(s || 'projeto').replace(/<[^>]*>/g, '').replace(/[\\/:*?"<>|]+/g, '').trim().slice(0, 60) || 'projeto';
-    async function mqtExportExcel(mq, project, run, stats) {
-      try {
-        showToast('A preparar o Excel…', { ms: 1800 });
-        const ExcelJS = await loadExcelJs();
-        const wb = new ExcelJS.Workbook(); wb.creator = 'NOVA Compass';
-        const ws = wb.addWorksheet(stats ? 'Estimativa' : 'MQT', { views: [{ state: 'frozen', ySplit: 6 }], pageSetup: { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: .5, right: .5, top: .6, bottom: .6, header: .3, footer: .3 } } });
-        const multi = mq.cols.length > 1 || mq.cols[0] !== '';
-        const bc = multi ? mq.cols : [];
-        const cQ = 4 + bc.length, cP = cQ + 1, cT = cQ + 2, cK = cQ + 3;
-        const L = n => { let s = ''; while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; };
-        ws.columns = [{ width: 8 }, { width: 70 }, { width: 6 }, ...bc.map(() => ({ width: 11 })), { width: 12 }, { width: 13 }, { width: 15 }, { width: 12, hidden: true }];
-        const pname = String(project?.name || '').replace(/<[^>]*>/g, '');
-        ws.getCell('A1').value = 'NOVA Associates'; ws.getCell('A1').font = { bold: true, size: 14 };
-        ws.getCell('A2').value = stats ? 'Estimativa orçamental — Mapa de Quantidades e Trabalhos' : 'Mapa de Quantidades e Trabalhos'; ws.getCell('A2').font = { bold: true, size: 12 };
-        ws.getCell('A3').value = [project?.code, pname].filter(Boolean).join(' · ');
-        ws.getCell('A4').value = `Versão ${run?.version || ''} · ${new Date().toLocaleDateString('pt-PT')}${stats ? ' · preços de referência atualizados à data' : ' · preencher os preços unitários (colunas a amarelo)'}`;
-        ws.getCell('A4').font = { color: { argb: 'FF666666' }, size: 9 };
-        const hr = ws.getRow(6);
-        hr.values = ['Art.', 'Designação', 'Un.', ...bc.map(mqtBlockLabel), 'Quantidade', 'Preço unit. (€)', 'Total (€)', 'Keynote'];
-        hr.font = { bold: true, color: { argb: 'FFFFFFFF' } }; hr.alignment = { vertical: 'middle', wrapText: true };
-        hr.eachCell(c => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF3A2E39' } }; });
-        const border = { bottom: { style: 'hair', color: { argb: 'FFBBBBBB' } } };
-        const money = '#,##0.00 €', qfmt = '#,##0.00';
-        let r = 7; const subCells = [];
-        mq.chapters.forEach(c => {
-          const chr = ws.getRow(r); chr.values = [String(c.num), c.ch.name.toUpperCase()]; chr.font = { bold: true };
-          chr.eachCell({ includeEmpty: true }, cell => { cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFEAEE' } }; });
-          for (let k = 1; k <= cT; k++) ws.getCell(r, k).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFEAEE' } };
-          r++; const first = r;
-          c.items.forEach(it => {
+    async function mqtExportExcel(lib, mq, specs, project, run, stats, block) {
+      const ExcelJS = await loadExcelJs();
+      const multi = mqtMulti(mq);
+      const tree = mqtTree(lib, mq, multi ? block : null, specs);
+      const wb = new ExcelJS.Workbook(); wb.creator = 'NOVA Compass';
+      const ws = wb.addWorksheet(stats ? 'Estimativa' : 'MQT', { views: [{ state: 'frozen', ySplit: 6 }], pageSetup: { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: .5, right: .5, top: .6, bottom: .6, header: .3, footer: .3 } } });
+      const cQ = 4, cP = 5, cT = 6, cK = 7;
+      const L = n => String.fromCharCode(64 + n);
+      ws.columns = [{ width: 9 }, { width: 72 }, { width: 6 }, { width: 12 }, { width: 13 }, { width: 15 }, { width: 14, hidden: true }];
+      const pname = String(project?.name || '').replace(/<[^>]*>/g, '');
+      const bl = multi ? mqtBlockLabel(block) : '';
+      ws.getCell('A1').value = 'NOVA Associates'; ws.getCell('A1').font = { bold: true, size: 14 };
+      ws.getCell('A2').value = (stats ? 'Estimativa orçamental — Mapa de Quantidades e Trabalhos' : 'Mapa de Quantidades e Trabalhos') + (bl ? ' — ' + bl : ''); ws.getCell('A2').font = { bold: true, size: 12 };
+      ws.getCell('A3').value = [project?.code, pname, bl].filter(Boolean).join(' · ');
+      ws.getCell('A4').value = `Versão ${run?.version || ''} · ${new Date().toLocaleDateString('pt-PT')}${stats ? ' · preços de referência atualizados à data' : ' · preencher os preços unitários (células a amarelo)'}`;
+      ws.getCell('A4').font = { color: { argb: 'FF666666' }, size: 9 };
+      const hr = ws.getRow(6);
+      hr.values = ['Art.', 'Designação', 'Un.', 'Quantidade', 'Preço unit. (€)', 'Total (€)', 'Keynote'];
+      hr.font = { bold: true, color: { argb: 'FFFFFFFF' } }; hr.alignment = { vertical: 'middle', wrapText: true };
+      hr.eachCell(c => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF3A2E39' } }; });
+      const border = { bottom: { style: 'hair', color: { argb: 'FFBBBBBB' } } };
+      const money = '#,##0.00 €', qfmt = '#,##0.00';
+      const fill = argb => ({ type: 'pattern', pattern: 'solid', fgColor: { argb } });
+      let r = 7; const subCells = [];
+      tree.forEach(c => {
+        ws.getCell(r, 1).value = String(c.num); ws.getCell(r, 2).value = c.ch.name.toUpperCase(); ws.getRow(r).font = { bold: true };
+        for (let k = 1; k <= cT; k++) ws.getCell(r, k).fill = fill('FFEFEAEE');
+        r++; const first = r;
+        c.arts.forEach(a => {
+          const line = (rw, sub) => {
             const row = ws.getRow(r);
-            row.getCell(1).value = it.art; row.getCell(2).value = it.desc; row.getCell(3).value = it.el.unit;
-            bc.forEach((b, j) => { const v = it.qb[b]; if (v) { row.getCell(4 + j).value = v; row.getCell(4 + j).numFmt = qfmt; } });
-            row.getCell(cQ).value = it.qty; row.getCell(cQ).numFmt = qfmt;
-            const st = stats?.[it.full.toUpperCase()];
+            row.getCell(1).value = rw.art; row.getCell(2).value = rw.text; row.getCell(3).value = rw.it.el.unit;
+            row.getCell(cQ).value = rw.q; row.getCell(cQ).numFmt = qfmt;
+            const st = stats?.[rw.it.full.toUpperCase()];
             const pu = row.getCell(cP);
-            if (st) pu.value = st.med;
-            else pu.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: stats ? 'FFFCE8E8' : 'FFFFF6D5' } };
+            if (st) pu.value = st.med; else pu.fill = fill(stats ? 'FFFCE8E8' : 'FFFFF6D5');
             pu.numFmt = money; pu.protection = { locked: false };
             row.getCell(cT).value = { formula: `IF(${L(cP)}${r}="","",${L(cQ)}${r}*${L(cP)}${r})` }; row.getCell(cT).numFmt = money;
-            row.getCell(cK).value = it.full + (it.typeKey ? '|' + it.typeKey : '');
-            row.getCell(2).alignment = { wrapText: true, vertical: 'top' }; row.getCell(1).alignment = { vertical: 'top' };
+            row.getCell(cK).value = rw.it.full + (rw.it.typeKey ? '|' + rw.it.typeKey : '');
+            row.getCell(2).alignment = { wrapText: true, vertical: 'top', indent: sub ? 2 : 0 }; row.getCell(1).alignment = { vertical: 'top' };
             for (let k = 1; k <= cT; k++) row.getCell(k).border = border;
             r++;
-          });
-          const sr = ws.getRow(r); sr.getCell(2).value = `Total do capítulo ${c.num}`; sr.getCell(2).alignment = { horizontal: 'right' }; sr.font = { bold: true };
-          sr.getCell(cT).value = { formula: `SUM(${L(cT)}${first}:${L(cT)}${r - 1})` }; sr.getCell(cT).numFmt = money;
-          subCells.push([c, `${L(cT)}${r}`]); r += 2;
+          };
+          if (a.subs) {
+            const row = ws.getRow(r);
+            row.getCell(1).value = a.art; row.getCell(2).value = a.text;
+            row.getCell(2).alignment = { wrapText: true, vertical: 'top' }; row.getCell(1).alignment = { vertical: 'top' }; row.getCell(1).font = { bold: true };
+            r++;
+            a.rows.forEach(rw => line(rw, true));
+          } else line(a.rows[0], false);
         });
-        // resumo
-        ws.getCell(r, 2).value = 'RESUMO'; ws.getCell(r, 2).font = { bold: true }; r++;
-        subCells.forEach(([c, ref]) => { ws.getCell(r, 1).value = String(c.num); ws.getCell(r, 2).value = c.ch.name; ws.getCell(r, cT).value = { formula: ref }; ws.getCell(r, cT).numFmt = money; r++; });
-        ws.getCell(r, 2).value = 'TOTAL (sem IVA)'; ws.getCell(r, 2).font = { bold: true };
-        ws.getCell(r, cT).value = { formula: subCells.map(x => x[1]).join('+') || '0' }; ws.getCell(r, cT).numFmt = money; ws.getCell(r, cT).font = { bold: true };
-        ws.getCell(r + 1, 2).value = 'Aos valores acresce IVA à taxa legal em vigor.'; ws.getCell(r + 1, 2).font = { italic: true, size: 9 };
-        if (!stats) { ws.getCell(r + 3, 2).value = 'Empreiteiro:'; ws.getCell(r + 4, 2).value = 'Data:'; ws.getCell(r + 5, 2).value = 'Assinatura:'; }
-        ws.headerFooter.oddFooter = '&L' + pname.replace(/&/g, '&&') + '&RPágina &P de &N';
-        const buf = await wb.xlsx.writeBuffer();
-        mqtDownload(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `MQT_${mqtSafeName(project?.code || pname)}_v${run?.version || 0}${stats ? '_estimativa' : ''}.xlsx`);
+        const sr = ws.getRow(r); sr.getCell(2).value = `Total do capítulo ${c.num}`; sr.getCell(2).alignment = { horizontal: 'right' }; sr.font = { bold: true };
+        sr.getCell(cT).value = { formula: `SUM(${L(cT)}${first}:${L(cT)}${r - 1})` }; sr.getCell(cT).numFmt = money;
+        subCells.push([c, `${L(cT)}${r}`]); r += 2;
+      });
+      ws.getCell(r, 2).value = 'RESUMO' + (bl ? ' — ' + bl : ''); ws.getCell(r, 2).font = { bold: true }; r++;
+      subCells.forEach(([c, ref]) => { ws.getCell(r, 1).value = String(c.num); ws.getCell(r, 2).value = c.ch.name; ws.getCell(r, cT).value = { formula: ref }; ws.getCell(r, cT).numFmt = money; r++; });
+      ws.getCell(r, 2).value = 'TOTAL (sem IVA)'; ws.getCell(r, 2).font = { bold: true };
+      ws.getCell(r, cT).value = { formula: subCells.map(x => x[1]).join('+') || '0' }; ws.getCell(r, cT).numFmt = money; ws.getCell(r, cT).font = { bold: true };
+      ws.getCell(r + 1, 2).value = 'Aos valores acresce IVA à taxa legal em vigor.'; ws.getCell(r + 1, 2).font = { italic: true, size: 9 };
+      if (!stats) { ws.getCell(r + 3, 2).value = 'Empreiteiro:'; ws.getCell(r + 4, 2).value = 'Data:'; ws.getCell(r + 5, 2).value = 'Assinatura:'; }
+      ws.headerFooter.oddFooter = '&L' + [pname, bl].filter(Boolean).join(' · ').replace(/&/g, '&&') + '&RPágina &P de &N';
+      const buf = await wb.xlsx.writeBuffer();
+      mqtDownload(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `MQT_${mqtSafeName(project?.code || pname)}${bl ? '_' + mqtSafeName(bl).replace(/\s+/g, '') : ''}_v${run?.version || 0}${stats ? '_estimativa' : ''}.xlsx`);
+    }
+    // Com blocos: um ficheiro por bloco (todos, ou só o que está aberto)
+    async function mqtExportFiles(lib, mq, specs, project, run, stats, blocks) {
+      try {
+        showToast(blocks.length > 1 ? `A preparar ${blocks.length} ficheiros…` : 'A preparar o Excel…', { ms: 2000 });
+        for (let i = 0; i < blocks.length; i++) {
+          await mqtExportExcel(lib, mq, specs, project, run, stats, blocks[i]);
+          if (i < blocks.length - 1) await new Promise(res => setTimeout(res, 700));
+        }
         haptic();
       } catch (e) { showError('gerar o Excel', e); }
     }
