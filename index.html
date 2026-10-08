@@ -3647,6 +3647,15 @@
   .mqt-std summary { cursor: pointer; }
   .mqt-std div { margin-top: var(--sp-1-5); background: var(--surface-2); border-radius: var(--r-md); padding: var(--sp-2) var(--sp-3); line-height: 1.5; }
   .mqt-prow .invoice-status { white-space: nowrap; }
+  /* Procurar artigo (artigo à mão, preço à mão) */
+  .mqt-pick-list { margin-top: 4px; max-height: 280px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); }
+  .mqt-pick-list[hidden] { display: none; }
+  .mqt-pick-opt { display: grid; grid-template-columns: auto 1fr; gap: 0 var(--sp-2-5); width: 100%; text-align: left; border: none; border-bottom: 1px solid var(--border); background: none; font: inherit; font-size: var(--fs-sm); color: var(--text); padding: 7px 10px; cursor: pointer; }
+  .mqt-pick-opt:last-child { border-bottom: none; }
+  .mqt-pick-opt b { color: var(--accent); white-space: nowrap; }
+  .mqt-pick-opt small { grid-column: 2; color: var(--text-3); font-size: var(--fs-xs); }
+  .mqt-pick-opt.on, .mqt-pick-opt:hover { background: var(--accent-soft); }
+  .mqt-pick-more { padding: 8px 10px; font-size: var(--fs-xs); color: var(--text-3); }
   /* Biblioteca global: tabela (tipo Excel) */
   .mqt-gridwrap { padding: 0; overflow-x: auto; }
   .mqt-grid { width: 100%; min-width: 860px; border-collapse: collapse; table-layout: fixed; font-size: var(--fs-sm); }
@@ -21536,29 +21545,71 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
     function mqtKeyOptions(lib, filter = () => true) {
       return lib.chapters.map(ch => ({ ch, list: lib.elements.filter(e => e.chapter_code === ch.code && e.active !== false && filter(e)).sort((a, b) => a.sort_order - b.sort_order).flatMap(e => { const vs = lib.varsOf[e.code.toUpperCase()] || []; return vs.length ? vs.map(v => [mqtFull(e.code, v.letter), `${e.code}.${v.letter} · ${e.name} — ${v.label} (${e.unit})`]) : [[e.code, `${e.code} · ${e.name} (${e.unit})`]]; }) })).filter(g => g.list.length);
     }
-    function mqtKeySelectHtml(groups, preset) {
-      const p = String(preset || '').toUpperCase();
-      const sel = p ? (groups.flatMap(g => g.list).find(([k]) => mqtMatch(p, k)) || [])[0] : null;
-      return groups.map(g => `<optgroup label="${escapeHtml(g.ch.code + ' · ' + g.ch.name)}">${g.list.map(([k, l]) => `<option value="${escapeHtml(k)}"${k === sel ? ' selected' : ''}>${escapeHtml(l)}</option>`).join('')}</optgroup>`).join('');
+    // Procurar um artigo da biblioteca: escreve-se qualquer palavra ou código (todas as palavras têm de aparecer,
+    // sem ligar a acentos); ↑ ↓ e Enter escolhem. Os códigos que começam pelo que se escreveu aparecem primeiro.
+    function mqtPickerHtml(id, placeholder = 'Escreve uma palavra ou código: peitoril, PRD01, 250 mm…') {
+      return `<div class="mqt-pick" id="${id}"><input type="text" class="form-input mqt-pick-q" placeholder="${escapeHtml(placeholder)}" autocomplete="off" role="combobox" aria-expanded="false" aria-autocomplete="list"><div class="mqt-pick-list" role="listbox" hidden></div></div>`;
+    }
+    function attachMqtPicker(id, lib, { preset = null, onPick = () => {} } = {}) {
+      const box = document.getElementById(id), q = box.querySelector('.mqt-pick-q'), list = box.querySelector('.mqt-pick-list');
+      const all = mqtKeyOptions(lib).flatMap(g => g.list.map(([k]) => {
+        const pk = mqtParseKey(k, lib), el = lib.elByCode[pk.code];
+        const v = pk.letter ? (lib.varsOf[pk.code] || []).find(x => x.letter.toUpperCase() === pk.letter) : null;
+        const label = el.name + (v ? ' — ' + v.label : '');
+        return { k, label, ch: g.ch, unit: el.unit, K: k.toUpperCase(), L: normTxt(label), s: normTxt([k, el.name, v?.label, v?.text, el.text, g.ch.name].join(' ')) };
+      }));
+      let hits = [], idx = 0, chosen = null;
+      const render = () => {
+        list.innerHTML = hits.length ? hits.slice(0, 60).map((o, i) => `<button type="button" class="mqt-pick-opt${i === idx ? ' on' : ''}" data-i="${i}" role="option" aria-selected="${i === idx}"><b>${escapeHtml(o.k)}</b><span>${escapeHtml(o.label)}</span><small>${escapeHtml(o.ch.name)} · ${escapeHtml(o.unit)}</small></button>`).join('') + (hits.length > 60 ? `<div class="mqt-pick-more">+ ${hits.length - 60} — escreve mais para afinar</div>` : '')
+          : '<div class="mqt-pick-more">Nada encontrado. Cria o keynote na Biblioteca de keynotes.</div>';
+        list.hidden = false; q.setAttribute('aria-expanded', 'true');
+        list.querySelector('.on')?.scrollIntoView({ block: 'nearest' });
+      };
+      const search = () => {
+        const raw = q.value.trim(), Q = raw.toUpperCase(), words = normTxt(raw).split(/\s+/).filter(Boolean);
+        hits = words.length ? all.filter(o => words.every(w => o.s.includes(w))) : all.slice();
+        if (words.length) {
+          const rank = o => o.K === Q ? 0 : o.K.startsWith(Q) ? 1 : o.L.startsWith(normTxt(raw)) ? 2 : words.every(w => (o.K.toLowerCase() + ' ' + o.L).includes(w)) ? 3 : 4;
+          hits = hits.map((o, i) => [rank(o), i, o]).sort((a, b) => a[0] - b[0] || a[1] - b[1]).map(x => x[2]);
+        }
+        idx = 0; render();
+      };
+      const close = () => { list.hidden = true; q.setAttribute('aria-expanded', 'false'); };
+      const pick = o => { if (!o) return; chosen = o; q.value = `${o.k} · ${o.label}`; close(); onPick(o); };
+      q.addEventListener('input', () => { chosen = null; search(); });
+      q.addEventListener('focus', () => { if (!chosen) search(); else q.select(); });
+      q.addEventListener('keydown', e => {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (list.hidden) search(); idx = Math.max(0, Math.min(Math.min(hits.length, 60) - 1, idx + (e.key === 'ArrowDown' ? 1 : -1))); render(); }
+        else if (e.key === 'Enter') { e.preventDefault(); if (!list.hidden && hits[idx]) pick(hits[idx]); }
+        else if (e.key === 'Escape' && !list.hidden) { e.preventDefault(); e.stopPropagation(); close(); }
+      });
+      list.addEventListener('mousedown', e => { const b = e.target.closest('[data-i]'); if (b) { e.preventDefault(); pick(hits[+b.dataset.i]); } });
+      q.addEventListener('blur', () => setTimeout(close, 150));
+      if (preset) { const o = all.find(x => mqtMatch(preset, x.k)); if (o) pick(o); }
+      return { get: () => chosen, focus: () => q.focus() };
     }
     function openMqtManualModal(lib, cfg, mq, presetCode) {
-      const opts = mqtKeySelectHtml(mqtKeyOptions(lib), presetCode);
       openQuickModal('Artigo à mão', `
-        <div class="field-hint" style="margin-top:0">Para o que não se modela: estaleiro, especialidades, peitoris, impermeabilizações…</div>
-        <label class="field-label" for="mqt-man-k">Elemento</label>
-        <select id="mqt-man-k" class="form-input">${opts}</select>
+        <div class="field-hint" style="margin-top:0">Para o que não se modela: estaleiro, peitoris, impermeabilizações… Procura em toda a biblioteca.</div>
+        <label class="field-label">Artigo</label>
+        ${mqtPickerHtml('mqt-man-pick')}
         <label class="field-label">Quantidade</label>
         ${mq.cols.map(b => `<div class="mqt-qrow"><span>${escapeHtml(mqtMulti(mq) ? mqtBlockLabel(b) : 'Quantidade')}</span><input type="text" inputmode="decimal" class="form-input mqt-man-in" data-b="${escapeHtml(b)}" placeholder="0"></div>`).join('')}
         <div class="field-hint" id="mqt-man-unit"></div>
         <div id="mqt-man-msg" class="form-msg"></div>
         <button type="button" class="primary-btn" id="mqt-man-save">Acrescentar</button>`);
-      const sel = document.getElementById('mqt-man-k');
-      const showUnit = () => { const pk = mqtParseKey(sel.value); const el = pk && lib.elByCode[pk.code]; document.getElementById('mqt-man-unit').textContent = el ? `Unidade: ${el.unit}${el.unit === 'vg' ? ' (põe 1)' : ''}` : ''; };
-      sel.addEventListener('change', showUnit); showUnit();
+      const picker = attachMqtPicker('mqt-man-pick', lib, { preset: presetCode, onPick: o => {
+        document.getElementById('mqt-man-unit').textContent = `Unidade: ${o.unit}${o.unit === 'vg' ? ' (põe 1)' : ''}`;
+        const first = document.querySelector('.mqt-man-in'); if (first) { if (o.unit === 'vg' && !first.value) first.value = '1'; first.focus(); first.select(); }
+      } });
+      if (!presetCode) setTimeout(() => picker.focus(), 60);
+      document.querySelectorAll('.mqt-man-in').forEach(i => i.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('mqt-man-save').click(); } }));
       document.getElementById('mqt-man-save').addEventListener('click', async () => {
+        const o = picker.get();
+        if (!o) { formError('mqt-man-msg', 'Escolhe o artigo (escreve e carrega em Enter).'); return; }
         const q = {}; document.querySelectorAll('.mqt-man-in').forEach(i => { const v = numOrNull(i.value.replace(/\s/g, '')); if (v) q[i.dataset.b] = v; });
         if (!Object.keys(q).length) { formError('mqt-man-msg', 'Indica a quantidade.'); return; }
-        try { const manual = JSON.parse(JSON.stringify(cfg.manual || {})); manual[sel.value] = q; await mqtSaveCfg(mqtProjectId, { manual }); closeQuickModal(); showToast('Artigo acrescentado'); renderMqt(); }
+        try { const manual = JSON.parse(JSON.stringify(cfg.manual || {})); manual[o.k] = q; await mqtSaveCfg(mqtProjectId, { manual }); closeQuickModal(); showToast('Artigo acrescentado'); renderMqt(); }
         catch (e) { formError('mqt-man-msg', 'Não foi possível guardar: ' + e.message); }
       });
     }
@@ -21869,15 +21920,17 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
     }
     function openMqtPriceManual(lib, projects) {
       openQuickModal('Preço à mão', `
-        <label class="field-label" for="mp-k">Elemento</label><select id="mp-k" class="form-input">${mqtKeySelectHtml(mqtKeyOptions(lib))}</select>
+        <label class="field-label">Artigo</label>${mqtPickerHtml('mp-pick')}
         <div class="mqt-g2"><div><label class="field-label" for="mp-p">Preço unitário (€)</label><input type="text" inputmode="decimal" id="mp-p" class="form-input"></div>
         <div><label class="field-label" for="mp-d">Data</label><input type="date" id="mp-d" class="form-input" value="${dateKey(new Date())}"></div></div>
         <label class="field-label" for="mp-w">De quem (empreiteiro / fornecedor)</label><input type="text" id="mp-w" class="form-input" maxlength="120">
         <label class="field-label" for="mp-proj">Projeto <span class="muted">(opcional)</span></label><select id="mp-proj" class="form-input"><option value="">—</option>${projects.map(p => `<option value="${escapeHtml(p.id)}"${p.id === mqtProjectId ? ' selected' : ''}>${escapeHtml(p.name)}</option>`).join('')}</select>
         <div id="mp-msg" class="form-msg"></div>
         <button type="button" class="primary-btn" id="mp-save">Guardar</button>`);
+      const mpPick = attachMqtPicker('mp-pick', lib, { onPick: () => document.getElementById('mp-p').focus() }); setTimeout(() => mpPick.focus(), 60);
       document.getElementById('mp-save').addEventListener('click', () => {
-        const k = document.getElementById('mp-k').value, p = numOrNull(document.getElementById('mp-p').value.replace(/[€\s]/g, '')), d = document.getElementById('mp-d').value, w = document.getElementById('mp-w').value.trim();
+        const k = mpPick.get()?.k || '', p = numOrNull(document.getElementById('mp-p').value.replace(/[€\s]/g, '')), d = document.getElementById('mp-d').value, w = document.getElementById('mp-w').value.trim();
+        if (!k) { formError('mp-msg', 'Escolhe o artigo (escreve e carrega em Enter).'); return; }
         if (!(p > 0) || !d || !w) { formError('mp-msg', 'Preenche o preço, a data e de quem é.'); return; }
         const el = lib.elByCode[mqtParseKey(k).code];
         mqtSaveQuote({ contractor: w, quote_date: d, project_id: document.getElementById('mp-proj').value || null, total: null, file_name: null, notes: 'preço à mão' }, [{ keynote: k.toUpperCase(), unit: el?.unit || null, unit_price: p, qty: null, description: null }], 'mp-msg');
