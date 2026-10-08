@@ -3637,6 +3637,7 @@
   .mqt-table tr.st-rev .mqt-note.cur { color: var(--mqt-rev); }
   .mqt-table tr.st-del .mqt-note.cur { color: var(--danger); }
   .mqt-tag { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: var(--r-full); background: var(--accent-soft); color: var(--accent); font-size: 11px; font-weight: var(--fw-semibold); vertical-align: 1px; }
+  .mqt-tag.res { background: var(--surface-3); color: var(--text-2); }
   .mqt-legend { display: flex; gap: var(--sp-4); flex-wrap: wrap; font-size: var(--fs-xs); color: var(--text-3); margin: var(--sp-1) 0 var(--sp-2); }
   .mqt-banner { background: var(--accent-soft); border-radius: var(--r-lg); padding: var(--sp-2-5) var(--sp-4); margin-bottom: var(--sp-3); font-size: var(--fs-md); }
   .mqt-back { flex-shrink: 0; }
@@ -3848,6 +3849,8 @@
   /* =================== LEVE E RÁPIDO =================== */
   /* Enquanto se escreve num campo, tudo o que mexe sozinho fica em pausa (o fundo deixa de repintar e a tecla responde já) */
   html.k-typing *, html.k-typing *::before, html.k-typing *::after { animation-play-state: paused !important; }
+  /* janelas, avisos e menus nunca ficam parados a meio da entrada */
+  html.k-typing :is(#quick-modal, #quick-modal-overlay, #quick-modal *, .toast, .toast *, #cmdk, #cmdk *, .more-sheet, .more-sheet *) { animation-play-state: running !important; }
   /* Modo leve (computadores mais fracos, automático ou à escolha): sem luzes a derivar, sem brilhos em loop,
      sem vidro desfocado (fundos sólidos), transições mais curtas. A app fica igual, só mais leve. */
   html.k-lite #k-ambient { display: none; }
@@ -19978,8 +19981,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     (() => {
       const isText = el => el && (el.tagName === 'TEXTAREA' || el.isContentEditable || (el.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|range|color|file|date|time|month|week)$/i.test(el.type)));
       const root = document.documentElement;
-      document.addEventListener('focusin', e => { if (isText(e.target)) root.classList.add('k-typing'); });
-      document.addEventListener('focusout', () => setTimeout(() => { if (!isText(document.activeElement)) root.classList.remove('k-typing'); }, 0));
+      // só pausa depois de as animações de entrada (janelas, páginas) terminarem — senão ficam paradas a meio
+      let t = null;
+      document.addEventListener('focusin', e => { if (!isText(e.target)) return; clearTimeout(t); t = setTimeout(() => { if (isText(document.activeElement)) root.classList.add('k-typing'); }, 700); });
+      document.addEventListener('focusout', () => setTimeout(() => { if (!isText(document.activeElement)) { clearTimeout(t); root.classList.remove('k-typing'); } }, 0));
     })();
     // Modo leve: escolha guardada, ou automático em computadores fracos (poucos núcleos/memória, ou fotogramas lentos)
     const kLite = {
@@ -20578,7 +20583,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       const q = it => block == null ? it.qty : (it.qb[block] || 0);
       const out = [];
       lib.chapters.forEach(ch => {
-        const its = Object.values(mq.items).filter(it => it.el.chapter_code === ch.code && q(it) > 0)
+        const its = Object.values(mq.items).filter(it => it.el.chapter_code === ch.code && (q(it) > 0 || (it.reserved && !it.qty)))
           .sort((a, b) => (a.el.sort_order - b.el.sort_order) || a.code.localeCompare(b.code) || a.letter.localeCompare(b.letter) || String(a.typeKey).localeCompare(String(b.typeKey), 'pt', { numeric: true }));
         if (!its.length) return;
         const arts = [];
@@ -20629,7 +20634,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         c.arts.forEach(a => {
           const EL = a.el.code.toUpperCase();
           const artNum = num.art[EL] ??= `${chNum}.${nextIn(num.art, chNum)}`;
-          const item = (r, lvl, n) => ({ t: 'item', lvl, key: r.it.key, code: a.el.code, full: r.it.full, typeKey: r.it.typeKey || '', num: n, text: r.text, unit: r.it.el.unit, q: Math.round(r.q * 100) / 100, own: !!r.own, src: src(r.it), miss: r.missing.length ? 1 : 0 });
+          const item = (r, lvl, n) => ({ res: r.it.reserved && !r.q ? 1 : 0, t: 'item', lvl, key: r.it.key, code: a.el.code, full: r.it.full, typeKey: r.it.typeKey || '', num: n, text: r.text, unit: r.it.el.unit, q: Math.round(r.q * 100) / 100, own: !!r.own, src: src(r.it), miss: r.missing.length ? 1 : 0 });
           if (a.subs) {
             lines.push({ t: 'art', key: EL, code: a.el.code, num: artNum, text: a.text, own: !!a.own, miss: a.missing.length ? 1 : 0 });
             a.rows.forEach(r => { const n = num.sub[r.it.key] ??= `${artNum}.${nextIn(num.sub, artNum)}`; lines.push(item(r, 2, n)); });
@@ -20706,6 +20711,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         const key = full.toUpperCase() + (typeKey ? '|' + typeKey : '');
         const it = items[key] ||= { key, full, code: el.code, letter, el, typeKey, source, qb: {}, qty: 0, extra };
         it.qb[block] = (it.qb[block] || 0) + qty;
+        return it;
       };
       Object.entries(byKey).forEach(([full, rs]) => {
         const { code, letter } = keyInfo[full];
@@ -20739,10 +20745,14 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       Object.entries(manual).forEach(([full, qb]) => {
         const pk = mqtParseKey(full); const el = pk && lib.elByCode[pk.code];
         if (!el || !qb) return;
-        Object.entries(qb).forEach(([b, q]) => { if (Number(q) > 0) { add(el, pk.letter, '', b, Number(q), 'manual', ''); if (b) blocksSet.add(b); } });
+        const qs = Object.entries(qb).filter(([, q]) => Number(q) > 0);
+        // sem quantidade: fica no MQT "a considerar" (reserva o keynote; em todos os blocos)
+        if (!qs.length) { const it = items[(mqtFull(el.code, pk.letter)).toUpperCase()] || add(el, pk.letter, '', '', 0, 'manual', ''); it.reserved = true; return; }
+        qs.forEach(([b, q]) => { add(el, pk.letter, '', b, Number(q), 'manual', ''); if (b) blocksSet.add(b); });
       });
       const blocks = [...blocksSet].sort((a, b) => a.localeCompare(b, 'pt', { numeric: true }));
       const hasCommon = Object.values(items).some(it => it.qb[''] > 0);
+      issues.reserved = Object.values(items).filter(it => it.reserved && !Object.values(it.qb).some(q => q > 0)).map(it => it.full);
       const cols = blocks.length ? (hasCommon ? ['', ...blocks] : blocks) : [''];
       // perdas, arredondamento, texto
       Object.values(items).forEach(it => {
@@ -20765,12 +20775,12 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       // por capítulo, pela ordem da biblioteca
       const chapters = [];
       lib.chapters.forEach(ch => {
-        const list = Object.values(items).filter(it => it.el.chapter_code === ch.code && it.qty > 0)
+        const list = Object.values(items).filter(it => it.el.chapter_code === ch.code && (it.qty > 0 || it.reserved))
           .sort((a, b) => (a.el.sort_order - b.el.sort_order) || a.code.localeCompare(b.code) || a.letter.localeCompare(b.letter) || String(a.typeKey).localeCompare(String(b.typeKey), 'pt', { numeric: true }));
         if (list.length) chapters.push({ ch, items: list });
       });
       chapters.forEach((c, i) => { c.num = i + 1; });
-      const present = new Set(Object.values(items).filter(it => it.qty > 0).map(it => it.full.toUpperCase()));
+      const present = new Set(Object.values(items).filter(it => it.qty > 0 || it.reserved).map(it => it.full.toUpperCase()));
       return { chapters, cols, blocks, items, issues, present, rowsCount: rows.length, keyed: Object.values(byKey).reduce((t, r) => t + r.length, 0) };
     }
     // "Não te esqueças": elementos típicos e regras
@@ -21067,7 +21077,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       if (!lines.length) return `<div class="gantt-wrap"><div class="gantt-empty">${editable ? 'O MQT ainda está vazio. Carrega as tabelas do Revit ou acrescenta <b>+ Artigo à mão</b>.' : 'Esta revisão não tem artigos.'}</div></div>`;
       const md = s => escapeHtml(s).replace(/\[([^\]]+)\]/g, '<mark>[$1]</mark>');
       const notes = l => (l.notes || []).map(n => `<div class="mqt-note${n.rev === revN ? ' cur' : ''}">${escapeHtml(mqtNoteText(n))}</div>`).join('');
-      const tags = l => [l.own ? '<span class="mqt-tag">texto do projeto</span>' : '', l.src === 'manual' ? ' · à mão' : l.src === 'derived' ? ' · calculado' : ''].join('');
+      const tags = l => [l.own ? '<span class="mqt-tag">texto do projeto</span>' : '', l.res ? '<span class="mqt-tag res">a considerar</span>' : l.src === 'manual' ? ' · à mão' : l.src === 'derived' ? ' · calculado' : ''].join('');
       // subtotais por capítulo
       const chSub = {}; let curCh = null;
       lines.forEach(l => { if (l.t === 'ch') curCh = l.num; else if (l.t === 'item' && l.st !== 'del') { const st = stats[String(l.full).toUpperCase()]; if (st) chSub[curCh] = (chSub[curCh] || 0) + Math.round(st.med * l.q * 100) / 100; } });
@@ -21082,7 +21092,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
           <td class="art">${escapeHtml(l.num)}</td>
           <td class="ds"><span class="kn">${escapeHtml(l.full)}${l.typeKey ? ' · ' + escapeHtml(l.typeKey) : ''}${tags(l)}</span><span class="tx">${md(l.text)}</span>${notes(l)}</td>
           <td class="un">${escapeHtml(l.unit)}</td>
-          <td class="num qt">${mqtQ(l.q)}</td>
+          <td class="num qt">${l.res ? '<span class="muted">—</span>' : mqtQ(l.q)}</td>
           <td class="num pu">${st ? escapeHtml(fmtEUR(st.med)) : '<span class="muted">—</span>'}</td>
           <td class="num tt">${val != null ? escapeHtml(fmtEUR(val)) : ''}</td>
         </tr>`;
@@ -21149,6 +21159,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         ...Object.values(I.badVariant).map(x => row('warn', `Variante que não existe: ${escapeHtml(x.k)}`, `${escapeHtml(x.t || '')} · ${x.n} elemento${x.n > 1 ? 's' : ''}`)),
         ...Object.values(I.noField).map(x => row('warn', `Falta a medição: ${escapeHtml(x.k)}`, `A tabela não tem a coluna ${escapeHtml(x.need)}`))
       ];
+      const resv = (I.reserved || []).map(k => row('na', `A considerar: ${escapeHtml(k)}`, 'Sem quantidade — reservado no MQT. Ganha medição quando vier do Revit ou à mão.'));
       const spec = I.missing.map(m => row('warn', `Por definir: ${escapeHtml(m.key)}`, escapeHtml(m.fields.join(', ')), `<button type="button" class="text-btn" data-mqt-spec="${escapeHtml(m.key)}">Definir</button>`));
       const ckRow = x => {
         const st = x.ok ? 'ok' : x.na != null ? 'na' : 'warn';
@@ -21161,6 +21172,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       return `<div class="gantt-wrap mqt-prog"><div class="mqt-bar"><i style="width:${ck.pct}%"></i></div><span><b>${ck.pct}%</b> verificado · ${ck.open ? `${ck.open} por ver` : 'nada em falta'}</span></div>
         ${sec('Modelo', model, 'Todos os elementos têm keynote válido e medição.')}
         ${sec('Textos por completar', spec, 'Todos os textos estão completos.')}
+        ${resv.length ? sec('A considerar (sem quantidade)', resv, '') : ''}
         ${sec('Regras: se há isto, falta aquilo?', ordered(ck.rules).map(ckRow), 'Nenhuma regra em falta.')}
         ${sec('Elementos típicos de um edifício', ordered(ck.typical).map(ckRow), 'Tudo presente.')}`;
     }
@@ -21599,7 +21611,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
             const manual = JSON.parse(JSON.stringify(cfg.manual || {}));
             const q = {}; document.querySelectorAll('.mqt-man-in').forEach(i => { const v2 = numOrNull(i.value.replace(/\s/g, '')); if (v2) q[i.dataset.b] = v2; });
             delete manual[it.full.toUpperCase()]; delete manual[it.full];
-            if (Object.keys(q).length) manual[it.full] = q;
+            manual[it.full] = q;   // vazio = a considerar
             patch.manual = manual;
           }
           await mqtSaveCfg(mqtProjectId, patch);
@@ -21660,11 +21672,11 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
     }
     function openMqtManualModal(lib, cfg, mq, presetCode) {
       openQuickModal('Artigo à mão', `
-        <div class="field-hint" style="margin-top:0">Para o que não se modela: estaleiro, peitoris, impermeabilizações… Procura em toda a biblioteca.</div>
+        <div class="field-hint" style="margin-top:0">Procura em toda a biblioteca. A quantidade é opcional: sem ela, o artigo fica no MQT <b>a considerar</b> — para veres que esse keynote já está ocupado.</div>
         <label class="field-label">Artigo</label>
         ${mqtPickerHtml('mqt-man-pick')}
-        <label class="field-label">Quantidade</label>
-        ${mq.cols.map(b => `<div class="mqt-qrow"><span>${escapeHtml(mqtMulti(mq) ? mqtBlockLabel(b) : 'Quantidade')}</span><input type="text" inputmode="decimal" class="form-input mqt-man-in" data-b="${escapeHtml(b)}" placeholder="0"></div>`).join('')}
+        <label class="field-label">Quantidade <span class="muted">(opcional)</span></label>
+        ${mq.cols.map(b => `<div class="mqt-qrow"><span>${escapeHtml(mqtMulti(mq) ? mqtBlockLabel(b) : 'Quantidade')}</span><input type="text" inputmode="decimal" class="form-input mqt-man-in" data-b="${escapeHtml(b)}" placeholder="—"></div>`).join('')}
         <div class="field-hint" id="mqt-man-unit"></div>
         <div id="mqt-man-msg" class="form-msg"></div>
         <button type="button" class="primary-btn" id="mqt-man-save">Acrescentar</button>`);
@@ -21678,8 +21690,8 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         const o = picker.get();
         if (!o) { formError('mqt-man-msg', 'Escolhe o artigo (escreve e carrega em Enter).'); return; }
         const q = {}; document.querySelectorAll('.mqt-man-in').forEach(i => { const v = numOrNull(i.value.replace(/\s/g, '')); if (v) q[i.dataset.b] = v; });
-        if (!Object.keys(q).length) { formError('mqt-man-msg', 'Indica a quantidade.'); return; }
-        try { const manual = JSON.parse(JSON.stringify(cfg.manual || {})); manual[o.k] = q; await mqtSaveCfg(mqtProjectId, { manual }); closeQuickModal(); showToast('Artigo acrescentado'); renderMqt(); }
+        // sem quantidade: fica "a considerar" (reserva o keynote)
+        try { const manual = JSON.parse(JSON.stringify(cfg.manual || {})); manual[o.k] = q; await mqtSaveCfg(mqtProjectId, { manual }); closeQuickModal(); showToast(Object.keys(q).length ? 'Artigo acrescentado' : 'Artigo acrescentado — a considerar, sem quantidade'); renderMqt(); }
         catch (e) { formError('mqt-man-msg', 'Não foi possível guardar: ' + e.message); }
       });
     }
@@ -21863,6 +21875,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       const desc = (l, bold) => {
         const parts = [{ text: String(l.text || ''), font: font(l, bold ? { bold: true } : {}) }];
         (l.notes || []).forEach(n => parts.push({ text: '\n' + mqtNoteText(n), font: { italic: true, size: 9, color: { argb: n.rev === revN && l.st ? COL[l.st] : 'FF808080' } } }));
+        if (l.res) parts.push({ text: '\nA considerar — sem medição', font: { italic: true, size: 9, color: { argb: 'FF808080' } } });
         return parts.length > 1 ? { richText: parts } : parts[0].text;
       };
       let r = 7; const subCells = []; let first = 7, curCh = null;
@@ -21885,7 +21898,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         if (typeof row.getCell(2).value === 'string') row.getCell(2).font = font(l);
         if (l.t === 'item') {
           row.getCell(3).value = l.unit; row.getCell(3).font = font(l);
-          row.getCell(cQ).value = l.q; row.getCell(cQ).numFmt = qfmt; row.getCell(cQ).font = font(l);
+          if (!l.res) { row.getCell(cQ).value = l.q; row.getCell(cQ).numFmt = qfmt; row.getCell(cQ).font = font(l); }
           const st = l.st === 'del' ? null : stats?.[String(l.full).toUpperCase()];
           const pu = row.getCell(cP);
           if (st) pu.value = st.med; else if (l.st !== 'del') pu.fill = fill(stats ? 'FFFCE8E8' : 'FFFFF6D5');
