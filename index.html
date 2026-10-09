@@ -729,6 +729,13 @@
   .ata-entry-body li > ul, .ata-entry-body li > ol { margin: var(--sp-0-5) 0 0; }
   .ata-entry-body ul ul { list-style-type: circle; }
   .ata-entry-body ul ul ul { list-style-type: square; }
+  .ata-files { display: grid; gap: 8px; }
+  .ata-files:empty { display: none; }
+  .ata-file { display: grid; grid-template-columns: 64px 1fr auto; gap: 10px; align-items: center; padding: 6px; border: 1px solid var(--border); border-radius: 10px; }
+  .ata-file img { width: 64px; height: 48px; object-fit: cover; border-radius: 6px; background: var(--bg-soft, rgba(0,0,0,.04)); }
+  .ata-file-main { display: grid; gap: 4px; min-width: 0; } .ata-file-main b { font-size: 12px; color: var(--accent); }
+  .ata-file-btns { display: flex; gap: 4px; }
+  .ata-files-add { display: flex; align-items: center; justify-content: center; margin-top: 8px; cursor: pointer; }
   .ata-entry-actions { display: none; gap: var(--sp-5); margin-top: var(--sp-3); flex-wrap: wrap; }
   .ata-entry.expanded .ata-entry-actions { display: flex; }
   .ata-toolbar { display: flex; gap: var(--sp-1); flex-wrap: wrap; margin-bottom: var(--sp-1-5); }
@@ -4442,7 +4449,8 @@
       { id: 'cat-1', name: 'Financial Management' },
       { id: 'cat-2', name: 'Internal Development' },
       { id: 'cat-3', name: 'Project Scouting' },
-      { id: 'cat-4', name: 'Skill Workshop' }
+      { id: 'cat-4', name: 'Skill Workshop' },
+      { id: 'cat-5', name: 'Outros' }
     ];
 
     let mockTimeLog = [
@@ -5468,6 +5476,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         projects = projRes.data || [];
         categories = catRes.data || [];
       }
+      categories.forEach(c => { if (isNoteCategory(c.name)) tsNoteCats.add(String(c.id)); });
 
       projectSelect.innerHTML = '<option value="">Seleciona um projeto</option>' +
         projects.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.code ? p.code + ' — ' : '')}${escapeHtml(p.name)}</option>`).join('');
@@ -5543,6 +5552,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       }
       if (horasMode === 'other' && !categoryId) {
         msgEl.textContent = 'Escolhe uma categoria.';
+        msgEl.className = 'form-msg error';
+        return;
+      }
+      if (horasMode === 'other' && tsNoteCats.has(String(categoryId)) && !description) {
+        msgEl.textContent = 'Em «Outros», a descrição é obrigatória (ex: Contacto Zé Martins).';
         msgEl.className = 'form-msg error';
         return;
       }
@@ -6953,7 +6967,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
 
           <section data-dpanel="fases" hidden>
             <div class="gantt-wrap">
-              <div class="card-head"><h2>Fases</h2><span class="card-head-actions"><button type="button" id="add-break-btn" class="text-btn">+ Pausa</button><button type="button" id="add-revision-btn" class="text-btn">+ Nova revisão de fase</button></span></div>
+              <div class="card-head"><h2>Fases</h2><span class="card-head-actions"><button type="button" id="add-break-btn" class="text-btn">+ Pausa</button><button type="button" id="add-revision-btn" class="text-btn">+ Nova fase ou revisão</button></span></div>
               <div id="revision-form-wrap" style="display:none;"></div>
               ${stagesTableHtml}
               ${npsClose ? `<div class="nps-close-row"><span>Fecho do projeto</span>${npsPillHtml(npsClose, npsCfgDet)}</div>` : ''}
@@ -7285,6 +7299,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             <option value="">A carregar...</option>
           </select>
           <div id="revision-camara"></div>
+          <label class="check-row" id="rv-nobill-wrap"><input type="checkbox" id="rv-nobill"> Não é para faturar (fica fora das contas da NOVA)</label>
           <div id="revision-cause"><label class="field-label">Porquê esta revisão?</label>
             <label class="check-row"><input type="radio" name="rv-cause" value="cliente"> Pedido do cliente</label>
             <label class="check-row"><input type="radio" name="rv-cause" value="nova"> Retrabalho nosso (erro, omissão, melhoria interna)</label>
@@ -7292,13 +7307,13 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             <label class="check-row rv-co" id="rv-co-wrap" hidden><input type="checkbox" id="rv-co"> Cobrar ao cliente como <b>trabalho a mais</b> (o cliente aprova num link e a fase é criada quando aprovar)</label></div>
           <label class="field-label">Rótulo da revisão (opcional)</label>
           <input type="text" id="revision-label" class="form-input" placeholder="ex: R02">
-          <label class="field-label">Tipo de valor</label>
+          <div id="revision-value-wrap"><label class="field-label">Tipo de valor</label>
           <div class="segmented" id="revision-value-type-toggle">
             <button type="button" data-value-type="percentage" class="active">Percentagem</button>
             <button type="button" data-value-type="fixed">Valor fixo</button>
           </div>
           <label class="field-label" id="revision-value-label">Percentagem do valor de adjudicação (%)</label>
-          <input type="number" id="revision-value" class="form-input" step="0.01" min="0" placeholder="ex: 10">
+          <input type="number" id="revision-value" class="form-input" step="0.01" min="0" placeholder="ex: 10"></div>
           <label class="field-label">Início (opcional)</label>
           <input type="date" id="revision-start" class="form-input">
           <label class="field-label">Fim (opcional)</label>
@@ -7362,7 +7377,17 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           const vt = document.getElementById('revision-value-type-toggle');
           if (vt && vt.previousElementSibling) vt.previousElementSibling.hidden = noVal;
         };
-        typeSel.addEventListener('change', drawRevCamara);
+        typeSel.addEventListener('change', () => { drawRevCamara(); syncNoBill(); });
+        // Fase que não é para faturar: sem valor nem motivo, fica fora das contas da NOVA
+        const syncNoBill = () => {
+          const nb = document.getElementById('rv-nobill').checked;
+          const isOf = camBox.querySelector('[name="rv-kind"]:checked')?.value === 'oficio';
+          document.getElementById('revision-value-wrap').hidden = nb;
+          document.getElementById('revision-cause').hidden = nb || isOf;
+          if (!nb && !isOf) ['revision-value-type-toggle', 'revision-value-label', 'revision-value'].forEach(id => { const e = document.getElementById(id); if (e) e.hidden = false; });
+        };
+        document.getElementById('rv-nobill').addEventListener('change', syncNoBill);
+        camBox.addEventListener('change', syncNoBill);
 
         document.querySelectorAll('[name="rv-cause"]').forEach(r => r.addEventListener('change', () => { document.getElementById('rv-co-wrap').hidden = document.querySelector('[name="rv-cause"]:checked')?.value !== 'cliente'; }));
         let revisionValueType = 'percentage';
@@ -7397,17 +7422,18 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             return;
           }
           const isOficioRev = document.querySelector('#revision-camara [name="rv-kind"]:checked')?.value === 'oficio';
+          const noBill = document.getElementById('rv-nobill').checked;
           const causeEl = document.querySelector('[name="rv-cause"]:checked');
-          if (!isOficioRev && !causeEl) { msgEl.textContent = 'Diz porquê: pedido do cliente, retrabalho nosso ou exigência da Câmara.'; msgEl.className = 'form-msg error'; return; }
-          const revCause = isOficioRev ? 'camara' : causeEl.value;
+          if (!isOficioRev && !noBill && !causeEl) { msgEl.textContent = 'Diz porquê: pedido do cliente, retrabalho nosso ou exigência da Câmara.'; msgEl.className = 'form-msg error'; return; }
+          const revCause = isOficioRev ? 'camara' : noBill ? null : causeEl.value;
           // Pedido do cliente a cobrar: em vez de criar já a fase, abre o trabalho a mais (a fase nasce quando o cliente aprovar)
-          if (!isOficioRev && revCause === 'cliente' && document.getElementById('rv-co')?.checked) {
+          if (!isOficioRev && !noBill && revCause === 'cliente' && document.getElementById('rv-co')?.checked) {
             wrap.style.display = 'none'; wrap.innerHTML = '';
             const after = stages.filter(s => s.stage_type_id === stageTypeId).sort((a, b) => (b.stage_order ?? 0) - (a.stage_order ?? 0))[0];
             openChangeOrderModal(projectId, { preset: { stage_type_id: stageTypeId, after_stage_id: after?.id, source: 'revision', pricing: revisionValueType === 'fixed' && valueRaw > 0 ? 'fixed' : 'hours', value: revisionValueType === 'fixed' && valueRaw > 0 ? valueRaw : '' }, after: () => openDetail(projectId) });
             return;
           }
-          if (!isOficioRev && (isNaN(valueRaw) || valueRaw < 0)) {
+          if (!isOficioRev && !noBill && (isNaN(valueRaw) || valueRaw < 0)) {
             msgEl.textContent = 'Indica um valor válido.';
             msgEl.className = 'form-msg error';
             return;
@@ -7447,10 +7473,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               stage_type_id: stageTypeId,
               stage_order: maxOrder + 1,
               revision_label: revisionLabel,
-              base_stage: false,
-              percentage: isOficioRev ? null : revisionValueType === 'percentage' ? valueRaw : null,
-              fixed_value: isOficioRev ? 0 : revisionValueType === 'fixed' ? valueRaw : null,
-              pricing_type: isOficioRev ? 'fixed' : revisionValueType,
+              // Primeira fase deste tipo no projeto: é fase base, não revisão
+              base_stage: !stages.some(s => s.stage_type_id === stageTypeId),
+              percentage: isOficioRev || noBill ? null : revisionValueType === 'percentage' ? valueRaw : null,
+              fixed_value: isOficioRev || noBill ? 0 : revisionValueType === 'fixed' ? valueRaw : null,
+              pricing_type: isOficioRev || noBill ? 'fixed' : revisionValueType,
+              excluded_from_invoicing: noBill,
               start_date: startDate,
               end_date: endDate,
               revision_cause: revCause,
@@ -7749,8 +7777,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     }
     function ataActionsHtml(n) {
       const ver = n.revision !== undefined && n.revision !== null;
-      if (!ver && !n.project_id) return '';
       return `<div class="ata-entry-actions">
+          <button type="button" class="text-btn" data-ata-pdf="${escapeHtml(n.id)}" title="Abre a ata pronta a imprimir ou guardar em PDF, com as imagens no fim">PDF</button>
           ${ver ? `<button type="button" class="text-btn" data-ata-edit="${escapeHtml(n.id)}">Editar</button>` : ''}
           ${ver && n.revision > 0 ? `<button type="button" class="text-btn" data-ata-versions="${escapeHtml(n.id)}">Versões anteriores (${n.revision})</button>` : ''}
           ${n.project_id ? `<button type="button" class="text-btn" data-ata-co="${escapeHtml(n.id)}" title="Algo pedido nesta reunião que está fora do âmbito">+ Trabalho a mais</button>` : ''}
@@ -7762,6 +7790,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         ev.stopPropagation();
         openNewAtaModal(null, null, byId[btn.dataset.ataEdit], onChanged);
       }));
+      root.querySelectorAll('[data-ata-pdf]').forEach(btn => btn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        exportAtaPdf(byId[btn.dataset.ataPdf]);
+      }));
       root.querySelectorAll('[data-ata-versions]').forEach(btn => btn.addEventListener('click', (ev) => {
         ev.stopPropagation();
         openAtaVersionsModal(byId[btn.dataset.ataVersions]);
@@ -7772,6 +7804,150 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const sel = String(getSelection?.() || '').trim();
         openChangeOrderModal(n.project_id, { preset: { title: '', description: sel || `Pedido na reunião de ${fmtDayMonth(n.meeting_date)}${n.title ? ' (' + n.title + ')' : ''}.`, source: 'ata', source_id: n.id }, after: onChanged });
       }));
+    }
+
+    // ---------- Atas: imagens e esquissos (bucket "ata-files", tabela meeting_note_files) ----------
+    let mockAtaFiles = [];
+    async function loadAtaFiles(noteId) {
+      if (!noteId) return [];
+      if (devMode) return mockAtaFiles.filter(f => f.note_id === noteId).sort((a, b) => a.sort - b.sort);
+      const r = await supabase.from('meeting_note_files').select('id, note_id, path, name, caption, sort').eq('note_id', noteId).order('sort');
+      if (r.error) { console.warn('anexos da ata:', r.error.message); return []; }
+      return r.data || [];
+    }
+    async function ataFileUrls(files) {
+      if (devMode) return Object.fromEntries(files.map(f => [f.id, f.url || '']));
+      if (!files.length) return {};
+      const r = await supabase.storage.from('ata-files').createSignedUrls(files.map(f => f.path), 3600);
+      if (r.error) throw r.error;
+      const byPath = Object.fromEntries((r.data || []).map(x => [x.path, x.signedUrl]));
+      return Object.fromEntries(files.map(f => [f.id, byPath[f.path] || '']));
+    }
+    // Lista editável de imagens dentro da janela da ata: acrescentar (ficheiro ou colar), legenda, ordem, tirar
+    async function ataFilesEditor(noteId) {
+      const box = document.getElementById('ata-files');
+      const input = document.getElementById('ata-files-input');
+      const orig = await loadAtaFiles(noteId);
+      const urls = await ataFileUrls(orig).catch(() => ({}));
+      let items = orig.map(f => ({ ...f, url: urls[f.id], caption: f.caption || '' }));
+      const removed = [];
+      const origSig = JSON.stringify(orig.map(f => [f.id, f.caption || '']));
+      const draw = () => {
+        box.innerHTML = items.map((f, i) => `
+          <div class="ata-file" data-i="${i}">
+            <img src="${escapeHtml(f.url || '')}" alt="">
+            <div class="ata-file-main"><b>Fig. ${i + 1}</b>
+              <input type="text" class="form-input" data-cap value="${escapeHtml(f.caption)}" placeholder="Legenda (opcional)" maxlength="200"></div>
+            <div class="ata-file-btns">
+              <button type="button" class="ck-x" data-up ${i ? '' : 'disabled'} aria-label="Subir">↑</button>
+              <button type="button" class="ck-x" data-del aria-label="Tirar imagem">×</button>
+            </div>
+          </div>`).join('');
+      };
+      const add = list => {
+        [...list].filter(f => /^image\//.test(f.type)).forEach(file => {
+          if (file.size > 15 * 1024 * 1024) { showToast(`«${file.name}» tem mais de 15 MB.`, { type: 'error' }); return; }
+          items.push({ file, name: file.name || 'imagem.png', caption: '', url: URL.createObjectURL(file) });
+        });
+        draw();
+      };
+      input.addEventListener('change', () => { add(input.files); input.value = ''; });
+      // (nos campos desta janela: o corpo da janela é reutilizado por outras)
+      const onPaste = e => {
+        const imgs = [...(e.clipboardData?.items || [])].filter(it => it.kind === 'file' && /^image\//.test(it.type)).map(it => it.getAsFile()).filter(Boolean);
+        if (imgs.length) { e.preventDefault(); add(imgs); showToast(imgs.length === 1 ? 'Imagem acrescentada' : imgs.length + ' imagens acrescentadas'); }
+      };
+      ['ata-body', 'ata-title'].forEach(id => document.getElementById(id)?.addEventListener('paste', onPaste));
+      box.addEventListener('input', e => { const r = e.target.closest('[data-i]'); if (r && e.target.matches('[data-cap]')) items[r.dataset.i].caption = e.target.value; });
+      box.addEventListener('click', e => {
+        const r = e.target.closest('[data-i]'); if (!r) return;
+        const i = Number(r.dataset.i);
+        if (e.target.closest('[data-del]')) { const [x] = items.splice(i, 1); if (x.id) removed.push(x); draw(); }
+        else if (e.target.closest('[data-up]') && i > 0) { [items[i - 1], items[i]] = [items[i], items[i - 1]]; draw(); }
+      });
+      draw();
+      return {
+        changed: () => removed.length > 0 || items.some(f => f.file) || JSON.stringify(items.filter(f => f.id).map(f => [f.id, f.caption])) !== origSig,
+        async save(id) {
+          const me = (await getCurrentMember())?.id || null;
+          for (const f of removed) {
+            if (devMode) { mockAtaFiles = mockAtaFiles.filter(x => x.id !== f.id); continue; }
+            await dbDelete('meeting_note_files', f.id, mockAtaFiles);
+            await supabase.storage.from('ata-files').remove([f.path]);
+          }
+          for (let i = 0; i < items.length; i++) {
+            const f = items[i], caption = f.caption.trim() || null;
+            if (f.id) {
+              const o = orig.find(x => x.id === f.id);
+              if (o && (o.sort !== i || (o.caption || null) !== caption)) {
+                if (devMode) Object.assign(mockAtaFiles.find(x => x.id === f.id) || {}, { sort: i, caption });
+                else await dbUpdate('meeting_note_files', f.id, { sort: i, caption }, mockAtaFiles);
+              }
+              continue;
+            }
+            const ext = (f.name.match(/\.([a-z0-9]{2,5})$/i)?.[1] || (f.file.type.split('/')[1] || 'png')).toLowerCase();
+            const path = `${id}/${Date.now()}-${i}.${ext}`;
+            if (devMode) { mockAtaFiles.push({ id: 'af-' + Date.now() + i, note_id: id, path, name: f.name, caption, sort: i, url: f.url }); continue; }
+            const up = await supabase.storage.from('ata-files').upload(path, f.file, { contentType: f.file.type, upsert: false });
+            if (up.error) throw up.error;
+            const r = await supabase.from('meeting_note_files').insert({ note_id: id, path, name: f.name, caption, sort: i, created_by: me });
+            if (r.error) throw r.error;
+          }
+        }
+      };
+    }
+    // Ata pronta a imprimir / guardar em PDF (para o arquivo no servidor), com as imagens no fim como anexos
+    async function exportAtaPdf(n) {
+      const w = window.open('', '_blank');
+      if (!w) { showToast('O navegador bloqueou a janela. Permite janelas deste site e tenta outra vez.', { type: 'error', ms: 7000 }); return; }
+      w.document.write('<p style="font:14px system-ui;padding:24px">A preparar a ata…</p>');
+      try {
+        const files = await loadAtaFiles(n.id);
+        const urls = await ataFileUrls(files);
+        const e = escapeHtml;
+        const where = n.projectName || n.projects?.name || n.categoryName || (n.project_id && devMode ? MOCK_PROJECTS.find(p => p.id === n.project_id)?.name : '') || '';
+        let whereName = where;
+        if (!whereName && n.project_id && !devMode) whereName = (await supabase.from('projects').select('name').eq('id', n.project_id).single()).data?.name || '';
+        const date = new Date(n.meeting_date + 'T00:00:00').toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' });
+        const ver = n.revision != null ? revLabel(n.revision) : '';
+        const logo = new URL('assets/nova-logo-plum-cropped.png', location.href).href;
+        const fileTitle = `Ata ${n.meeting_date}${whereName ? ' — ' + whereName : ''} — ${n.title || ''}`.replace(/[\\/:*?"<>|]/g, '-');
+        const html = `<!doctype html><html lang="pt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${e(fileTitle)}</title>
+          <style>
+            @page { size: A4; margin: 16mm 16mm 18mm; }
+            * { box-sizing: border-box; }
+            html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            body { font: 10pt/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1B1A19; margin: 0 auto; padding: 28px 24px 40px; max-width: 820px; background: #fff; }
+            .bar { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+            .bar button { font: inherit; font-weight: 600; background: #714D79; color: #fff; border: 0; border-radius: 10px; padding: 9px 16px; cursor: pointer; }
+            header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; padding-bottom: 12px; border-bottom: 1px solid #E4E3DE; }
+            header img { height: 26px; } header .meta { text-align: right; font-size: 8.5pt; color: #6B6660; }
+            .eyebrow { font-size: 8pt; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #714D79; }
+            h1 { font-size: 18pt; line-height: 1.2; margin: 4px 0 2px; font-weight: 600; letter-spacing: -0.01em; }
+            .sub { color: #6B6660; font-size: 9.5pt; margin-bottom: 18px; }
+            .body p { margin: 0 0 8px; } .body ul, .body ol { margin: 0 0 8px; padding-left: 20px; } .body li { margin: 2px 0; }
+            h2 { font-size: 11pt; font-weight: 600; margin: 24px 0 8px; padding-bottom: 6px; border-bottom: 2px solid #1B1A19; }
+            .idx { margin: 0 0 8px; padding-left: 0; list-style: none; } .idx li { padding: 2px 0; }
+            figure { margin: 0; page-break-before: always; break-before: page; padding-top: 4px; }
+            figure img { display: block; max-width: 100%; max-height: 235mm; margin: 0 auto 8px; object-fit: contain; }
+            figcaption { font-size: 9.5pt; color: #3A3835; text-align: center; } figcaption b { color: #714D79; }
+            footer { font-size: 7.5pt; color: #736D66; margin-top: 24px; display: flex; justify-content: space-between; }
+            @media print { body { padding: 0; max-width: none; } .bar { display: none; } }
+          </style></head><body>
+          <div class="bar"><button onclick="window.print()">Imprimir / guardar em PDF</button></div>
+          <header><img src="${e(logo)}" alt="NOVA"><div class="meta">NOVA Associates<br>${e(date)}</div></header>
+          <div class="eyebrow">Ata de reunião${ver ? ' · ' + e(ver) : ''}</div>
+          <h1>${e(n.title || 'Ata')}</h1>
+          <div class="sub">${e([whereName, date].filter(Boolean).join(' · '))}</div>
+          <div class="body">${renderAtaBody(n.body)}</div>
+          ${files.length ? `<h2>Anexos</h2><ol class="idx">${files.map((f, i) => `<li><b>Fig. ${i + 1}</b>${f.caption ? ' — ' + e(f.caption) : ''}</li>`).join('')}</ol>` : ''}
+          <footer><span>${e(fileTitle)}</span><span>NOVA Compass</span></footer>
+          ${files.map((f, i) => `<figure><img src="${e(urls[f.id] || '')}" alt="Fig. ${i + 1}"><figcaption><b>Fig. ${i + 1}</b>${f.caption ? ' — ' + e(f.caption) : ''}</figcaption></figure>`).join('')}
+          </body></html>`;
+        w.document.open(); w.document.write(html); w.document.close();
+      } catch (err) {
+        w.document.open(); w.document.write('<p style="font:14px system-ui;padding:24px">Não foi possível preparar a ata: ' + escapeHtml(err.message) + '</p>'); w.document.close();
+      }
     }
 
     async function openAtaVersionsModal(note) {
@@ -7848,6 +8024,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         </div>
         <textarea id="ata-body" class="form-input" rows="8" placeholder="Notas da reunião...&#10;- ponto&#10;  - sub-ponto"></textarea>
         <div class="field-hint">Começa uma linha com <strong>-</strong> para criar um ponto. Tab / Shift+Tab (ou ⇥ / ⇤) muda o nível. <strong>**texto**</strong> fica a negrito.</div>
+        <label class="field-label">Imagens e esquissos</label>
+        <div id="ata-files" class="ata-files"></div>
+        <label class="secondary-btn ata-files-add"><input type="file" id="ata-files-input" accept="image/*" multiple hidden>+ Acrescentar imagens</label>
+        <div class="field-hint">Ficam como anexos no fim do PDF da ata (Fig. 1, Fig. 2…). Também podes colar (Ctrl+V) uma captura de ecrã. No texto, refere-te a elas como «ver Fig. 1».</div>
         <button id="ata-submit" class="primary-btn">${isEdit ? 'Guardar como ' + revLabel(existing.revision + 1) : 'Guardar ata'}</button>
         <div id="ata-msg" class="form-msg"></div>
       `;
@@ -7858,6 +8038,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         document.getElementById('ata-body').value = existing.body ?? '';
       }
       attachAtaEditor(document.getElementById('ata-body'), document.getElementById('ata-toolbar'));
+      const ataFiles = await ataFilesEditor(isEdit ? existing.id : null);
 
       const projSelect = document.getElementById('ata-project');
       let projects;
@@ -7948,9 +8129,18 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           const unchanged = title === (existing.title ?? '') && body === (existing.body ?? '').trim() &&
             date === existing.meeting_date && projectV === (existing.project_id ?? null) && categoryV === (existing.category_id ?? null) &&
             (mkSelect.value || null) === (existing.milestone_id ?? null);
-          if (unchanged) {
+          if (unchanged && !ataFiles.changed()) {
             msgEl.textContent = 'Não há alterações para guardar.';
             msgEl.className = 'form-msg error';
+            return;
+          }
+          // Só mudaram as imagens: grava-as sem criar uma versão nova da ata
+          if (unchanged) {
+            try {
+              await ataFiles.save(existing.id);
+              closeQuickModal(); showToast('Imagens guardadas');
+              if (onSaved) onSaved();
+            } catch (err) { msgEl.textContent = 'Erro ao guardar as imagens: ' + err.message; msgEl.className = 'form-msg error'; }
             return;
           }
         }
@@ -7985,6 +8175,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               if (res.error) throw res.error;
               if (!res.data || res.data.length === 0) throw new Error('a base de dados não aceitou a alteração (sem permissão para editar atas).');
             }
+            await ataFiles.save(existing.id);
             closeQuickModal();
             showToast(`Guardada como ${revLabel(existing.revision + 1)} — a ${revLabel(existing.revision)} fica no histórico`);
             if (onSaved) onSaved();
@@ -7992,14 +8183,18 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           }
           payload.created_by = member?.id || null;
           if (devMode) {
-            mockMeetingNotes.unshift({ id: 'note-' + Date.now(), ...payload, revision: 0, created_at: new Date().toISOString() });
+            const nid = 'note-' + Date.now();
+            mockMeetingNotes.unshift({ id: nid, ...payload, revision: 0, created_at: new Date().toISOString() });
+            await ataFiles.save(nid);
             msgEl.textContent = 'Ata guardada (modo de demonstração).';
             msgEl.className = 'form-msg success';
             setTimeout(closeQuickModal, 800);
             return;
           }
-          const res = await supabase.from('meeting_notes').insert(payload);
+          const res = await supabase.from('meeting_notes').insert(payload).select('id').single();
           if (res.error) throw res.error;
+          try { await ataFiles.save(res.data.id); }
+          catch (err) { showToast('A ata ficou guardada, mas as imagens não: ' + err.message, { type: 'error', ms: 8000 }); }
           closeQuickModal();
           showToast('Ata guardada');
           if (lockedProjectId) openDetail(lockedProjectId);
@@ -8710,10 +8905,15 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     }
 
     async function loadTimeCategories() {
-      if (devMode) return MOCK_CATEGORIES;
+      if (devMode) { MOCK_CATEGORIES.forEach(c => { if (isNoteCategory(c.name)) tsNoteCats.add(c.id); }); return MOCK_CATEGORIES; }
       const res = await supabase.from('time_categories').select('id, name').order('name');
-      return res.data || [];
+      const list = res.data || [];
+      list.forEach(c => { if (isNoteCategory(c.name)) tsNoteCats.add(String(c.id)); });
+      return list;
     }
+    // Categoria "Outros": a nota é obrigatória e cada nota é uma linha própria na grelha de horas
+    const tsNoteCats = new Set();
+    const isNoteCategory = name => normTxt(name || '') === 'outros';
 
     // Carrega marcos de um intervalo de datas, já com owners resolvidos.
     // ---------- Office 365: reuniões Teams e eventos do Outlook de cada pessoa (lidos pela função ms365-sync) ----------
@@ -15398,10 +15598,16 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         tour: [{ go: 'project:fases', sel: '.stages-table .st-name', text: 'Toca no nome da fase para abrir todos os detalhes.' }] },
       { id: 'revisao', cat: 'proj', ctx: ['detail:fases'], first: 6,
         q: 'abro uma revisão de fase (ofício, aditamento, alterações do cliente)',
-        a: 'Fases → + Nova revisão de fase. Diz o tipo de fase, porquê (cliente, nós ou Câmara) e, se for Câmara, se é um ofício.',
-        steps: ['Abre o projeto → [[Fases]] → [[+ Nova revisão de fase]].', 'Escolhe o **Tipo de fase** que está a ser revista (ex.: Licenciamento).', 'Em licenciamento e PIP, a app pergunta **Esta revisão é…**: **Resposta a um ofício da Câmara** (indica a data do ofício e o prazo em dias úteis — a app avisa-te antes de acabar) ou **Aditamento** / **Novo PIP**.', 'Responde **Porquê esta revisão?**: **Pedido do cliente**, **Retrabalho nosso** ou **Exigência da Câmara**. Isto alimenta o Mission Control → Qualidade.', 'Indica o valor (as respostas a ofício não se faturam) e toca em [[Adicionar fase]].'],
+        a: 'Fases → + Nova fase ou revisão. Diz o tipo de fase, porquê (cliente, nós ou Câmara) e, se for Câmara, se é um ofício.',
+        steps: ['Abre o projeto → [[Fases]] → [[+ Nova fase ou revisão]].', 'Escolhe o **Tipo de fase** que está a ser revista (ex.: Licenciamento).', 'Em licenciamento e PIP, a app pergunta **Esta revisão é…**: **Resposta a um ofício da Câmara** (indica a data do ofício e o prazo em dias úteis — a app avisa-te antes de acabar) ou **Aditamento** / **Novo PIP**.', 'Responde **Porquê esta revisão?**: **Pedido do cliente**, **Retrabalho nosso** ou **Exigência da Câmara**. Isto alimenta o Mission Control → Qualidade.', 'Indica o valor (as respostas a ofício não se faturam) e toca em [[Adicionar fase]].'],
         kw: 'revisao oficio aditamento alteracoes cliente retrabalho nova revisao r01 r02 pip novo correcoes',
         tour: [{ go: 'project:fases', sel: '#add-revision-btn', text: 'Toca aqui para abrir uma revisão.' }] },
+      { id: 'fase-nao-faturar', cat: 'proj', ctx: ['detail:fases'],
+        q: 'crio uma fase que não é para faturar (ex.: Licença / Alvará de Obra)',
+        a: 'Fases → + Nova fase ou revisão → marca «Não é para faturar». Não pede valor nem motivo e fica fora das contas da NOVA.',
+        steps: ['Abre o projeto → [[Fases]] → [[+ Nova fase ou revisão]].', 'Escolhe o **Tipo de fase** (ex.: **Licença / Alvará de Obra**).', 'Marca **Não é para faturar**: o valor e o motivo deixam de ser pedidos.', 'Indica as datas, se quiseres, e toca em [[Adicionar fase]].', 'Numa fase que já existe: abre a fase → **Mais opções** → **Fora das contas da NOVA**.'],
+        kw: 'fase nao faturar sem faturacao gratuita fora das contas alvara licenca obra nova fase sem valor',
+        tour: [{ go: 'project:fases', sel: '#add-revision-btn', text: 'Toca aqui e marca «Não é para faturar».' }] },
       { id: 'pausa', cat: 'proj', ctx: ['detail:fases'],
         q: 'registo que o projeto está parado (à espera do cliente ou da Câmara)',
         a: 'Fases → + Pausa. As fases seguintes esperam e os prazos andam para a frente até terminares a pausa.',
@@ -15423,8 +15629,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { id: 'ata', cat: 'proj', ctx: ['detail:atas', 'atas'],
         q: 'escrevo uma ata de reunião',
         a: 'Novo → Nova ata de reunião, ou no projeto → Atas → + Nova ata.',
-        steps: ['Toca em [[Novo]] → [[Nova ata de reunião]] (ou no projeto: [[Atas]] → [[+ Nova ata]]).', 'Escolhe o projeto (ou deixa sem projeto para reuniões internas), a data e um título.', 'Escreve as notas. Listas com «- » ou «1. » ficam formatadas.', 'Grava. As versões anteriores ficam guardadas: dá para ver o que mudou.', 'Todas as atas estão em [[Atas]], com pesquisa.'],
-        kw: 'ata reuniao notas acta minuta registo reuniao',
+        steps: ['Toca em [[Novo]] → [[Nova ata de reunião]] (ou no projeto: [[Atas]] → [[+ Nova ata]]).', 'Escolhe o projeto (ou deixa sem projeto para reuniões internas), a data e um título.', 'Escreve as notas. Listas com «- » ou «1. » ficam formatadas.', 'Imagens ou esquissos: [[+ Acrescentar imagens]] (ou cola uma captura com Ctrl+V). Ficam numeradas Fig. 1, Fig. 2… — refere-te a elas no texto.', 'Grava. As versões anteriores ficam guardadas: dá para ver o que mudou.', 'Para arquivar no servidor: abre a ata → [[PDF]] → **Imprimir / guardar em PDF**. As imagens vão no fim, como anexos.', 'Todas as atas estão em [[Atas]], com pesquisa.'],
+        kw: 'ata reuniao notas acta minuta registo reuniao pdf imprimir arquivo servidor imagens esquissos anexos figura',
         tour: [{ go: 'project:atas', sel: '#add-ata-btn', text: 'Toca aqui para escrever uma ata deste projeto.' }] },
       { id: 'marco', cat: 'proj', ctx: ['detail:marcos', 'agenda'],
         q: 'marco uma reunião, visita ou entrega na agenda do projeto',
@@ -15455,7 +15661,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { id: 'oficio', cat: 'camara', ctx: ['detail:fases', 'detail:camara'],
         q: 'respondo a um ofício da Câmara',
         a: 'Abre uma revisão da fase como «Resposta a um ofício»: indica a data e o prazo e a app avisa-te antes de acabar.',
-        steps: ['Abre o projeto → [[Fases]] → [[+ Nova revisão de fase]].', 'Escolhe o tipo **Licenciamento** (ou **PIP**).', 'Em **Esta revisão é…** escolhe **Resposta a um ofício da Câmara**.', 'Indica a **Data do ofício** e o **Prazo (dias úteis)**, ou marca **O ofício não tem prazo**.', 'Toca em [[Adicionar fase]]. A app calcula até quando responder e avisa na página Hoje.', 'As respostas a ofício **não se faturam** e contam no indicador «ofícios por processo».'],
+        steps: ['Abre o projeto → [[Fases]] → [[+ Nova fase ou revisão]].', 'Escolhe o tipo **Licenciamento** (ou **PIP**).', 'Em **Esta revisão é…** escolhe **Resposta a um ofício da Câmara**.', 'Indica a **Data do ofício** e o **Prazo (dias úteis)**, ou marca **O ofício não tem prazo**.', 'Toca em [[Adicionar fase]]. A app calcula até quando responder e avisa na página Hoje.', 'As respostas a ofício **não se faturam** e contam no indicador «ofícios por processo».'],
         kw: 'oficio resposta camara notificacao pedido elementos correcao prazo resposta',
         tour: [{ go: 'project:fases', sel: '#add-revision-btn', text: 'Começa aqui: uma revisão do tipo «Resposta a um ofício».' }] },
       { id: 'prazo-manual', cat: 'camara', ctx: ['detail:camara', 'detail:marcos'],
@@ -15469,8 +15675,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { id: 'horas', cat: 'horas', ctx: ['horas', 'home'], first: 8,
         q: 'registo as minhas horas',
         a: 'Em Horas, escreve as horas em cada dia da semana: grava sozinho quando sais da célula.',
-        steps: ['Abre [[Horas]].', 'Cada linha é um **projeto · fase** (ou uma categoria interna). As fases em que estás atribuído já aparecem sugeridas.', 'Escreve as horas na célula do dia: **1,5** ou **1:30**. Podes juntar uma nota: «2 revisão de plantas».', 'Sai da célula: fica gravado. Para apagar, deixa vazio.', 'Falta uma linha? Toca em [[+ Acrescentar linha]].', 'No telemóvel: escolhe o dia na fita de cima e escreve as horas de cada linha.'],
-        kw: 'horas registar imputar tempo timesheet folha horas semana trabalho lancar horas',
+        steps: ['Abre [[Horas]].', 'Cada linha é um **projeto · fase** (ou uma categoria interna). As fases em que estás atribuído já aparecem sugeridas.', 'Escreve as horas na célula do dia: **1,5** ou **1:30**. Podes juntar uma nota: «2 revisão de plantas».', 'Sai da célula: fica gravado. Para apagar, deixa vazio.', 'Falta uma linha? Toca em [[+ Acrescentar linha]].', 'Trabalho interno sem categoria certa? Em [[+ Acrescentar linha]] → **Interno** → **Outros**, escreve o que foi (ex.: «Contacto Zé Martins») — a nota é obrigatória e cada nota fica numa linha própria.', 'No telemóvel: escolhe o dia na fita de cima e escreve as horas de cada linha.'],
+        kw: 'horas registar imputar tempo timesheet folha horas semana trabalho lancar horas outros interno nota',
         tour: [{ go: 'nav:horas', sel: '#ts-box .ts-cell', text: 'Escreve aqui as horas do dia. Grava sozinho.' }, { sel: '[data-ts-add]', text: 'Falta um projeto ou categoria? Acrescenta aqui.' }] },
       { id: 'ponto', cat: 'horas', ctx: ['home'],
         q: 'marco a entrada e a saída (ponto)',
@@ -23278,7 +23484,8 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       const jan4 = new Date(d.getFullYear(), 0, 4);
       return 1 + Math.round(((d - jan4) / 86400000 - 3 + ((jan4.getDay() + 6) % 7)) / 7);
     }
-    const tsLineKey = e => e.project_id ? `p:${e.project_id}:${e.stage_id || ''}` : `c:${e.category_id || ''}`;
+    const tsLineKey = e => e.project_id ? `p:${e.project_id}:${e.stage_id || ''}`
+      : `c:${e.category_id || ''}` + (tsNoteCats.has(String(e.category_id)) ? ':' + normTxt(e.note ?? e.description ?? '') : '');
     // Aceita "1,5", "1.5" e "1:30"
     function parseHoursInput(v) {
       v = String(v ?? '').trim().replace(',', '.');
@@ -23330,6 +23537,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         }
         const entries = all.filter(e => e.date >= tsWeekStart);
         const recent = all.filter(e => e.date < tsWeekStart);
+        const cats = await loadTimeCategories();
 
         const phases = (await fetchActivePhases()).filter(p =>
           (p.assignee_ids || []).includes(me) && p.start_date <= weekEnd &&
@@ -23344,6 +23552,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
             lines.set(key, {
               key, origin,
               project_id: src.project_id || null, stage_id: src.stage_id || null, category_id: src.category_id || null,
+              note: tsNoteCats.has(String(src.category_id)) ? (src.note ?? src.description ?? '') : null,
               billable: src.billable ?? !!src.project_id
             });
           }
@@ -23375,7 +23584,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
           (pr.data || []).forEach(p => { names.projects[p.id] = p.name; });
           (sr.data || []).forEach(s => { names.stages[s.id] = (s.stage_types?.name ?? 'Fase') + (s.revision_label ? ' ' + s.revision_label : ''); });
         }
-        (await loadTimeCategories()).forEach(c => { names.cats[c.id] = c.name; });
+        cats.forEach(c => { names.cats[c.id] = c.name; });
 
         // Ordem: com horas nesta semana (mais horas primeiro), depois sugestões
         const weekTotal = l => entries.filter(e => tsLineKey(e) === l.key).reduce((s, e) => s + Number(e.hours || 0), 0);
@@ -23393,6 +23602,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
     function tsLineName(l) {
       const n = tsState.names;
       if (l.project_id) return { title: n.projects[l.project_id] || 'Projeto', sub: l.stage_id ? (n.stages[l.stage_id] || 'Fase') : 'Sem fase' };
+      if (l.note) return { title: l.note, sub: 'Interno · ' + (n.cats[l.category_id] || 'Outros') };
       return { title: n.cats[l.category_id] || 'Sem categoria', sub: 'Interno' };
     }
     function tsCell(key, day) {
@@ -23522,6 +23732,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       const list = tsCell(line.key, day).list.filter(e => !!e.billable === billable);
       if (list.length > 1) throw new Error('há vários registos deste tipo neste dia — edita-os em "Ver registos"');
       const old = list[0];
+      if (line.note != null) note = line.note || note;   // "Outros": a nota é a da linha
       if (!old) {
         if (!v) return;
         const payload = {
@@ -23560,7 +23771,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         });
         return;
       }
-      const patch = note ? { hours: v, description: note } : { hours: v };
+      const patch = note && line.note == null ? { hours: v, description: note } : { hours: v };
       if (devMode) { const m = mockTimeLog.find(x => x.id === old.id); if (m) Object.assign(m, patch); }
       else {
         const r = await supabase.from('time_entries').update(patch).eq('id', old.id);
@@ -23590,7 +23801,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       input.classList.add('saving');
       try {
         await tsWriteKind(line, day, billable, v, note);
-        if (note) showToast('Nota guardada: ' + note);
+        if (note && line.note == null) showToast('Nota guardada: ' + note);
         tsRefreshCell(key, day, { focusKind: document.activeElement === input ? input.dataset.kind : null });
         tsUpdateTotals();
       } catch (err) {
@@ -23653,6 +23864,8 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         <div id="tsl-other" style="display:none;">
           <label class="field-label">Categoria</label>
           <select id="tsl-cat" class="form-input"><option value="">A carregar…</option></select>
+          <div id="tsl-note-wrap" hidden><label class="field-label" for="tsl-note">O quê? (obrigatório)</label>
+            <input type="text" id="tsl-note" class="form-input" maxlength="120" placeholder="ex: Contacto Zé Martins"></div>
         </div>
         <button type="button" class="primary-btn" id="tsl-ok">Acrescentar</button>
         <div id="tsl-msg" class="form-msg"></div>`);
@@ -23683,6 +23896,12 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         (mine.length || recentIds.length ? `<optgroup label="Todos os projetos">${others.map(optP).join('')}</optgroup>` : others.map(optP).join(''));
       document.getElementById('tsl-cat').innerHTML = '<option value="">Escolhe a categoria</option>' +
         cats.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
+      const catSel = document.getElementById('tsl-cat');
+      catSel.addEventListener('change', () => {
+        const need = tsNoteCats.has(String(catSel.value));
+        document.getElementById('tsl-note-wrap').hidden = !need;
+        if (need) document.getElementById('tsl-note').focus();
+      });
       document.getElementById('tsl-proj').addEventListener('change', async (e) => {
         const sel = document.getElementById('tsl-stage');
         const pid = e.target.value;
@@ -23715,6 +23934,11 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
           const cid = document.getElementById('tsl-cat').value;
           if (!cid) { msg.textContent = 'Escolhe a categoria.'; msg.className = 'form-msg error'; return; }
           line = { project_id: null, stage_id: null, category_id: cid, billable: false };
+          if (tsNoteCats.has(String(cid))) {
+            const note = document.getElementById('tsl-note').value.trim();
+            if (!note) { msg.textContent = 'Em «Outros», escreve o que foi (ex: Contacto Zé Martins).'; msg.className = 'form-msg error'; document.getElementById('tsl-note').focus(); return; }
+            line.note = note;
+          }
         }
         (tsExtraLines[tsWeekStart] = tsExtraLines[tsWeekStart] || []).push(line);
         const hidden = tsHidden[tsWeekStart];
@@ -23740,7 +23964,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       box.querySelectorAll('[data-ts-add]').forEach(b => b.addEventListener('click', tsAddLineModal));
       box.querySelectorAll('[data-ts-sugg]').forEach(b => b.addEventListener('click', () => {
         const l = (tsState.suggest || []).find(x => x.key === b.dataset.tsSugg); if (!l) return;
-        (tsExtraLines[tsWeekStart] = tsExtraLines[tsWeekStart] || []).push({ project_id: l.project_id, stage_id: l.stage_id, category_id: l.category_id, billable: l.billable });
+        (tsExtraLines[tsWeekStart] = tsExtraLines[tsWeekStart] || []).push({ project_id: l.project_id, stage_id: l.stage_id, category_id: l.category_id, note: l.note, billable: l.billable });
         tsHidden[tsWeekStart]?.delete(l.key);
         tsState.lines.push({ ...l, origin: 'extra' });
         renderTimesheet();
