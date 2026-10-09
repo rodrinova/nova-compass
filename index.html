@@ -3388,6 +3388,19 @@
   .dbk-away { display: flex; flex-direction: column; gap: var(--sp-1); background: var(--warning-soft); border-radius: var(--r-md); padding: var(--sp-2) var(--sp-3); margin-bottom: var(--sp-3); font-size: var(--fs-sm); }
   .dbk-note { font-size: var(--fs-sm); background: var(--surface-2); border-radius: var(--r-md); padding: var(--sp-2) var(--sp-3); margin-bottom: var(--sp-3); }
   .dbk-note .text-btn { padding: 0; min-height: 0; }
+  .dbk-days { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 8px; margin: 0 0 var(--sp-2); scrollbar-width: thin; }
+  .dbk-day { flex: none; display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 46px; padding: 6px 4px; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); color: var(--text); font: inherit; cursor: pointer; position: relative; }
+  .dbk-day .l { font-size: var(--fs-xs); color: var(--text-2); }
+  .dbk-day .n { font-weight: var(--fw-semibold); font-size: var(--fs-md); line-height: 1.2; }
+  .dbk-day .c { font-size: 11px; color: var(--text-3); min-height: 14px; }
+  .dbk-day.today .l { color: var(--accent); font-weight: var(--fw-semibold); }
+  .dbk-day.away { background: var(--warning-soft); }
+  .dbk-day.on { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent) inset; }
+  .dbk-day.on .c { color: var(--accent); }
+  .dbk-day-cal input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .dbk-ahead { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: var(--sp-2); font-size: var(--fs-xs); color: var(--text-2); }
+  .dbk-ahead .text-btn { padding: 0; min-height: 0; font-size: var(--fs-xs); }
+  .dbk-ahead-chip { font: inherit; font-size: var(--fs-xs); border: 1px solid var(--border); background: var(--surface-2); color: var(--text); border-radius: 99px; padding: 3px 10px; cursor: pointer; }
   .dbk-sub { display: flex; justify-content: space-between; align-items: baseline; margin: var(--sp-2) 0 var(--sp-1-5); font-size: var(--fs-md); }
   .dbk-sub span { color: var(--text-2); font-size: var(--fs-xs); }
   .dbk-list { display: flex; flex-direction: column; }
@@ -15735,8 +15748,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { id: 'daybreak', cat: 'horas', ctx: ['home', 'finance:daybreak'],
         q: 'faço o Daybreak (reunião das 8:40, plano do dia e fecho)',
         a: 'Ao sair, o «Fechar o tasco» abre o fecho do dia: o que ficou feito e as horas não planeadas e de retrabalho. De manhã, planeia o dia no cartão Daybreak da Hoje. Às 8:40, «Começar o Daybreak» passa pessoa a pessoa.',
-        steps: ['Ao sair, toca em [[Fechar o tasco]]: marca o que ficou feito e diz, mais ou menos, quantas horas foram para **trabalho não planeado** e para **retrabalho**, e porquê.', 'De manhã, antes das 8:40, abre [[Hoje]] → cartão **Daybreak** → [[Planear o dia]]: escolhe tarefas das checklists das tuas fases ou escreve outras. Marca até **3 prioridades** com ★.', 'O que fica por fazer passa sozinho para o dia seguinte, com **↻ 2.º dia**, **3.º dia**…', 'Às 8:40 toca em [[Começar o Daybreak]]: cada pessoa tem 2 minutos (ontem, horas fora do plano, hoje). Nos dias de teletrabalho, **Entrar no Teams**.', 'No fim, as **ações de melhoria**: o quê, quem e até quando. Entram na lista de tarefas de quem fica responsável.', 'Fases de revisão que são todas retrabalho: ao indicá-las no fecho, a app pergunta e, se disseres que sim, passa a contar essas horas sozinha.', 'A evolução está no [[Mission Control]] → **Daybreak**.'],
-        kw: 'daybreak kaizen reuniao diaria 8:40 plano do dia tarefas prioridades retrabalho nao planeado fecho do dia acoes melhoria teams standup',
+        steps: ['Ao sair, toca em [[Fechar o tasco]]: marca o que ficou feito e diz, mais ou menos, quantas horas foram para **trabalho não planeado** e para **retrabalho**, e porquê.', 'De manhã, antes das 8:40, abre [[Hoje]] → cartão **Daybreak** → [[Planear o dia]]: escolhe tarefas das checklists das tuas fases ou escreve outras. Marca até **3 prioridades** com ★.', 'Também podes **planear dias futuros**: no plano, escolhe o dia na fita de cima (as próximas 2 semanas) ou em **Outro** (calendário). Na Hoje aparece **Já planeado: Amanhã · 3** — toca para abrir esse dia.', 'O que fica por fazer passa sozinho para o dia seguinte, com **↻ 2.º dia**, **3.º dia**…', 'Às 8:40 toca em [[Começar o Daybreak]]: cada pessoa tem 2 minutos (ontem, horas fora do plano, hoje). Nos dias de teletrabalho, **Entrar no Teams**.', 'No fim, as **ações de melhoria**: o quê, quem e até quando. Entram na lista de tarefas de quem fica responsável.', 'Fases de revisão que são todas retrabalho: ao indicá-las no fecho, a app pergunta e, se disseres que sim, passa a contar essas horas sozinha.', 'A evolução está no [[Mission Control]] → **Daybreak**.'],
+        kw: 'daybreak kaizen reuniao diaria 8:40 plano do dia planear amanha dias futuros proxima semana tarefas prioridades retrabalho nao planeado fecho do dia acoes melhoria teams standup',
         tour: [{ go: 'nav:home', sel: '#today-daybreak', text: 'O plano do dia e o botão para começar a reunião das 8:40.' }] },
       { id: 'ausencias', cat: 'horas', ctx: ['absences', 'home'],
         q: 'marco férias, uma falta ou formação',
@@ -19635,7 +19648,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       try {
         const today = dateKey(new Date());
         const away = await absentOn(today).catch(() => []);
-        const [tasks0, days, members, cfg] = await Promise.all([dbkPrepare(today, away.map(a => a.member_id)), loadDbDays(addDaysKey(today, -14), today), loadAllMembers(), loadDbkCfg()]);
+        const [tasks0, days, members, cfg, ahead] = await Promise.all([dbkPrepare(today, away.map(a => a.member_id)), loadDbDays(addDaysKey(today, -14), today), loadAllMembers(), loadDbkCfg(),
+          loadDbTasks(addDaysKey(today, 1), addDaysKey(today, 30)).catch(() => [])]);
+        // Próximos dias já planeados (resumo discreto; tocar abre o plano desse dia)
+        const nextDays = [...new Set(ahead.filter(t => t.member_id === me).map(t => t.day))].sort().slice(0, 5)
+          .map(d => ({ d, n: ahead.filter(t => t.member_id === me && t.day === d).length }));
         const names = await dbkProjectNames(tasks0);
         const tasks = tasks0.map(t => ({ ...t, projectName: names[t.project_id] || '' }));
         const mine = tasks.filter(t => t.member_id === me && t.day === today).sort((a, b) => (b.priority - a.priority) || (a.sort_order - b.sort_order));
@@ -19662,6 +19679,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             <div class="dbk-sub"><b>O meu plano de hoje</b><span>${mine.length ? `${mine.filter(t => t.done).length}/${mine.length} feitas` : ''}</span></div>
             ${mine.length ? `<div class="dbk-list">${mine.map(t => dbkTaskRow(t, { today })).join('')}</div>` : `<div class="gantt-empty">${isAway ? 'Hoje estás fora. Bom descanso.' : 'Ainda sem plano. Escolhe tarefas das tuas fases ou escreve as tuas.'}</div>`}
             <button type="button" class="secondary-btn" id="dbk-plan">${mine.length ? 'Editar o plano' : 'Planear o dia'}</button>
+            <div class="dbk-ahead">${nextDays.length ? `<span>Já planeado:</span>${nextDays.map(x => `<button type="button" class="dbk-ahead-chip" data-dbk-ahead="${x.d}">${escapeHtml(dbkDayName(x.d, today).replace(/^./, c => c.toUpperCase()).replace(/,.*$/, '') + (x.d === addDaysKey(today, 1) ? '' : ' ' + parseDateKey(x.d).getDate()))} · ${x.n}</button>`).join('')}` : ''}
+              <button type="button" class="text-btn" id="dbk-plan-ahead">Planear outros dias</button></div>
           </div>
           ${team ? `<div class="dbk-team">${team}</div>` : ''}`;
         box.querySelectorAll('[data-dbk-done]').forEach(c => c.addEventListener('change', async () => {
@@ -19671,6 +19690,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           catch (err) { showToast('Não foi possível marcar: ' + err.message, { type: 'error' }); renderDaybreakCard(me); }
         }));
         document.getElementById('dbk-plan').addEventListener('click', () => openDbkPlan(me, today, () => renderDaybreakCard(me)));
+        box.querySelectorAll('[data-dbk-ahead]').forEach(b => b.addEventListener('click', () => openDbkPlan(me, b.dataset.dbkAhead, () => renderDaybreakCard(me))));
+        document.getElementById('dbk-plan-ahead').addEventListener('click', () => { let d = addDaysKey(today, 1); while (!isWorkday(d)) d = addDaysKey(d, 1); openDbkPlan(me, d, () => renderDaybreakCard(me)); });
         document.getElementById('dbk-start').addEventListener('click', () => openDaybreak());
         document.getElementById('dbk-close-prev')?.addEventListener('click', () => openDbkClose(me, prev, () => renderDaybreakCard(me)));
         document.getElementById('dbk-link')?.addEventListener('click', () => openDbkLink(() => renderDaybreakCard(me)));
@@ -19698,15 +19719,40 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     }
 
     // ---------- Plano do dia ----------
+    // Dias que se podem planear: hoje (ou o próximo dia útil) e os dias úteis das 2 semanas seguintes
+    function dbkPlanDays(today) {
+      const out = []; let d = today;
+      while (out.length < 11) { if (isWorkday(d)) out.push(d); d = addDaysKey(d, 1); }
+      return out;
+    }
+    const dbkDayName = (day, today) => day === today ? 'hoje' : day === addDaysKey(today, 1) ? 'amanhã' : dbkWeekday(day).toLowerCase();
     async function openDbkPlan(memberId, day, after) {
-      const [members, phases] = await Promise.all([loadAllMembers(), fetchActivePhases().catch(() => [])]);
+      const today = dateKey(new Date());
+      if (!day || day < today) day = today;
+      const strip = dbkPlanDays(today);
+      if (!strip.includes(day)) strip.push(day);
+      const last = strip.reduce((m, d) => d > m ? d : m, day);
+      const [members, phases, ahead, absences] = await Promise.all([loadAllMembers(), fetchActivePhases().catch(() => []),
+        loadDbTasks(today, last).catch(() => []), loadAbsences(today, last).catch(() => [])]);
       const who = members.find(m => m.id === memberId);
       const myPhases = phases.filter(p => (p.assignee_ids || []).includes(memberId) && !isStageDone(p));
       const ck = await loadChecklistItemsFor(myPhases.map(p => p.id)).catch(() => []);
-      let tasks = (await loadDbTasks(day, day)).filter(t => t.member_id === memberId);
+      let tasks = ahead.filter(t => t.member_id === memberId && t.day === day);
       const me = await getCurrentMember();
-      openQuickModal(memberId === me?.id ? `Plano de ${dbkWeekday(day).toLowerCase()}` : `Plano de ${attFirst(who?.name)}`, `
-        <div class="dbk-sub"><b>Plano</b><span id="dp-count"></span></div>
+      const mineAbs = absences.filter(a => a.member_id === memberId);
+      const awayOn = d => mineAbs.find(a => a.start_date <= d && a.end_date >= d);
+      const away = awayOn(day);
+      const dayName = dbkDayName(day, today);
+      const L = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+      openQuickModal(memberId === me?.id ? `Plano de ${dayName}` : `Plano de ${attFirst(who?.name)} · ${dayName}`, `
+        <div class="dbk-days" id="dp-days" role="tablist" aria-label="Dia a planear">${strip.map(d => {
+          const n = ahead.filter(t => t.member_id === memberId && t.day === d).length;
+          return `<button type="button" class="dbk-day${d === day ? ' on' : ''}${d === today ? ' today' : ''}${awayOn(d) ? ' away' : ''}" data-day="${d}" role="tab" aria-selected="${d === day}" title="${escapeHtml(dbkWeekday(d))}${n ? ' · ' + n + (n === 1 ? ' tarefa' : ' tarefas') : ''}${awayOn(d) ? ' · fora' : ''}">
+            <span class="l">${d === today ? 'Hoje' : L[parseDateKey(d).getDay()]}</span><span class="n">${parseDateKey(d).getDate()}</span><span class="c">${n || (awayOn(d) ? 'fora' : '·')}</span></button>`;
+        }).join('')}
+          <label class="dbk-day dbk-day-cal" title="Outro dia"><span class="l">Outro</span><span class="n">📅</span><input type="date" id="dp-date" min="${today}" max="${addDaysKey(today, 365)}" aria-label="Escolher outro dia"></label></div>
+        ${away ? `<div class="dbk-away"><span>${memberId === me?.id ? 'Nesse dia estás' : 'Nesse dia está'} fora · ${escapeHtml(absLabel(away))}</span></div>` : ''}
+        <div class="dbk-sub"><b>Tarefas</b><span id="dp-count"></span></div>
         <div class="dbk-plan" id="dp-list"></div>
         <div class="dbk-add"><input type="text" id="dp-new" class="form-input" maxlength="200" placeholder="Escrever uma tarefa…"><button type="button" class="secondary-btn" id="dp-add">Adicionar</button></div>
         ${myPhases.length ? `<div class="section-label" style="margin:16px 0 6px">Das ${memberId === me?.id ? 'minhas' : 'suas'} fases</div><div class="dbk-pick" id="dp-pick">${myPhases.map(p => {
@@ -19714,8 +19760,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           if (!items.length) return '';
           return `<div class="dbk-pg"><b>${escapeHtml(p.projects?.name || '')} · ${escapeHtml(phaseName(p))}</b>${items.map(i => `<button type="button" class="dbk-pi" data-ck="${escapeHtml(i.id)}" data-stage="${escapeHtml(p.id)}" data-project="${escapeHtml(p.project_id)}"><span>+</span>${escapeHtml(i.title)}${i.kind === 'deliverable' ? ' <em>Entregável</em>' : ''}</button>`).join('')}</div>`;
         }).join('') || '<div class="field-hint">As checklists das fases estão em dia.</div>'}</div>` : ''}
-        <div class="field-hint">★ marca até 3 prioridades (as que têm mesmo de sair hoje). Arrasta pela pega ⠿ para ordenar. O que ficar por fazer passa sozinho para amanhã.</div>
+        <div class="field-hint">★ marca até 3 prioridades (as que têm mesmo de sair ${day === today ? 'hoje' : 'nesse dia'}). Arrasta pela pega ⠿ para ordenar. O que ficar por fazer passa sozinho para o dia útil seguinte.</div>
         <button type="button" class="primary-btn" id="dp-done">Pronto</button>`);
+      const onDay = document.querySelector('#dp-days .on');
+      if (onDay) onDay.parentElement.scrollLeft = onDay.offsetLeft - onDay.parentElement.offsetLeft - 60;
       const list = document.getElementById('dp-list');
       const draw = () => {
         tasks.sort((a, b) => (b.priority - a.priority) || (a.sort_order - b.sort_order));
@@ -19755,10 +19803,15 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const item = ck.find(i => i.id === b.dataset.ck);
         add({ title: item.title, checklist_item_id: item.id, stage_id: b.dataset.stage, project_id: b.dataset.project });
       }));
+      const markReady = async () => { try { if (tasks.length) await saveDbDay({ member_id: memberId, day, plan_ready_at: new Date().toISOString() }); } catch (_) { /* não impede */ } };
       document.getElementById('dp-done').addEventListener('click', async () => {
-        try { if (tasks.length) await saveDbDay({ member_id: memberId, day, plan_ready_at: new Date().toISOString() }); } catch (_) { /* não impede */ }
+        await markReady();
         closeQuickModal(); if (after) after();
       });
+      // Mudar de dia: guarda este e abre o plano do outro (o "depois" corre só ao fechar)
+      const goDay = async d => { if (!d || d === day) return; await markReady(); openDbkPlan(memberId, d < today ? today : d, after); };
+      document.querySelectorAll('#dp-days [data-day]').forEach(b => b.addEventListener('click', () => goDay(b.dataset.day)));
+      document.getElementById('dp-date').addEventListener('change', e => goDay(e.target.value));
       draw();
     }
 
@@ -23340,6 +23393,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       { group: 'Ir para', label: 'Ausências', keys: 'ferias ausencias faltas folga doenca baixa consulta formacao mapa de ferias', run: () => NAV_ACTIONS.absences() },
       { group: 'Criar', label: 'Marcar férias ou ausência', keys: 'ferias marcar ausencia falta doenca consulta formacao', run: () => openAbsenceModal({}) },
       { group: 'Ir para', label: 'Começar o Daybreak', keys: 'daybreak reuniao diaria kaizen 8:40 standup plano do dia', run: () => openDaybreak() },
+      { group: 'Criar', label: 'Planear amanhã (Daybreak)', keys: 'plano amanha proximo dia futuro planear semana daybreak', run: async () => { const m = await getCurrentMember(); let d = addDaysKey(dateKey(new Date()), 1); while (!isWorkday(d)) d = addDaysKey(d, 1); if (m) openDbkPlan(m.id, d, () => { if (currentViewState?.name === 'home') renderToday(); }); } },
       { group: 'Criar', label: 'Planear o meu dia (Daybreak)', keys: 'plano do dia tarefas daybreak prioridades', run: async () => { const m = await getCurrentMember(); if (m) openDbkPlan(m.id, dateKey(new Date()), () => { if (currentViewState?.name === 'home') renderToday(); }); } },
       { group: 'Ir para', label: 'Melhorias', keys: 'melhorias tickets pedidos erros ideias votos', run: () => NAV_ACTIONS.tickets() },
       { group: 'Ir para', label: 'Ajuda', keys: 'manual ajuda como guia instrucoes', run: () => NAV_ACTIONS.help() }
