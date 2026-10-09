@@ -10903,7 +10903,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const box = document.getElementById('mc-pipeline');
       beginLoad(box, 'mc:pipeline:' + mcPeriod, '<div class="gantt-wrap">' + SKELETON(3) + '</div><div class="gantt-wrap">' + SKELETON(5) + '</div>');
       try {
-        const [d, mc, hc] = await Promise.all([loadOppsData(), loadMcData(), computeHourCost().catch(() => null)]);
+        const [d, mc, hc, cd] = await Promise.all([loadOppsData(), loadMcData(), computeHourCost().catch(() => null), loadCacData().catch(() => null)]);
+        d.cac = cd;
         let scout = [];
         if (devMode) { const ids = MOCK_CATEGORIES.filter(c => /scout|angaria|prospe/i.test(c.name)).map(c => c.id); scout = mockTimeLog.filter(e => ids.includes(e.category_id)); }
         else {
@@ -10961,7 +10962,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const eur = v => v == null ? '—' : escapeHtml(fmtEURShort(v));
       return `
         <div class="mc-tiles">
-          ${mcTile('Custo de angariação por projeto ganho', eur(cac), cost != null ? `${escapeHtml(fmtNum(Math.round(hours)))} h de scouting × ${eur(rate)}/h ÷ ${won.length} ${won.length === 1 ? 'projeto ganho' : 'projetos ganhos'}` : 'sem custo/hora calculado', cac != null ? '' : 'warn')}
+          ${(() => { const cc = cacCalc(d.cac, d.proposals); return cc && cc.cac != null ? mcTile('Custo de aquisição por cliente', eur(cc.cac), `${eur(cc.cost)} ÷ ${cc.n} ${cc.n === 1 ? 'cliente' : 'clientes'} · desde sempre (igual ao Pipeline)`) : mcTile('Custo de aquisição por cliente', '—', 'sem custo/hora calculado', 'warn'); })()}
           ${mcTile('Conversão de propostas', props.length ? mcPct(acc.length, props.length) + '%' : '—', `${acc.length} aceites de ${props.length} enviadas · ${eur(accVal)}`)}
           ${mcTile('Comissões ganhas', eur(commWon || null), commPossible ? `${eur(commPossible)} possíveis se os negócios avançarem` : 'só contam com o negócio fechado')}
         </div>
@@ -10979,7 +10980,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           ${people.length ? `<div class="table-scroll"><table class="mini-table mc-table"><thead><tr><th>Pessoa</th><th class="col-value">Oportunidades</th><th class="col-value">Viabilidades</th><th class="col-value">Apresentados</th><th class="col-value">À espera</th><th class="col-value">Ganhos</th><th class="col-value">Horas de scouting</th></tr></thead><tbody>
             ${people.map(x => `<tr><td>${escapeHtml(x.m.name)}</td><td class="col-value">${x.n}</td><td class="col-value">${x.feas}</td><td class="col-value">${x.pres}</td><td class="col-value${x.wait ? ' warn-text' : ''}">${x.wait}</td><td class="col-value">${x.won}</td><td class="col-value">${escapeHtml(fmtNum(Math.round(x.h * 10) / 10))} h</td></tr>`).join('')}
           </tbody></table></div>` : '<div class="gantt-empty">Sem oportunidades nem horas de scouting neste período.</div>'}
-          <div class="field-hint">Custo de angariação: horas registadas na categoria <b>Project Scouting</b> × custo/hora da NOVA${rate ? ` (${eur(rate)}/h)` : ''}, a dividir pelos projetos adjudicados no período${perEuro != null ? ` · ${escapeHtml(pct(perEuro, 1))} dos honorários aceites` : ''}. Propostas em aberto: ${eur(openVal || null)}${dec.length ? ` · ${dec.length} recusadas` : ''}.</div>
+          <div class="field-hint">Custo de aquisição por cliente (o mesmo do Pipeline): horas de <b>Angariação</b> × custo/hora da NOVA${rate ? ` (${eur(rate)}/h)` : ''} + despesas de Representação e Marketing + comissões a angariadores, desde sempre, a dividir pelos clientes que já temos. Horas de scouting neste período: ${escapeHtml(fmtNum(Math.round(hours)))} h. Propostas em aberto: ${eur(openVal || null)}${dec.length ? ` · ${dec.length} recusadas` : ''}.</div>
         </div>`;
     }
     // ================= PONTUALIDADE: entradas, saídas e reuniões =================
@@ -18897,9 +18898,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     // Custos: horas de Angariação × custo/hora + despesas de Representação e Marketing + comissões a angariadores
     // (das propostas adjudicadas). ÷ clientes com projeto. A próxima adjudicação: a proposta em aberto mais provável.
     async function loadCacData() {
-      const cfg = await loadProposalCfg().catch(() => ({}));
-      let cph = Number(cfg.cost_per_hour) || 0;
-      if (!cph) { const hc = await computeHourCost().catch(() => null); cph = Number(hc?.total) || 0; }
+      // custo/hora: o calculado em Pessoas, salários e custo/hora (o mesmo do Mission Control); o das propostas só se faltar
+      const hc = await computeHourCost().catch(() => null);
+      let cph = Number(hc?.total) || 0;
+      if (!cph) cph = Number((await loadProposalCfg().catch(() => ({}))).cost_per_hour) || 0;
       if (devMode) return { cph, hours: 120, exp: 860, clients: [...new Set(MOCK_PROJECTS.map(p => p.client_id || p.client).filter(Boolean))] };
       const [tc, ec, pj] = await Promise.all([
         supabase.from('time_categories').select('id, name'),
