@@ -3669,6 +3669,7 @@
   .pr-status.warn { background: var(--warning-soft); }
   .pr-status small { display: block; color: var(--text-2); margin-top: 2px; }
   .sig-preview { background: #fff; border: 1px solid var(--border); border-radius: var(--r-lg); padding: var(--sp-5); overflow-x: auto; color: #1B1A19; }
+  .sig-preview.pm-sig { padding: var(--sp-3) var(--sp-4); margin-top: 8px; }
   .sig-actions { display: flex; gap: var(--sp-2); flex-wrap: wrap; margin-top: var(--sp-3); }
   .sig-actions .primary-btn, .sig-actions .secondary-btn { width: auto; margin: 0; padding: 0 var(--sp-4); min-height: 40px; }
   .sig-how { display: grid; grid-template-columns: minmax(150px, 210px) 1fr; gap: var(--sp-2) var(--sp-4); margin-top: var(--sp-5); font-size: var(--fs-sm); }
@@ -15998,7 +15999,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { id: 'proposta', cat: 'opps', ctx: ['pipeline', 'opps', 'plot', 'proposal', 'settings:proposals'], first: 2,
         q: 'faço uma proposta de honorários',
         a: 'Clientes → Pipeline → + Nova proposta (ou na oportunidade do Intelligence). Monta-se com os blocos da biblioteca e sai em PDF no modelo NOVA, em português ou inglês.',
-        steps: ['Abre [[Pipeline]] → [[+ Nova proposta]]. Se vier de uma oportunidade do Intelligence, escolhe-a: a proposta usa o **mesmo CST** e já vem com o local, a área, as frações e o cliente.', 'Em **Cliente e capa**: o cliente, as linhas da capa, o local, a língua (PT/EN) e a assinatura da marca. Nas moradias, podes incluir o **Manifesto**.', 'Em **Âmbito**: o texto de enquadramento, o quadro de dados e os serviços — toca em [[+ Serviços da biblioteca]] e escolhe (A Arquitetura, B Especialidades, C Marketing, D Fiscalização, estudos…). Tudo se pode editar.', 'Em **Quanto nos vai custar** (só para a NOVA): as horas estimadas pelo histórico, o custo/hora e as especialidades.', 'Em **Valor**: linhas com valor, ou unidades × valor unitário (ex.: 15 frações × 2.310 €), descontos e avenças mensais (ex.: 18 visitas × 150 €). A app mostra o valor por hora e a margem.', 'Em **Condições de pagamento**: as percentagens (Adjudicação, Estudo Prévio…) e a fase do projeto de cada uma. As avenças entram sozinhas.', 'Opcional: **Timeline** (Gantt por semanas), **Opcionais** e **Exclusões**. No fim, quem assina e a validade.', 'Toca em [[Criar proposta]] (recebe o CST). A partir daí grava sozinha.', 'Para enviar: [[Enviar por email]]. A app escreve o email (assunto com o CST e o cliente), gera o PDF e prepara-o no teu Outlook com o PDF anexado. Revês e carregas em **Enviar** — a proposta fica marcada como enviada a essa hora e o follow-up fica para daqui a 7 dias.'],
+        steps: ['Abre [[Pipeline]] → [[+ Nova proposta]]. Se vier de uma oportunidade do Intelligence, escolhe-a: a proposta usa o **mesmo CST** e já vem com o local, a área, as frações e o cliente.', 'Em **Cliente e capa**: o cliente, as linhas da capa, o local, a língua (PT/EN) e a assinatura da marca. Nas moradias, podes incluir o **Manifesto**.', 'Em **Âmbito**: o texto de enquadramento, o quadro de dados e os serviços — toca em [[+ Serviços da biblioteca]] e escolhe (A Arquitetura, B Especialidades, C Marketing, D Fiscalização, estudos…). Tudo se pode editar.', 'Em **Quanto nos vai custar** (só para a NOVA): as horas estimadas pelo histórico, o custo/hora e as especialidades.', 'Em **Valor**: linhas com valor, ou unidades × valor unitário (ex.: 15 frações × 2.310 €), descontos e avenças mensais (ex.: 18 visitas × 150 €). A app mostra o valor por hora e a margem.', 'Em **Condições de pagamento**: as percentagens (Adjudicação, Estudo Prévio…) e a fase do projeto de cada uma. As avenças entram sozinhas.', 'Opcional: **Timeline** (Gantt por semanas), **Opcionais** e **Exclusões**. No fim, quem assina e a validade.', 'Toca em [[Criar proposta]] (recebe o CST). A partir daí grava sozinha.', 'Para enviar: [[Enviar por email]]. A app escreve o email (assunto com o CST e o cliente), gera o PDF e descarrega o email com o PDF anexado e a tua assinatura (Definições → Assinatura de email). Abre o ficheiro: o Outlook do computador mostra a mensagem pronta (fica também nos teus Rascunhos, para o Outlook na web ou no Mac). Revês e carregas em **Enviar** — a proposta fica marcada como enviada a essa hora e o follow-up fica para daqui a 7 dias.'],
         kw: 'proposta honorarios orcamento preco valor fee nota de honorarios cst pdf modelo nova capa ambito exclusoes opcionais timeline pagamento biblioteca ingles email outlook enviar anexo',
         tour: [{ go: 'nav:pipeline', sel: '#pipe-new', text: 'Começa aqui uma proposta nova.' }] },
       { id: 'pipeline', cat: 'opps', ctx: ['pipeline', 'proposal', 'home'], first: 3,
@@ -19397,7 +19398,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               <span class="pp-sum-l">Honorários (sem IVA)</span><b class="pp-sum-v num" id="pp-side-total">${escapeHtml(fmtEUR(T.total))}</b>
               <div class="op-sum" id="pp-fee-sum"></div>
               ${pp.id && !locked && pp.status !== 'declined' ? `<button type="button" class="primary-btn" id="pp-mail">${c.mail?.status === 'sent' ? 'Enviar outra vez por email' : 'Enviar por email'}</button>` : ''}
-              ${c.mail?.status === 'draft' ? `<div class="pp-mailstate">Email pronto no Outlook, à espera de ser enviado.${c.mail.link ? ` <a href="${escapeHtml(c.mail.link)}" target="_blank" rel="noopener">Abrir</a>` : ''}</div>` : c.mail?.status === 'sent' && c.mail.sent_at ? `<div class="pp-mailstate ok">Enviado por email a ${escapeHtml(fmtDayMonthYear(c.mail.sent_at.slice(0, 10)))}, ${escapeHtml(new Date(c.mail.sent_at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }))}.</div>` : ''}
+              ${c.mail?.status === 'draft' ? `<div class="pp-mailstate">Email pronto no Outlook (ficheiro descarregado e Rascunhos), à espera de ser enviado.${c.mail.link ? ` <a href="${escapeHtml(c.mail.link)}" target="_blank" rel="noopener">Abrir na web</a>` : ''}</div>` : c.mail?.status === 'sent' && c.mail.sent_at ? `<div class="pp-mailstate ok">Enviado por email a ${escapeHtml(fmtDayMonthYear(c.mail.sent_at.slice(0, 10)))}, ${escapeHtml(new Date(c.mail.sent_at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }))}.</div>` : ''}
               <button type="button" class="${pp.id ? 'secondary-btn' : 'primary-btn'}" id="pp-pdf">Ver proposta (PDF)</button>
               ${!pp.id ? `<button type="button" class="secondary-btn" id="pp-create">Criar proposta${pp.number ? ' · CST ' + pp.number : ''}</button>` : ''}
             </div>
@@ -20063,7 +20064,6 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const h = new Date().getHours();
       const hello = en ? (firsts ? `Hello ${firsts},` : 'Hello,') : `${h < 13 ? 'Bom dia' : h < 20 ? 'Boa tarde' : 'Boa noite'}${firsts ? ' ' + firsts : ''},`;
       const where = [c.cover.place, c.cover.region].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).join(', ');
-      const me = S.me?.name || S.members.find(m => m.id === c.closing.signer)?.name || '';
       const days = pp.valid_days || 30;
       const v2 = (pp.version || 1) > 1;
       const text = en
@@ -20071,31 +20071,66 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           v2 ? `Here is the updated version of our fee proposal${where ? ' for the project in ' + where : ''}, with the changes we talked about.` : `Please find attached our fee proposal${where ? ' for the project in ' + where : ''}.`, '',
           v2 ? 'If there is still something missing, just let me know.' : 'I tried to keep it easy to read. If anything is unclear or needs adjusting, just let me know and we can go through it together.', '',
           `The proposal is valid for ${days} days.`, '',
-          'Best regards,', me, 'NOVA Associates', 'novassociates.com'].join('\n')
+          'Best regards,'].join('\n')
         : [hello, '',
           v2 ? `Segue a nova versão da nossa proposta de honorários${where ? ' para o projeto em ' + where : ''}, já com os ajustes de que falámos.` : `Envio em anexo a nossa proposta de honorários${where ? ' para o projeto em ' + where : ''}.`, '',
           v2 ? 'Se ainda faltar alguma coisa, é só dizer.' : 'Procurei que ficasse simples de ler. Se alguma coisa não estiver clara ou precisar de ajuste, é só dizer e vemos isso juntos.', '',
           `A proposta é válida por ${days} dias.`, '',
-          'Até breve,', me, 'NOVA Associates', 'novassociates.com'].join('\n');
+          'Até breve,'].join('\n');
       const subject = [ppRef(pp), en ? 'Fee Proposal' : 'Proposta de Honorários', name, where || c.cover.lines?.[1] || ''].filter(Boolean).join(' | ');
       return { to: client?.email ? [client.email] : [], subject, text };
     }
-    function ppMailHtml(text) {
+    function ppMailHtml(text, sig) {
       const paras = String(text || '').replace(/\r\n?/g, '\n').split(/\n{2,}/);
-      return `<div style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#1E1C1B;line-height:1.45">${paras.map(p => `<p style="margin:0 0 12px">${escapeHtml(p).replace(/\n/g, '<br>')}</p>`).join('')}</div>`;
+      return `<div style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#1E1C1B;line-height:1.45">${paras.map(p => `<p style="margin:0 0 12px">${escapeHtml(p).replace(/\n/g, '<br>')}</p>`).join('')}</div>${sig ? `<div style="margin-top:4px">${sig}</div>` : ''}`;
+    }
+    // A assinatura de quem envia, a mesma de Definições → Assinatura de email
+    async function ppMailSignature(S) {
+      const me = S.me || {};
+      let saved = {};
+      if (devMode) saved = mockSigs;
+      else { const r = await supabase.from('app_settings').select('value').eq('key', 'email_signatures').maybeSingle(); saved = r.data?.value || {}; }
+      const s = saved[me.id] || {};
+      return signatureHtml({ name: me.name || '', title: s.title ?? (me.role === 'Partner' ? 'Managing Partner' : (me.role || '')), phone: s.phone || '', prof: s.prof ?? 'Architect', office: saved._office || '' });
+    }
+    // Ficheiro .eml por enviar (X-Unsent): abre no Outlook do computador como mensagem nova, pronta a enviar
+    function ppEml({ to, cc, subject, html, pdf }) {
+      const b64u = str => { const b = new TextEncoder().encode(str); let bin = ''; for (let i = 0; i < b.length; i += 0x8000) bin += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); return btoa(bin); };
+      const wrap = b => b.replace(/.{1,76}/g, '$&\r\n');
+      const hdr = v => /^[\x20-\x7e]*$/.test(v) ? v : `=?UTF-8?B?${b64u(v)}?=`;
+      const bd = 'nova-' + Date.now().toString(36);
+      const fname = pdf?.filename || 'Proposta.pdf';
+      const ascii = fname.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\x20-\x7e]/g, '_').replace(/"/g, '');
+      const lines = ['X-Unsent: 1', 'MIME-Version: 1.0'];
+      if (to.length) lines.push('To: ' + to.join(', '));
+      if (cc.length) lines.push('Cc: ' + cc.join(', '));
+      lines.push('Subject: ' + hdr(subject), `Content-Type: multipart/mixed; boundary="${bd}"`, '', `--${bd}`,
+        'Content-Type: text/html; charset="utf-8"', 'Content-Transfer-Encoding: base64', '',
+        wrap(b64u(`<!DOCTYPE html><html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"></head><body>${html}</body></html>`)));
+      if (pdf?.b64) lines.push(`--${bd}`, `Content-Type: application/pdf; name="${ascii}"`, `Content-Disposition: attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(fname)}`, 'Content-Transfer-Encoding: base64', '', wrap(pdf.b64));
+      lines.push(`--${bd}--`, '');
+      return new Blob([lines.join('\r\n')], { type: 'message/rfc822' });
+    }
+    function ppDownload(blob, name) {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 60000);
     }
     async function openProposalMail() {
       const S = proposalState, pp = S.pp;
       await S.flush?.();
       const m = ppMailDraft(pp, S);
+      const sig = await ppMailSignature(S).catch(() => '');
       openQuickModal('Enviar a proposta por email', `
-        <div class="field-hint" style="margin:0 0 8px;">A app cria o email no teu Outlook com o PDF anexado. Revês, carregas em <b>Enviar</b> e a proposta fica marcada como enviada a essa hora.</div>
+        <div class="field-hint" style="margin:0 0 8px;">A app descarrega o email com o PDF anexado e a tua assinatura. Abre o ficheiro e o Outlook do computador mostra a mensagem pronta: carregas em <b>Enviar</b> e a proposta fica marcada como enviada a essa hora.</div>
         <label class="field-label" style="margin-top:0;">Para</label><input type="text" id="pm-to" class="form-input" value="${escapeHtml(m.to.join('; '))}" placeholder="email do cliente">
         <label class="field-label">Cc <small class="muted">(opcional)</small></label><input type="text" id="pm-cc" class="form-input" placeholder="separa com ;">
         <label class="field-label">Assunto</label><input type="text" id="pm-subj" class="form-input" value="${escapeHtml(m.subject)}">
-        <label class="field-label">Mensagem</label><textarea id="pm-text" class="form-input" rows="14">${escapeHtml(m.text)}</textarea>
+        <label class="field-label">Mensagem</label><textarea id="pm-text" class="form-input" rows="12">${escapeHtml(m.text)}</textarea>
+        ${sig ? `<div class="sig-preview pm-sig">${sig}</div><div class="field-hint" style="margin-top:4px">A tua assinatura (muda-se em Definições → Assinatura de email).</div>` : ''}
         <div class="field-hint">Anexo: <b>${escapeHtml(ppDocHtml(pp, S).fileTitle)}.pdf</b></div>
-        <button type="button" class="primary-btn" id="pm-go">Preparar no Outlook</button>
+        <button type="button" class="primary-btn" id="pm-go">Abrir no Outlook</button>
         <div id="pm-msg" class="form-msg"></div>`);
       document.getElementById('pm-go').addEventListener('click', async () => {
         const btn = document.getElementById('pm-go');
@@ -20103,20 +20138,19 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const to = split(document.getElementById('pm-to').value), cc = split(document.getElementById('pm-cc').value);
         const bad = [...to, ...cc].find(a => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(a));
         if (bad) return formError('pm-msg', `«${bad}» não parece um email.`);
-        // a janela abre já (senão o navegador bloqueia) e recebe o link quando o rascunho estiver pronto
-        const win = window.open('', '_blank');
-        if (win) win.document.write('<p style="font:15px -apple-system,Segoe UI,sans-serif;padding:32px;color:#4A2350">A preparar o email no Outlook…</p>');
         btn.disabled = true;
         try {
           btn.textContent = 'A gerar o PDF…';
           const pdf = devMode ? { b64: '', filename: 'teste.pdf' } : await ppMakePdf(pp, S, (i, n) => { btn.textContent = `A gerar o PDF… ${i}/${n}`; });
           btn.textContent = 'A criar o email…';
+          const subject = document.getElementById('pm-subj').value.trim();
+          const html = ppMailHtml(document.getElementById('pm-text').value, sig);
+          // o mesmo email fica também nos Rascunhos (para o Outlook na web, no Mac ou no telemóvel) e serve para saber quando sai
           let r;
           if (devMode) r = { data: { ok: true, webLink: 'about:blank' } };
-          else r = await supabase.functions.invoke('ms365-mail', { body: { action: 'draft', proposal_id: pp.id, to, cc, subject: document.getElementById('pm-subj').value.trim(), html: ppMailHtml(document.getElementById('pm-text').value), pdf: pdf.b64, filename: pdf.filename } });
+          else r = await supabase.functions.invoke('ms365-mail', { body: { action: 'draft', proposal_id: pp.id, ref: ppRef(pp), to, cc, subject, html, pdf: pdf.b64, filename: pdf.filename } });
           const res = r.data || {};
           if (r.error || !res.ok) {
-            win?.close();
             if (res.error === 'permission') {
               const has = (res.roles || []).some(r => /^Mail\.ReadWrite$/i.test(r));
               return formError('pm-msg', has
@@ -20126,15 +20160,14 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             return formError('pm-msg', 'Não foi possível criar o email: ' + (res.error || r.error?.message || 'erro desconhecido'));
           }
           pp.content.mail = { status: 'draft', link: res.webLink, created_at: new Date().toISOString() };
-          if (devMode) { const x = mockProposals.find(y => y.id === pp.id); if (x) x.content = JSON.parse(JSON.stringify(pp.content)); }
-          if (win) win.location.href = res.webLink; else window.open(res.webLink, '_blank');
+          if (devMode) { const x = mockProposals.find(y => y.id === pp.id); if (x) x.content = JSON.parse(JSON.stringify(pp.content)); window.__lastEml = { to, cc, subject, html, pdf }; }
+          ppDownload(ppEml({ to, cc, subject, html, pdf }), (pdf.filename || 'Proposta.pdf').replace(/\.pdf$/i, '') + '.eml');
           closeQuickModal();
-          showToast('Email pronto no Outlook. Quando o enviares, a proposta fica marcada como enviada.', { ms: 8000 });
+          showToast('Abre o ficheiro descarregado: o email aparece no Outlook pronto a enviar. Também ficou nos teus Rascunhos.', { ms: 12000, undo: res.webLink && res.webLink !== 'about:blank' ? () => window.open(res.webLink, '_blank') : null, undoLabel: 'Abrir na web' });
           suppressNavPush = true; openProposalView(pp.id);
         } catch (err) {
-          win?.close();
           formError('pm-msg', 'Não foi possível preparar o email: ' + err.message);
-        } finally { btn.disabled = false; btn.textContent = 'Preparar no Outlook'; }
+        } finally { btn.disabled = false; btn.textContent = 'Abrir no Outlook'; }
       });
     }
     // Vê se os rascunhos já saíram do Outlook (uma proposta ou todas)
