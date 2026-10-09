@@ -766,6 +766,24 @@
   .pp-empty { font-size: var(--fs-xs); color: var(--text-3); padding: 6px 4px; }
   .pp-header .pp-ref { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--accent); }
   .pp-saved { font-size: var(--fs-xs); color: var(--text-3); align-self: flex-end; }
+  .pp-head-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: none; }
+  .pp-langseg button { min-width: 44px; }
+  .pp-more { margin: var(--sp-4) 0 var(--sp-2); }
+  .pp-more > summary { list-style: none; cursor: pointer; padding: var(--sp-3) var(--sp-1); font-weight: var(--fw-semibold); color: var(--text-2); display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .pp-more > summary::-webkit-details-marker { display: none; }
+  .pp-more > summary::before { content: '+'; display: inline-flex; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--border); align-items: center; justify-content: center; font-weight: 400; color: var(--text-3); flex: none; }
+  .pp-more[open] > summary::before { content: '−'; }
+  .pp-more > summary small { font-weight: 400; color: var(--text-3); font-size: var(--fs-xs); }
+  .pp-more .pp-sec-n { background: var(--surface-2); color: var(--text-3); }
+  .pp-exgrp { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; }
+  .pp-exgrp > b { font-size: var(--fs-xs); color: var(--text-3); text-transform: uppercase; letter-spacing: .04em; margin: 6px 0 2px; }
+  .np-tpls { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; }
+  .np-tpl { text-align: left; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); padding: 10px 12px; cursor: pointer; display: flex; flex-direction: column; gap: 3px; color: var(--text); font: inherit; }
+  .np-tpl b { font-size: var(--fs-sm); }
+  .np-tpl span { font-size: var(--fs-xs); color: var(--text-3); line-height: 1.35; }
+  .np-tpl:hover { border-color: var(--accent); }
+  .np-tpl.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; background: var(--accent-soft); }
+  .np-lang { margin: 0; }
   .pp-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--sp-3); align-items: start; }
   .pp-side { position: sticky; top: calc(var(--sp-3) + 56px); display: flex; flex-direction: column; gap: var(--sp-2); }
   .pp-sum { display: flex; flex-direction: column; gap: 4px; }
@@ -3669,7 +3687,6 @@
   .pr-status.warn { background: var(--warning-soft); }
   .pr-status small { display: block; color: var(--text-2); margin-top: 2px; }
   .sig-preview { background: #fff; border: 1px solid var(--border); border-radius: var(--r-lg); padding: var(--sp-5); overflow-x: auto; color: #1B1A19; }
-  .sig-preview.pm-sig { padding: var(--sp-3) var(--sp-4); margin-top: 8px; }
   .sig-actions { display: flex; gap: var(--sp-2); flex-wrap: wrap; margin-top: var(--sp-3); }
   .sig-actions .primary-btn, .sig-actions .secondary-btn { width: auto; margin: 0; padding: 0 var(--sp-4); min-height: 40px; }
   .sig-how { display: grid; grid-template-columns: minmax(150px, 210px) 1fr; gap: var(--sp-2) var(--sp-4); margin-top: var(--sp-5); font-size: var(--fs-sm); }
@@ -15998,10 +16015,15 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         tour: [{ go: 'nav:opps', sel: '[data-otab="pres"]', text: 'As apresentações estão neste separador.' }] },
       { id: 'proposta', cat: 'opps', ctx: ['pipeline', 'opps', 'plot', 'proposal', 'settings:proposals'], first: 2,
         q: 'faço uma proposta de honorários',
-        a: 'Clientes → Pipeline → + Nova proposta (ou na oportunidade do Intelligence). Monta-se com os blocos da biblioteca e sai em PDF no modelo NOVA, em português ou inglês.',
-        steps: ['Abre [[Pipeline]] → [[+ Nova proposta]]. Se vier de uma oportunidade do Intelligence, escolhe-a: a proposta usa o **mesmo CST** e já vem com o local, a área, as frações e o cliente.', 'Em **Cliente e capa**: o cliente, as linhas da capa, o local, a língua (PT/EN) e a assinatura da marca. Nas moradias, podes incluir o **Manifesto**.', 'Em **Âmbito**: o texto de enquadramento, o quadro de dados e os serviços — toca em [[+ Serviços da biblioteca]] e escolhe (A Arquitetura, B Especialidades, C Marketing, D Fiscalização, estudos…). Tudo se pode editar.', 'Em **Quanto nos vai custar** (só para a NOVA): as horas estimadas pelo histórico, o custo/hora e as especialidades.', 'Em **Valor**: linhas com valor, ou unidades × valor unitário (ex.: 15 frações × 2.310 €), descontos e avenças mensais (ex.: 18 visitas × 150 €). A app mostra o valor por hora e a margem.', 'Em **Condições de pagamento**: as percentagens (Adjudicação, Estudo Prévio…) e a fase do projeto de cada uma. As avenças entram sozinhas.', 'Opcional: **Timeline** (Gantt por semanas), **Opcionais** e **Exclusões**. No fim, quem assina e a validade.', 'Toca em [[Criar proposta]] (recebe o CST). A partir daí grava sozinha.', 'Para enviar: [[Enviar por email]]. A app escreve o email (assunto com o CST e o cliente), gera o PDF e descarrega o email com o PDF anexado e a tua assinatura (Definições → Assinatura de email). Abre o ficheiro: o Outlook do computador mostra a mensagem pronta (fica também nos teus Rascunhos, para o Outlook na web ou no Mac). Revês e carregas em **Enviar** — a proposta fica marcada como enviada a essa hora e o follow-up fica para daqui a 7 dias.'],
-        kw: 'proposta honorarios orcamento preco valor fee nota de honorarios cst pdf modelo nova capa ambito exclusoes opcionais timeline pagamento biblioteca ingles email outlook enviar anexo',
+        a: 'Clientes → Pipeline → + Nova proposta: escolhe o tipo (Estudo Preliminar, PIP, Estudo de Viabilidade ou Projeto Completo), a tipologia e a língua. O modelo do tipo já traz serviços, valores, pagamento, textos, opcionais e exclusões.',
+        steps: ['Abre [[Pipeline]] → [[+ Nova proposta]]. Escolhe **que proposta é** (o modelo pré-configura tudo), a **tipologia** e a **língua**. Se vier de uma oportunidade do Intelligence, escolhe-a: usa o **mesmo CST** e traz o local, a área e o cliente.', 'No editor ficam à vista só quatro partes: **Cliente e local**, **Serviços**, **Valor** e **Pagamento**. Ajusta o que for preciso — os valores do modelo são um ponto de partida.', 'A língua muda-se a qualquer momento no **PT | EN** do topo: os textos da biblioteca e do modelo passam para a outra língua.', 'O resto está em **Mais opções**: capa e manifesto, textos do âmbito (Base de trabalho, Pressupostos, Prazo…), secções próprias (ex.: Aperfeiçoamento), custo e margem, timeline, opcionais, exclusões e assinatura.', 'Nos textos, {h} é a taxa horária dos opcionais, {local} o local e concelho, {validade}/{ate} a validade, e {Opcionais} (ou outro título) o número dessa secção no documento.', 'Toca em [[Criar proposta]] (recebe o CST). A partir daí grava sozinha. Para que as próximas deste tipo comecem assim, toca em **Guardar como modelo**.', 'Para enviar: [[Enviar por email]]. A app gera o PDF e descarrega o email com o PDF e a tua assinatura: abre o ficheiro e o Outlook mostra a mensagem pronta (fica também nos Rascunhos). Carregas em **Enviar** e a proposta fica marcada como enviada a essa hora, com follow-up a 7 dias.'],
+        kw: 'proposta honorarios orcamento preco valor fee nota de honorarios cst pdf modelo nova capa ambito exclusoes opcionais timeline pagamento biblioteca ingles email outlook enviar anexo pip viabilidade estudo preliminar projeto completo tipo lingua aperfeicoamento taxa horaria guardar como modelo',
         tour: [{ go: 'nav:pipeline', sel: '#pipe-new', text: 'Começa aqui uma proposta nova.' }] },
+      { id: 'modelos-proposta', cat: 'opps', ctx: ['proposal', 'settings:proposals', 'pipeline'],
+        q: 'mudo o que vem pré-preenchido numa proposta',
+        a: 'Abre uma proposta do tipo que queres mudar, ajusta-a e toca em «Guardar como modelo». Assinatura, validade, língua e taxa horária ficam em Definições → Propostas.',
+        steps: ['Cria (ou abre) uma proposta do tipo — ex.: PIP.', 'Ajusta serviços, valores, pagamento, textos, opcionais e exclusões como queres que venham de origem.', 'No painel da direita toca em **Guardar como modelo** e escolhe o modelo a substituir (ou cria um novo, com nome).', 'Em [[Definições]] → **Propostas** ficam: quem assina, cargo, local, validade, língua, **taxa horária dos opcionais** e a lista de modelos (com «Repor o de origem»).', 'Os textos soltos (Base de trabalho, Prazo de execução, Aperfeiçoamento, exclusões…) vivem na **Biblioteca das propostas**, também nas Definições.'],
+        kw: 'modelo modelos proposta predefinido pre preenchido omissao definicoes assinatura validade lingua taxa horaria opcionais biblioteca' },
       { id: 'pipeline', cat: 'opps', ctx: ['pipeline', 'proposal', 'home'], first: 3,
         q: 'acompanho o pipeline de propostas (follow-up, versões, perdidas)',
         a: 'Clientes → Pipeline: propostas por estado, valor em aberto e ponderado, taxa de sucesso. A Hoje avisa os follow-ups e as validades; à segunda, o Daybreak mostra o resumo.',
@@ -17709,7 +17731,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         if (oppsTab === 'plots' || oppsTab === 'match') openNewPlotQuick();
         else if (oppsTab === 'pres') openPresentModal(null, d, null, loadOpps);
         else if (oppsTab === 'investors') openInvestorModal(null, loadOpps);
-        else openProposalView(null);
+        else openNewProposalChooser(d);
       });
     }
 
@@ -18523,7 +18545,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             const responded = sel.value === 'presented' ? null : dateKey(new Date());
             await dbUpdate('land_presentations', sel.dataset.pres, { status: sel.value, responded_on: responded }, mockPresentations);
             const x = d.presentations.find(y => String(y.id) === sel.dataset.pres); if (x) { x.status = sel.value; x.responded_on = responded; }
-            if (sel.value === 'proposal') { showToast('Boa! Cria a proposta de honorários', { ms: 8000 }); openProposalView(null, { plot: p, investor: invById[x?.investor_id] }); }
+            if (sel.value === 'proposal') { showToast('Boa! Cria a proposta de honorários', { ms: 8000 }); openNewProposalChooser(d, { plot: p }); }
             else { showToast('Resposta guardada'); drawInvestors(); }
           } catch (err) { showError('guardar', err); }
         }));
@@ -18538,8 +18560,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             : '<div class="gantt-empty">Quando um investidor avançar, a proposta nasce daqui já preenchida.</div>'}`;
         box.querySelectorAll('[data-proposal]').forEach(b => b.addEventListener('click', () => openProposalView(b.dataset.proposal)));
         document.getElementById('pl-new-prop').addEventListener('click', () => {
-          const keen = d.presentations.find(x => x.plot_id === p.id && ['proposal', 'interested'].includes(x.status));
-          openProposalView(null, { plot: p, investor: keen ? invById[keen.investor_id] : null });
+          openNewProposalChooser(d, { plot: p });
         });
       };
       // ---- Valores diferentes dos de referência ----
@@ -18883,41 +18904,179 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     const libTB = (x, en) => libB(x, en) || libT(x, en);
 
     // Conteúdo de uma proposta nova (blocos por omissão da biblioteca)
-    function ppDefaultContent(lib, en, me, preset = {}) {
+    function ppDefaultContent(lib, en, me, preset = {}, cfg = {}) {
       const pick = (kind, grp) => lib.filter(x => x.kind === kind && (!grp || x.grp === grp));
       const txt = key => { const l = pick('text', key); const x = l.find(y => y.default_on) || l[0]; return x ? { lib: x.id, t: libTB(x, en) } : { t: '' }; };
       const notes = kind => pick(kind).filter(x => x.default_on).map(x => ({ lib: x.id, t: libT(x, en) }));
       const q = pick('text', 'quality')[0];
       return {
+        kind: preset.kind || null,
         cover: { lines: preset.lines || ['', ''], place: preset.place || '', region: preset.region || '' },
-        tagline: 'impact', manifesto: false, date: dateKey(new Date()), referral: { name: '', value: null },
-        scope: { intro: '', facts: preset.facts || [], lead: txt('scope_lead'), groups: [], notes: notes('note_scope') },
+        tagline: cfg.tagline || 'impact', manifesto: false, date: dateKey(new Date()), referral: { name: '', value: null },
+        scope: { intro: '', facts: preset.facts || [], blocks: [], lead: txt('scope_lead'), groups: [], after: [], notes: notes('note_scope') },
+        extra: [],
         value: { intro: txt('value_intro'), lines: [], notes: notes('note_value') },
-        pay: { intro: txt('pay_intro'), rows: [], notes: notes('note_pay') },
+        pay: { intro: txt('pay_intro'), rows: [], notes: notes('note_pay'), terms: [] },
         timeline: { on: false, start: dateKey(new Date()).slice(0, 7), rows: [], intro: txt('timeline_intro'), note: txt('timeline_note') },
-        optionals: { intro: txt('optionals_intro'), rows: [] },
-        exclusions: { intro: txt('exclusions_intro'), rows: pick('exclusion').filter(x => x.default_on).map(x => ({ lib: x.id, t: libT(x, en) })) },
-        closing: { lib: q?.id || null, title: q ? libT(q, en) : '', body: q ? libB(q, en) : '', signer: me?.id || null, role: 'Architect | Managing Partner', place: 'Porto' }
+        optionals: { intro: txt('optionals_intro'), rows: [], notes: notes('note_optional') },
+        exclusions: { intro: txt('exclusions_intro'), rows: pick('exclusion').filter(x => x.default_on).map(x => ({ lib: x.id, t: libT(x, en), grp: x.grp || '' })), notes: notes('note_exclusion') },
+        closing: { lib: q?.id || null, title: q ? libT(q, en) : '', body: q ? libB(q, en) : '', signer: cfg.signer || me?.id || null, role: cfg.signer_role || 'Architect | Managing Partner', place: cfg.place || 'Porto' }
       };
+    }
+
+    // ---------- Modelos de proposta: o tipo escolhido ao criar pré-configura tudo ----------
+    // Cada modelo diz que blocos da biblioteca entram (por título; o 3.º elemento desempata pelo texto),
+    // as linhas de valor, o pagamento e os textos. Em Definições → Propostas podem trocar-se por uma proposta
+    // guardada como modelo («Guardar como modelo» no editor).
+    const PP_TEMPLATES = [
+      { key: 'prelim', name: 'Estudo Preliminar', desc: 'Estudo curto de layout e conceito, antes do Estudo Prévio.',
+        cover: [['Estudo Preliminar', 'Preliminary Study']],
+        intro: ['O presente documento descreve a proposta de realização de um Estudo Preliminar para o imóvel sito em {local}.\n\nO objetivo deste estudo é fornecer ao Cliente uma base técnica de suporte à decisão, testando o programa pretendido sobre o espaço existente e definindo o conceito e o layout funcional que servirão de base às fases seguintes.',
+          'This document sets out our proposal for a Preliminary Study for the property located in {local}.\n\nThe purpose of this study is to give the Client a technical basis for decision-making, testing the intended brief against the existing space and defining the concept and functional layout that will underpin the following stages.'],
+        facts: [['Área de Intervenção', 'Intervention Area'], ['Nº de Pisos', 'Number of Floors'], ['Programa pretendido', 'Intended Brief']],
+        blocks: [['scope_before', 'Pressupostos do Cliente', 'programa pretendido']],
+        lead: 'Com base nos pressupostos', groups: [['Estudo Prévio de Layout Funcional']],
+        after: [['scope_after', 'Prazo de Execução', 'O estudo será entregue'], ['scope_after', 'Fases seguintes']],
+        valueIntro: 'Valor — Estudo', lines: [[['Estudo Preliminar', 'Preliminary Study'], null]],
+        valueNotes: ['Aos valores apresentados acresce IVA', 'Aumentos de área superiores a 5%', 'Em concordância com os mais atuais'],
+        payIntro: 'Pagamento — Ritmo', pay: [[['Adjudicação', 'Award'], 30, 'Adjudicação'], [['Apresentação e Entrega do Estudo', 'Presentation and Delivery of the Study'], 70, 'Estudo Preliminar']],
+        payNotes: ['Aplica-se IVA'], terms: [['pay_terms', 'Momento de faturação', 'marco indicado na tabela.'], ['pay_terms', 'Prazo e forma de pagamento']],
+        optionals: ['Reformulação da solução urbanística', 'Reuniões adicionais com o Cliente', 'Visitas ao imóvel', 'Análise e integração de estudos', 'Imagens 3D complementares', 'Cedência de Modelos Editáveis'],
+        exclIntro: 'Exclusões', exclusions: ['Levantamento topográfico, cadastral', 'Avaliação técnica do estado', 'Reuniões de certificação', 'Entrega de Ficheiros', 'Qualquer fase de projeto subsequente', 'Taxas, licenças, certidões'] },
+      { key: 'pip', name: 'PIP — Pedido de Informação Prévia', desc: 'Análise urbanística, estudo prévio, PIP e um ciclo de aperfeiçoamento.',
+        cover: [['NOVA Investment Intelligence', 'NOVA Investment Intelligence'], ['Pedido de Informação Prévia', 'Pre-Application Enquiry']],
+        intro: ['O presente documento descreve a proposta de prestação de serviços para desenvolvimento de um Pedido de Informação Prévia (PIP), ao abrigo do n.º 1 do artigo 14.º do RJUE, relativo ao imóvel localizado em {local}.\n\nO objetivo do trabalho consiste em avaliar e obter informação municipal sobre o potencial construtivo do imóvel, criando uma base documental que permita ao Cliente valorizar o ativo e suportar uma futura decisão de investimento ou alienação.\n\nO estudo procurará definir a solução urbanística que permita atingir a maior área de construção possível e urbanisticamente viável, avaliando para esse efeito a implantação, volumetria, número de pisos, cércea, afastamentos e demais parâmetros relevantes. A análise poderá considerar diferentes configurações volumétricas, sempre com o objetivo de maximizar a capacidade construtiva potencial do imóvel.',
+          'This document sets out our proposal for preparing a Pre-Application Enquiry (PIP), under article 14(1) of the RJUE, for the property located in {local}.\n\nThe purpose of the work is to assess and obtain municipal information on the building potential of the property, creating a documented basis that allows the Client to add value to the asset and support a future investment or sale decision.\n\nThe study will seek the planning solution that achieves the largest possible and viable gross floor area, assessing the site layout, massing, number of storeys, building height, setbacks and other relevant parameters. Different massing options may be considered, always with the aim of maximising the building potential of the property.'],
+        facts: [['Área do Terreno', 'Plot Area'], ['Área de Implantação potencial', 'Potential Footprint']],
+        manifesto: 'Uma abordagem NOVA',
+        blocks: [['scope_before', 'Base de trabalho'], ['scope_before', 'Pressupostos do Cliente', 'maximizar']],
+        lead: 'O trabalho inclui', groups: [['Análise Urbanística'], ['Estudo Prévio|', ['Estudo da implantação', 'Estudo da volumetria', 'Estimativa da área de construção', 'Uma reunião de arranque']], ['Pedido de Informação Prévia', ['Memória descritiva e justificativa', 'Peças desenhadas necessárias', 'Quadro síntese', 'Preparação e submissão', 'Um ciclo de aperfeiçoamento']]],
+        after: [['scope_after', 'Prazo de Execução', 'PIP será submetido'], ['scope_after', 'Natureza da Pretensão']],
+        extra: [['section', 'Aperfeiçoamento', 'único ciclo']],
+        valueIntro: 'Valor — Oportunidade', lines: [[['Análise e Enquadramento Urbanístico', 'Planning Analysis and Framing'], 1500], [['Estudo Prévio', 'Concept Design'], 4000], [['Pedido de Informação Prévia', 'Pre-Application Enquiry'], 500]],
+        valueNotes: ['Aplica-se IVA', 'Em concordância com os mais atuais', 'Estaremos sempre disponíveis', 'Esta proposta é válida por {validade}'],
+        payIntro: 'Pagamento — Investimento', pay: [[['Adjudicação', 'Award'], 30, 'Adjudicação'], [['Entrega do Estudo Prévio', 'Concept Design Delivery'], 40, 'Estudo Prévio'], [['Entrega e Submissão do PIP', 'PIP Delivery and Submission'], 20, 'PIP'], [['Ciclo de Aperfeiçoamento / Decisão Municipal', 'Review Cycle / Municipal Decision'], 10, 'Resposta a Ofício']],
+        payNotes: ['Aplica-se IVA'], terms: [['pay_terms', 'Momento de faturação', 'último pagamento'], ['pay_terms', 'Prazo e forma de pagamento'], ['pay_terms', 'Independência do resultado']],
+        optIntro: '', optionals: ['Estudos volumétricos', 'Reformulação da solução urbanística', 'Reuniões adicionais com o Cliente', 'Reuniões com o Município', 'Visitas ao imóvel', 'Análise e integração de estudos', 'Elementos adicionais solicitados', 'Adaptação da solução', 'Respostas a notificações posteriores', 'Estudos ou reformulação decorrentes', 'Coordenação de consultores externos'],
+        exclIntro: 'Exclusões — Não assumidos', exclusions: ['Levantamento topográfico, cadastral', 'Verificação in loco', 'Levantamento ou correção de informação predial', 'Obtenção de certidões', 'Estudos geotécnicos', 'Projetos de especialidades e respetivos', 'Projeto de Arquitetura e quaisquer fases posteriores ao PIP', 'Regularização ou legalização', 'Processos de alteração de uso', 'Consultoria jurídica', 'Taxas, licenças, certidões', 'Honorários de consultores', 'Qualquer garantia quanto ao teor'] },
+      { key: 'viab', name: 'Estudo de Viabilidade', desc: 'Programa, custos e retorno indicativos para apoiar uma decisão.',
+        cover: [['Estudo de Viabilidade Preliminar', 'Preliminary Feasibility Study']],
+        intro: ['O presente documento descreve a proposta de realização de um Estudo de Viabilidade Preliminar para o imóvel sito em {local}.\n\nO objetivo desta análise é fornecer ao Cliente uma base técnica e financeira de suporte à decisão, avaliando a viabilidade conceptual da intervenção pretendida.',
+          'This document sets out our proposal for a Preliminary Feasibility Study for the property located in {local}.\n\nThe purpose of this analysis is to give the Client a technical and financial basis for decision-making, assessing the conceptual feasibility of the intended intervention.'],
+        facts: [['Área Total de Construção', 'Total Construction Area'], ['Nº de Pisos', 'Number of Floors'], ['Programa pretendido', 'Intended Brief']],
+        blocks: [['scope_before', 'Pressupostos do Cliente', 'programa pretendido']],
+        lead: 'Com base nos pressupostos', groups: [['Estudo de Viabilidade Preliminar']],
+        after: [['scope_after', 'Natureza do Estudo'], ['scope_after', 'Prazo de Execução', 'O estudo será entregue']],
+        valueIntro: 'Valor — Estudo', lines: [[['Estudo de Viabilidade', 'Feasibility Study'], null]],
+        valueNotes: ['Aos valores apresentados acresce IVA', 'Em concordância com os mais atuais'],
+        payIntro: 'Pagamento — Ritmo', pay: [[['Apresentação e Entrega do Estudo', 'Presentation and Delivery of the Study'], 100, 'Estudo Preliminar']],
+        payNotes: ['Aplica-se IVA'], terms: [['pay_terms', 'Momento de faturação', 'marco indicado na tabela.'], ['pay_terms', 'Prazo e forma de pagamento']],
+        optionals: ['Estudos volumétricos', 'Reuniões adicionais com o Cliente', 'Visitas ao imóvel', 'Análise e integração de estudos'],
+        exclIntro: 'Exclusões', exclusions: ['Levantamento topográfico, cadastral', 'Reuniões de certificação', 'Estudo de mercado imobiliário', 'Avaliação técnica do estado', 'Qualquer fase de projeto subsequente'] },
+      { key: 'full', name: 'Projeto Completo', desc: 'Arquitetura e especialidades, do estudo prévio à assistência técnica.',
+        cover: [['Projeto de Arquitetura', 'Architecture Project']],
+        intro: ['O presente documento descreve a proposta de prestação de serviços para o desenvolvimento do Projeto de Arquitetura e Especialidades para o imóvel sito em {local}.',
+          'This document sets out our proposal for the Architecture and Engineering Projects for the property located in {local}.'],
+        facts: [['Área do Terreno', 'Plot Area'], ['Área Total de Construção', 'Total Construction Area'], ['Nº de Frações', 'Number of Units']],
+        manifesto: 'Uma casa NOVA', manifestoIf: /unifamiliar|moradia/,
+        blocks: [['scope_before', 'Elementos-base a fornecer']],
+        lead: 'Com base nos pressupostos', groups: [['A \\ Projeto de Arquitetura'], ['B \\ Projetos de Engenharia']],
+        after: [['scope_after', 'Prazo de Execução', 'cronograma']],
+        extra: [['section', 'Metodologia'], ['section', 'BIM'], ['section', 'Aperfeiçoamento', 'procedimento de licenciamento']],
+        valueIntro: null, lines: [[['Projeto de Arquitetura e Especialidades', 'Architecture and Engineering Projects'], null]],
+        valueNotes: ['Aos valores apresentados acresce IVA', 'Aumentos de área superiores a 5%', 'Em concordância com os mais atuais'],
+        payIntro: null, pay: null,
+        payNotes: ['Aplica-se IVA'], terms: [['pay_terms', 'Momento de faturação', 'marco indicado na tabela.'], ['pay_terms', 'Prazo e forma de pagamento'], ['pay_terms', 'Independência do resultado']],
+        timeline: true,
+        optionals: ['Assistência Técnica em Obra', 'Levantamento Topográfico', 'Imagens 3D complementares', 'Cedência de Modelos Editáveis', 'Reuniões com o Município', 'Adaptação da solução', 'Respostas a notificações posteriores', 'Coordenação de consultores externos'],
+        exclIntro: 'Exclusões', exclusions: null }
+    ];
+    // Modelos em uso: os de origem, trocados pelos guardados em Definições (cfg.templates[key])
+    function ppTemplates(cfg) {
+      const saved = cfg?.templates || {};
+      const list = PP_TEMPLATES.map(t => saved[t.key] ? { ...t, ...saved[t.key], saved: true } : t);
+      Object.values(saved).forEach(t => { if (!PP_TEMPLATES.some(x => x.key === t.key)) list.push({ ...t, saved: true, own: true }); });
+      return list;
+    }
+    // Conteúdo de uma proposta nova a partir de um modelo
+    function ppFromTemplate(tpl, lib, en, me, cfg, ctx = {}) {
+      const c = ppDefaultContent(lib, en, me, { kind: tpl?.key || null, lines: ctx.lines, place: ctx.place, region: ctx.region, facts: ctx.facts }, cfg);
+      if (!tpl) return c;
+      const L2 = (x, i) => Array.isArray(x) ? (en ? x[1] ?? x[0] : x[0]) : x;
+      const n = normTxt;
+      const find = (kind, title, has, grp) => lib.find(x => x.kind === kind && (!grp || x.grp === grp) && n(x.title_pt).startsWith(n(title)) && (!has || n(x.title_pt + ' ' + (x.body_pt || '')).includes(n(has))));
+      const fill = t => String(t || '');   // {local} fica: o documento troca-o pelo local e concelho do momento
+      // Proposta guardada como modelo: copia o conteúdo e, se a língua for outra, troca os blocos da biblioteca
+      if (tpl.snap) {
+        const snap = JSON.parse(JSON.stringify(tpl.snap));
+        const out = ppFillContent({ ...c, ...snap, kind: tpl.key, cover: { ...c.cover, ...(snap.cover || {}), place: c.cover.place, region: c.cover.region },
+          scope: { ...c.scope, ...(snap.scope || {}), facts: c.scope.facts.length ? c.scope.facts : (snap.scope?.facts || []) }, date: c.date, referral: c.referral, mail: undefined,
+          closing: { ...c.closing, ...(snap.closing || {}), signer: c.closing.signer } }, lib, en, me);
+        if ((tpl.lang === 'en') !== en) ppRelang(out, lib, en);
+        return out;
+      }
+      if (tpl.cover) { c.cover.lines = [...tpl.cover.map(x => L2(x)), ...(ctx.typeName ? [ctx.typeName] : [])]; c.cover.i18n = tpl.cover.map(x => ({ pt: x[0], en: x[1] })); }
+      if (tpl.intro) { c.scope.intro = fill(L2(tpl.intro)); c.scope.introAlt = { pt: fill(tpl.intro[0]), en: fill(tpl.intro[1]) }; }
+      if (!c.scope.facts.length && tpl.facts) c.scope.facts = tpl.facts.map(f => ({ k: L2(f), v: '', pt: f[0], en: f[1] }));
+      if (tpl.manifesto && (!tpl.manifestoIf || tpl.manifestoIf.test(n(ctx.typeName || '')))) c.manifesto = find('text', tpl.manifesto)?.id || false;
+      const blk = list => (list || []).map(([grp, t, has]) => find('block', t, has, grp)).filter(Boolean).map(x => ({ lib: x.id, t: libT(x, en), b: libB(x, en) }));
+      c.scope.blocks = blk(tpl.blocks); c.scope.after = blk(tpl.after); c.extra = blk(tpl.extra); c.pay.terms = blk(tpl.terms);
+      const lead = tpl.lead && find('text', tpl.lead); if (lead) c.scope.lead = { lib: lead.id, t: libTB(lead, en) };
+      (tpl.groups || []).forEach(([gname, items]) => {
+        const svc = lib.filter(x => x.kind === 'service' && n(x.grp).startsWith(n(gname)));
+        const pickd = items ? items.map(t => svc.find(x => n(x.title_pt).startsWith(n(t)))).filter(Boolean) : svc;
+        if (!pickd.length) return;
+        c.scope.groups.push({ g: pickd[0].grp, t: plSplit(pickd[0].grp, en), items: pickd.map(x => ({ lib: x.id, t: libT(x, en), b: libB(x, en) })) });
+      });
+      const txt = (key, title) => { const x = title && lib.find(y => y.kind === 'text' && y.grp === key && n(y.title_pt).startsWith(n(title))); return x ? { lib: x.id, t: libTB(x, en) } : null; };
+      if (tpl.valueIntro) c.value.intro = txt('value_intro', tpl.valueIntro) || c.value.intro;
+      if (tpl.payIntro) c.pay.intro = txt('pay_intro', tpl.payIntro) || c.pay.intro;
+      if (tpl.exclIntro) c.exclusions.intro = txt('exclusions_intro', tpl.exclIntro) || c.exclusions.intro;
+      if (tpl.optIntro === '') c.optionals.intro = { t: '' };
+      const notesOf = (kind, list) => list.map(t => find(kind, t)).filter(Boolean).map(x => ({ lib: x.id, t: libT(x, en) }));
+      if (tpl.valueNotes) c.value.notes = notesOf('note_value', tpl.valueNotes);
+      // a nota ESG vai para o valor quando o modelo a põe lá (não repetir no âmbito)
+      if (c.value.notes.some(x => /ESG/.test(x.t))) c.scope.notes = c.scope.notes.filter(x => !/ESG/.test(x.t));
+      if (tpl.payNotes) c.pay.notes = notesOf('note_pay', tpl.payNotes);
+      if (tpl.lines) c.value.lines = tpl.lines.map(([t, v]) => ({ g: '', t: L2(t), pt: t[0], en: t[1], q: null, u: null, v, kind: 'fee' }));
+      const stageId = name => (ctx.stageTypes || []).find(x => n(x.name) === n(name))?.id || null;
+      if (tpl.pay) c.pay.rows = tpl.pay.map(([t, pct, st]) => ({ t: L2(t), pt: t[0], en: t[1], pct, stage: stageId(st) }));
+      if (tpl.timeline) c.timeline.on = true;
+      if (tpl.optionals) c.optionals.rows = tpl.optionals.map(t => find('optional', t)).filter(Boolean).map(x => ({ lib: x.id, t: libT(x, en), v: plSplit(x.value_text, en) }));
+      if (tpl.exclusions) c.exclusions.rows = tpl.exclusions.map(t => find('exclusion', t)).filter(Boolean).map(x => ({ lib: x.id, t: libT(x, en), grp: x.grp || '' }));
+      return c;
     }
     // Completa o conteúdo guardado com as secções que faltem (propostas antigas)
     function ppFillContent(c, lib, en, me) {
       const def = ppDefaultContent(lib, en, me);
       const out = { ...def, ...(c || {}) };
       Object.keys(def).forEach(k => { if (def[k] && typeof def[k] === 'object' && !Array.isArray(def[k])) out[k] = { ...def[k], ...(c?.[k] || {}) }; });
+      if (c && !c.optionals?.notes) out.optionals.notes = [];
+      if (c && !c.exclusions?.notes) out.exclusions.notes = [];
       return out;
     }
     // Mudar de língua: os blocos da biblioteca que não foram mudados à mão passam para a outra língua
     function ppRelang(c, lib, en) {
       const byId = Object.fromEntries(lib.map(x => [x.id, x]));
       const swap = (o, get) => { const x = o && o.lib && byId[o.lib]; if (!x) return; if (!o.t || o.t === get(x, !en)) o.t = get(x, en); };
+      // linhas dos modelos com as duas línguas (pt/en)
+      const pair = (o, k = 't') => { if (o && o.pt != null && o.en != null && o[k] === (en ? o.pt : o.en)) o[k] = en ? o.en : o.pt; };
       [c.scope.lead, c.value.intro, c.pay.intro, c.timeline.intro, c.timeline.note, c.optionals.intro, c.exclusions.intro].forEach(o => swap(o, libTB));
-      [...c.scope.notes, ...c.value.notes, ...c.pay.notes, ...c.exclusions.rows].forEach(o => swap(o, libT));
+      [...c.scope.notes, ...c.value.notes, ...c.pay.notes, ...c.exclusions.rows, ...(c.optionals.notes || []), ...(c.exclusions.notes || [])].forEach(o => swap(o, libT));
+      [...(c.scope.blocks || []), ...(c.scope.after || []), ...(c.extra || []), ...(c.pay.terms || [])].forEach(o => {
+        const x = o.lib && byId[o.lib]; if (!x) return;
+        if (o.t === libT(x, !en)) o.t = libT(x, en);
+        if ((o.b || '') === libB(x, !en)) o.b = libB(x, en);
+      });
       c.optionals.rows.forEach(o => { swap(o, libT); const x = o.lib && byId[o.lib]; if (x?.value_text && o.v === plSplit(x.value_text, !en)) o.v = plSplit(x.value_text, en); });
       c.scope.groups.forEach(g => {
         if (g.g && g.t === plSplit(g.g, !en)) g.t = plSplit(g.g, en);
         g.items.forEach(it => { const x = it.lib && byId[it.lib]; if (!x) return; if (it.t === libT(x, !en)) it.t = libT(x, en); if ((it.b || '') === libB(x, !en)) it.b = libB(x, en); });
       });
+      c.value.lines.forEach(o => pair(o)); c.pay.rows.forEach(o => pair(o));
+      c.scope.facts.forEach(f => pair(f, 'k'));
+      if (c.scope.introAlt && c.scope.intro === (en ? c.scope.introAlt.pt : c.scope.introAlt.en)) c.scope.intro = en ? c.scope.introAlt.en : c.scope.introAlt.pt;
+      (c.cover.i18n || []).forEach((p, i) => { if (c.cover.lines[i] === (en ? p.pt : p.en)) c.cover.lines[i] = en ? p.en : p.pt; });
       const q = c.closing.lib && byId[c.closing.lib];
       if (q) { if (c.closing.title === libT(q, !en)) c.closing.title = libT(q, en); if (c.closing.body === libB(q, !en)) c.closing.body = libB(q, en); }
     }
@@ -19124,18 +19283,38 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       document.getElementById('pipe-new').addEventListener('click', () => openNewProposalChooser(d));
     }
     // Nova proposta: a partir de uma oportunidade do Intelligence (mesmo CST) ou sem oportunidade (CST novo)
-    function openNewProposalChooser(d) {
+    async function openNewProposalChooser(d, preset = {}) {
+      const cfg = await loadProposalCfg().catch(() => PROPOSAL_DEFAULT);
+      const tpls = ppTemplates(cfg);
       const open = d.plots.filter(p => PLOT_OPEN.includes(p.status));
+      let tpl = preset.tpl || tpls[0].key, lang = cfg.lang || 'pt';
       openQuickModal('Nova proposta de honorários', `
-        <div class="field-hint" style="margin:0 0 10px;">Se vier de uma oportunidade do Investment Intelligence, a proposta usa o mesmo CST e já vem preenchida com o local, a área, as frações e o cliente.</div>
-        <label class="field-label" style="margin-top:0;">Oportunidade</label>
+        <label class="field-label" style="margin-top:0;">Que proposta é?</label>
+        <div class="np-tpls" role="radiogroup">${tpls.map(t => `<button type="button" class="np-tpl${t.key === tpl ? ' on' : ''}" role="radio" aria-checked="${t.key === tpl}" data-tpl="${escapeHtml(t.key)}"><b>${escapeHtml(t.name)}</b><span>${escapeHtml(t.desc || '')}</span></button>`).join('')}</div>
+        <div class="form-grid">
+          <div><label class="field-label">Tipologia</label><select id="np-type" class="form-input"><option value="">—</option>${d.types.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('')}</select></div>
+          <div><label class="field-label">Língua</label><div class="segmented np-lang" role="radiogroup"><button type="button" data-lang="pt" class="${lang === 'pt' ? 'active' : ''}">Português</button><button type="button" data-lang="en" class="${lang === 'en' ? 'active' : ''}">English</button></div></div>
+        </div>
+        <label class="field-label">Oportunidade do Intelligence <small class="muted">(opcional)</small></label>
         <select id="np-plot" class="form-input"><option value="">Sem oportunidade (CST novo)</option>${open.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml([p.cst ? 'CST ' + p.cst : null, p.name, p.municipality].filter(Boolean).join(' · '))}</option>`).join('')}</select>
+        <div class="field-hint">Com oportunidade, a proposta usa o mesmo CST e já vem com o local, a área e o cliente. Tudo o resto vem do modelo — muda-se em Definições → Propostas.</div>
         <button type="button" class="primary-btn" id="np-go">Começar</button>`);
+      const box = document;
+      box.querySelectorAll('.np-tpl').forEach(b => b.addEventListener('click', () => { tpl = b.dataset.tpl; box.querySelectorAll('.np-tpl').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', x === b); }); }));
+      box.querySelectorAll('.np-lang button').forEach(b => b.addEventListener('click', () => { lang = b.dataset.lang; box.querySelectorAll('.np-lang button').forEach(x => x.classList.toggle('active', x === b)); }));
+      const plotSel = document.getElementById('np-plot'), typeSel = document.getElementById('np-type');
+      plotSel.addEventListener('change', () => {
+        const plot = d.plots.find(p => String(p.id) === plotSel.value);
+        if (plot?.project_type_id) typeSel.value = plot.project_type_id;
+        const cl = plot && d.clients.find(x => x.id === plot.client_id);
+        if (cl?.language) { lang = cl.language === 'en' ? 'en' : 'pt'; box.querySelectorAll('.np-lang button').forEach(x => x.classList.toggle('active', x.dataset.lang === lang)); }
+      });
+      if (preset.plot) { plotSel.value = preset.plot.id; plotSel.dispatchEvent(new Event('change')); }
       document.getElementById('np-go').addEventListener('click', () => {
-        const plot = d.plots.find(p => String(p.id) === document.getElementById('np-plot').value) || null;
+        const plot = d.plots.find(p => String(p.id) === plotSel.value) || null;
         const keen = plot ? d.presentations.find(x => x.plot_id === plot.id && ['proposal', 'interested'].includes(x.status)) : null;
         closeQuickModal();
-        openProposalView(null, { plot, investor: keen ? d.investors.find(i => i.id === keen.investor_id) : null });
+        openProposalView(null, { plot, investor: keen ? d.investors.find(i => i.id === keen.investor_id) : null, tpl, lang, typeId: typeSel.value || null });
       });
     }
 
@@ -19163,28 +19342,30 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const typeById = Object.fromEntries(d.types.map(t => [t.id, t]));
         if (!pp) {
           const plot = preset.plot, c = plot ? plotCalc(plot) : null, inv = preset.investor;
-          const typeId = plot?.project_type_id || null;
+          const typeId = preset.typeId || plot?.project_type_id || null;
           const client = d.clients.find(x => x.id === (plot?.origin === 'client' ? plot.client_id : inv?.client_id));
-          const en = client?.language === 'en';
+          const en = preset.lang ? preset.lang === 'en' : (client?.language === 'en' || cfg.lang === 'en');
           const fr = c?.feas?.units || plot?.fractions_est || null;
           const facts = plot ? [
-            Number(plot.land_area) ? { k: en ? 'Plot Area' : 'Área do Terreno', v: fmtNum(plot.land_area) + ' m²' } : null,
-            Number(c?.build) ? { k: en ? 'Total Construction Area' : 'Área Total de Construção', v: fmtNum(Math.round(c.build * 100) / 100) + ' m²' } : null,
-            Number(fr) ? { k: en ? 'Number of Apartments' : 'Nº de Frações', v: String(fr) } : null
+            Number(plot.land_area) ? { k: en ? 'Plot Area' : 'Área do Terreno', v: fmtNum(plot.land_area) + ' m²', pt: 'Área do Terreno', en: 'Plot Area' } : null,
+            Number(c?.build) ? { k: en ? 'Total Construction Area' : 'Área Total de Construção', v: fmtNum(Math.round(c.build * 100) / 100) + ' m²', pt: 'Área Total de Construção', en: 'Total Construction Area' } : null,
+            Number(fr) ? { k: en ? 'Number of Apartments' : 'Nº de Frações', v: String(fr), pt: 'Nº de Frações', en: 'Number of Apartments' } : null
           ].filter(Boolean) : [];
+          const tpl = ppTemplates(cfg).find(t => t.key === preset.tpl) || null;
+          const place = plot?.parish || plot?.address || '', region = plot?.municipality || '';
           pp = {
             id: null, number: plot?.cst || null, version: 1, title: plot ? plot.name : '', plot_id: plot?.id || null,
             client_id: client?.id || null, investor_id: inv?.id || null,
             client_name: inv ? [inv.name, inv.company].filter(Boolean).join(' — ') : null,
             project_type_id: typeId, method: 'global', area: c?.build ? Math.round(c.build * 100) / 100 : null, fractions: fr,
             unit_value: null, total: null, est_hours: null, cost_per_hour: cfg.cost_per_hour ?? autoCph, target_rate: cfg.target_rate,
-            specialties: specialtyPreset(cfg, typeId), phases: [], status: 'draft', language: en ? 'en' : 'pt', valid_days: 30, notes: null,
+            specialties: specialtyPreset(cfg, typeId), phases: [], status: 'draft', language: en ? 'en' : 'pt', valid_days: Number(cfg.valid_days) || 30, notes: null,
             source: plot ? 'intelligence' : 'direct', owner_id: meM?.id ?? null, probability: null, followup_on: null, expected_on: null,
-            content: ppDefaultContent(lib, en, meM, {
-              lines: [en ? 'Architecture Project' : 'Projeto de Arquitetura', typeById[typeId]?.name || ''],
-              place: plot?.parish || plot?.address || '', region: plot?.municipality || '', facts
-            })
+            content: tpl
+              ? ppFromTemplate(tpl, lib, en, meM, cfg, { place, region, facts, typeName: typeById[typeId]?.name || '', stageTypes: modelData.stageTypes })
+              : ppDefaultContent(lib, en, meM, { lines: [en ? 'Architecture Project' : 'Projeto de Arquitetura', typeById[typeId]?.name || ''], place, region, facts }, cfg)
           };
+          pp.total = ppTotals(pp.content).total || null;
         } else {
           pp = JSON.parse(JSON.stringify(pp));
           pp.content = ppFillContent(pp.content, lib, pp.language === 'en', meM);
@@ -19193,7 +19374,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         let restored = false;
         if (!pp.id) {
           let dr = null; try { dr = JSON.parse(localStorage.getItem(PP_DRAFT_KEY) || 'null'); } catch (_) { /* sem armazenamento */ }
-          if (dr?.pp && Date.now() - dr.at < 3 * 864e5 && (!preset.plot || dr.pp.plot_id === preset.plot.id)) {
+          if (dr?.pp && Date.now() - dr.at < 3 * 864e5 && (!preset.plot || dr.pp.plot_id === preset.plot.id) && (!preset.tpl || dr.pp.content?.kind === preset.tpl)) {
             pp = dr.pp; pp.content = ppFillContent(pp.content, lib, pp.language === 'en', meM); restored = true;
           }
         }
@@ -19250,7 +19431,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             ${cols.map(x => x.ro ? `<span class="pp-ro num" data-ro="${path}.${i}.${x.k}">${x.ro(r)}</span>`
               : x.sel ? `<select class="form-input" data-pp="${path}.${i}.${x.k}" aria-label="${escapeHtml(x.ph || x.k)}">${x.sel(r[x.k])}</select>`
               : x.chk ? `<label class="pp-chk"><input type="checkbox" data-ppc="${path}.${i}.${x.k}"${r[x.k] ? ' checked' : ''}> ${escapeHtml(x.ph)}</label>`
-              : x.area ? `<textarea class="form-input" rows="2" data-pp="${path}.${i}.${x.k}" placeholder="${escapeHtml(x.ph || '')}">${escapeHtml(r[x.k] ?? '')}</textarea>`
+              : x.area ? `<textarea class="form-input" rows="${r[x.k] ? 2 : 1}" data-pp="${path}.${i}.${x.k}" placeholder="${escapeHtml(x.ph || '')}">${escapeHtml(r[x.k] ?? '')}</textarea>`
               : `<input type="text"${x.n ? ' inputmode="decimal" data-n' : ''} class="form-input" data-pp="${path}.${i}.${x.k}" value="${escapeHtml(r[x.k] ?? '')}" placeholder="${escapeHtml(x.ph || '')}" aria-label="${escapeHtml(x.ph || x.k)}">`).join('')}
             <span class="pp-row-btns">${i ? `<button type="button" class="ck-x" data-act="up" data-path="${path}" data-i="${i}" aria-label="Subir">↑</button>` : '<span></span>'}<button type="button" class="ck-x" data-act="del" data-path="${path}" data-i="${i}" aria-label="Tirar">×</button></span>
           </div>`).join('')}</div>` : (empty ? `<div class="pp-empty">${empty}</div>` : '');
@@ -19269,6 +19450,32 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         return `${vars.length > 1 ? `<select class="form-input pp-variant" data-introvar="${path}" aria-label="Texto-modelo">${vars.map(v => `<option value="${escapeHtml(v.id)}"${v.id === o.lib ? ' selected' : ''}>${escapeHtml(libT(v, false))}</option>`).join('')}<option value=""${!o.lib ? ' selected' : ''}>Texto próprio</option></select>` : ''}
           ${area(path + '.t', o.t, 3)}`;
       };
+      // Blocos com título e texto (Base de trabalho, Prazo, Aperfeiçoamento…): da biblioteca ou escritos à mão
+      const blocksUI = (path, grp) => {
+        const list = ppGet(pp, path) || [];
+        const on = new Set(list.map(x => x.lib).filter(Boolean));
+        const libRows = S.lib.filter(x => x.kind === 'block' && x.grp === grp && !on.has(x.id));
+        return `<div class="pp-blocks">${list.map((x, i) => `
+          <div class="pp-group pp-block">
+            <div class="pp-group-head"><input type="text" class="form-input" data-pp="${path}.${i}.t" value="${escapeHtml(x.t || '')}" placeholder="Título">
+              <span class="pp-row-btns">${i ? `<button type="button" class="ck-x" data-act="up" data-path="${path}" data-i="${i}" aria-label="Subir">↑</button>` : ''}<button type="button" class="ck-x" data-act="del" data-path="${path}" data-i="${i}" aria-label="Tirar">×</button></span></div>
+            ${area(`${path}.${i}.b`, x.b, Math.min(14, 3 + Math.round(String(x.b || '').length / 160)))}
+          </div>`).join('')}
+          <div class="pp-btnrow">${libRows.length ? `<select class="form-input pp-libadd" data-libblock="${path}" aria-label="Acrescentar da biblioteca"><option value="">+ Da biblioteca…</option>${libRows.map(x => `<option value="${escapeHtml(x.id)}">${escapeHtml(libT(x, en) + ' — ' + libB(x, en).replace(/\*\*/g, '').slice(0, 70))}…</option>`).join('')}</select>` : ''}
+            <button type="button" class="text-btn" data-act="add" data-path="${path}" data-tpl='{"t":"","b":""}'>+ Escrito à mão</button></div></div>`;
+      };
+      // Exclusões por tema (o tema vem da biblioteca)
+      const exclusionsUI = () => {
+        const list = c.exclusions.rows;
+        const libRows = libOf('exclusion');
+        const groups = [...new Set(libRows.map(x => x.grp || ''))];
+        const own = list.map((n, i) => ({ n, i })).filter(x => !x.n.lib || !libRows.some(l => l.id === x.n.lib));
+        return `<div class="pp-notes">${groups.map(g => `<div class="pp-exgrp"><b>${escapeHtml(plSplit(g, en) || 'Outras')}</b>${libRows.filter(x => (x.grp || '') === g).map(l => `<label class="pp-chk pp-note"><input type="checkbox" data-libnote="content.exclusions.rows" value="${escapeHtml(l.id)}"${list.some(n => n.lib === l.id) ? ' checked' : ''}> ${escapeHtml(libT(l, en))}</label>`).join('')}</div>`).join('')}
+          ${own.map(({ n, i }) => `<div class="pp-note-own"><input type="text" class="form-input" data-pp="content.exclusions.rows.${i}.t" value="${escapeHtml(n.t)}"><button type="button" class="ck-x" data-act="del" data-path="content.exclusions.rows" data-i="${i}" aria-label="Tirar">×</button></div>`).join('')}
+          <button type="button" class="text-btn" data-act="add" data-path="content.exclusions.rows" data-tpl='{"t":""}'>+ Exclusão escrita à mão</button></div>`;
+      };
+      const manifestos = S.lib.filter(x => x.kind === 'text' && x.grp === 'manifesto');
+      const manOn = c.manifesto === true ? manifestos[0]?.id : c.manifesto;
       const sec = (id, n, title, body, { open = true, extra = '' } = {}) => `<details class="gantt-wrap pp-sec" id="pps-${id}"${open ? ' open' : ''}><summary><span class="pp-sec-n">${n}</span>${title}${extra}</summary><div class="pp-sec-body" data-sec="${id}">${body}</div></details>`;
       const T = ppTotals(c);
       const secBodies = {
@@ -19276,31 +19483,26 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <label class="field-label" style="margin-top:0;">Cliente</label>
           ${clientPickerHtml('pp-client')}
           <div class="form-grid">
-            <div><label class="field-label">Nome na capa (se não for o do cliente)</label>${inp('client_name', pp.client_name, { ph: 'ex.: Maria e Reynald Aeschlimann' })}</div>
-            <div><label class="field-label">Título interno</label>${inp('title', pp.title, { ph: 'ex.: Habitação coletiva em Seixezelo' })}</div>
+            <div><label class="field-label">Local</label>${inp('content.cover.place', c.cover.place, { ph: 'ex.: Rua de Álvares Cabral' })}</div>
+            <div><label class="field-label">Concelho / região</label>${inp('content.cover.region', c.cover.region, { ph: 'ex.: Vila Nova de Gaia' })}</div>
+            <div><label class="field-label">Tipologia</label><select class="form-input" data-pp="project_type_id" id="pp-type"><option value="">Escolhe…</option>${typeOpts}</select></div>
+            <div><label class="field-label">Área de construção (m²)</label>${inp('area', pp.area, { n: true })}</div>
+            <div><label class="field-label">Frações</label>${inp('fractions', pp.fractions, { n: true })}</div>
+          </div>`,
+        coverMore: () => `
+          <div class="form-grid">
+            <div><label class="field-label" style="margin-top:0;">Nome na capa (se não for o do cliente)</label>${inp('client_name', pp.client_name, { ph: 'ex.: Maria e Reynald Aeschlimann' })}</div>
+            <div><label class="field-label" style="margin-top:0;">Título interno</label>${inp('title', pp.title, { ph: 'ex.: Habitação coletiva em Seixezelo' })}</div>
           </div>
           <label class="field-label">Linhas da capa</label>
           <div class="pp-lines">${(c.cover.lines || []).map((l, i) => `<div class="pp-note-own">${inp(`content.cover.lines.${i}`, l, { ph: i === 0 ? 'ex.: Projeto de Arquitetura' : 'ex.: Habitação Plurifamiliar' })}<button type="button" class="ck-x" data-act="del" data-path="content.cover.lines" data-i="${i}" aria-label="Tirar">×</button></div>`).join('')}
             <button type="button" class="text-btn" data-act="add" data-path="content.cover.lines" data-tpl='""'>+ Linha</button></div>
           <div class="form-grid">
-            <div><label class="field-label">Local</label>${inp('content.cover.place', c.cover.place, { ph: 'ex.: Pedroso e Seixezelo' })}</div>
-            <div><label class="field-label">Concelho / região (a negrito)</label>${inp('content.cover.region', c.cover.region, { ph: 'ex.: Vila Nova de Gaia' })}</div>
-            <div><label class="field-label">Tipologia</label><select class="form-input" data-pp="project_type_id" id="pp-type"><option value="">Escolhe…</option>${typeOpts}</select></div>
-            <div><label class="field-label">Língua</label><select class="form-input" id="pp-lang"><option value="pt"${en ? '' : ' selected'}>Português</option><option value="en"${en ? ' selected' : ''}>English</option></select></div>
-            <div><label class="field-label">Área de construção (m²)</label>${inp('area', pp.area, { n: true })}</div>
-            <div><label class="field-label">Frações</label>${inp('fractions', pp.fractions, { n: true })}</div>
             <div><label class="field-label">Assinatura da marca</label><select class="form-input" data-pp="content.tagline">${PP_TAGLINES.map(([k, l]) => `<option value="${k}"${c.tagline === k ? ' selected' : ''}>${escapeHtml(l)}</option>`).join('')}</select></div>
+            <div><label class="field-label">Manifesto</label><select class="form-input" id="pp-manifesto"><option value="">Sem manifesto</option>${manifestos.map(m => `<option value="${escapeHtml(m.id)}"${m.id === manOn ? ' selected' : ''}>${escapeHtml(libT(m, false))}</option>`).join('')}</select></div>
             <div><label class="field-label">Oportunidade (Intelligence)</label><select class="form-input" id="pp-plot"${pp.id && pp.number ? ' disabled' : ''}><option value="">Sem oportunidade</option>${d.plots.map(x => `<option value="${escapeHtml(x.id)}"${x.id === pp.plot_id ? ' selected' : ''}>${escapeHtml([x.cst ? 'CST ' + x.cst : null, x.name].filter(Boolean).join(' · '))}</option>`).join('')}</select></div>
-          </div>
-          <label class="pp-chk" style="margin-top:10px;"><input type="checkbox" data-ppc="content.manifesto"${c.manifesto ? ' checked' : ''}> Incluir o Manifesto (moradias e habitação própria)</label>`,
+          </div>`,
         scope: () => `
-          <label class="field-label" style="margin-top:0;">Enquadramento</label>
-          ${area('content.scope.intro', c.scope.intro, 4, 'O presente documento descreve a proposta de prestação de serviços para… Usa **negrito** para destacar.')}
-          <label class="field-label">Quadro de dados</label>
-          ${rowsUI('content.scope.facts', c.scope.facts, [{ k: 'k', ph: 'ex.: Área de Intervenção', w: '1fr' }, { k: 'v', ph: 'ex.: aprox. 840,00 m²', w: '1fr' }])}
-          <button type="button" class="text-btn" data-act="add" data-path="content.scope.facts" data-tpl='{"k":"","v":""}'>+ Linha</button>
-          <label class="field-label">Frase antes dos serviços</label>
-          ${area('content.scope.lead.t', c.scope.lead?.t, 2)}
           <div class="pp-groups">${c.scope.groups.map((g, gi) => `
             <div class="pp-group">
               <div class="pp-group-head"><input type="text" class="form-input" data-pp="content.scope.groups.${gi}.t" value="${escapeHtml(g.t)}" placeholder="Grupo, ex.: A \\ Projeto de Arquitetura">
@@ -19308,9 +19510,26 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               ${rowsUI(`content.scope.groups.${gi}.items`, g.items, [{ k: 't', ph: 'Serviço', w: '1fr' }, { k: 'b', ph: 'Descritivo (opcional)', w: '1.4fr', area: true }])}
               <button type="button" class="text-btn" data-act="add" data-path="content.scope.groups.${gi}.items" data-tpl='{"t":"","b":""}'>+ Item</button>
             </div>`).join('') || '<div class="pp-empty">Ainda sem serviços. Escolhe-os da biblioteca ou cria um grupo.</div>'}</div>
-          <div class="pp-btnrow"><button type="button" class="secondary-btn" data-act="lib-services">+ Serviços da biblioteca</button><button type="button" class="text-btn" data-act="add" data-path="content.scope.groups" data-tpl='{"t":"","items":[]}'>+ Grupo vazio</button></div>
+          <div class="pp-btnrow"><button type="button" class="secondary-btn" data-act="lib-services">+ Serviços da biblioteca</button><button type="button" class="text-btn" data-act="add" data-path="content.scope.groups" data-tpl='{"t":"","items":[]}'>+ Grupo vazio</button></div>`,
+        scopeText: () => `
+          <label class="field-label" style="margin-top:0;">Enquadramento</label>
+          ${area('content.scope.intro', c.scope.intro, 5, 'O presente documento descreve a proposta de prestação de serviços para… Usa **negrito** para destacar.')}
+          <div class="field-hint">{local} é trocado pelo local e concelho de «Cliente e local».</div>
+          <label class="field-label">Quadro de dados</label>
+          ${rowsUI('content.scope.facts', c.scope.facts, [{ k: 'k', ph: 'ex.: Área de Intervenção', w: '1fr' }, { k: 'v', ph: 'ex.: aprox. 840,00 m²', w: '1fr' }])}
+          <button type="button" class="text-btn" data-act="add" data-path="content.scope.facts" data-tpl='{"k":"","v":""}'>+ Linha</button>
+          <div class="field-hint">Linhas sem valor não aparecem na proposta.</div>
+          <label class="field-label">Antes dos serviços (Base de trabalho, Pressupostos…)</label>
+          ${blocksUI('content.scope.blocks', 'scope_before')}
+          <label class="field-label">Frase antes dos serviços</label>
+          ${area('content.scope.lead.t', c.scope.lead?.t, 2)}
+          <label class="field-label">Depois dos serviços (Prazo de execução, Natureza…)</label>
+          ${blocksUI('content.scope.after', 'scope_after')}
           <label class="field-label">Notas (a roxo, no fim do âmbito)</label>
           ${notesUI('content.scope.notes', 'note_scope')}`,
+        extra: () => `
+          <div class="field-hint" style="margin-top:0;">Secções inteiras da proposta, a seguir ao âmbito (ex.: Aperfeiçoamento, Metodologia, BIM). Usa **negrito** no início de um parágrafo para o destacar.</div>
+          ${blocksUI('content.extra', 'section')}`,
         cost: () => `
           <div class="field-hint" style="margin-top:0;">Só para a NOVA — não aparece na proposta.</div>
           <div class="op-est" id="pp-est"></div>
@@ -19323,8 +19542,6 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <button type="button" class="text-btn" data-act="add" data-path="specialties" data-tpl='{"name":"","mode":"fixed","value":null}'>+ Linha</button>
           <div class="op-sum" id="pp-cost-sum"></div>`,
         value: () => `
-          <label class="field-label" style="margin-top:0;">Texto de abertura</label>
-          ${introUI('content.value.intro', 'value_intro')}
           <div class="pp-th" style="grid-template-columns:.8fr 2fr .55fr .75fr .75fr .9fr .8fr 52px"><span>Grupo</span><span>Descrição</span><span>Unid.</span><span>Valor unit.</span><span>ou Valor</span><span>Tipo</span><span>Total</span><span></span></div>
           ${rowsUI('content.value.lines', c.value.lines, [
             { k: 'g', ph: 'ex.: Arquitetura', w: '.8fr' }, { k: 't', ph: 'ex.: Projeto por fração', w: '2fr' }, { k: 'q', ph: 'qtd', n: true, w: '.55fr' }, { k: 'u', ph: '€/unid.', n: true, w: '.75fr' },
@@ -19338,20 +19555,25 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             <button type="button" class="text-btn" data-act="add" data-path="content.value.lines" data-tpl='{"g":"","t":"Visita mensal à obra","q":18,"u":150,"v":null,"kind":"month"}'>+ Avença mensal</button>
           </div>
           <div class="op-target" id="pp-target"></div>
-          <div class="pp-total"><span>Total (sem IVA)</span><b class="num" id="pp-total">${escapeHtml(fmtEUR(T.total))}</b></div>
-          <label class="field-label">Notas do valor</label>
-          ${notesUI('content.value.notes', 'note_value')}`,
+          <div class="pp-total"><span>Total (sem IVA)</span><b class="num" id="pp-total">${escapeHtml(fmtEUR(T.total))}</b></div>`,
         pay: () => `
-          <label class="field-label" style="margin-top:0;">Texto de abertura</label>
-          ${introUI('content.pay.intro', 'pay_intro')}
           <div class="pp-th" style="grid-template-columns:2fr .6fr 1.3fr .9fr 52px"><span>Descrição</span><span>%</span><span>Fase do projeto (ao adjudicar)</span><span>Valor</span><span></span></div>
           ${rowsUI('content.pay.rows', c.pay.rows, [{ k: 't', ph: 'ex.: Adjudicação', w: '2fr' }, { k: 'pct', ph: '%', n: true, w: '.6fr' }, { k: 'stage', sel: stageOpts, w: '1.3fr' }, { k: '_v', ro: x => escapeHtml(fmtEUR(T.base * (Number(x.pct) || 0) / 100)), w: '.9fr' }], { empty: 'Sem faseamento.' })}
           ${c.value.lines.filter(l => l.kind === 'month').map(l => `<div class="pp-row pp-row-month" style="grid-template-columns:2fr .6fr 1.3fr .9fr 52px"><span>${escapeHtml(l.t || 'Avença')}</span><span class="muted">${escapeHtml(fmtEUR(l.u || 0))}/mês</span><span class="muted">${escapeHtml(fmtNum(l.q || 0))} meses (do valor)</span><span class="num">${escapeHtml(fmtEUR(ppLineAmount(l)))}</span><span></span></div>`).join('')}
           <div class="pp-total"><span>Soma das percentagens</span><b class="num ${Math.abs(T.pctSum - 100) > 0.01 && c.pay.rows.length ? 'warn-text' : ''}" id="pp-pct-sum">${escapeHtml(fmtNum(T.pctSum))}%</b></div>
           <div class="pp-btnrow"><button type="button" class="text-btn" data-act="add" data-path="content.pay.rows" data-tpl='{"t":"","pct":0,"stage":null}'>+ Linha</button><button type="button" class="text-btn" data-act="pay-model">Repor do modelo de fases</button></div>
-          <div class="field-hint">As percentagens aplicam-se ao valor sem as avenças mensais. A «fase do projeto» diz em que fase cada pagamento entra quando a proposta for adjudicada.</div>
+          <div class="field-hint">As percentagens aplicam-se ao valor sem as avenças mensais. A «fase do projeto» diz em que fase cada pagamento entra quando a proposta for adjudicada.</div>`,
+        moneyText: () => `
+          <label class="field-label" style="margin-top:0;">Abertura do valor</label>
+          ${introUI('content.value.intro', 'value_intro')}
+          <label class="field-label">Notas do valor</label>
+          ${notesUI('content.value.notes', 'note_value')}
+          <label class="field-label">Abertura do pagamento</label>
+          ${introUI('content.pay.intro', 'pay_intro')}
           <label class="field-label">Notas do pagamento</label>
-          ${notesUI('content.pay.notes', 'note_pay')}`,
+          ${notesUI('content.pay.notes', 'note_pay')}
+          <label class="field-label">Condições (Momento de faturação, Prazo e forma de pagamento…)</label>
+          ${blocksUI('content.pay.terms', 'pay_terms')}`,
         timeline: () => `
           <label class="pp-chk" style="margin-top:0;"><input type="checkbox" data-ppc="content.timeline.on"${c.timeline.on ? ' checked' : ''}> Incluir o timeline (Gantt por semanas)</label>
           ${c.timeline.on ? `
@@ -19363,12 +19585,17 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <label class="field-label">Nota</label>${area('content.timeline.note.t', c.timeline.note?.t, 3)}` : ''}`,
         optionals: () => `
           <label class="field-label" style="margin-top:0;">Texto de abertura</label>${area('content.optionals.intro.t', c.optionals.intro?.t, 2)}
-          ${rowsUI('content.optionals.rows', c.optionals.rows, [{ k: 't', ph: 'Serviço opcional', w: '2fr' }, { k: 'v', ph: 'ex.: 60 €/h ou sob consulta', w: '1fr' }], { empty: 'Sem opcionais — a secção não aparece na proposta.' })}
+          ${rowsUI('content.optionals.rows', c.optionals.rows, [{ k: 't', ph: 'Serviço opcional', w: '2fr' }, { k: 'v', ph: 'ex.: €{h}/h ou Sob consulta', w: '1fr' }], { empty: 'Sem opcionais — a secção não aparece na proposta.' })}
+          <div class="field-hint">{h} é a taxa horária das Definições (agora ${escapeHtml(fmtEUR(ppRate(S.cfg)))}/h).</div>
           <div class="pp-btnrow"><select class="form-input pp-libadd" data-libadd="optional" aria-label="Acrescentar da biblioteca"><option value="">+ Da biblioteca…</option>${libOf('optional').map(x => `<option value="${escapeHtml(x.id)}">${escapeHtml(libT(x, en))}</option>`).join('')}</select>
-            <button type="button" class="text-btn" data-act="add" data-path="content.optionals.rows" data-tpl='{"t":"","v":""}'>+ Escrito à mão</button></div>`,
+            <button type="button" class="text-btn" data-act="add" data-path="content.optionals.rows" data-tpl='{"t":"","v":""}'>+ Escrito à mão</button></div>
+          <label class="field-label">Notas dos opcionais</label>
+          ${notesUI('content.optionals.notes', 'note_optional')}`,
         exclusions: () => `
           <label class="field-label" style="margin-top:0;">Texto de abertura</label>${area('content.exclusions.intro.t', c.exclusions.intro?.t, 2)}
-          ${notesUI('content.exclusions.rows', 'exclusion')}`,
+          ${exclusionsUI()}
+          <label class="field-label">Notas das exclusões</label>
+          ${notesUI('content.exclusions.notes', 'note_exclusion')}`,
         closing: () => `
           <label class="field-label" style="margin-top:0;">Título</label>${inp('content.closing.title', c.closing.title)}
           <label class="field-label">Texto</label>${area('content.closing.body', c.closing.body, 8)}
@@ -19380,7 +19607,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             <div><label class="field-label">Validade (dias)</label>${inp('valid_days', pp.valid_days, { n: true })}</div>
           </div>`
       };
-      const order = [['cover', 'Cliente e capa'], ['scope', 'Âmbito'], ['cost', 'Quanto nos vai custar', { open: !pp.id }], ['value', 'Valor'], ['pay', 'Condições de pagamento'], ['timeline', 'Timeline', { open: c.timeline.on }], ['optionals', 'Opcionais', { open: !!c.optionals.rows.length }], ['exclusions', 'Exclusões', { open: false }], ['closing', 'Fecho e assinatura', { open: false }]];
+      const order = [['cover', 'Cliente e local'], ['scope', 'Serviços'], ['value', 'Valor'], ['pay', 'Pagamento']];
+      const more = [['coverMore', 'Capa e apresentação'], ['scopeText', 'Textos do âmbito'], ['extra', 'Secções próprias' + (c.extra?.length ? ` (${c.extra.length})` : '')], ['cost', 'Custo e margem (só para a NOVA)'], ['moneyText', 'Textos do valor e do pagamento'], ['timeline', 'Timeline'], ['optionals', 'Opcionais' + (c.optionals.rows.length ? ` (${c.optionals.rows.length})` : '')], ['exclusions', 'Exclusões' + (c.exclusions.rows.length ? ` (${c.exclusions.rows.length})` : '')], ['closing', 'Fecho e assinatura']];
       const today = dateKey(new Date());
       const exp = ppExpiry(pp), left = exp ? diffDays(today, exp) : null;
       view.innerHTML = `
@@ -19388,11 +19616,15 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <div class="titles"><div class="pp-ref">${escapeHtml(ppRef(pp) || 'CST por atribuir')} ${pill(pp.status)}${plot ? ` <button type="button" class="text-btn" data-open-plot="${escapeHtml(plot.id)}">oportunidade: ${escapeHtml(plot.name)}</button>` : ''}</div>
             <h2>${escapeHtml(ppClientName(pp, d) || pp.title || 'Nova proposta de honorários')}</h2>
             <div class="sub">${escapeHtml([pp.title && ppClientName(pp, d) ? pp.title : null, S.typeById[pp.project_type_id]?.name, c.cover.region].filter(Boolean).join(' · '))}</div></div>
-          <span class="pp-saved" id="pp-saved" aria-live="polite"></span>
+          <div class="pp-head-right"><div class="segmented pp-langseg" role="radiogroup" aria-label="Língua da proposta"><button type="button" data-lang="pt" class="${en ? '' : 'active'}">PT</button><button type="button" data-lang="en" class="${en ? 'active' : ''}">EN</button></div>
+            <span class="pp-saved" id="pp-saved" aria-live="polite"></span></div>
         </div>
         ${locked ? `<div class="archived-banner" style="display:flex;"><span>${pp.status === 'accepted' ? 'Proposta adjudicada' + (pp.project_id ? ' — o projeto já foi criado' : '') : 'Esta versão foi substituída por uma mais recente'}. Só leitura.</span>${pp.project_id ? `<button type="button" class="text-btn" data-open-project="${escapeHtml(pp.project_id)}">Abrir o projeto</button>` : ''}</div>` : ''}
         <div class="pp-layout">
-          <div class="pp-main">${order.map(([id, title, o], i) => sec(id, i + 1, title, secBodies[id](), o || {})).join('')}</div>
+          <div class="pp-main">${order.map(([id, title, o], i) => sec(id, i + 1, title, secBodies[id](), o || {})).join('')}
+            <details class="pp-more"${S.moreOpen ? ' open' : ''}><summary>Mais opções <small>textos, custo e margem, timeline, opcionais, exclusões, assinatura</small></summary>
+              ${more.map(([id, title]) => sec(id, '+', title, secBodies[id](), { open: !!S.openSecs?.[id] })).join('')}
+            </details></div>
           <aside class="pp-side">
             <div class="gantt-wrap pp-sum">
               <span class="pp-sum-l">Honorários (sem IVA)</span><b class="pp-sum-v num" id="pp-side-total">${escapeHtml(fmtEUR(T.total))}</b>
@@ -19401,6 +19633,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               ${c.mail?.status === 'draft' ? `<div class="pp-mailstate">Email pronto no Outlook (ficheiro descarregado e Rascunhos), à espera de ser enviado.${c.mail.link ? ` <a href="${escapeHtml(c.mail.link)}" target="_blank" rel="noopener">Abrir na web</a>` : ''}</div>` : c.mail?.status === 'sent' && c.mail.sent_at ? `<div class="pp-mailstate ok">Enviado por email a ${escapeHtml(fmtDayMonthYear(c.mail.sent_at.slice(0, 10)))}, ${escapeHtml(new Date(c.mail.sent_at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }))}.</div>` : ''}
               <button type="button" class="${pp.id ? 'secondary-btn' : 'primary-btn'}" id="pp-pdf">Ver proposta (PDF)</button>
               ${!pp.id ? `<button type="button" class="secondary-btn" id="pp-create">Criar proposta${pp.number ? ' · CST ' + pp.number : ''}</button>` : ''}
+              <button type="button" class="text-btn" id="pp-save-tpl">Guardar como modelo</button>
             </div>
             ${pp.id ? `<div class="gantt-wrap pp-pipe">
               <div class="card-head"><h2>Pipeline</h2>${pill(pp.status)}</div>
@@ -19482,7 +19715,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         }
         if (el.dataset.libnote) {
           const list = ppGet(pp, el.dataset.libnote); const x = S.lib.find(l => l.id === el.value);
-          if (el.checked && x && !list.some(n => n.lib === x.id)) list.push({ lib: x.id, t: libT(x, en) });
+          if (el.checked && x && !list.some(n => n.lib === x.id)) list.push({ lib: x.id, t: libT(x, en), ...(x.kind === 'exclusion' ? { grp: x.grp || '' } : {}) });
           if (!el.checked) { const i = list.findIndex(n => n.lib === el.value); if (i >= 0) list.splice(i, 1); }
           touch(); return;
         }
@@ -19491,17 +19724,28 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           if (x) { c.optionals.rows.push({ lib: x.id, t: libT(x, en), v: plSplit(x.value_text, en) }); touch('optionals'); }
           return;
         }
-        if (el.id === 'pp-lang') {
-          const toEn = el.value === 'en'; if (toEn === en) return;
-          pp.language = el.value; ppRelang(c, S.lib, toEn); S.dirty = true;
-          if (pp.id) await ppSave().catch(() => {});
-          renderProposalEditor(); return;
+        if (el.dataset.libblock) {
+          const x = S.lib.find(l => l.id === el.value); el.value = '';
+          if (x) { ppGet(pp, el.dataset.libblock).push({ lib: x.id, t: libT(x, en), b: libB(x, en) }); touch(el.closest('[data-sec]').dataset.sec); }
+          return;
         }
+        if (el.id === 'pp-manifesto') { c.manifesto = el.value || false; touch(); return; }
         if (el.id === 'pp-plot') {
           const np = d.plots.find(x => String(x.id) === el.value) || null;
           pp.plot_id = np?.id || null; if (!pp.id) pp.number = np?.cst || null; pp.source = np ? 'intelligence' : 'direct'; touch(); return;
         }
       });
+      // Língua (PT | EN no topo): os textos da biblioteca e dos modelos passam para a outra língua
+      view.querySelectorAll('.pp-langseg button').forEach(bt => bt.addEventListener('click', async () => {
+        const toEn = bt.dataset.lang === 'en'; if (toEn === en || locked) return;
+        pp.language = bt.dataset.lang; ppRelang(c, S.lib, toEn); S.dirty = true;
+        if (pp.id) await ppSave().catch(() => {});
+        else { try { localStorage.setItem(PP_DRAFT_KEY, JSON.stringify({ at: Date.now(), pp })); } catch (_) { /* sem armazenamento */ } }
+        renderProposalEditor();
+      }));
+      // Lembra o que está aberto em «Mais opções» (a página redesenha-se ao mudar a língua, etc.)
+      view.querySelector('.pp-more')?.addEventListener('toggle', e => { if (e.target.classList.contains('pp-more')) S.moreOpen = e.target.open; });
+      view.querySelectorAll('.pp-more .pp-sec').forEach(dt => dt.addEventListener('toggle', () => { (S.openSecs = S.openSecs || {})[dt.id.replace('pps-', '')] = dt.open; }));
       main.addEventListener('click', async e => {
         const b = e.target.closest('[data-act]');
         if (b) {
@@ -19608,6 +19852,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       if (pp.est_hours == null && S.estimate && !pp.id) { pp.est_hours = S.estimate.hours; const h = view.querySelector('[data-pp="est_hours"]'); if (h) h.value = pp.est_hours; recalc(); }
       document.getElementById('pp-pdf').addEventListener('click', async () => { await S.flush?.(); printProposal(pp, S); });
       document.getElementById('pp-mail')?.addEventListener('click', () => openProposalMail());
+      document.getElementById('pp-save-tpl')?.addEventListener('click', () => ppSaveAsTemplate());
       ppWatchMail(pp);
       document.getElementById('pp-create')?.addEventListener('click', async () => {
         const r = await ppSave(); if (!r) return;
@@ -19615,6 +19860,50 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       });
     }
     const ppGet = (o, path) => path.split('.').reduce((x, k) => x?.[k], o);
+    const ppRate = cfg => Number(cfg?.opt_rate) || 60;
+    // Marcas nos textos: {h} taxa horária, {validade} dias, {ate} data-limite, {Opcionais} número da secção com esse título
+    // (se a secção não existir, sai também o «nos termos da secção»)
+    function ppTokens(html, { secs = [], rate = 60, days = 30, until = null, local = '' } = {}) {
+      const d = until ? until.split('-').reverse().join('.') : '';
+      return String(html)
+        .replace(/\{local\}/g, escapeHtml(local || '…'))
+        .replace(/\{h\}/g, String(rate).replace('.', ','))
+        .replace(/\{validade\}/g, String(days))
+        .replace(/\{ate\}/g, d)
+        .replace(/(,?\s*(?:nos termos d[ao]s?|conforme|under|as per|see)\s+(?:a\s+)?(?:secção|section)\s+)?\{([^{}<>]{2,40})\}/gi, (all, pre, name) => {
+          const hit = secs.find(x => normTxt(x.t).startsWith(normTxt(name.trim())));
+          return hit ? (pre || '') + hit.n : '';
+        });
+    }
+    // «Guardar como modelo»: esta proposta (sem cliente, local, valores do pipeline) passa a ser o modelo de um tipo
+    function ppSaveAsTemplate() {
+      const S = proposalState, pp = S.pp, c = pp.content;
+      const tpls = ppTemplates(S.cfg);
+      const cur = tpls.find(t => t.key === c.kind);
+      openQuickModal('Guardar como modelo', `
+        <div class="field-hint" style="margin:0 0 8px;">As próximas propostas deste tipo começam com os serviços, valores, pagamento, textos, opcionais e exclusões desta. O cliente, o local e o quadro de dados não passam.</div>
+        <label class="field-label" style="margin-top:0;">Modelo</label>
+        <select id="tp-key" class="form-input">${tpls.map(t => `<option value="${escapeHtml(t.key)}"${t.key === cur?.key ? ' selected' : ''}>Substituir «${escapeHtml(t.name)}»</option>`).join('')}<option value="">Novo modelo…</option></select>
+        <div id="tp-new" hidden><label class="field-label">Nome do novo modelo</label><input type="text" id="tp-name" class="form-input" maxlength="60" placeholder="ex.: Reabilitação — Licenciamento"></div>
+        <button type="button" class="primary-btn" id="tp-go">Guardar modelo</button>
+        <div id="tp-msg" class="form-msg"></div>`);
+      const key = document.getElementById('tp-key');
+      key.addEventListener('change', () => { document.getElementById('tp-new').hidden = !!key.value; });
+      document.getElementById('tp-go').addEventListener('click', async () => {
+        let k = key.value, name = document.getElementById('tp-name').value.trim();
+        if (!k) { if (!name) return formError('tp-msg', 'Dá um nome ao modelo.'); k = 'own-' + Date.now().toString(36); }
+        const base = tpls.find(t => t.key === k);
+        const snap = JSON.parse(JSON.stringify(c));
+        ['mail', 'referral', 'date', 'kind'].forEach(x => delete snap[x]);
+        snap.cover = { lines: snap.cover.lines, i18n: snap.cover.i18n };
+        snap.scope.facts = (snap.scope.facts || []).map(f => ({ ...f, v: '' }));
+        delete snap.closing.signer;
+        const cfg = await loadProposalCfg();
+        cfg.templates = { ...(cfg.templates || {}), [k]: { key: k, name: base?.name || name, desc: base?.desc || '', lang: pp.language, snap, at: new Date().toISOString() } };
+        try { await saveProposalCfg(cfg); S.cfg = cfg; c.kind = k; closeQuickModal(); showToast(`Modelo «${base?.name || name}» guardado`); }
+        catch (err) { formError('tp-msg', 'Não foi possível guardar: ' + err.message); }
+      });
+    }
     function setPathObj(o, path, v) { const ks = path.split('.'); const last = ks.pop(); const t = ks.reduce((a, k) => a[k], o); t[last] = v; }
     // Grava a proposta (a primeira vez atribui o CST: o da oportunidade, ou o próximo do registo)
     async function ppSave(extra = {}) {
@@ -19821,22 +20110,31 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       // Blocos do fluxo
       let n = 0;
       const B = [];
-      const h2 = (t, br = false) => { n++; B.push(`<div class="b h2${br ? '' : ''}" data-keep="next"${br ? ' data-break="before"' : ''}><h2>${n} \\ ${e(t)}</h2></div>`); };
+      const secs = [];
+      const h2 = (t, br = false) => { n++; secs.push({ n, t }); B.push(`<div class="b h2${br ? '' : ''}" data-keep="next"${br ? ' data-break="before"' : ''}><h2>${n} \\ ${e(t)}</h2></div>`); };
+      // Título + texto, um bloco por parágrafo (para a paginação poder partir)
+      const hb = list => (list || []).filter(x => (x.t || '').trim() || (x.b || '').trim()).forEach(x => {
+        if ((x.t || '').trim()) B.push(`<div class="b txt bh" data-keep="next"><p><b>${e(x.t)}</b></p></div>`);
+        String(x.b || '').replace(/\r\n?/g, '\n').split(/\n{2,}/).filter(t => t.trim()).forEach(t => B.push(`<div class="b txt">${md(t)}</div>`));
+      });
       const p = html => { if (html) B.push(`<div class="b txt">${html}</div>`); };
       const note = list => { const l = (list || []).map(x => typeof x === 'string' ? x : x.t).filter(s => (s || '').trim()); if (l.length) B.push(`<div class="b note">${l.map(s => md(s, { para: false })).join('<br>')}</div>`); };
       const row = (cells, cls = '', cols = '') => `<div class="b tr ${cls}"${cols ? ` style="grid-template-columns:${cols}"` : ''}>${cells}</div>`;
-      if (c.manifesto && !en) {
-        h2(L.manifesto, true);
-        const man = S.lib.find(x => x.kind === 'text' && x.grp === 'manifesto');
-        if (man) B.push(`<div class="b txt manifesto">${md(libB(man, en))}</div>`);
+      const mans = S.lib.filter(x => x.kind === 'text' && x.grp === 'manifesto');
+      const man = c.manifesto === true ? mans[0] : mans.find(x => x.id === c.manifesto);
+      if (man && (!en || man.body_en)) {
+        h2(libT(man, en) || L.manifesto, true);
+        B.push(`<div class="b txt manifesto">${md(libB(man, en))}</div>`);
       }
       // Âmbito
       h2(L.scope, true);
       p(md(c.scope.intro));
-      if (c.scope.facts.length) {
+      const facts = c.scope.facts.filter(f => String(f.v ?? '').trim());
+      if (facts.length) {
         B.push(`<div class="b gap"></div>`);
-        c.scope.facts.filter(f => f.k || f.v).forEach(f => B.push(row(`<span>${e(f.k)}</span><span class="r strong">${md(f.v, { para: false })}</span>`, 'fact', '1fr 1fr')));
+        facts.forEach(f => B.push(row(`<span>${e(f.k)}</span><span class="r strong">${md(f.v, { para: false })}</span>`, 'fact', '1fr 1fr')));
       }
+      if ((c.scope.blocks || []).length) { B.push(`<div class="b gap"></div>`); hb(c.scope.blocks); }
       if (c.scope.groups.length) {
         B.push(`<div class="b gap"></div>`);
         if (c.scope.lead?.t) p(md(c.scope.lead.t));
@@ -19845,7 +20143,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           g.items.filter(it => it.t || it.b).forEach(it => B.push(`<div class="b item${it.b ? ' long' : ''}"><div class="it">${md(it.t, { para: false })}</div>${it.b ? `<div class="ib">${md(it.b)}</div>` : ''}</div>`));
         });
       }
+      if ((c.scope.after || []).length) { B.push(`<div class="b gap"></div>`); hb(c.scope.after); }
       note(c.scope.notes);
+      // Secções próprias (Aperfeiçoamento, Metodologia, BIM…)
+      (c.extra || []).filter(x => (x.t || '').trim() || (x.b || '').trim()).forEach(x => { h2(x.t || '', true); hb([{ b: x.b }]); });
       // Valor
       h2(L.value, true);
       p(md(c.value.intro?.t));
@@ -19880,6 +20181,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         c.value.lines.filter(l => l.kind === 'month').forEach(l => B.push(row(`<span>${e(l.t)}</span><span class="r">${e(eur(l.u))} ${e(L.monthly)}</span><span class="r">${e(eur(ppLineAmount(l)))}</span>`, '', cols)));
         B.push(row(`<span>${e(L.total)}</span><span class="r">${T.monthly ? '' : e(nf(T.pctSum)) + '%'}</span><span class="r">${e(eur(T.total))}</span>`, 'tot', cols));
         note(c.pay.notes);
+        if ((c.pay.terms || []).length) { B.push(`<div class="b gap"></div>`); hb(c.pay.terms); }
       }
       // Timeline (Gantt por semanas)
       if (c.timeline.on && c.timeline.rows.length) {
@@ -19902,15 +20204,26 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         h2(L.opt);
         p(md(c.optionals.intro?.t));
         B.push(row(`<span>${e(L.desc)}</span><span class="r">${e(L.val)}</span>`, 'th', '1fr auto'));
-        c.optionals.rows.forEach(x => B.push(row(`<span>${e(x.t)}</span><span class="r">${e(x.v)}</span>`, '', '1fr auto')));
+        c.optionals.rows.forEach(x => B.push(row(`<span>${md(x.t, { para: false })}</span><span class="r">${e(x.v)}</span>`, '', '1fr auto')));
+        note(c.optionals.notes);
       }
       // Exclusões
       if (c.exclusions.rows.length) {
         B.push(`<div class="b gap2"></div>`);
         h2(L.excl);
         p(md(c.exclusions.intro?.t));
-        B.push(row(`<span>${e(L.desc)}</span>`, 'th', '1fr'));
-        c.exclusions.rows.filter(x => x.t).forEach(x => B.push(row(`<span>${e(x.t)}</span>`, '', '1fr')));
+        const ex = c.exclusions.rows.filter(x => x.t);
+        const gOf = x => x.grp || (x.lib && S.lib.find(l => l.id === x.lib)?.grp) || '';
+        const gs = [...new Set(ex.map(gOf))];
+        if (gs.length > 1 || gs[0]) gs.forEach(g => {
+          B.push(`<div class="b tr grp" data-keep="next"><span>${e(plSplit(g, en) || (en ? 'Other' : 'Outras'))}</span></div>`);
+          ex.filter(x => gOf(x) === g).forEach(x => B.push(row(`<span>${md(x.t, { para: false })}</span>`, '', '1fr')));
+        });
+        else {
+          B.push(row(`<span>${e(L.desc)}</span>`, 'th', '1fr'));
+          ex.forEach(x => B.push(row(`<span>${md(x.t, { para: false })}</span>`, '', '1fr')));
+        }
+        note(c.exclusions.notes);
       }
       // Fecho e assinatura
       h2(c.closing.title || (en ? 'With the Courtesy of Gentlepeople' : 'Porque merecemos Qualidade'), true);
@@ -19946,6 +20259,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           h2 { font-size: 12.6pt; font-weight: 700; margin: 0 0 10pt; letter-spacing: -.005em; }
           .b { break-inside: avoid; }
           .txt p { margin: 0 0 8pt; text-align: justify; }
+          .bh p { margin: 4pt 0 2pt; text-align: left; }
           .manifesto p { text-align: left; margin-bottom: 11pt; }
           .gap { height: 8pt; } .gap2 { height: 22pt; }
           .tr { display: grid; gap: 8pt; padding: 4.6pt 6pt; border-bottom: .6pt solid #C9C2BF; align-items: baseline; }
@@ -19986,7 +20300,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <div class="ref"><b>CST</b> ${e(String(pp.number || ''))} V${e(String(pp.version || 1))}<br>${e(dShort)}</div>
         </div>
         <template id="tpl"><div class="page"><img class="wm" src="${e(logoP)}" alt=""><div class="content"></div>${foot}<span class="pno"></span></div></template>
-        <div id="flow" class="content">${B.join('')}</div>
+        <div id="flow" class="content">${ppTokens(B.join(''), { secs, rate: ppRate(S.cfg), days: pp.valid_days || 30, until: addDaysKey(c.date || dateKey(new Date()), Number(pp.valid_days) || 30), local: [c.cover.place, c.cover.region].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).join(', ') })}</div>
         <script>
           function paginate() {
             var flow = document.getElementById('flow'), tpl = document.getElementById('tpl');
@@ -20117,58 +20431,48 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 60000);
     }
+    // «Enviar por email»: gera o PDF e abre logo o email no Outlook (o texto revê-se lá)
+    let ppMailBusy = false;
     async function openProposalMail() {
       const S = proposalState, pp = S.pp;
-      await S.flush?.();
-      const m = ppMailDraft(pp, S);
-      const sig = await ppMailSignature(S).catch(() => '');
-      openQuickModal('Enviar a proposta por email', `
-        <div class="field-hint" style="margin:0 0 8px;">A app descarrega o email com o PDF anexado e a tua assinatura. Abre o ficheiro e o Outlook do computador mostra a mensagem pronta: carregas em <b>Enviar</b> e a proposta fica marcada como enviada a essa hora.</div>
-        <label class="field-label" style="margin-top:0;">Para</label><input type="text" id="pm-to" class="form-input" value="${escapeHtml(m.to.join('; '))}" placeholder="email do cliente">
-        <label class="field-label">Cc <small class="muted">(opcional)</small></label><input type="text" id="pm-cc" class="form-input" placeholder="separa com ;">
-        <label class="field-label">Assunto</label><input type="text" id="pm-subj" class="form-input" value="${escapeHtml(m.subject)}">
-        <label class="field-label">Mensagem</label><textarea id="pm-text" class="form-input" rows="12">${escapeHtml(m.text)}</textarea>
-        ${sig ? `<div class="sig-preview pm-sig">${sig}</div><div class="field-hint" style="margin-top:4px">A tua assinatura (muda-se em Definições → Assinatura de email).</div>` : ''}
-        <div class="field-hint">Anexo: <b>${escapeHtml(ppDocHtml(pp, S).fileTitle)}.pdf</b></div>
-        <button type="button" class="primary-btn" id="pm-go">Abrir no Outlook</button>
-        <div id="pm-msg" class="form-msg"></div>`);
-      document.getElementById('pm-go').addEventListener('click', async () => {
-        const btn = document.getElementById('pm-go');
-        const split = v => v.split(/[;,\s]+/).map(x => x.trim()).filter(Boolean);
-        const to = split(document.getElementById('pm-to').value), cc = split(document.getElementById('pm-cc').value);
-        const bad = [...to, ...cc].find(a => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(a));
-        if (bad) return formError('pm-msg', `«${bad}» não parece um email.`);
-        btn.disabled = true;
-        try {
-          btn.textContent = 'A gerar o PDF…';
-          const pdf = devMode ? { b64: '', filename: 'teste.pdf' } : await ppMakePdf(pp, S, (i, n) => { btn.textContent = `A gerar o PDF… ${i}/${n}`; });
-          btn.textContent = 'A criar o email…';
-          const subject = document.getElementById('pm-subj').value.trim();
-          const html = ppMailHtml(document.getElementById('pm-text').value, sig);
-          // o mesmo email fica também nos Rascunhos (para o Outlook na web, no Mac ou no telemóvel) e serve para saber quando sai
-          let r;
-          if (devMode) r = { data: { ok: true, webLink: 'about:blank' } };
-          else r = await supabase.functions.invoke('ms365-mail', { body: { action: 'draft', proposal_id: pp.id, ref: ppRef(pp), to, cc, subject, html, pdf: pdf.b64, filename: pdf.filename } });
-          const res = r.data || {};
-          if (r.error || !res.ok) {
-            if (res.error === 'permission') {
-              const has = (res.roles || []).some(r => /^Mail\.ReadWrite$/i.test(r));
-              return formError('pm-msg', has
-                ? `A permissão Mail.ReadWrite já chegou à app, mas o Exchange recusou criar o email na caixa ${res.mailbox || ''} (${res.detail || 'acesso negado'}). Pode haver uma política do Exchange a limitar a aplicação a algumas caixas.`
-                : `A Microsoft ainda não deu a permissão Mail.ReadWrite à app (tem: ${(res.roles || []).join(', ') || 'nenhuma'}). Confirma no Entra que ficou como «Aplicação» (não «Delegada») e com o visto verde «Concedido». Depois do consentimento pode demorar uns minutos a chegar.`);
-            }
-            return formError('pm-msg', 'Não foi possível criar o email: ' + (res.error || r.error?.message || 'erro desconhecido'));
+      if (ppMailBusy) return;
+      ppMailBusy = true;
+      const btn = document.getElementById('pp-mail');
+      const label = btn?.textContent;
+      const step = t => { if (btn) btn.textContent = t; };
+      if (btn) btn.disabled = true;
+      try {
+        await S.flush?.();
+        const m = ppMailDraft(pp, S);
+        const sig = await ppMailSignature(S).catch(() => '');
+        step('A gerar o PDF…');
+        const pdf = devMode ? { b64: '', filename: ppDocHtml(pp, S).fileTitle + '.pdf' } : await ppMakePdf(pp, S, (i, n) => step(`A gerar o PDF… ${i}/${n}`));
+        step('A preparar o email…');
+        const html = ppMailHtml(m.text, sig);
+        const to = m.to, cc = [], subject = m.subject;
+        // o mesmo email fica também nos Rascunhos (para o Outlook na web, no Mac ou no telemóvel) e serve para saber quando sai
+        let r;
+        if (devMode) r = { data: { ok: true, webLink: 'about:blank' } };
+        else r = await supabase.functions.invoke('ms365-mail', { body: { action: 'draft', proposal_id: pp.id, ref: ppRef(pp), to, cc, subject, html, pdf: pdf.b64, filename: pdf.filename } });
+        const res = r.data || {};
+        if (r.error || !res.ok) {
+          if (res.error === 'permission') {
+            const has = (res.roles || []).some(x => /^Mail\.ReadWrite$/i.test(x));
+            throw new Error(has
+              ? `o Exchange recusou criar o email na caixa ${res.mailbox || ''} (${res.detail || 'acesso negado'}). Pode haver uma política do Exchange a limitar a aplicação a algumas caixas.`
+              : `a Microsoft ainda não deu a permissão Mail.ReadWrite à app (tem: ${(res.roles || []).join(', ') || 'nenhuma'}). Confirma no Entra que ficou como «Aplicação» e com o visto verde «Concedido».`);
           }
-          pp.content.mail = { status: 'draft', link: res.webLink, created_at: new Date().toISOString() };
-          if (devMode) { const x = mockProposals.find(y => y.id === pp.id); if (x) x.content = JSON.parse(JSON.stringify(pp.content)); window.__lastEml = { to, cc, subject, html, pdf }; }
-          ppDownload(ppEml({ to, cc, subject, html, pdf }), (pdf.filename || 'Proposta.pdf').replace(/\.pdf$/i, '') + '.eml');
-          closeQuickModal();
-          showToast('Abre o ficheiro descarregado: o email aparece no Outlook pronto a enviar. Também ficou nos teus Rascunhos.', { ms: 12000, undo: res.webLink && res.webLink !== 'about:blank' ? () => window.open(res.webLink, '_blank') : null, undoLabel: 'Abrir na web' });
-          suppressNavPush = true; openProposalView(pp.id);
-        } catch (err) {
-          formError('pm-msg', 'Não foi possível preparar o email: ' + err.message);
-        } finally { btn.disabled = false; btn.textContent = 'Abrir no Outlook'; }
-      });
+          throw new Error(res.error || r.error?.message || 'erro desconhecido');
+        }
+        pp.content.mail = { status: 'draft', link: res.webLink, created_at: new Date().toISOString() };
+        if (devMode) { const x = mockProposals.find(y => y.id === pp.id); if (x) x.content = JSON.parse(JSON.stringify(pp.content)); window.__lastEml = { to, cc, subject, html, pdf }; }
+        ppDownload(ppEml({ to, cc, subject, html, pdf }), (pdf.filename || 'Proposta.pdf').replace(/\.pdf$/i, '') + '.eml');
+        showToast(`Abre o ficheiro descarregado: o email aparece no Outlook pronto a enviar.${to.length ? '' : ' O cliente não tem email na ficha: escreve-o lá.'}`, { ms: 12000, undo: res.webLink && res.webLink !== 'about:blank' ? () => window.open(res.webLink, '_blank') : null, undoLabel: 'Abrir na web' });
+        suppressNavPush = true; openProposalView(pp.id);
+      } catch (err) {
+        showToast('Não foi possível preparar o email: ' + err.message, { type: 'error', ms: 12000 });
+        if (btn) { btn.disabled = false; btn.textContent = label; }
+      } finally { ppMailBusy = false; }
     }
     // Vê se os rascunhos já saíram do Outlook (uma proposta ou todas)
     let ppMailPoll = null;
@@ -20229,7 +20533,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     }
 
     // ---------- Biblioteca das propostas (Definições) ----------
-    const PL_KINDS = [['service', 'Serviços'], ['exclusion', 'Exclusões'], ['optional', 'Opcionais'], ['note_value', 'Notas do valor'], ['note_pay', 'Notas do pagamento'], ['note_scope', 'Notas do âmbito'], ['text', 'Textos-modelo']];
+    const PL_KINDS = [['service', 'Serviços'], ['block', 'Blocos com título (âmbito, secções, pagamento)'], ['exclusion', 'Exclusões'], ['optional', 'Opcionais'], ['note_value', 'Notas do valor'], ['note_pay', 'Notas do pagamento'], ['note_scope', 'Notas do âmbito'], ['note_optional', 'Notas dos opcionais'], ['note_exclusion', 'Notas das exclusões'], ['text', 'Textos-modelo']];
+    const PL_BLOCK_KEYS = { scope_before: 'Âmbito — antes dos serviços', scope_after: 'Âmbito — depois dos serviços', section: 'Secção própria (ex.: Aperfeiçoamento)', pay_terms: 'Condições de pagamento' };
     const PL_TEXT_KEYS = { scope_lead: 'Frase antes dos serviços', value_intro: 'Abertura do valor', pay_intro: 'Abertura do pagamento', timeline_intro: 'Texto do timeline', timeline_note: 'Nota do timeline', optionals_intro: 'Abertura dos opcionais', exclusions_intro: 'Abertura das exclusões', quality: 'Fecho («Porque merecemos Qualidade»)', manifesto: 'Manifesto' };
     let plKind = 'service';
     async function openPropLibManager() {
@@ -20239,26 +20544,28 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const rows = lib.filter(x => x.kind === plKind);
         openQuickModal('Biblioteca das propostas', `
           <select class="form-input" id="pl-kind">${PL_KINDS.map(([k, l]) => `<option value="${k}"${k === plKind ? ' selected' : ''}>${l} (${lib.filter(x => x.kind === k).length})</option>`).join('')}</select>
-          <div class="field-hint">Cada bloco tem texto em português e em inglês. ${plKind === 'text' ? 'Os textos-modelo são as aberturas e o fecho de cada secção.' : 'Os marcados com ✓ vêm já escolhidos nas propostas novas.'}</div>
-          <div class="pl-list">${rows.map(x => `<button type="button" class="pl-item" data-pl="${escapeHtml(x.id)}"><span><b>${escapeHtml(x.title_pt)}</b>${x.kind === 'service' ? `<small>${escapeHtml(plSplit(x.grp, false))}</small>` : x.kind === 'text' ? `<small>${escapeHtml(PL_TEXT_KEYS[x.grp] || x.grp || '')}</small>` : x.value_text ? `<small>${escapeHtml(plSplit(x.value_text, false))}</small>` : ''}</span>${x.default_on ? '<em>✓</em>' : ''}</button>`).join('') || '<div class="gantt-empty">Ainda sem blocos.</div>'}</div>
+          <div class="field-hint">Cada bloco tem texto em português e em inglês. ${plKind === 'text' ? 'Os textos-modelo são as aberturas e o fecho de cada secção.' : plKind === 'block' ? 'Textos com título que os modelos de proposta usam (Base de trabalho, Prazo, Aperfeiçoamento, Momento de faturação…).' : 'Os marcados com ✓ vêm já escolhidos nas propostas sem modelo; os modelos escolhem os seus.'}</div>
+          <div class="pl-list">${rows.map(x => `<button type="button" class="pl-item" data-pl="${escapeHtml(x.id)}"><span><b>${escapeHtml(x.title_pt)}</b>${x.kind === 'service' || x.kind === 'exclusion' ? `<small>${escapeHtml(plSplit(x.grp, false))}</small>` : x.kind === 'block' ? `<small>${escapeHtml(PL_BLOCK_KEYS[x.grp] || x.grp || '')}</small>` : x.kind === 'text' ? `<small>${escapeHtml(PL_TEXT_KEYS[x.grp] || x.grp || '')}</small>` : x.value_text ? `<small>${escapeHtml(plSplit(x.value_text, false))}</small>` : ''}</span>${x.default_on ? '<em>✓</em>' : ''}</button>`).join('') || '<div class="gantt-empty">Ainda sem blocos.</div>'}</div>
           <button type="button" class="secondary-btn" id="pl-new">+ Novo</button>`);
         document.getElementById('pl-kind').addEventListener('change', e => { plKind = e.target.value; list(); });
         document.querySelectorAll('[data-pl]').forEach(b => b.addEventListener('click', () => edit(lib.find(x => x.id === b.dataset.pl))));
         document.getElementById('pl-new').addEventListener('click', () => edit(null));
       };
       const edit = x => {
-        const isNew = !x; x = x || { kind: plKind, grp: plKind === 'service' ? (lib.find(y => y.kind === 'service')?.grp || '') : plKind === 'text' ? 'value_intro' : '', title_pt: '', body_pt: '', title_en: '', body_en: '', value_text: '', default_on: false };
-        const hasBody = ['service', 'text'].includes(x.kind);
-        const groups = [...new Set(lib.filter(y => y.kind === 'service').map(y => y.grp))];
+        const isNew = !x; x = x || { kind: plKind, grp: plKind === 'service' ? (lib.find(y => y.kind === 'service')?.grp || '') : plKind === 'text' ? 'value_intro' : plKind === 'block' ? 'scope_after' : '', title_pt: '', body_pt: '', title_en: '', body_en: '', value_text: '', default_on: false };
+        const hasBody = ['service', 'text', 'block'].includes(x.kind);
+        const groups = [...new Set(lib.filter(y => y.kind === x.kind && ['service', 'exclusion'].includes(x.kind)).map(y => y.grp).filter(Boolean))];
         openQuickModal(isNew ? 'Novo bloco' : 'Editar bloco', `
-          ${x.kind === 'service' ? `<label class="field-label" style="margin-top:0;">Grupo (PT|EN)</label><input type="text" id="pe-grp" class="form-input" list="pe-grps" value="${escapeHtml(x.grp || '')}"><datalist id="pe-grps">${groups.map(g => `<option value="${escapeHtml(g)}">`).join('')}</datalist>` : ''}
+          ${x.kind === 'block' ? `<label class="field-label" style="margin-top:0;">Onde entra</label><select id="pe-grp" class="form-input">${Object.entries(PL_BLOCK_KEYS).map(([k, l]) => `<option value="${k}"${k === x.grp ? ' selected' : ''}>${escapeHtml(l)}</option>`).join('')}</select>` : ''}
+          ${x.kind === 'service' || x.kind === 'exclusion' ? `<label class="field-label" style="margin-top:0;">${x.kind === 'service' ? 'Grupo' : 'Tema'} (PT|EN)</label><input type="text" id="pe-grp" class="form-input" list="pe-grps" value="${escapeHtml(x.grp || '')}"><datalist id="pe-grps">${groups.map(g => `<option value="${escapeHtml(g)}">`).join('')}</datalist>` : ''}
           ${x.kind === 'text' ? `<label class="field-label" style="margin-top:0;">Onde entra</label><select id="pe-grp" class="form-input">${Object.entries(PL_TEXT_KEYS).map(([k, l]) => `<option value="${k}"${k === x.grp ? ' selected' : ''}>${escapeHtml(l)}</option>`).join('')}</select>` : ''}
-          <label class="field-label">${x.kind === 'text' ? 'Nome (para escolher)' : 'Texto'} — português</label><input type="text" id="pe-tpt" class="form-input" value="${escapeHtml(x.title_pt || '')}">
+          <label class="field-label">${x.kind === 'text' ? 'Nome (para escolher)' : x.kind === 'block' ? 'Título' : 'Texto'} — português</label><input type="text" id="pe-tpt" class="form-input" value="${escapeHtml(x.title_pt || '')}">
           ${hasBody ? `<label class="field-label">Descritivo — português <small class="muted">(**negrito**, *itálico*)</small></label><textarea id="pe-bpt" class="form-input" rows="5">${escapeHtml(x.body_pt || '')}</textarea>` : ''}
-          <label class="field-label">${x.kind === 'text' ? 'Nome' : 'Texto'} — inglês</label><input type="text" id="pe-ten" class="form-input" value="${escapeHtml(x.title_en || '')}">
+          <label class="field-label">${x.kind === 'text' ? 'Nome' : x.kind === 'block' ? 'Título' : 'Texto'} — inglês</label><input type="text" id="pe-ten" class="form-input" value="${escapeHtml(x.title_en || '')}">
           ${hasBody ? `<label class="field-label">Descritivo — inglês</label><textarea id="pe-ben" class="form-input" rows="5">${escapeHtml(x.body_en || '')}</textarea>` : ''}
-          ${x.kind === 'optional' ? `<label class="field-label">Valor (PT|EN)</label><input type="text" id="pe-val" class="form-input" value="${escapeHtml(x.value_text || '')}" placeholder="ex.: 60 €/h  ou  sob consulta|on request">` : ''}
-          ${x.kind !== 'service' ? `<label class="check-row"><input type="checkbox" id="pe-on"${x.default_on ? ' checked' : ''}> ${x.kind === 'text' ? 'É o texto por omissão' : 'Vem marcado nas propostas novas'}</label>` : ''}
+          ${x.kind === 'optional' ? `<label class="field-label">Valor (PT|EN)</label><input type="text" id="pe-val" class="form-input" value="${escapeHtml(x.value_text || '')}" placeholder="ex.: €{h}/h  ou  Sob consulta|Upon request">` : ''}
+          ${hasBody && x.kind !== 'text' ? '<div class="field-hint">Marcas: {h} taxa horária · {validade} dias · {ate} data-limite · {Opcionais} número da secção com esse título.</div>' : ''}
+          ${!['service', 'block'].includes(x.kind) ? `<label class="check-row"><input type="checkbox" id="pe-on"${x.default_on ? ' checked' : ''}> ${x.kind === 'text' ? 'É o texto por omissão' : 'Vem marcado nas propostas novas'}</label>` : ''}
           <button type="button" class="primary-btn" id="pe-save">Guardar</button>
           <div class="pp-btnrow"><button type="button" class="text-btn" id="pe-back">← Voltar à lista</button>${isNew ? '' : '<button type="button" class="text-btn danger-text" id="pe-off">Tirar da biblioteca</button>'}</div>
           <div id="pe-msg" class="form-msg"></div>`);
@@ -20290,7 +20597,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     async function loadProposalSettings() {
       const box = document.getElementById('settings-proposals-container');
       try {
-        const [cfg, types, hc] = await Promise.all([loadProposalCfg(), devMode ? MOCK_PROJECT_TYPES : ((await supabase.from('project_types').select('id, name').order('name')).data || []), computeHourCost().catch(() => null)]);
+        const [cfg, types, hc, members] = await Promise.all([loadProposalCfg(), devMode ? MOCK_PROJECT_TYPES : ((await supabase.from('project_types').select('id, name').order('name')).data || []), computeHourCost().catch(() => null), loadAllMembers().catch(() => [])]);
         let sel = box.dataset.type || 'default';
         const lines = () => cfg.specialties[sel] || null;
         const draw = () => {
@@ -20302,6 +20609,20 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               <div><label class="field-label" style="margin-top:0;">Valor/hora objetivo (€)</label><input type="text" inputmode="decimal" id="ps-rate" class="form-input" value="${escapeHtml(cfg.target_rate ?? '')}"></div>
             </div>
             <div class="field-hint">O custo/hora é calculado em <button type="button" class="text-btn" id="ps-go-payroll">Pessoas, salários e custo/hora</button>${hc?.total ? ` (agora ${escapeHtml(fmtEUR(hc.total))}/h)` : ''}. Escreve um valor só se quiseres substituí-lo. O valor/hora objetivo também fica nos Objetivos do Mission Control.</div>
+            <div class="section-label op-form-sec">Por omissão nas propostas novas</div>
+            <div class="form-grid">
+              <div><label class="field-label" style="margin-top:0;">Assina</label><select id="ps-signer" class="form-input"><option value="">Quem cria a proposta</option>${members.map(m => `<option value="${escapeHtml(m.id)}"${m.id === cfg.signer ? ' selected' : ''}>${escapeHtml(m.name)}</option>`).join('')}</select></div>
+              <div><label class="field-label" style="margin-top:0;">Cargo</label><input type="text" id="ps-role" class="form-input" value="${escapeHtml(cfg.signer_role || '')}" placeholder="Architect | Managing Partner"></div>
+              <div><label class="field-label">Local da assinatura</label><input type="text" id="ps-place" class="form-input" value="${escapeHtml(cfg.place || '')}" placeholder="Porto"></div>
+              <div><label class="field-label">Validade (dias)</label><input type="text" inputmode="numeric" id="ps-valid" class="form-input" value="${escapeHtml(cfg.valid_days ?? '')}" placeholder="30"></div>
+              <div><label class="field-label">Língua</label><select id="ps-lang" class="form-input"><option value="pt"${cfg.lang !== 'en' ? ' selected' : ''}>Português</option><option value="en"${cfg.lang === 'en' ? ' selected' : ''}>English</option></select></div>
+              <div><label class="field-label">Taxa horária dos opcionais (€/h)</label><input type="text" inputmode="decimal" id="ps-optrate" class="form-input" value="${escapeHtml(cfg.opt_rate ?? '')}" placeholder="60"></div>
+              <div><label class="field-label">Assinatura da marca</label><select id="ps-tagline" class="form-input">${PP_TAGLINES.map(([k, l]) => `<option value="${k}"${(cfg.tagline || 'impact') === k ? ' selected' : ''}>${escapeHtml(l)}</option>`).join('')}</select></div>
+            </div>
+            <div class="field-hint">A língua de cada proposta escolhe-se ao criá-la (e muda-se no topo do editor); se o cliente estiver marcado como inglês, começa em inglês.</div>
+            <div class="section-label op-form-sec">Modelos de proposta</div>
+            <div class="field-hint" style="margin-top:0;">Ao criar uma proposta escolhe-se o tipo, e o modelo pré-configura serviços, valores, pagamento, textos, opcionais e exclusões. Para mudar um modelo: abre uma proposta desse tipo, ajusta e toca em «Guardar como modelo».</div>
+            <div id="ps-tpls">${ppTemplates(cfg).map(t => `<div class="invoice-row"><span><b>${escapeHtml(t.name)}</b><br><small class="muted">${t.saved ? 'guardado a partir de uma proposta' + (t.at ? ' em ' + escapeHtml(fmtDayMonthYear(t.at.slice(0, 10))) : '') : 'modelo de origem (propostas da NOVA)'}</small></span><span>${t.saved ? `<button type="button" class="text-btn${t.own ? ' danger-text' : ''}" data-tpl-reset="${escapeHtml(t.key)}">${t.own ? 'Apagar' : 'Repor o de origem'}</button>` : ''}</span></div>`).join('')}</div>
             <div class="section-label op-form-sec">Registo CST e biblioteca</div>
             <div class="form-grid">
               <div><label class="field-label" style="margin-top:0;">Último CST usado</label><input type="text" inputmode="numeric" id="ps-cst" class="form-input" value="${escapeHtml(cfg.cst_last ?? '')}" placeholder="ex.: 26041"></div>
@@ -20335,8 +20656,17 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           ['ps-cph', 'ps-rate'].forEach(id => document.getElementById(id).addEventListener('input', e => { cfg[id === 'ps-cph' ? 'cost_per_hour' : 'target_rate'] = numOrNull(e.target.value); }));
           document.getElementById('ps-cst').addEventListener('input', e => { cfg.cst_last = numOrNull(e.target.value); });
           document.getElementById('ps-lib').addEventListener('click', () => openPropLibManager());
+          [['ps-signer', 'signer'], ['ps-role', 'signer_role'], ['ps-place', 'place'], ['ps-lang', 'lang'], ['ps-tagline', 'tagline']].forEach(([id, k]) => document.getElementById(id).addEventListener('input', e => { cfg[k] = e.target.value.trim() || null; }));
+          document.getElementById('ps-valid').addEventListener('input', e => { cfg.valid_days = numOrNull(e.target.value); });
+          document.getElementById('ps-optrate').addEventListener('input', e => { cfg.opt_rate = numOrNull(e.target.value); });
+          box.querySelectorAll('[data-tpl-reset]').forEach(b => b.addEventListener('click', async () => {
+            const k = b.dataset.tplReset, t = cfg.templates?.[k];
+            if (!t || !confirm(`${PP_TEMPLATES.some(x => x.key === k) ? 'Repor o modelo de origem' : 'Apagar o modelo'} «${t.name}»?`)) return;
+            delete cfg.templates[k];
+            try { await saveProposalCfg(cfg); showToast('Modelo reposto'); draw(); } catch (err) { formError('ps-msg', 'Não foi possível: ' + err.message); }
+          }));
           document.getElementById('ps-save').addEventListener('click', async () => {
-            if ([cfg.cost_per_hour, cfg.target_rate, cfg.cst_last].some(n => Number.isNaN(n))) return formError('ps-msg', 'Número inválido.');
+            if ([cfg.cost_per_hour, cfg.target_rate, cfg.cst_last, cfg.valid_days, cfg.opt_rate].some(n => Number.isNaN(n))) return formError('ps-msg', 'Número inválido.');
             if (cfg.cst_last != null && !/^\d{5}$/.test(String(cfg.cst_last))) return formError('ps-msg', 'O CST tem 5 algarismos: ano + número (ex.: 26041).');
             Object.keys(cfg.specialties).forEach(k => { cfg.specialties[k] = (cfg.specialties[k] || []).filter(s => (s.name || '').trim()); });
             try {

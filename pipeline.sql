@@ -205,3 +205,7 @@ Always open,
 Always ours.
 
 Shall we begin?', null, false, 88);
+
+-- Estados do pipeline (a tabela original só aceitava draft/sent/accepted/declined)
+alter table public.fee_proposals drop constraint if exists fee_proposals_status_check;
+alter table public.fee_proposals add constraint fee_proposals_status_check check (status = any (array['draft','sent','negotiation','accepted','declined','superseded']));
