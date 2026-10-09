@@ -9142,6 +9142,14 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         <div class="field-hint">Vem do calendário Outlook/Teams. Para mudar, muda no Outlook ou no Teams.</div>`);
     }
 
+    // Idioma falado nas reuniões Teams (o Teams grava e transcreve nesta língua)
+    const MEETING_LANGS = [['pt-PT', 'Português (Portugal)'], ['en-GB', 'English (UK)'], ['en-US', 'English (US)'], ['es-ES', 'Español'], ['fr-FR', 'Français'], ['de-DE', 'Deutsch'], ['it-IT', 'Italiano'], ['pt-BR', 'Português (Brasil)']];
+    let msLangCol = null;
+    async function milestonesHaveLang() {
+      if (devMode) return true;
+      if (msLangCol === null) { const r = await supabase.from('project_milestones').select('meeting_lang').limit(1); msLangCol = !r.error; }
+      return msLangCol;
+    }
     let msTeamsCol = null;
     async function milestonesHaveTeams() {
       if (devMode) return true;
@@ -9155,7 +9163,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           (!from || m.event_date >= from) && (!to || m.event_date <= to));
       }
       const cols = 'id, project_id, type_id, title, event_date, all_day, start_time, end_time, location, notes, done, alert_days, stage_id, auto_kind' +
-        (await milestonesHaveCategory() ? ', category_id' : '') + (await milestonesHaveTeams() ? ', teams_link' : '');
+        (await milestonesHaveCategory() ? ', category_id' : '') + (await milestonesHaveTeams() ? ', teams_link' : '') + (await milestonesHaveLang() ? ', meeting_lang' : '');
       let q = supabase.from('project_milestones').select(cols);
       if (projectId) q = q.eq('project_id', projectId);
       if (from) q = q.gte('event_date', from);
@@ -26539,6 +26547,10 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
           </div>
         </div>
         <label class="check-row" id="mk-teams-row"><input type="checkbox" id="mk-teams"> Reunião online — adicionar link Teams</label>
+        <div id="mk-lang-row" hidden>
+          <label class="field-label" for="mk-lang" style="margin-top:4px;">Idioma da reunião <small class="muted">(o Teams grava e transcreve nesta língua)</small></label>
+          <select id="mk-lang" class="form-input">${MEETING_LANGS.map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select>
+        </div>
         <div id="mk-teams-join"></div>
         <div id="mk-deadline-block" class="deadline-block" hidden>
           <label class="field-label" style="margin-top:0;">Avisar na Home</label>
@@ -26742,7 +26754,9 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
 
       let allDay = isEdit ? !!existing.all_day : false;
       const timeWrap = document.getElementById('mk-time-wrap');
-      const syncAllDay = () => { timeWrap.style.display = allDay ? 'none' : 'flex'; document.getElementById('mk-teams-row').hidden = allDay; };
+      const syncLang = () => { document.getElementById('mk-lang-row').hidden = allDay || !document.getElementById('mk-teams').checked; };
+      const syncAllDay = () => { timeWrap.style.display = allDay ? 'none' : 'flex'; document.getElementById('mk-teams-row').hidden = allDay; syncLang(); };
+      document.getElementById('mk-teams').addEventListener('change', syncLang);
       document.querySelectorAll('#mk-allday-toggle button').forEach(b => b.classList.toggle('active', (b.dataset.allday === 'true') === allDay));
       syncAllDay();
       document.getElementById('mk-allday-toggle').addEventListener('click', (e) => {
@@ -26821,6 +26835,8 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         document.getElementById('mk-location').value = existing.location ?? '';
         document.getElementById('mk-notes').value = existing.notes ?? '';
         document.getElementById('mk-teams').checked = !!existing.teams_link;
+        document.getElementById('mk-lang').value = MEETING_LANGS.some(([k]) => k === existing.meeting_lang) ? existing.meeting_lang : 'pt-PT';
+        syncLang();
         if (existing.teams_link && !devMode) supabase.from('ms_event_links').select('join_url').eq('source_key', 'm:' + existing.id).not('join_url', 'is', null).limit(1).then(r => {
           const u = r.data?.[0]?.join_url, box = document.getElementById('mk-teams-join');
           if (box) box.innerHTML = u && /^https:\/\//.test(u) ? `<a class="secondary-btn ms-join" href="${escapeHtml(u)}" target="_blank" rel="noopener">Entrar na reunião Teams</a>` : '<div class="field-hint" style="margin:0;">O link Teams aparece aqui depois da próxima sincronização com o Office 365 (até 10 minutos).</div>';
@@ -26933,6 +26949,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         };
         // reunião online: a sincronização com o Office 365 cria a reunião Teams (organizada por quem criou o marco)
         if (await milestonesHaveTeams()) payload.teams_link = !allDay && document.getElementById('mk-teams').checked;
+        if (payload.teams_link && await milestonesHaveLang()) payload.meeting_lang = document.getElementById('mk-lang').value || 'pt-PT';
         const alertV = document.getElementById('mk-alert').value;
         payload.alert_days = alertV ? Number(alertV) : null;
         if (hasCategory) payload.category_id = link === 'category' ? categoryValue : null;
