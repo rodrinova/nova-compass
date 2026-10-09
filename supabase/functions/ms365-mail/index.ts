@@ -1,7 +1,9 @@
 // NOVA Compass — email das propostas de honorários pelo Outlook (Office 365)
 // draft:     cria um rascunho na caixa de correio de quem está a usar a app, com o PDF da proposta anexado,
 //            e devolve o link para o abrir no Outlook (a pessoa revê e carrega em Enviar).
-// check:     vê se o rascunho de uma proposta já saiu; se saiu, a proposta passa a enviada com a hora do envio.
+//            A app descarrega também o mesmo email num ficheiro .eml, que abre no Outlook do computador.
+// check:     vê se o email de uma proposta já saiu (o rascunho, ou o .eml enviado e encontrado nos Itens Enviados pelo
+//            assunto); se saiu, a proposta passa a enviada com a hora do envio e o rascunho que sobrou vai para o lixo.
 // check_all: o mesmo para todas as propostas com rascunho por enviar (a app chama ao abrir o Pipeline e a Hoje).
 // Usa a mesma aplicação do Entra que a ms365-sync (MS_TENANT_ID, MS_CLIENT_ID, MS_CLIENT_SECRET), com mais uma
 // permissão de aplicação: Mail.ReadWrite (consentimento do administrador). Ids imutáveis, para o rascunho manter
@@ -69,18 +71,28 @@ async function caller(req: Request) {
 async function checkOne(p: any) {
   const mail = p.content?.mail;
   if (!mail?.id || !mail?.by || mail.status !== "draft") return { id: p.id, status: mail?.status || null };
-  let m: any;
+  let m: any = null;
   try { m = await g("GET", `/users/${encodeURIComponent(mail.by)}/messages/${encodeURIComponent(mail.id)}?$select=isDraft,sentDateTime`, undefined, IMMUTABLE); }
-  catch (e: any) {
-    if (e.status === 404) {
+  catch (e: any) { if (e.status !== 404) throw e; }
+  let sentAt: string | null = m && !m.isDraft ? (m.sentDateTime || new Date().toISOString()) : null;
+  if (!sentAt) {
+    // enviado a partir do .eml (Outlook do computador): procura nos Itens Enviados desde que o email foi preparado
+    const since = new Date(new Date(mail.created_at || Date.now()).getTime() - 60000).toISOString().replace(/\.\d+Z$/, "Z");
+    const norm = (x: string) => String(x || "").toLowerCase().replace(/^\s*((re|fw|fwd|enc|reenc)\s*:\s*)+/i, "").replace(/\s+/g, " ").trim();
+    const want = norm(mail.subject), ref = norm(mail.ref);
+    const list = await g("GET", `/users/${encodeURIComponent(mail.by)}/mailFolders/sentitems/messages?$filter=sentDateTime ge ${since}&$orderby=sentDateTime desc&$select=subject,sentDateTime&$top=50`);
+    const hit = (list?.value || []).find((x: any) => { const s = norm(x.subject); return (want && s === want) || (ref && s.includes(ref)); });
+    if (!hit) {
+      if (m) return { id: p.id, status: "draft" };
+      // o rascunho foi apagado e nada saiu com este assunto
       const content = { ...p.content, mail: { ...mail, status: "gone" } };
       await db.from("fee_proposals").update({ content }).eq("id", p.id);
       return { id: p.id, status: "gone" };
     }
-    throw e;
+    sentAt = hit.sentDateTime || new Date().toISOString();
+    // o rascunho que sobrou nos Rascunhos vai para os Itens Eliminados, para não ser enviado duas vezes
+    if (m) { try { await g("POST", `/users/${encodeURIComponent(mail.by)}/messages/${encodeURIComponent(mail.id)}/move`, { destinationId: "deleteditems" }, IMMUTABLE); } catch (_) { /* já não existe */ } }
   }
-  if (m.isDraft) return { id: p.id, status: "draft" };
-  const sentAt = m.sentDateTime || new Date().toISOString();
   const day = dayKey(sentAt);
   const patch: Record<string, unknown> = {
     content: { ...p.content, mail: { ...mail, status: "sent", sent_at: sentAt } },
@@ -139,7 +151,7 @@ Deno.serve(async (req) => {
           }
         }
       }
-      const mail = { id: msg.id, link: msg.webLink || null, by: mailbox, by_member: who.id, created_at: new Date().toISOString(), status: "draft", subject: body.subject || "", to: body.to || [] };
+      const mail = { id: msg.id, link: msg.webLink || null, by: mailbox, by_member: who.id, created_at: new Date().toISOString(), status: "draft", subject: body.subject || "", ref: body.ref || "", to: body.to || [] };
       await db.from("fee_proposals").update({ content: { ...(pr.data.content || {}), mail } }).eq("id", pr.data.id);
       return json({ ok: true, webLink: msg.webLink, id: msg.id });
     }
