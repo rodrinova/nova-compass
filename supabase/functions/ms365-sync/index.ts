@@ -20,7 +20,9 @@
 //   6. DAYBREAK: cria uma reunião Teams fixa para a reunião diária das 8:40 (só o link, sem evento no calendário;
 //      app_settings 'daybreak'.join_url). Precisa de OnlineMeetings.ReadWrite.All e da política do Teams.
 //   4. GRAVAÇÃO AUTOMÁTICA: nas reuniões Teams futuras organizadas pela equipa (14 dias), liga "Gravar e transcrever
-//      automaticamente" (recordAutomatically), para a transcrição arrancar sozinha. Precisa de OnlineMeetings.ReadWrite.All.
+//      automaticamente" (recordAutomatically), para a transcrição arrancar sozinha, e define o idioma falado
+//      (meetingSpokenLanguageTag): o do marco (project_milestones.meeting_lang) ou português de Portugal.
+//      Precisa de OnlineMeetings.ReadWrite.All.
 // Precisa (Edge Functions → Secrets): MS_TENANT_ID, MS_CLIENT_ID, MS_CLIENT_SECRET — uma aplicação registada
 // no Entra ID com as permissões de aplicação Calendars.ReadWrite e MailboxSettings.ReadWrite (consentimento do
 // administrador). Sem estes segredos, só regista "por configurar" e sai.
@@ -292,7 +294,7 @@ async function userId(email: string) {
   return uidCache[email];
 }
 // Gravação e transcrição automáticas nas reuniões Teams futuras organizadas pela equipa
-const AUTOREC_DAYS = 14;
+const AUTOREC_DAYS = 14, DEFAULT_LANG = "pt-PT";
 async function syncAutoRecord(members: any[], links: any[]) {
   const res = { set: 0, error: null as string | null };
   const now = Date.now(), nowIso = new Date(now).toISOString(), until = new Date(now + AUTOREC_DAYS * 864e5).toISOString();
@@ -301,29 +303,41 @@ async function syncAutoRecord(members: any[], links: any[]) {
   const cand = new Map<string, any>();
   const ev = await db.from("ms_events").select("ical_uid, subject, start_at, join_url, organizer_email")
     .eq("is_online", true).not("join_url", "is", null).gte("start_at", nowIso).lte("start_at", until);
-  for (const e of ev.data || []) { const org = byEmail[e.organizer_email || ""]; if (org && e.ical_uid) cand.set(e.ical_uid, { ...e, org }); }
+  for (const e of ev.data || []) { const org = byEmail[e.organizer_email || ""]; if (org && e.ical_uid) cand.set(e.ical_uid, { ...e, org, lang: DEFAULT_LANG }); }
   const ml = links.filter((l: any) => l.source_key?.startsWith("m:") && l.join_url && l.ical_uid && byId[l.member_id]);
   if (ml.length) {
-    const mr = await db.from("project_milestones").select("id, title, event_date, start_time").in("id", ml.map((l: any) => l.source_key.slice(2)));
+    let mr: any = await db.from("project_milestones").select("id, title, event_date, start_time, meeting_lang").in("id", ml.map((l: any) => l.source_key.slice(2)));
+    if (mr.error) mr = await db.from("project_milestones").select("id, title, event_date, start_time").in("id", ml.map((l: any) => l.source_key.slice(2)));
     const mBy = Object.fromEntries((mr.data || []).map((m: any) => [m.id, m]));
     for (const l of ml) {
       const m = mBy[l.source_key.slice(2)];
       if (!m?.start_time) continue;
       const st = lisbonToUtc(m.event_date, String(m.start_time)).toISOString();
-      if (st >= nowIso && st <= until) cand.set(l.ical_uid, { ical_uid: l.ical_uid, subject: m.title, start_at: st, join_url: l.join_url, org: byId[l.member_id] });
+      if (st >= nowIso && st <= until) cand.set(l.ical_uid, { ical_uid: l.ical_uid, subject: m.title, start_at: st, join_url: l.join_url, org: byId[l.member_id], lang: m.meeting_lang || DEFAULT_LANG });
     }
   }
   if (!cand.size) return res;
-  const seen = await db.from("ms_autorecord").select("ical_uid, status").in("ical_uid", [...cand.keys()]);
-  const done = new Set((seen.data || []).filter((x: any) => x.status === "ok").map((x: any) => x.ical_uid));
+  let seen: any = await db.from("ms_autorecord").select("ical_uid, status, lang").in("ical_uid", [...cand.keys()]);
+  if (seen.error) seen = await db.from("ms_autorecord").select("ical_uid, status").in("ical_uid", [...cand.keys()]);
+  const prevBy = Object.fromEntries((seen.data || []).map((x: any) => [x.ical_uid, x]));
   for (const c of cand.values()) {
-    if (done.has(c.ical_uid)) continue;
+    const p = prevBy[c.ical_uid];
+    if (p?.status === "ok" && (p.lang === undefined || p.lang === c.lang)) continue;   // já gravada e no idioma certo
     const row: any = { ical_uid: c.ical_uid, subject: c.subject, start_at: c.start_at, status: "ok", error: null, set_at: nowIso };
+    if (p?.lang !== undefined || !seen.error) { row.lang = null; row.lang_error = null; }
     try {
       const uid = await userId(c.org.email);
       const om = (await g("GET", `/users/${uid}/onlineMeetings?$filter=${encodeURIComponent(`JoinWebUrl eq '${c.join_url}'`)}`))?.value?.[0];
       if (!om) throw new Error("Reunião não encontrada no Teams");
       if (!om.recordAutomatically) await g("PATCH", `/users/${uid}/onlineMeetings/${om.id}`, { recordAutomatically: true });
+      // idioma falado (para a transcrição sair na língua certa); se o Teams recusar, a gravação fica na mesma
+      if ("lang" in row) {
+        try {
+          if (String(om.meetingSpokenLanguageTag || "").toLowerCase() !== c.lang.toLowerCase())
+            await g("PATCH", `/users/${uid}/onlineMeetings/${om.id}`, { meetingSpokenLanguageTag: c.lang });
+          row.lang = c.lang;
+        } catch (le: any) { row.lang_error = le.message; row.lang = c.lang; console.error("ms365 idioma:", c.subject, le.status, le.message); }
+      }
       res.set++;
     } catch (e: any) {
       row.status = "error"; row.error = e.message;
