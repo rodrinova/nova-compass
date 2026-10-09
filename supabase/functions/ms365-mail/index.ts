@@ -28,7 +28,7 @@ const json = (b: unknown, status = 200) =>
 const dayKey = (iso: string) => new Date(iso).toLocaleDateString("sv-SE", { timeZone: TZ });
 const addDays = (k: string, n: number) => { const d = new Date(k + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 
-let token = "";
+let token = "", roles: string[] = [];
 async function getToken() {
   const r = await fetch(`https://login.microsoftonline.com/${TENANT}/oauth2/v2.0/token`, {
     method: "POST",
@@ -38,6 +38,8 @@ async function getToken() {
   const j = await r.json();
   if (!r.ok) throw new Error("O Office 365 recusou a ligação: " + (j.error_description || j.error || r.status));
   token = j.access_token;
+  // permissões que a Microsoft deu de facto a esta aplicação (para explicar o que falta)
+  try { roles = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).roles || []; } catch (_) { roles = []; }
 }
 async function g(method: string, path: string, body?: unknown, extra: Record<string, string> = {}) {
   const r = await fetch(path.startsWith("http") ? path : GRAPH + path, {
@@ -114,7 +116,8 @@ Deno.serve(async (req) => {
           toRecipients: rec(body.to), ccRecipients: rec(body.cc),
         }, IMMUTABLE);
       } catch (e: any) {
-        if (noPermission(e)) return json({ error: "permission", detail: e.message });
+        console.error("ms365-mail draft:", e.status, e.message, "roles:", roles.join(","));
+        if (noPermission(e)) return json({ error: "permission", detail: e.message, status: e.status, roles, mailbox });
         throw e;
       }
       // PDF: até ~3 MB vai direto; acima disso, por sessão de envio em partes
