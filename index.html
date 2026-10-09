@@ -4897,8 +4897,55 @@
       }
       nav.querySelectorAll('[data-sub]').forEach(b => { const on = b.dataset.sub === name; b.classList.toggle('active', on); b.setAttribute('aria-current', on ? 'page' : 'false'); });
     }
+    // Histórico do browser: cada página tem o seu endereço (#/proposta/…), o botão de retroceder do rato e do
+    // browser andam para trás e para a frente dentro da app, e recarregar volta à mesma página.
+    // depois de recarregar, o browser ainda tem o histórico: continua a contar de onde estava
+    let kHistIdx = Number(history.state?.i) || 0, kFromPop = false, kFirstView = true;
+    const VIEW_ID_KEY = { detail: 'projectId', client: 'clientId', plot: 'plotId', proposal: 'proposalId', investorView: 'investorId', agenda: 'mode' };
+    function viewHash(st) {
+      if (!st || st.name === 'home') return '#/';
+      const k = VIEW_ID_KEY[st.name], id = k ? st[k] : null;
+      return '#/' + st.name + (id ? '/' + encodeURIComponent(id) : '');
+    }
+    function stateFromHash(h) {
+      const m = String(h || '').match(/^#\/([A-Za-z]+)(?:\/([^/?#]+))?/);
+      if (!m) return null;
+      const st = { name: m[1] }, k = VIEW_ID_KEY[m[1]];
+      if (k) st[k] = m[2] ? decodeURIComponent(m[2]) : null;
+      return st;
+    }
+    function openState(st) {
+      if (!st || st.name === 'home') return showHome();
+      const byName = {
+        projects: openProjectsModule, horas: openHorasModule, settings: openSettingsModule, atas: openAtasModule, despesas: openDespesasModule,
+        clients: openClientsModule, billing: () => openBillingModule(), finance: () => openFinanceModule(), help: () => openHelpModule(),
+        opps: () => openOppsModule(), pipeline: () => openPipelineModule(), mqt: () => openMqtModule(), tickets: () => openTicketsModule(),
+        absences: () => openAbsencesModule(), agenda: () => openAgendaModule(st.mode || undefined),
+        client: () => openClientDetail(st.clientId), investorView: () => openInvestorView(st.investorId), plot: () => openPlotView(st.plotId),
+        feas: () => openFeasView(st.plotId), detail: () => openDetail(st.projectId), proposal: () => openProposalView(st.proposalId || null)
+      };
+      if (byName[st.name] && (!VIEW_ID_KEY[st.name] || st.name === 'proposal' || st.name === 'agenda' || st[VIEW_ID_KEY[st.name]])) return byName[st.name]();
+      return showHome();
+    }
+    window.addEventListener('popstate', e => {
+      const h = e.state;
+      if (!h || !h.v) return;
+      const back = h.i < kHistIdx; kHistIdx = h.i;
+      if (back) navStack.pop(); else if (currentViewState) navStack.push(currentViewState);
+      kFromPop = true; suppressNavPush = true;
+      Promise.resolve(proposalState?.flush?.()).catch(() => {}).finally(() => openState(h.v));
+    });
     function pushCurrentView(newState) {
       const sameView = JSON.stringify(currentViewState) === JSON.stringify(newState);
+      // endereço e histórico do browser
+      try {
+        if (kFromPop) kFromPop = false;
+        else if (!sameView) {
+          if (kFirstView || !kHistIdx || suppressNavPush) { kHistIdx = kHistIdx || 1; history.replaceState({ v: newState, i: kHistIdx }, '', viewHash(newState)); }
+          else { kHistIdx++; history.pushState({ v: newState, i: kHistIdx }, '', viewHash(newState)); }
+        }
+      } catch (_) { /* sem histórico (ex.: ficheiro local) */ }
+      kFirstView = false;
       if (!sameView && currentViewState) kNavDir = suppressNavPush ? -1 : K_DEEP.has(newState.name) ? 1 : 0;
       if (!suppressNavPush && !sameView) {
         navStack.push(currentViewState);
@@ -4920,6 +4967,7 @@
     }
 
     function goBack() {
+      if (kHistIdx > 1 && history.state?.i === kHistIdx) { history.back(); return; }
       const prev = navStack.pop();
       suppressNavPush = true;
       if (!prev) { showHome(); return; }
@@ -5388,6 +5436,8 @@
       loginScreen.style.display = 'none';
       appScreen.style.display = 'block';
       renderSideUser();
+      const st = stateFromHash(location.hash);
+      if (st && st.name !== 'home') { try { openState(st); return; } catch (_) { /* volta à Hoje */ } }
       showHome();
     }
 
@@ -19090,6 +19140,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
 
     // ---------- Editor da proposta ----------
     let proposalState = null;   // proposta aberta no editor
+    const PP_DRAFT_KEY = 'nova.ppDraft';
+    // Fechar ou recarregar a página com alterações por gravar: o browser pergunta antes
+    window.addEventListener('beforeunload', e => {
+      if (currentViewState?.name === 'proposal' && proposalState?.dirty && proposalState.pp?.id) { proposalState.flush?.(); e.preventDefault(); e.returnValue = ''; }
+    });
     async function openProposalView(proposalId, preset = {}) {
       pushCurrentView({ name: 'proposal', proposalId: proposalId || null });
       hideAllViews();
@@ -19133,7 +19188,16 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           pp = JSON.parse(JSON.stringify(pp));
           pp.content = ppFillContent(pp.content, lib, pp.language === 'en', meM);
         }
+        // Proposta nova que ficou a meio (a página recarregou, ou fechou-se): recupera o que estava escrito
+        let restored = false;
+        if (!pp.id) {
+          let dr = null; try { dr = JSON.parse(localStorage.getItem(PP_DRAFT_KEY) || 'null'); } catch (_) { /* sem armazenamento */ }
+          if (dr?.pp && Date.now() - dr.at < 3 * 864e5 && (!preset.plot || dr.pp.plot_id === preset.plot.id)) {
+            pp = dr.pp; pp.content = ppFillContent(pp.content, lib, pp.language === 'en', meM); restored = true;
+          }
+        }
         proposalState = { pp, d, cfg, modelData, hist, typeById, lib, members, me: meM, dirty: false, estimate: null, autoCph };
+        if (restored) showToast('Recuperei a proposta que estavas a escrever.', { undo: () => { try { localStorage.removeItem(PP_DRAFT_KEY); } catch (_) { /* nada */ } suppressNavPush = true; openProposalView(null, preset); }, undoLabel: 'Começar do zero', ms: 9000 });
         // Efeito desta proposta no custo de aquisição por cliente, se for adjudicada
         if (pp.id && PIPE_OPEN.includes(pp.status)) {
           const cc = cacCalc(await loadCacData().catch(() => null), d.proposals);
@@ -19144,6 +19208,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           }
         }
         if (!pp.id && !pp.content.pay.rows.length) await ppPayFromModel();
+        if (restored) proposalState.dirty = true;
         renderProposalEditor();
       } catch (err) {
         view.innerHTML = /fee_proposals|proposal_library/.test(err.message || '') ? '<div class="error-box">Para usar as propostas, corre pipeline.sql no Supabase.</div>'
@@ -19374,6 +19439,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const savedEl = () => document.getElementById('pp-saved');
       const touch = (redrawSec) => {
         S.dirty = true;
+        if (!pp.id) { try { localStorage.setItem(PP_DRAFT_KEY, JSON.stringify({ at: Date.now(), pp })); } catch (_) { /* sem armazenamento */ } }
         if (redrawSec) redraw(redrawSec);
         recalc();
         if (pp.id && !locked) { clearTimeout(saveT); savedEl().textContent = 'Por gravar…'; saveT = setTimeout(() => ppSave().catch(() => {}), 1200); }
@@ -19592,6 +19658,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           Object.assign(row, { number, version: pp.version || 1, ref: cstLabel(number, pp.version || 1), status: pp.status || 'draft', owner_id: pp.owner_id || null, created_by: (await getCurrentMember())?.id ?? null });
           const r = await dbInsert('fee_proposals', row, mockProposals);
           pp.id = r.id; pp.number = number; pp.ref = row.ref;
+          try { localStorage.removeItem(PP_DRAFT_KEY); } catch (_) { /* nada */ }
           if (!d.proposals.some(x => x.id === r.id)) d.proposals.unshift({ ...row, id: r.id });
         }
         Object.assign(pp, row); S.dirty = false;
@@ -23873,10 +23940,11 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
           const html = await r.text();
           const theirs = hash(biggest([...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1])));
           if (theirs === mine) return;
-          const busyUser = document.querySelector('#quick-modal[style*="flex"]') || !document.getElementById('pres')?.hidden || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || '');
+          // Só recarrega sozinha na Hoje e sem nada a meio; nas outras páginas pergunta (não se perde o que se escreve)
+          const busyUser = currentViewState?.name !== 'home' || proposalState?.dirty || document.querySelector('#quick-modal[style*="flex"]') || !document.getElementById('pres')?.hidden || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || '');
           if (!busyUser) return reload();
           offered = true;
-          showToast('Há uma versão nova da app', { undo: reload, undoLabel: 'Atualizar', ms: 15000 });
+          showToast('Há uma versão nova da app. Atualiza quando der jeito — não se perde nada do que está gravado.', { undo: async () => { await proposalState?.flush?.(); reload(); }, undoLabel: 'Atualizar', ms: 600000 });
         } catch (_) { /* sem rede: tenta mais tarde */ } finally { busy = false; }
       }
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
