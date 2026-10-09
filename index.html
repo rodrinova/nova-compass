@@ -730,6 +730,18 @@
   .ata-entry-body ul ul { list-style-type: circle; }
   .ata-entry-body ul ul ul { list-style-type: square; }
   /* ================= PIPELINE de propostas ================= */
+  .pp-cac { display: grid; grid-template-columns: minmax(180px, 1fr) 2.4fr; gap: var(--sp-3); align-items: center; margin-bottom: var(--sp-3); }
+  .pp-cac-main { display: flex; flex-direction: column; gap: 2px; }
+  .pp-cac-main span { font-size: var(--fs-xs); color: var(--text-2); }
+  .pp-cac-main b { font-size: 1.6rem; font-weight: var(--fw-semibold); letter-spacing: -0.02em; }
+  .pp-cac-main small, .pp-cac-parts small { font-size: var(--fs-xs); color: var(--text-3); }
+  .pp-cac-parts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-2); }
+  .pp-cac-parts > div { display: flex; flex-direction: column; gap: 1px; border-left: 1px solid var(--border); padding-left: var(--sp-3); }
+  .pp-cac-parts span { font-size: var(--fs-xs); color: var(--text-2); }
+  .pp-cac-next { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: var(--sp-2); flex-wrap: wrap; border-top: 1px solid var(--border); padding-top: var(--sp-2); font-size: var(--fs-sm); }
+  .pp-cac-next em { font-style: normal; color: var(--text-2); }
+  .pp-cac-next .good { color: var(--success, #2e7d4f); }
+  @media (max-width: 699px) { .pp-cac { grid-template-columns: 1fr; } .pp-cac-parts { grid-template-columns: 1fr; } }
   .pp-kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--sp-2); margin: var(--sp-2) 0 var(--sp-3); }
   .pp-kpis > div { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: var(--sp-3); display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .pp-kpis span { font-size: var(--fs-xs); color: var(--text-2); }
@@ -763,6 +775,8 @@
   .pp-pipe-grid { gap: 0 var(--sp-2); grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .pp-pipe-grid .form-input { min-width: 0; width: 100%; }
   .pp-pipe-grid input[type="date"] { padding-left: 8px; padding-right: 4px; font-size: 13px; }
+  .pp-mailstate { font-size: var(--fs-xs); color: var(--text-2); background: var(--surface-2); border-radius: var(--r-md); padding: 6px 10px; margin-top: 6px; }
+  .pp-mailstate.ok { color: var(--success, #2e7d4f); }
   .pp-actions { display: flex; flex-direction: column; gap: 6px; margin-top: var(--sp-2); }
   .pp-actions .primary-btn, .pp-actions .secondary-btn { margin: 0; }
   .pp-versions { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin-top: var(--sp-2); font-size: var(--fs-xs); color: var(--text-2); }
@@ -15933,14 +15947,14 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { id: 'proposta', cat: 'opps', ctx: ['pipeline', 'opps', 'plot', 'proposal', 'settings:proposals'], first: 2,
         q: 'faço uma proposta de honorários',
         a: 'Clientes → Pipeline → + Nova proposta (ou na oportunidade do Intelligence). Monta-se com os blocos da biblioteca e sai em PDF no modelo NOVA, em português ou inglês.',
-        steps: ['Abre [[Pipeline]] → [[+ Nova proposta]]. Se vier de uma oportunidade do Intelligence, escolhe-a: a proposta usa o **mesmo CST** e já vem com o local, a área, as frações e o cliente.', 'Em **Cliente e capa**: o cliente, as linhas da capa, o local, a língua (PT/EN) e a assinatura da marca. Nas moradias, podes incluir o **Manifesto**.', 'Em **Âmbito**: o texto de enquadramento, o quadro de dados e os serviços — toca em [[+ Serviços da biblioteca]] e escolhe (A Arquitetura, B Especialidades, C Marketing, D Fiscalização, estudos…). Tudo se pode editar.', 'Em **Quanto nos vai custar** (só para a NOVA): as horas estimadas pelo histórico, o custo/hora e as especialidades.', 'Em **Valor**: linhas com valor, ou unidades × valor unitário (ex.: 15 frações × 2.310 €), descontos e avenças mensais (ex.: 18 visitas × 150 €). A app mostra o valor por hora e a margem.', 'Em **Condições de pagamento**: as percentagens (Adjudicação, Estudo Prévio…) e a fase do projeto de cada uma. As avenças entram sozinhas.', 'Opcional: **Timeline** (Gantt por semanas), **Opcionais** e **Exclusões**. No fim, quem assina e a validade.', 'Toca em [[Criar proposta]] (recebe o CST) e depois em [[Ver proposta (PDF)]] → **Imprimir / guardar em PDF**. A partir daí grava sozinha.'],
-        kw: 'proposta honorarios orcamento preco valor fee nota de honorarios cst pdf modelo nova capa ambito exclusoes opcionais timeline pagamento biblioteca ingles',
+        steps: ['Abre [[Pipeline]] → [[+ Nova proposta]]. Se vier de uma oportunidade do Intelligence, escolhe-a: a proposta usa o **mesmo CST** e já vem com o local, a área, as frações e o cliente.', 'Em **Cliente e capa**: o cliente, as linhas da capa, o local, a língua (PT/EN) e a assinatura da marca. Nas moradias, podes incluir o **Manifesto**.', 'Em **Âmbito**: o texto de enquadramento, o quadro de dados e os serviços — toca em [[+ Serviços da biblioteca]] e escolhe (A Arquitetura, B Especialidades, C Marketing, D Fiscalização, estudos…). Tudo se pode editar.', 'Em **Quanto nos vai custar** (só para a NOVA): as horas estimadas pelo histórico, o custo/hora e as especialidades.', 'Em **Valor**: linhas com valor, ou unidades × valor unitário (ex.: 15 frações × 2.310 €), descontos e avenças mensais (ex.: 18 visitas × 150 €). A app mostra o valor por hora e a margem.', 'Em **Condições de pagamento**: as percentagens (Adjudicação, Estudo Prévio…) e a fase do projeto de cada uma. As avenças entram sozinhas.', 'Opcional: **Timeline** (Gantt por semanas), **Opcionais** e **Exclusões**. No fim, quem assina e a validade.', 'Toca em [[Criar proposta]] (recebe o CST). A partir daí grava sozinha.', 'Para enviar: [[Enviar por email]]. A app escreve o email (assunto com o CST e o cliente), gera o PDF e prepara-o no teu Outlook com o PDF anexado. Revês e carregas em **Enviar** — a proposta fica marcada como enviada a essa hora e o follow-up fica para daqui a 7 dias.'],
+        kw: 'proposta honorarios orcamento preco valor fee nota de honorarios cst pdf modelo nova capa ambito exclusoes opcionais timeline pagamento biblioteca ingles email outlook enviar anexo',
         tour: [{ go: 'nav:pipeline', sel: '#pipe-new', text: 'Começa aqui uma proposta nova.' }] },
       { id: 'pipeline', cat: 'opps', ctx: ['pipeline', 'proposal', 'home'], first: 3,
         q: 'acompanho o pipeline de propostas (follow-up, versões, perdidas)',
         a: 'Clientes → Pipeline: propostas por estado, valor em aberto e ponderado, taxa de sucesso. A Hoje avisa os follow-ups e as validades; à segunda, o Daybreak mostra o resumo.',
-        steps: ['Em [[Pipeline]] as propostas estão por estado: **Rascunho → Enviada → Em negociação → Adjudicada / Perdida**. Em cima, o valor em aberto, o ponderado (valor × probabilidade), o adjudicado no ano, a taxa de sucesso e os dias até à decisão.', 'Na proposta, toca em [[Marcar como enviada]]: a app marca o **follow-up para daqui a 7 dias** e avisa-te na Hoje nesse dia. Também avisa 5 dias antes de acabar a validade.', 'O cliente pediu alterações? Toca em [[Nova versão]]: passa a **V2** com o mesmo CST e a V1 fica no histórico.', 'Não avançou? [[Perdida]] e escolhe o motivo — ajuda a perceber onde perdemos.', 'No primeiro dia útil de cada semana, o **Daybreak** mostra o resumo do pipeline e as propostas paradas.'],
-        kw: 'pipeline propostas follow-up seguimento validade versao v2 perdida motivo taxa sucesso ponderado probabilidade negociacao daybreak segunda',
+        steps: ['Em [[Pipeline]] as propostas estão por estado: **Rascunho → Enviada → Em negociação → Adjudicada / Perdida**. Em cima, o valor em aberto, o ponderado (valor × probabilidade), o adjudicado no ano, a taxa de sucesso e os dias até à decisão.', 'Na proposta, toca em [[Marcar como enviada]]: a app marca o **follow-up para daqui a 7 dias** e avisa-te na Hoje nesse dia. Também avisa 5 dias antes de acabar a validade.', 'O cliente pediu alterações? Toca em [[Nova versão]]: passa a **V2** com o mesmo CST e a V1 fica no histórico.', 'Não avançou? [[Perdida]] e escolhe o motivo — ajuda a perceber onde perdemos.', 'No primeiro dia útil de cada semana, o **Daybreak** mostra o resumo do pipeline e as propostas paradas.', 'O **custo de aquisição por cliente** soma as horas de Angariação (× custo/hora), as despesas de Representação e Marketing e as comissões a angariadores das propostas adjudicadas, a dividir pelos clientes que já temos. Por baixo, quanto passa a valer se a próxima proposta for adjudicada. A comissão de cada proposta escreve-se no painel do Pipeline da proposta.'],
+        kw: 'pipeline propostas follow-up seguimento validade versao v2 perdida motivo taxa sucesso ponderado probabilidade negociacao daybreak segunda custo aquisicao cliente cac angariacao comissao angariador',
         tour: [{ go: 'nav:pipeline', sel: '.pp-kpis', text: 'O resumo do pipeline.' }] },
       { id: 'proposta-aceite', cat: 'opps', ctx: ['proposal'],
         q: 'passo uma proposta adjudicada a projeto',
@@ -18824,7 +18838,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const q = pick('text', 'quality')[0];
       return {
         cover: { lines: preset.lines || ['', ''], place: preset.place || '', region: preset.region || '' },
-        tagline: 'impact', manifesto: false, date: dateKey(new Date()),
+        tagline: 'impact', manifesto: false, date: dateKey(new Date()), referral: { name: '', value: null },
         scope: { intro: '', facts: preset.facts || [], lead: txt('scope_lead'), groups: [], notes: notes('note_scope') },
         value: { intro: txt('value_intro'), lines: [], notes: notes('note_value') },
         pay: { intro: txt('pay_intro'), rows: [], notes: notes('note_pay') },
@@ -18879,6 +18893,70 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       return txt.split(/\n{2,}/).map(p => `<p>${inl(p).replace(/\n/g, '<br>')}</p>`).join('');
     }
 
+    // ---------- Custo de aquisição por cliente (desde sempre) ----------
+    // Custos: horas de Angariação × custo/hora + despesas de Representação e Marketing + comissões a angariadores
+    // (das propostas adjudicadas). ÷ clientes com projeto. A próxima adjudicação: a proposta em aberto mais provável.
+    async function loadCacData() {
+      const cfg = await loadProposalCfg().catch(() => ({}));
+      let cph = Number(cfg.cost_per_hour) || 0;
+      if (!cph) { const hc = await computeHourCost().catch(() => null); cph = Number(hc?.total) || 0; }
+      if (devMode) return { cph, hours: 120, exp: 860, clients: [...new Set(MOCK_PROJECTS.map(p => p.client_id || p.client).filter(Boolean))] };
+      const [tc, ec, pj] = await Promise.all([
+        supabase.from('time_categories').select('id, name'),
+        supabase.from('expense_categories').select('id, name'),
+        selectAll(() => supabase.from('projects').select('id, client_id, client').order('id'))
+      ]);
+      const tIds = (tc.data || []).filter(c => /angaria/.test(normTxt(c.name))).map(c => c.id);
+      const eIds = (ec.data || []).filter(c => /representa|marketing/.test(normTxt(c.name))).map(c => c.id);
+      const [te, ex] = await Promise.all([
+        tIds.length ? selectAll(() => supabase.from('time_entries').select('hours').in('category_id', tIds).order('id')) : { data: [] },
+        eIds.length ? selectAll(() => supabase.from('expenses').select('amount').in('category_id', eIds).is('archived_at', null).order('id')) : { data: [] }
+      ]);
+      return {
+        cph, hours: (te.data || []).reduce((t, x) => t + (Number(x.hours) || 0), 0),
+        exp: (ex.data || []).reduce((t, x) => t + (Number(x.amount) || 0), 0),
+        clients: [...new Set((pj.data || []).map(p => p.client_id || normTxt(p.client || '')).filter(Boolean))]
+      };
+    }
+    const ppReferral = p => Number(p?.content?.referral?.value) || 0;
+    function cacCalc(cd, proposals) {
+      if (!cd) return null;
+      const latest = ppLatest(proposals || []);
+      const comm = latest.filter(p => p.status === 'accepted').reduce((t, p) => t + ppReferral(p), 0);
+      const hoursCost = cd.hours * cd.cph;
+      const cost = hoursCost + cd.exp + comm;
+      const n = cd.clients.length;
+      const cac = n ? cost / n : null;
+      const known = new Set(cd.clients);
+      // Impacto de uma adjudicação: cliente novo → mais um cliente (e a comissão dessa proposta, se houver)
+      const impact = p => {
+        const isNew = !p.client_id || !known.has(p.client_id);
+        if (!isNew) return { isNew, after: cac, delta: 0 };
+        const after = (cost + ppReferral(p)) / (n + 1);
+        return { isNew, after, delta: cac == null ? null : after - cac };
+      };
+      const open = latest.filter(p => PIPE_OPEN.includes(p.status) && p.status !== 'draft');
+      const next = [...(open.length ? open : latest.filter(p => p.status === 'draft'))]
+        .sort((a, b) => ppProb(b) - ppProb(a) || String(a.expected_on || '9999').localeCompare(String(b.expected_on || '9999')) || (Number(b.total) || 0) - (Number(a.total) || 0))[0] || null;
+      return { hoursCost, hours: cd.hours, cph: cd.cph, exp: cd.exp, comm, cost, n, cac, impact, next };
+    }
+    function cacHtml(c, d) {
+      if (!c) return '';
+      const ni = c.next ? c.impact(c.next) : null;
+      const who = c.next ? (ppClientName(c.next, d) || c.next.title || '') : '';
+      return `<div class="gantt-wrap pp-cac">
+        <div class="pp-cac-main"><span>Custo de aquisição por cliente</span><b class="num">${c.cac != null ? escapeHtml(fmtEUR(Math.round(c.cac))) : '—'}</b>
+          <small>${escapeHtml(fmtEUR(Math.round(c.cost)))} ÷ ${c.n} ${c.n === 1 ? 'cliente' : 'clientes'} · desde sempre</small></div>
+        <div class="pp-cac-parts">
+          <div><span>Horas de angariação</span><b>${escapeHtml(fmtEUR(Math.round(c.hoursCost)))}</b><small>${escapeHtml(fmtNum(Math.round(c.hours * 10) / 10))} h × ${c.cph ? escapeHtml(fmtEUR(c.cph)) + '/h' : '<span class="warn-text">falta o custo/hora</span>'}</small></div>
+          <div><span>Representação e marketing</span><b>${escapeHtml(fmtEUR(Math.round(c.exp)))}</b><small>despesas</small></div>
+          <div><span>Comissões a angariadores</span><b>${escapeHtml(fmtEUR(Math.round(c.comm)))}</b><small>propostas adjudicadas</small></div>
+        </div>
+        ${c.next ? `<div class="pp-cac-next"><span>Próxima adjudicação: <b>${escapeHtml(ppRef(c.next))}</b> · ${escapeHtml(who)} <em>${ppProb(c.next)}%</em></span>
+          <b class="${ni.delta < 0 ? 'good' : ni.delta > 0 ? 'warn-text' : ''}">${!ni.isNew ? 'cliente que já é nosso: o custo fica igual' : ni.after != null ? `passa a ${escapeHtml(fmtEUR(Math.round(ni.after)))}${ni.delta != null ? ` (${ni.delta <= 0 ? '−' : '+'}${escapeHtml(fmtEUR(Math.abs(Math.round(ni.delta))))})` : ''}` : '—'}</b></div>` : ''}
+      </div>`;
+    }
+
     // ---------- Página Clientes → Pipeline ----------
     let pipeShowClosed = false, pipeMine = false;
     async function openPipelineModule() {
@@ -18892,9 +18970,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const box = document.getElementById('pipeline-view');
       beginLoad(box, 'pipeline', '<div class="gantt-wrap">' + SKELETON(3) + '</div><div class="gantt-wrap">' + SKELETON(6) + '</div>');
       try {
-        const d = await loadOppsData();
+        if (!devMode) { const chk = await ppCheckMail(null); if (chk?.results?.some(x => x.status === 'sent')) showToast('Há propostas que saíram por email — já estão marcadas como enviadas.'); }
+        const [d, cd] = await Promise.all([loadOppsData(), loadCacData().catch(() => null)]);
         oppsCache = d;
         d.me = (await getCurrentMember())?.id ?? null;
+        d.cac = cd;
         renderPipeline(d);
       } catch (err) {
         box.innerHTML = /fee_proposals|content|number/.test(err.message || '') ? '<div class="error-box">Para usar o pipeline, corre pipeline.sql no Supabase.</div>'
@@ -18968,6 +19048,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <div><span>Taxa de sucesso</span><b class="num">${pct(st.winRate)}</b><small>${st.winValRate != null ? pct(st.winValRate) + ' em valor · ' : ''}12 meses</small></div>
           <div><span>Até à decisão</span><b class="num">${st.medianDays != null ? st.medianDays + ' d' : '—'}</b><small>mediana</small></div>
         </div>
+        ${cacHtml(cacCalc(d.cac, d.proposals), d)}
         ${st.due.length || st.expiring.length ? `<div class="pp-attn">${st.due.length ? `<span><b>${st.due.length}</b> ${st.due.length === 1 ? 'follow-up por fazer' : 'follow-ups por fazer'}</span>` : ''}${st.expiring.length ? `<span><b>${st.expiring.length}</b> a expirar ou fora de validade</span>` : ''}</div>` : ''}
         <input type="text" id="pipe-search" class="search-input op-search" placeholder="Pesquisar por CST, cliente, título ou local…" autocomplete="off" value="${escapeHtml(document.getElementById('pipe-search')?.value || '')}">
         <div class="pp-board">${cols.map(([k, l]) => {
@@ -19051,6 +19132,15 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           pp.content = ppFillContent(pp.content, lib, pp.language === 'en', meM);
         }
         proposalState = { pp, d, cfg, modelData, hist, typeById, lib, members, me: meM, dirty: false, estimate: null, autoCph };
+        // Efeito desta proposta no custo de aquisição por cliente, se for adjudicada
+        if (pp.id && PIPE_OPEN.includes(pp.status)) {
+          const cc = cacCalc(await loadCacData().catch(() => null), d.proposals);
+          if (cc && cc.cac != null) {
+            const im = cc.impact(pp);
+            proposalState.cacInfo = im.isNew ? `Se for adjudicada (cliente novo), o custo de aquisição por cliente passa de ${escapeHtml(fmtEUR(Math.round(cc.cac)))} para ${escapeHtml(fmtEUR(Math.round(im.after)))}.`
+              : 'Cliente que já é nosso: não mexe no custo de aquisição.';
+          }
+        }
         if (!pp.id && !pp.content.pay.rows.length) await ppPayFromModel();
         renderProposalEditor();
       } catch (err) {
@@ -19239,7 +19329,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             <div class="gantt-wrap pp-sum">
               <span class="pp-sum-l">Honorários (sem IVA)</span><b class="pp-sum-v num" id="pp-side-total">${escapeHtml(fmtEUR(T.total))}</b>
               <div class="op-sum" id="pp-fee-sum"></div>
-              <button type="button" class="primary-btn" id="pp-pdf">Ver proposta (PDF)</button>
+              ${pp.id && !locked && pp.status !== 'declined' ? `<button type="button" class="primary-btn" id="pp-mail">${c.mail?.status === 'sent' ? 'Enviar outra vez por email' : 'Enviar por email'}</button>` : ''}
+              ${c.mail?.status === 'draft' ? `<div class="pp-mailstate">Email pronto no Outlook, à espera de ser enviado.${c.mail.link ? ` <a href="${escapeHtml(c.mail.link)}" target="_blank" rel="noopener">Abrir</a>` : ''}</div>` : c.mail?.status === 'sent' && c.mail.sent_at ? `<div class="pp-mailstate ok">Enviado por email a ${escapeHtml(fmtDayMonthYear(c.mail.sent_at.slice(0, 10)))}, ${escapeHtml(new Date(c.mail.sent_at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }))}.</div>` : ''}
+              <button type="button" class="${pp.id ? 'secondary-btn' : 'primary-btn'}" id="pp-pdf">Ver proposta (PDF)</button>
               ${!pp.id ? `<button type="button" class="secondary-btn" id="pp-create">Criar proposta${pp.number ? ' · CST ' + pp.number : ''}</button>` : ''}
             </div>
             ${pp.id ? `<div class="gantt-wrap pp-pipe">
@@ -19249,7 +19341,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
                 <div><label class="field-label">Follow-up</label><input type="date" class="form-input" data-pp="followup_on" value="${escapeHtml(pp.followup_on || '')}"></div>
                 <div><label class="field-label">Enviada a</label><input type="date" class="form-input" data-pp="sent_on" value="${escapeHtml(pp.sent_on || '')}"></div>
                 <div><label class="field-label">Decisão prevista</label><input type="date" class="form-input" data-pp="expected_on" value="${escapeHtml(pp.expected_on || '')}"></div>
+                <div><label class="field-label">Angariador</label><input type="text" class="form-input" data-pp="content.referral.name" value="${escapeHtml(c.referral?.name || '')}" placeholder="quem nos trouxe"></div>
+                <div><label class="field-label">Comissão (€)</label><input type="text" inputmode="decimal" class="form-input" data-pp="content.referral.value" data-n value="${escapeHtml(c.referral?.value ?? '')}" placeholder="0"></div>
               </div>
+              ${S.cacInfo ? `<div class="field-hint" id="pp-cac-hint">${S.cacInfo}</div>` : ''}
               ${exp && PIPE_OPEN.includes(pp.status) && pp.status !== 'draft' ? `<div class="field-hint ${left < 0 ? 'warn-text' : ''}">${left < 0 ? 'Fora de validade desde ' + escapeHtml(fmtDayMonth(exp)) + ' — faz uma nova versão ou marca como perdida.' : 'Válida até ' + escapeHtml(fmtDayMonthYear(exp)) + (left <= 5 ? ` (${left} ${left === 1 ? 'dia' : 'dias'})` : '')}</div>` : ''}
               ${pp.status === 'declined' ? `<div class="field-hint">Perdida${pp.lost_reason ? ': ' + escapeHtml(optLabel(LOST_REASONS, pp.lost_reason)) : ''}${pp.lost_note ? ' — ' + escapeHtml(pp.lost_note) : ''}</div>` : ''}
               <div class="pp-actions">
@@ -19443,6 +19538,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       recalc();
       if (pp.est_hours == null && S.estimate && !pp.id) { pp.est_hours = S.estimate.hours; const h = view.querySelector('[data-pp="est_hours"]'); if (h) h.value = pp.est_hours; recalc(); }
       document.getElementById('pp-pdf').addEventListener('click', async () => { await S.flush?.(); printProposal(pp, S); });
+      document.getElementById('pp-mail')?.addEventListener('click', () => openProposalMail());
+      ppWatchMail(pp);
       document.getElementById('pp-create')?.addEventListener('click', async () => {
         const r = await ppSave(); if (!r) return;
         showToast(`Proposta ${ppRef(r)} criada`); suppressNavPush = true; openProposalView(r.id);
@@ -19472,7 +19569,19 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       if (Number.isNaN(row.area) || Number.isNaN(row.fractions)) { formError('pp-msg', 'Área ou frações inválidas.'); return null; }
       try {
         if (saved) saved.textContent = 'A gravar…';
-        if (pp.id) await dbUpdate('fee_proposals', pp.id, row, mockProposals);
+        if (pp.id) {
+          // o estado do email é escrito pela função ms365-mail: não o apagar com uma cópia antiga
+          if (!devMode) {
+            const cur = await supabase.from('fee_proposals').select('content, status, sent_on, followup_on, probability').eq('id', pp.id).maybeSingle();
+            const m = cur.data?.content?.mail;
+            if (m && JSON.stringify(m) !== JSON.stringify(pp.content.mail || null)) {
+              const justSent = m.status === 'sent' && pp.content.mail?.status !== 'sent';
+              pp.content.mail = m; row.content = pp.content;
+              if (justSent && !extra.status) ['status', 'sent_on', 'followup_on', 'probability'].forEach(k => { row[k] = cur.data[k]; pp[k] = cur.data[k]; });
+            }
+          }
+          await dbUpdate('fee_proposals', pp.id, row, mockProposals);
+        }
         else {
           let number = pp.number;
           const plot = d.plots.find(x => x.id === pp.plot_id);
@@ -19613,6 +19722,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     function printProposal(pp, S) {
       const w = window.open('', '_blank');
       if (!w) { showToast('O navegador bloqueou a janela da proposta. Permite janelas deste site e tenta outra vez.', { type: 'error', ms: 7000 }); return; }
+      const { html } = ppDocHtml(pp, S);
+      w.document.open(); w.document.write(html); w.document.close();
+    }
+    function ppDocHtml(pp, S) {
       const c = pp.content, en = pp.language === 'en', e = escapeHtml, md = ppMd;
       const loc = en ? 'en-GB' : 'pt-PT';
       // Como nas propostas da NOVA: "€ 2 310,00" (milhares com espaço, sempre)
@@ -19831,7 +19944,145 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(function () { setTimeout(paginate, 30); });
         <\/script>
         </body></html>`;
-      w.document.open(); w.document.write(html); w.document.close();
+      return { html, fileTitle };
+    }
+
+
+    // ---------- Email da proposta: rascunho no Outlook com o PDF anexado ----------
+    // A app escreve o email (assunto com o CST e o cliente), gera o PDF e cria o rascunho na caixa de correio de
+    // quem envia (função ms365-mail). Quando o email sai do Outlook, a proposta passa a enviada com a hora certa.
+    const H2C_URL = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    const JSPDF_URL = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    const ppScripts = {};
+    function ppLoadScript(url) {
+      if (!ppScripts[url]) ppScripts[url] = new Promise((res, rej) => { const el = document.createElement('script'); el.src = url; el.onload = res; el.onerror = () => { delete ppScripts[url]; rej(new Error('não foi possível carregar ' + url.split('/').pop())); }; document.head.appendChild(el); });
+      return ppScripts[url];
+    }
+    // PDF a partir do documento da proposta (cada página A4 como imagem)
+    async function ppMakePdf(pp, S, onStep) {
+      await Promise.all([ppLoadScript(H2C_URL), ppLoadScript(JSPDF_URL)]);
+      const { html, fileTitle } = ppDocHtml(pp, S);
+      const fr = document.createElement('iframe');
+      fr.setAttribute('aria-hidden', 'true');
+      fr.style.cssText = 'position:fixed;left:-10000px;top:0;width:900px;height:1200px;border:0;';
+      document.body.appendChild(fr);
+      try {
+        const doc = fr.contentDocument;
+        doc.open(); doc.write(html); doc.close();
+        for (let i = 0; i < 100 && (doc.getElementById('flow') || !doc.querySelector('.page:not(.cover)')); i++) await new Promise(r => setTimeout(r, 100));
+        await Promise.all([...doc.images].map(im => im.complete ? null : new Promise(r => { im.onload = im.onerror = r; })));
+        const pages = [...doc.querySelectorAll('.page')];
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+        for (let i = 0; i < pages.length; i++) {
+          onStep && onStep(i + 1, pages.length);
+          const canvas = await window.html2canvas(pages[i], { scale: 1.7, backgroundColor: '#FFFEF2', useCORS: true, logging: false, windowWidth: 900 });
+          if (i) pdf.addPage();
+          pdf.addImage(canvas.toDataURL('image/jpeg', 0.84), 'JPEG', 0, 0, 210, 297);
+        }
+        const b64 = pdf.output('datauristring').split(',')[1];
+        return { b64, filename: fileTitle + '.pdf', pages: pages.length };
+      } finally { fr.remove(); }
+    }
+    // Texto do email: simples, próximo, sem fórmulas feitas
+    function ppMailDraft(pp, S) {
+      const c = pp.content, en = pp.language === 'en', d = S.d;
+      const client = d.clients.find(x => x.id === pp.client_id);
+      const name = ppClientName(pp, d) || '';
+      const firm = /\b(fam[ií]lia|family|lda|l\.da|s\.?a\.?|unipessoal|promotora|imobili|invest|constru|grupo|sociedade|munic[ií]pio|mission[aá]rios|associa[cç][aã]o|funda[cç][aã]o|company|ltd|holding|capital)\b/i.test(name);
+      const firsts = firm || !name ? '' : name.split(/\s+(?:e|and|&)\s+/i).map(x => x.trim().split(/\s+/)[0]).filter(Boolean).join(en ? ' and ' : ' e ');
+      const h = new Date().getHours();
+      const hello = en ? (firsts ? `Hello ${firsts},` : 'Hello,') : `${h < 13 ? 'Bom dia' : h < 20 ? 'Boa tarde' : 'Boa noite'}${firsts ? ' ' + firsts : ''},`;
+      const where = [c.cover.place, c.cover.region].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).join(', ');
+      const me = S.me?.name || S.members.find(m => m.id === c.closing.signer)?.name || '';
+      const days = pp.valid_days || 30;
+      const v2 = (pp.version || 1) > 1;
+      const text = en
+        ? [hello, '',
+          v2 ? `Here is the updated version of our fee proposal${where ? ' for the project in ' + where : ''}, with the changes we talked about.` : `Please find attached our fee proposal${where ? ' for the project in ' + where : ''}.`, '',
+          v2 ? 'If there is still something missing, just let me know.' : 'I tried to keep it easy to read. If anything is unclear or needs adjusting, just let me know and we can go through it together.', '',
+          `The proposal is valid for ${days} days.`, '',
+          'Best regards,', me, 'NOVA Associates', 'novassociates.com'].join('\n')
+        : [hello, '',
+          v2 ? `Segue a nova versão da nossa proposta de honorários${where ? ' para o projeto em ' + where : ''}, já com os ajustes de que falámos.` : `Envio em anexo a nossa proposta de honorários${where ? ' para o projeto em ' + where : ''}.`, '',
+          v2 ? 'Se ainda faltar alguma coisa, é só dizer.' : 'Procurei que ficasse simples de ler. Se alguma coisa não estiver clara ou precisar de ajuste, é só dizer e vemos isso juntos.', '',
+          `A proposta é válida por ${days} dias.`, '',
+          'Até breve,', me, 'NOVA Associates', 'novassociates.com'].join('\n');
+      const subject = [ppRef(pp), en ? 'Fee Proposal' : 'Proposta de Honorários', name, where || c.cover.lines?.[1] || ''].filter(Boolean).join(' | ');
+      return { to: client?.email ? [client.email] : [], subject, text };
+    }
+    function ppMailHtml(text) {
+      const paras = String(text || '').replace(/\r\n?/g, '\n').split(/\n{2,}/);
+      return `<div style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#1E1C1B;line-height:1.45">${paras.map(p => `<p style="margin:0 0 12px">${escapeHtml(p).replace(/\n/g, '<br>')}</p>`).join('')}</div>`;
+    }
+    async function openProposalMail() {
+      const S = proposalState, pp = S.pp;
+      await S.flush?.();
+      const m = ppMailDraft(pp, S);
+      openQuickModal('Enviar a proposta por email', `
+        <div class="field-hint" style="margin:0 0 8px;">A app cria o email no teu Outlook com o PDF anexado. Revês, carregas em <b>Enviar</b> e a proposta fica marcada como enviada a essa hora.</div>
+        <label class="field-label" style="margin-top:0;">Para</label><input type="text" id="pm-to" class="form-input" value="${escapeHtml(m.to.join('; '))}" placeholder="email do cliente">
+        <label class="field-label">Cc <small class="muted">(opcional)</small></label><input type="text" id="pm-cc" class="form-input" placeholder="separa com ;">
+        <label class="field-label">Assunto</label><input type="text" id="pm-subj" class="form-input" value="${escapeHtml(m.subject)}">
+        <label class="field-label">Mensagem</label><textarea id="pm-text" class="form-input" rows="14">${escapeHtml(m.text)}</textarea>
+        <div class="field-hint">Anexo: <b>${escapeHtml(ppDocHtml(pp, S).fileTitle)}.pdf</b></div>
+        <button type="button" class="primary-btn" id="pm-go">Preparar no Outlook</button>
+        <div id="pm-msg" class="form-msg"></div>`);
+      document.getElementById('pm-go').addEventListener('click', async () => {
+        const btn = document.getElementById('pm-go');
+        const split = v => v.split(/[;,\s]+/).map(x => x.trim()).filter(Boolean);
+        const to = split(document.getElementById('pm-to').value), cc = split(document.getElementById('pm-cc').value);
+        const bad = [...to, ...cc].find(a => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(a));
+        if (bad) return formError('pm-msg', `«${bad}» não parece um email.`);
+        // a janela abre já (senão o navegador bloqueia) e recebe o link quando o rascunho estiver pronto
+        const win = window.open('', '_blank');
+        if (win) win.document.write('<p style="font:15px -apple-system,Segoe UI,sans-serif;padding:32px;color:#4A2350">A preparar o email no Outlook…</p>');
+        btn.disabled = true;
+        try {
+          btn.textContent = 'A gerar o PDF…';
+          const pdf = devMode ? { b64: '', filename: 'teste.pdf' } : await ppMakePdf(pp, S, (i, n) => { btn.textContent = `A gerar o PDF… ${i}/${n}`; });
+          btn.textContent = 'A criar o email…';
+          let r;
+          if (devMode) r = { data: { ok: true, webLink: 'about:blank' } };
+          else r = await supabase.functions.invoke('ms365-mail', { body: { action: 'draft', proposal_id: pp.id, to, cc, subject: document.getElementById('pm-subj').value.trim(), html: ppMailHtml(document.getElementById('pm-text').value), pdf: pdf.b64, filename: pdf.filename } });
+          const res = r.data || {};
+          if (r.error || !res.ok) {
+            win?.close();
+            if (res.error === 'permission') return formError('pm-msg', 'O Office 365 ainda não deixa a app criar emails: falta dar a permissão Mail.ReadWrite à aplicação NOVA Compass no portal Microsoft Entra (Permissões de API → Microsoft Graph → Permissões de aplicação → Mail.ReadWrite → Conceder consentimento de administrador).');
+            return formError('pm-msg', 'Não foi possível criar o email: ' + (res.error || r.error?.message || 'erro desconhecido'));
+          }
+          pp.content.mail = { status: 'draft', link: res.webLink, created_at: new Date().toISOString() };
+          if (devMode) { const x = mockProposals.find(y => y.id === pp.id); if (x) x.content = JSON.parse(JSON.stringify(pp.content)); }
+          if (win) win.location.href = res.webLink; else window.open(res.webLink, '_blank');
+          closeQuickModal();
+          showToast('Email pronto no Outlook. Quando o enviares, a proposta fica marcada como enviada.', { ms: 8000 });
+          suppressNavPush = true; openProposalView(pp.id);
+        } catch (err) {
+          win?.close();
+          formError('pm-msg', 'Não foi possível preparar o email: ' + err.message);
+        } finally { btn.disabled = false; btn.textContent = 'Preparar no Outlook'; }
+      });
+    }
+    // Vê se os rascunhos já saíram do Outlook (uma proposta ou todas)
+    let ppMailPoll = null;
+    async function ppCheckMail(proposalId) {
+      if (devMode) return null;
+      const r = await supabase.functions.invoke('ms365-mail', { body: proposalId ? { action: 'check', proposal_id: proposalId } : { action: 'check_all' } }).catch(() => null);
+      return r?.data || null;
+    }
+    function ppWatchMail(pp) {
+      clearInterval(ppMailPoll);
+      if (pp.content?.mail?.status !== 'draft') return;
+      ppMailPoll = setInterval(async () => {
+        if (currentViewState?.name !== 'proposal' || proposalState?.pp?.id !== pp.id) { clearInterval(ppMailPoll); return; }
+        const r = await ppCheckMail(pp.id);
+        if (r?.status === 'sent') {
+          clearInterval(ppMailPoll);
+          const t = new Date(r.sent_at);
+          showToast(`Email enviado às ${t.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })} — proposta marcada como enviada`, { ms: 8000 });
+          suppressNavPush = true; openProposalView(pp.id);
+        } else if (r?.status === 'gone') { clearInterval(ppMailPoll); suppressNavPush = true; openProposalView(pp.id); }
+      }, 20000);
     }
 
     // ---------- Avisos do pipeline (Hoje) e resumo da semana (Daybreak) ----------
@@ -19842,6 +20093,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       return r.data || [];
     }
     async function pipelineAlerts(me) {
+      await ppCheckMail(null);
       const list = ppLatest(await loadPipeProposals()).filter(p => ['sent', 'negotiation'].includes(p.status));
       if (!list.length) return [];
       const today = dateKey(new Date());
