@@ -20117,7 +20117,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           const res = r.data || {};
           if (r.error || !res.ok) {
             win?.close();
-            if (res.error === 'permission') return formError('pm-msg', 'O Office 365 ainda não deixa a app criar emails: falta dar a permissão Mail.ReadWrite à aplicação NOVA Compass no portal Microsoft Entra (Permissões de API → Microsoft Graph → Permissões de aplicação → Mail.ReadWrite → Conceder consentimento de administrador).');
+            if (res.error === 'permission') {
+              const has = (res.roles || []).some(r => /^Mail\.ReadWrite$/i.test(r));
+              return formError('pm-msg', has
+                ? `A permissão Mail.ReadWrite já chegou à app, mas o Exchange recusou criar o email na caixa ${res.mailbox || ''} (${res.detail || 'acesso negado'}). Pode haver uma política do Exchange a limitar a aplicação a algumas caixas.`
+                : `A Microsoft ainda não deu a permissão Mail.ReadWrite à app (tem: ${(res.roles || []).join(', ') || 'nenhuma'}). Confirma no Entra que ficou como «Aplicação» (não «Delegada») e com o visto verde «Concedido». Depois do consentimento pode demorar uns minutos a chegar.`);
+            }
             return formError('pm-msg', 'Não foi possível criar o email: ' + (res.error || r.error?.message || 'erro desconhecido'));
           }
           pp.content.mail = { status: 'draft', link: res.webLink, created_at: new Date().toISOString() };
