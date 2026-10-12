@@ -2459,12 +2459,6 @@
   .op-est-why summary { cursor: pointer; padding: var(--sp-1) 0; }
   .op-ref { padding: var(--sp-1) 0; border-bottom: 1px solid var(--border); }
   .op-ref small { display: block; color: var(--text-3); }
-  .op-target { margin-top: var(--sp-3); display: flex; align-items: flex-end; justify-content: space-between; gap: var(--sp-3); background: var(--surface-2); border-radius: var(--r-md); padding: var(--sp-3); }
-  .op-target:empty { display: none; }
-  .op-target span { display: block; color: var(--text-2); font-size: var(--fs-sm); }
-  .op-target b { font-size: var(--fs-lg); font-variant-numeric: tabular-nums; }
-  .op-target small { display: block; color: var(--text-3); font-size: var(--fs-xs); }
-  .op-target .text-btn { flex-shrink: 0; }
   .op-phase { display: grid; grid-template-columns: minmax(0, 1fr) 70px 14px 110px 32px; gap: var(--sp-2); align-items: center; padding: 2px 0; }
   .op-phase .form-input { margin: 0; text-align: right; }
   .op-phase b { text-align: right; font-variant-numeric: tabular-nums; font-weight: var(--fw-medium); }
@@ -19766,8 +19760,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         value: () => `
           <div class="pp-th" style="grid-template-columns:.8fr 2fr .55fr .75fr .75fr .9fr .8fr 52px"><span>Grupo</span><span>Descrição</span><span>Unid.</span><span>Valor unit.</span><span>ou Valor</span><span>Tipo</span><span>Total</span><span></span></div>
           ${rowsUI('content.value.lines', c.value.lines, [
-            { k: 'g', ph: 'ex.: Arquitetura', w: '.8fr' }, { k: 't', ph: 'ex.: Projeto por fração', w: '2fr' }, { k: 'q', ph: 'qtd', n: true, w: '.55fr' }, { k: 'u', ph: '€/unid.', n: true, w: '.75fr' },
-            { k: 'v', ph: '€', n: true, w: '.75fr' }, { k: 'kind', sel: v => PP_KINDS.map(([k, l]) => `<option value="${k}"${(v || 'fee') === k ? ' selected' : ''}>${l}</option>`).join(''), w: '.9fr' },
+            { k: 'g', ph: 'ex.: Arquitetura', w: '1.1fr' }, { k: 't', ph: 'ex.: Projeto por fração', w: '1.7fr' }, { k: 'q', ph: 'qtd', n: true, w: '.5fr' }, { k: 'u', ph: '€/unid.', n: true, w: '.75fr' },
+            { k: 'v', ph: '€', n: true, w: '.75fr' }, { k: 'kind', sel: v => PP_KINDS.map(([k, l]) => `<option value="${k}"${(v || 'fee') === k ? ' selected' : ''}>${l}</option>`).join(''), w: 'minmax(124px, 1.2fr)' },
             { k: '_a', ro: l => escapeHtml(fmtEUR(ppLineAmount(l))), w: '.8fr' }], { empty: 'Ainda sem linhas de valor.' })}
           <div class="pp-btnrow">
             <button type="button" class="text-btn" data-act="add" data-path="content.value.lines" data-tpl='{"g":"","t":"","q":null,"u":null,"v":null,"kind":"fee"}'>+ Linha</button>
@@ -19776,7 +19770,6 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             <button type="button" class="text-btn" data-act="add" data-path="content.value.lines" data-tpl='{"g":"","t":"Desconto","q":null,"u":null,"v":null,"kind":"disc"}'>+ Desconto</button>
             <button type="button" class="text-btn" data-act="add" data-path="content.value.lines" data-tpl='{"g":"","t":"Visita mensal à obra","q":18,"u":150,"v":null,"kind":"month"}'>+ Avença mensal</button>
           </div>
-          <div class="op-target" id="pp-target"></div>
           <div class="pp-total"><span>Total (sem IVA)</span><b class="num" id="pp-total">${escapeHtml(fmtEUR(T.total))}</b></div>`,
         pay: () => `
           <div class="pp-th" style="grid-template-columns:2fr .6fr 1.3fr .9fr 52px"><span>Descrição</span><span>%</span><span>Fase do projeto (ao adjudicar)</span><span>Valor</span><span></span></div>
@@ -20055,29 +20048,19 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <div><span>Equipa${Number(pp.est_hours) ? ` (${escapeHtml(fmtNum(pp.est_hours))} h × ${missingCph ? '?' : escapeHtml(fmtEUR(pp.cost_per_hour))})` : ''}</span><b>${missingCph ? '<span class="warn-text">falta o custo/hora</span>' : escapeHtml(fmtEUR(cc.team))}</b></div>
           <div><span>Especialidades e outros</span><b>${escapeHtml(fmtEUR(cc.spec))}</b></div>
           <div class="op-sum-total"><span>Custo previsto</span><b>${escapeHtml(fmtEUR(cc.cost))}</b></div>`;
-        const tgt = document.getElementById('pp-target');
-        if (tgt) {
-          tgt.innerHTML = Number(pp.est_hours) && Number(pp.target_rate) && !locked ? `<div><span>Pelo nosso objetivo de ${escapeHtml(fmtEUR(pp.target_rate))}/h</span><b>${escapeHtml(fmtEUR(cc.targetValue))}</b>
-              <small>${escapeHtml(fmtNum(pp.est_hours))} h × ${escapeHtml(fmtEUR(pp.target_rate))} + ${escapeHtml(fmtEUR(cc.spec))} de especialidades</small></div>
-            <button type="button" class="text-btn" id="pp-use-target">${c.value.lines.length ? 'Acrescentar como linha' : 'Usar este valor'}</button>` : '';
-          document.getElementById('pp-use-target')?.addEventListener('click', () => {
-            c.value.lines.push({ g: '', t: en ? 'Architecture Project' : 'Projeto de Arquitetura', q: null, u: null, v: Math.round(cc.targetValue / 50) * 50, kind: 'fee' });
-            touch('value'); redraw('pay');
-          });
-        }
         const low = cc.perHour != null && Number(pp.target_rate) && cc.perHour < Number(pp.target_rate);
         document.getElementById('pp-side-total').textContent = fmtEUR(T2.total);
         document.getElementById('pp-fee-sum').innerHTML = T2.total ? `
           ${T2.monthly ? `<div><span>dos quais avenças</span><b>${escapeHtml(fmtEUR(T2.monthly))}</b></div>` : ''}
           <div><span>Equivale a</span><b>${escapeHtml([Number(pp.area) ? fmtEUR(T2.total / Number(pp.area)) + '/m²' : null, Number(pp.fractions) ? fmtEUR(T2.total / Number(pp.fractions)) + '/fração' : null].filter(Boolean).join(' · ') || '—')}</b></div>
-          <div><span>Valor por hora</span><b class="${low ? 'warn-text' : ''}">${cc.perHour != null ? escapeHtml(fmtEUR(cc.perHour)) + '/h' : '—'}</b></div>
-          <div><span>Margem prevista</span><b class="${cc.margin < 0 ? 'late' : ''}">${missingCph ? '<span class="muted">falta o custo/hora</span>' : escapeHtml(fmtEUR(cc.margin)) + (cc.marginPct != null ? ` <small>${Math.round(cc.marginPct)}%</small>` : '')}</b></div>`
-          : '<div class="field-hint" style="margin:0;">Acrescenta linhas em «Valor» para ver o total, o valor por hora e a margem.</div>';
+          ${Number(pp.est_hours) ? `<div><span>Valor por hora</span><b class="${low ? 'warn-text' : ''}">${cc.perHour != null ? escapeHtml(fmtEUR(cc.perHour)) + '/h' : '—'}</b></div>
+          <div><span>Margem prevista</span><b class="${cc.margin < 0 ? 'late' : ''}">${missingCph ? '<span class="muted">falta o custo/hora</span>' : escapeHtml(fmtEUR(cc.margin)) + (cc.marginPct != null ? ` <small>${Math.round(cc.marginPct)}%</small>` : '')}</b></div>` : ''}`
+          : '<div class="field-hint" style="margin:0;">Acrescenta linhas em «Valor» para ver o total.</div>';
       };
       const lockAll = root => root.querySelectorAll('input, select, textarea, button[data-act]').forEach(el => { el.disabled = true; });
       if (locked) lockAll(view.querySelector('.pp-main'));
       recalc();
-      if (pp.est_hours == null && S.estimate && !pp.id) { pp.est_hours = S.estimate.hours; const h = view.querySelector('[data-pp="est_hours"]'); if (h) h.value = pp.est_hours; recalc(); }
+      // As horas previstas já não vêm preenchidas pelo histórico (ainda há poucos dados): só se alguém as escrever
       document.getElementById('pp-pdf').addEventListener('click', async () => { await S.flush?.(); printProposal(pp, S); });
       document.getElementById('pp-mail')?.addEventListener('click', () => openProposalMail());
       document.getElementById('pp-save-tpl')?.addEventListener('click', () => ppSaveAsTemplate());
