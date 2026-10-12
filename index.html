@@ -2167,6 +2167,27 @@
   .pp-cycles { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); margin-bottom: var(--sp-3); padding: var(--sp-2-5) var(--sp-3); background: var(--surface-2); border-radius: var(--r-md); }
   .pp-cycles > span { font-weight: var(--fw-semibold); font-size: var(--fs-sm); }
   .pp-cycles small { flex-basis: 100%; }
+  .vt-sheet.is-ind :is(#vt-areas, #vt-frac, #vt-cost, #vt-sales, #vt-res, #vt-rent, #vt-mod) { display: none; }
+  .vt-sheet:not(.is-ind) .ind-g { display: none; }
+  .vi-sliders { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; align-items: center; padding: 8px 0; }
+  .vi-sliders .field-label { margin: 0; white-space: nowrap; } .vi-sliders b { font-weight: var(--fw-semibold); color: var(--accent); margin-left: 6px; }
+  .vi-sliders input[type=range] { width: 100%; accent-color: var(--accent); }
+  .vi-sale { display: flex; gap: 4px; align-items: center; } .vi-sale .vi-unit { width: auto; min-width: 0; margin: 0; padding: 4px 22px 4px 6px; font-size: var(--fs-xs); }
+  .vi-vat { margin-left: 8px; } .vi-vat select { margin: 0; font-size: var(--fs-xs); padding: 4px 26px 4px 8px; font-weight: var(--fw-regular, 400); }
+  .vi-bind .vt-l small { color: var(--accent); }
+  .vi-times { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px 14px; }
+  .vi-times label { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: var(--fs-sm); color: var(--text-2); }
+  .vi-times .vt-in { max-width: 110px; }
+  .vi-table { display: flex; flex-direction: column; font-size: var(--fs-sm); overflow-x: auto; }
+  .vi-tr { display: grid; grid-template-columns: minmax(130px, 1.5fr) repeat(3, minmax(74px, 1fr)) 58px 52px 58px 40px; gap: 6px; padding: 8px 4px; border-bottom: 1px solid var(--border); align-items: baseline; font-variant-numeric: tabular-nums; min-width: 600px; font-size: var(--fs-xs); }
+  .vi-tr b { font-size: var(--fs-sm); }
+  .vi-tr > span:not(:first-child) { text-align: right; }
+  .vi-tr small { display: block; color: var(--text-3); font-size: var(--fs-xs); }
+  .vi-th { font-size: var(--fs-xs); color: var(--text-3); text-transform: uppercase; letter-spacing: .05em; }
+  .vi-best { background: var(--accent-soft); border-radius: var(--r-md); border-bottom-color: transparent; }
+  .vi-tag { color: var(--accent) !important; font-weight: var(--fw-semibold); }
+  .vt-reset-link { background: none; border: 0; padding: 0; font-size: var(--fs-xs); color: var(--text-3); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+  .vt-reset-link:hover { color: var(--text-2); }
   .ps-type-other { max-width: 420px; margin: -4px 0 var(--sp-3); } .ps-type-other .form-input { margin: 0; }
   .cd-grid { display: grid; grid-template-columns: 1fr 1fr 1.25fr; gap: var(--sp-4) var(--sp-5); }
   .cd-flags { margin: var(--sp-2) 0 0; }
@@ -4639,6 +4660,7 @@
       { id: 'pt-1', name: 'Habitação Coletiva' },
       { id: 'pt-2', name: 'Habitação Unifamiliar' },
       { id: 'pt-3', name: 'Reabilitação' },
+      { id: 'pt-4', name: 'Indústria / Logística' },
       { id: 'pt-9', name: 'Outro' }
     ];
 
@@ -16418,6 +16440,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         a: 'No projeto → Fases, toca no número de horas da fase. Abre a lista dos registos agrupados por pessoa, com filtros por pessoa, datas e tipo. Muda a data, as horas, faturável/não faturável, a categoria ou a nota na própria linha (grava sozinho); o × apaga (com Anular).',
         steps: ['Abre o projeto → [[Fases]].', 'Toca nas **horas** da fase (o número sublinhado).', 'Filtra por pessoa, datas («Este mês», «Últimos 30 dias») ou tipo.', 'Corrige diretamente na linha — grava sozinho. O × apaga o registo.'],
         kw: 'horas fase registos imputacao logs pessoa editar corrigir apagar filtrar datas faturaveis timesheet' },
+      { id: 'industria', cat: 'opps', ctx: ['plot'],
+        q: 'analiso uma oportunidade industrial (terreno → lotes → pavilhões)',
+        a: 'Marca a tipologia «Indústria / Logística» na oportunidade: a Viabilidade passa à cadeia industrial. A capacidade sai dos parâmetros preenchidos nas Condicionantes (índice de construção, impermeabilização, índice volumétrico + altura, implantação máxima — conta o mais restritivo, sobre o terreno antes das cedências). Depois: cedências, n.º de lotes e área média (sliders), arruamentos em metros lineares × €/m, custos por fase, valores de venda (€/m² ou por unidade) e prazos. A app compara as saídas — terreno com PIP, lotes infraestruturados, pavilhões vendidos e arrendados — com lucro, ROI, margem e TIR, e recomenda a melhor.',
+        steps: ['Na oportunidade, marca **Indústria / Logística** nas tipologias.', 'Em **Condicionantes**, preenche só os parâmetros que o município aplica.', 'Em **Loteamento**, acerta as cedências e mexe nos sliders do n.º de lotes / área média.', 'Escolhe se o IVA é recuperável ou soma ao custo, e ajusta valores de venda e prazos.', 'Vê a comparação em **Saídas da cadeia de valor** e a recomendada à direita. Os valores de referência estão em [[Definições]] → Viabilidade (inclui os 850 €/m de rua).'],
+        kw: 'industria industrial logistica armazem armazens pavilhao pavilhoes loteamento lotes infraestruturas arruamentos metro linear pip cedencias indice volumetrico impermeabilizacao tir roi arrendamento' },
       { id: 'notas-oportunidade', cat: 'opps', ctx: ['plot', 'opps'],
         q: 'escrevo notas internas sobre uma oportunidade (Investment Intelligence)',
         a: 'Na página da oportunidade há o cartão «Notas internas da NOVA»: escreve e toca em «Guardar nota» (ou Ctrl+Enter). Fica com o teu nome e a data. Só a equipa vê — nunca vão para o resumo do investidor.',
@@ -17341,8 +17368,18 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       delta_pct: 10,
       // modalidades: prazos (meses), horizonte do arrendamento (anos), parte dos projetos gasta até cada etapa (%)
       // e o ROI que um promotor pede para comprar o terreno com PIP / com projeto aprovado (%)
-      pip_months: 6, lic_months: 12, sales_months: 6, rent_years: 20, pip_proj_share: 15, lic_proj_share: 50, buyer_roi_pip: 25, buyer_roi_lic: 20
+      pip_months: 6, lic_months: 12, sales_months: 6, rent_years: 20, pip_proj_share: 15, lic_proj_share: 50, buyer_roi_pip: 25, buyer_roi_lic: 20,
+      ind: null   // indústria / logística: IND_DEFAULT (abaixo)
     };
+    // Indústria / logística — valores indicativos (Norte, 2026), sem IVA; ajustáveis em Definições e em cada oportunidade
+    const IND_DEFAULT = {
+      ced_pct: 20, height: 10, road_ml: null, road_eur_ml: 850, lots: null,
+      pip_cost: 15000, lot_proj: 30000, lot_fees: null, build_m2: 550, proj_pct: 4, lic_pct: 1, cont_pct: 5,
+      vat_mode: 'recover', sale_pip_mode: 'm2', sale_pip: 35, sale_lot_mode: 'm2', sale_lot: 85, sale_pav_mode: 'm2', sale_pav: 850,
+      rent_m2: 4.5, occupancy: 95, opex_pct: 8, rent_years: 15,
+      m_pip: 6, m_sell_land: 3, m_lot: 12, m_urb: 9, m_build: 10, m_sell: 9
+    };
+    FEAS_DEFAULT.ind = IND_DEFAULT;
     // Áreas brutas mínimas por tipologia (RGEU, art. 67.º); a média estimada = mínimo + uma margem (15% por referência)
     const RGEU_MIN = [['T0', 35], ['T1', 52], ['T2', 72], ['T3', 91], ['T4', 105], ['T5', 122]];
     // Frações e distribuição de tipologias a partir da área vendável e da área média escolhida.
@@ -17373,7 +17410,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       let v = {};
       if (devMode) v = mockFeasCfg || {};
       else { const r = await supabase.from('app_settings').select('value').eq('key', 'feasibility').maybeSingle(); v = r.data?.value || {}; }
-      feasCfgCache = { ...FEAS_DEFAULT, ...v, cost: { ...FEAS_DEFAULT.cost, ...(v.cost || {}) } };
+      feasCfgCache = { ...FEAS_DEFAULT, ...v, cost: { ...FEAS_DEFAULT.cost, ...(v.cost || {}) }, ind: { ...IND_DEFAULT, ...(v.ind || {}) } };
       return feasCfgCache;
     }
     async function saveFeasCfg(v) {
@@ -17386,7 +17423,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     function feasInputs(p, cfg = feasCfgCache || FEAS_DEFAULT) {
       const f = p.feasibility || {};
       const base = plotAreas(p);
-      return { ...cfg, ...f, cost: { ...cfg.cost, ...(f.cost || {}) }, typologies: f.typologies || cfg.typologies,
+      return { ...cfg, ...f, cost: { ...cfg.cost, ...(f.cost || {}) }, ind: { ...IND_DEFAULT, ...(cfg.ind || {}), ...(f.ind || {}) }, typologies: f.typologies || cfg.typologies,
         housing_area: f.housing_area ?? base.build, commerce_area: f.commerce_area ?? null, below_area: f.below_area ?? null,
         green_area: f.green_area ?? null, infra_area: f.infra_area ?? null };
     }
@@ -17460,6 +17497,68 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const d = (Number(f.delta_pct) || 0) / 100;
       return [['Conservador', feasCalc(p, f, { sales: 1 - d, build: 1 + d })], ['Base', feasCalc(p, f)], ['Otimista', feasCalc(p, f, { sales: 1 + d, build: 1 - d })]];
     }
+    // ---------- Indústria / logística: cadeia de valor ----------
+    // Terreno → PIP aprovado (venda do terreno) → loteamento licenciado e infraestruturado (venda de lotes)
+    // → pavilhões chave na mão (venda ou arrendamento). Capacidade construtiva sobre o terreno, ANTES das cedências:
+    // cada parâmetro preenchido nas Condicionantes limita a área dos pavilhões e conta o mais restritivo.
+    let oppsTypeNames = {};
+    const isIndTypeName = n => /ind[uú]stri|log[ií]stic|armaz[eé]m|pavilh/i.test(n || '');
+    const isIndPlot = p => plotTypes(p).some(id => isIndTypeName(oppsTypeNames[id]));
+    function indCalc(p, f = feasInputs(p)) {
+      const N = v => Number(v) || 0, has = v => v != null && v !== '' && Number.isFinite(Number(v)) && Number(v) > 0;
+      const I = { ...IND_DEFAULT, ...(f.ind || {}) }, cons = p.constraints || {};
+      const A = N(p.land_area), vatR = I.vat_mode === 'cost' ? N(f.vat_pct) / 100 : 0;
+      const caps = [];
+      if (A && has(p.pdm_index)) caps.push({ key: 'ic', label: 'Índice de construção', param: fmtNum(N(p.pdm_index)), area: A * N(p.pdm_index) });
+      if (A && has(cons.imperm_pct)) caps.push({ key: 'imp', label: 'Índice de impermeabilização', param: fmtNum(N(cons.imperm_pct)) + '%', area: A * N(cons.imperm_pct) / 100 });
+      if (A && has(cons.vol_idx)) { const h = has(cons.height) ? N(cons.height) : (N(I.height) || 10); caps.push({ key: 'vol', label: 'Índice volumétrico', param: `${fmtNum(N(cons.vol_idx))} m³/m² ÷ ${fmtNum(h)} m`, area: A * N(cons.vol_idx) / h }); }
+      if (has(cons.footprint)) caps.push({ key: 'fp', label: 'Área máxima de implantação', param: cons.footprint_unit === 'pct' ? fmtNum(N(cons.footprint)) + '%' : fmtNum(N(cons.footprint)) + ' m²', area: cons.footprint_unit === 'pct' ? A * N(cons.footprint) / 100 : N(cons.footprint) });
+      const typed = has(p.buildable_area) ? N(p.buildable_area) : null;
+      const bind = caps.length ? caps.reduce((m, c) => c.area < m.area ? c : m) : null;
+      const abc = typed ?? (bind ? Math.round(bind.area) : 0);
+      const ced = A * N(I.ced_pct) / 100, lotArea = Math.max(0, A - ced);
+      const lots = Math.max(1, Math.round(N(I.lots) || (lotArea ? Math.round(lotArea / 2500) : 1)));
+      const lotAvg = lotArea / lots, pavPerLot = abc / lots;
+      const mlEst = Math.round(lots * Math.sqrt(lotAvg || 0) / 2), mlAuto = !has(I.road_ml), ml = mlAuto ? mlEst : N(I.road_ml);
+      const base = feasCalc(p, f), acq = base.acquisition;
+      const pipNet = N(I.pip_cost), lotNet = N(I.lot_proj), fees = N(I.lot_fees), infraNet = ml * N(I.road_eur_ml);
+      const buildNet = abc * N(I.build_m2), projB = buildNet * N(I.proj_pct) / 100, licB = buildNet * N(I.lic_pct) / 100, contB = (buildNet + projB) * N(I.cont_pct) / 100;
+      const cPip = pipNet * (1 + vatR), cLot = lotNet * (1 + vatR) + fees, cInfra = infraNet * (1 + vatR), cBuild = (buildNet + projB + contB) * (1 + vatR) + licB;
+      const vatTotal = (pipNet + lotNet + infraNet + buildNet + projB + contB) * vatR;
+      const comm = g => g * N(f.comm_pct) / 100 * (1 + vatR);
+      const gPip = I.sale_pip_mode === 'unit' ? N(I.sale_pip) : A * N(I.sale_pip);
+      const gLot = I.sale_lot_mode === 'unit' ? lots * N(I.sale_lot) : lotArea * N(I.sale_lot);
+      const gPav = I.sale_pav_mode === 'unit' ? lots * N(I.sale_pav) : abc * N(I.sale_pav);
+      const rentMonth = abc * N(I.rent_m2), rentYear = rentMonth * 12 * N(I.occupancy) / 100, rentNet = rentYear * (1 - N(I.opex_pct) / 100);
+      const m = v => Math.max(1, Math.round(N(v)));
+      const P = m(I.m_pip), SL = m(I.m_sell_land), L = m(I.m_lot), U = m(I.m_urb), B = m(I.m_build), S = m(I.m_sell), H = m(I.rent_years) * 12;
+      const flow = (n, steps) => { const cf = new Array(n + 1).fill(0); steps.forEach(([a, b, tot]) => { const k = b - a + 1; for (let i = a; i <= b; i++) cf[i] += tot / k; }); return cf; };
+      const mk = (key, name, short, cost, gross, net, months, cf, extra = {}) => {
+        let bal = 0, cap = 0; cf.forEach(v => { bal += v; cap = Math.min(cap, bal); });
+        const r = irrMonthly(cf), profit = net - cost;
+        return { key, name, short, cost, gross, net, profit, roi: cost ? profit / cost : null, margin: net ? profit / net : null, months, capital: -cap,
+          irr: r == null ? null : Math.pow(1 + r, 12) - 1, ...extra };
+      };
+      const exits = [];
+      const T1 = P + L + U, T2 = T1 + B;
+      if (A && gPip > 0) exits.push(mk('pip', 'Terreno com PIP aprovado', 'PIP e venda do terreno', acq + cPip, gPip, gPip - comm(gPip), P + SL,
+        flow(P + SL, [[0, 0, -acq], [1, P, -cPip], [P + SL, P + SL, gPip - comm(gPip)]])));
+      if (A && gLot > 0) exits.push(mk('lot', 'Lotes infraestruturados', 'Venda de lotes', acq + cPip + cLot + cInfra, gLot, gLot - comm(gLot), T1 + S,
+        flow(T1 + S, [[0, 0, -acq], [1, P, -cPip], [P + 1, P + L, -cLot], [P + L + 1, T1, -cInfra], [T1 + 1, T1 + S, gLot - comm(gLot)]])));
+      const costPav = acq + cPip + cLot + cInfra + cBuild;
+      if (abc && gPav > 0) exits.push(mk('pav', 'Pavilhões chave na mão', 'Venda de pavilhões', costPav, gPav, gPav - comm(gPav), T2 + S,
+        flow(T2 + S, [[0, 0, -acq], [1, P, -cPip], [P + 1, P + L, -cLot], [P + L + 1, T1, -cInfra], [T1 + 1, T2, -cBuild], [T2 + 1, T2 + S, gPav - comm(gPav)]])));
+      if (abc && rentNet > 0) exits.push(mk('rent', 'Pavilhões arrendados', 'Arrendamento', costPav, rentYear * H / 12, rentNet * H / 12, T2 + H,
+        flow(T2 + H, [[0, 0, -acq], [1, P, -cPip], [P + 1, P + L, -cLot], [P + L + 1, T1, -cInfra], [T1 + 1, T2, -cBuild], [T2 + 1, T2 + H, rentNet * H / 12]]),
+        { yieldGross: costPav ? rentYear / costPav : null, yieldNet: costPav ? rentNet / costPav : null, years: H / 12 }));
+      const ranked = exits.filter(x => x.irr != null).sort((a, b) => b.irr - a.irr);
+      let best = ranked[0] || null;
+      if (best && ranked[1] && best.irr - ranked[1].irr < 0.02 && ranked[1].capital < best.capital) best = ranked[1];
+      return { A, caps, bind, typed, abc, ced, lotArea, lots, lotAvg, pavPerLot, ml, mlEst, mlAuto, acq, base, vatR, vatTotal,
+        pipNet, lotNet, fees, infraNet, buildNet, projB, licB, contB, cPip, cLot, cInfra, cBuild, gPip, gLot, gPav, rentMonth, rentYear, rentNet,
+        exits, ranked, best, I, ratios: { landPerM2: abc ? N(p.asking_price) / abc : null, landPerLot: lots ? N(p.asking_price) / lots : null, costPerM2: abc ? costPav / abc : null } };
+    }
+
     // ---------- Modalidades de investimento: onde parar na cadeia de valor ----------
     // Terreno → PIP → projeto aprovado → obra → venda ou arrendamento. Cada modalidade vira um fluxo de caixa mensal
     // (compra no mês 0, custos espalhados pelos prazos, receita no fim) e compara-se pela TIR anual (antes de impostos).
@@ -17467,7 +17566,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     // (método residual), descontado do que já se gastou e que ele já não paga.
     function irrMonthly(cf) {
       const npv = r => cf.reduce((t, v, i) => t + v / Math.pow(1 + r, i), 0);
-      let lo = -0.99, hi = 1, flo = npv(lo), fhi = npv(hi);
+      // limite de baixo a −50%/mês: com prazos longos (arrendamento) −99% dava números infinitos e a TIR ficava em branco
+      let lo = -0.5, hi = 1, flo = npv(lo), fhi = npv(hi);
       if (!Number.isFinite(flo) || !Number.isFinite(fhi) || flo * fhi > 0) return null;
       for (let i = 0; i < 200; i++) { const mid = (lo + hi) / 2, fm = npv(mid); if (Math.abs(fm) < 1e-6) return mid; if (flo * fm < 0) { hi = mid; } else { lo = mid; flo = fm; } }
       return (lo + hi) / 2;
@@ -17552,6 +17652,56 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         'Estacionamento (abaixo do solo)': T('Estacionamento (abaixo do solo)', 'Parking (below ground)'), 'Áreas verdes': T('Áreas verdes', 'Landscaping'), 'Infraestruturas': T('Infraestruturas', 'Infrastructure') };
       const neg = n => n ? '− ' + e(eur(n)) : e(eur(0));
       const kpi = (tag, label, big, sub, cls = '') => `<div class="kpi ${cls}"><span class="tag">${e(tag)}</span><span class="l">${e(label)}</span><b>${big}</b><small>${sub}</small></div>`;
+      // Indústria / logística: capacidade, loteamento, custos por fase e as saídas da cadeia de valor lado a lado
+      const IND = isIndPlot(p), ic = IND ? indCalc(p, f) : null;
+      const indBody = () => {
+        const b = ic.best, vt = ic.vatR ? T('IVA incluído (não dedutível)', 'VAT included (non-deductible)') : T('valores sem IVA (IVA recuperável)', 'amounts excl. VAT (recoverable VAT)');
+        const exName = x => ({ pip: T('Terreno com PIP aprovado', 'Land with approved PIP'), lot: T('Lotes infraestruturados', 'Serviced plots'), pav: T('Pavilhões chave na mão', 'Turnkey warehouses'), rent: T('Pavilhões arrendados', 'Leased warehouses') }[x.key] || x.name);
+        return `
+        <div class="kpis">
+          ${b ? kpi(T('Recomendada', 'Recommended'), e(exName(b)), e(pc(b.irr)) + `<small style="display:inline;font-size:9pt"> ${e(T('TIR/ano', 'IRR/yr'))}</small>`, `ROI ${e(pc(b.roi))} · ${e(T('lucro', 'profit'))} ${e(eur(b.profit))} · ${b.months} ${e(T('meses', 'months'))}`) : kpi('—', T('Saída', 'Exit'), '—', e(T('Faltam valores de venda.', 'Sale values missing.')))}
+          ${kpi(T('Capacidade', 'Capacity'), T('Área de construção', 'Floor area'), e(m2(ic.abc)), `${ic.lots} ${e(T('lotes', 'plots'))} · ${e(m2(ic.pavPerLot))} ${e(T('por lote', 'per plot'))}`)}
+          ${b ? kpi(T('Investimento', 'Investment'), T('Capital no pico', 'Peak capital'), e(eur(b.capital)), `${e(T('custo até à saída', 'cost to exit'))} ${e(eur(b.cost))}`) : ''}
+        </div>
+        <div class="two">
+          <section><h2>${e(T('Terreno e capacidade', 'Land and capacity'))}</h2><table>
+            ${row(e(T('Área do terreno', 'Plot area')), '', '', e(m2(ic.A)))}
+            ${ic.caps.map(c => row(e(c.label) + `<small>${e(c.param)}${ic.bind === c && !ic.typed ? ' · ' + e(T('é o que limita', 'binding limit')) : ''}</small>`, '', '', e(m2(c.area)))).join('')}
+            ${row(e(T('Área de construção (pavilhões)', 'Floor area (warehouses)')), '', '', e(m2(ic.abc)), 'sub')}
+          </table></section>
+          <section><h2>${e(T('Loteamento', 'Subdivision'))}</h2><table>
+            ${row(e(T('Cedências ao domínio público', 'Public land transfer')) + `<small>${e(nf(ic.I.ced_pct))}%</small>`, '', '', e(m2(ic.ced)))}
+            ${row(e(T('Área de lotes', 'Plot area for sale')), '', '', e(m2(ic.lotArea)))}
+            ${row(e(T('Lotes', 'Plots')), '', '', `${ic.lots} × ${e(m2(ic.lotAvg))}`)}
+            ${row(e(T('Pavilhão por lote', 'Warehouse per plot')), '', '', e(m2(ic.pavPerLot)))}
+            ${row(e(T('Arruamentos', 'Roads')), '', '', e(nf(ic.ml)) + ' m', 'sub')}
+          </table></section>
+        </div>
+        ${sec(T('Custos de aquisição do terreno', 'Land acquisition costs'), `
+          ${row(e(T('Preço do terreno', 'Land price')), '', '', e(eur(c.price)))}
+          ${row(e(T('IMT', 'Property transfer tax (IMT)')), '', '', e(eur(c.imt)))}
+          ${row(e(T('Imposto do Selo', 'Stamp duty')), '', '', e(eur(c.stamp)))}
+          ${c.acqOther ? row(e(T('Escritura e registos', 'Deeds and registration')), '', '', e(eur(c.acqOther))) : ''}
+          ${row(e(T('Total da aquisição', 'Total acquisition')), '', '', e(eur(c.acquisition)), 'sub')}`)}
+        ${sec(T('Custos por fase', 'Costs by stage'), `
+          ${row(e(T('PIP — projetos e taxas', 'PIP — design and fees')), '', '', e(eur(ic.cPip)))}
+          ${row(e(T('Licenciamento do loteamento', 'Subdivision permitting')) + (ic.fees ? `<small>${e(T('inclui taxas municipais', 'incl. municipal fees'))} ${e(eur(ic.fees))}</small>` : ''), '', '', e(eur(ic.cLot)))}
+          ${row(e(T('Infraestruturas', 'Infrastructure')) + `<small>${e(nf(ic.ml))} m × ${e(eur(ic.I.road_eur_ml))}/m</small>`, '', '', e(eur(ic.cInfra)))}
+          ${row(e(T('Construção dos pavilhões', 'Warehouse construction')) + `<small>${e(m2(ic.abc))} × ${e(eur(ic.I.build_m2))}/m² · ${e(T('projetos, licenças e contingência incluídos', 'design, permits and contingency included'))}</small>`, '', '', e(eur(ic.cBuild)))}`,
+          e(vt))}
+        <section><h2>${e(T('Saídas da cadeia de valor', 'Exits along the value chain'))}</h2>
+          <table class="ex"><tr class="h"><th>${e(T('Saída', 'Exit'))}</th><th class="r">${e(T('Receita líquida', 'Net revenue'))}</th><th class="r">${e(T('Custo', 'Cost'))}</th><th class="r">${e(T('Lucro', 'Profit'))}</th><th class="r">ROI</th><th class="r">${e(T('TIR/ano', 'IRR/yr'))}</th><th class="r">${e(T('Prazo', 'Time'))}</th></tr>
+            ${ic.exits.map(x => `<tr class="${ic.best === x ? 'sub' : ''}"><td>${e(exName(x))}${x.key === 'rent' ? `<small>${e(T('yield bruta', 'gross yield'))} ${e(pc(x.yieldGross))} · ${x.years} ${e(T('anos de rendas', 'years of rent'))}</small>` : ''}</td>
+              <td class="r">${e(eur(x.net))}</td><td class="r">${e(eur(x.cost))}</td><td class="r ${x.profit < 0 ? 'bad' : ''}">${e(eur(x.profit))}</td><td class="r">${e(pc(x.roi))}</td><td class="r">${x.irr == null ? '—' : e(pc(x.irr))}</td><td class="r">${x.months} ${e(T('m', 'mo'))}</td></tr>`).join('')}
+          </table>
+          <p class="note">${e(T(`Valores indicativos ${ic.vatR ? 'com IVA não dedutível' : 'sem IVA (IVA recuperável)'}; comissão imobiliária de ${nf(f.comm_pct)}% deduzida a cada venda. TIR a partir dos prazos de cada fase.`, `Indicative values ${ic.vatR ? 'with non-deductible VAT' : 'excl. VAT (recoverable)'}; ${nf(f.comm_pct)}% agency commission deducted from each sale. IRR from each stage's timeline.`))}</p>
+        </section>
+        <section><h2>${e(T('Rácios do terreno', 'Land ratios'))}</h2><table>
+          ${row(e(T('Terreno por m² de construção', 'Land per m² of floor area')), '', '', ic.ratios.landPerM2 ? e(eur(ic.ratios.landPerM2)) + '/m²' : '—')}
+          ${row(e(T('Terreno por lote', 'Land per plot')), '', '', ic.ratios.landPerLot ? e(eur(ic.ratios.landPerLot)) : '—')}
+          ${row(e(T('Custo por m² de pavilhão', 'Cost per m² of warehouse')), '', '', ic.ratios.costPerM2 ? e(eur(ic.ratios.costPerM2)) + '/m²' : '—')}
+        </table></section>`;
+      };
       const html = `<!doctype html><html lang="${en ? 'en' : 'pt'}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${e(p.name)} — NOVA Investment Intelligence</title>
         <style>
           @page { size: A4; margin: 14mm 14mm 16mm; }
@@ -17568,7 +17718,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           .title .eyebrow { font-size: 8pt; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #714D79; }
           h1 { font-size: 20pt; line-height: 1.15; margin: 4px 0 4px; font-weight: 600; letter-spacing: -0.02em; }
           .loc { color: #6B6660; font-size: 9pt; } .loc a { color: #714D79; }
-          .kpis { display: grid; grid-template-columns: repeat(${rentOk ? 3 : 2}, 1fr); gap: 10px; margin-bottom: 14px; }
+          .kpis { display: grid; grid-template-columns: repeat(${IND || rentOk ? 3 : 2}, 1fr); gap: 10px; margin-bottom: 14px; }
           .kpi { background: #fff; border: 1px solid #E4E3DE; border-radius: 14px; padding: 12px 14px; break-inside: avoid; }
           .kpi .tag { display: inline-block; font-size: 7pt; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: #714D79; background: rgba(113,77,121,.09); border-radius: 99px; padding: 2px 8px; margin-bottom: 6px; }
           .kpi .l { display: block; font-size: 8.5pt; color: #6B6660; }
@@ -17589,6 +17739,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           .scen div { background: #F3F3F0; border-radius: 10px; padding: 8px 10px; } .scen span { display: block; font-size: 8pt; color: #6B6660; } .scen b { font-size: 12pt; font-weight: 600; } .scen small { display: block; font-size: 7.5pt; color: #736D66; }
           .note { font-size: 7.5pt; color: #736D66; margin: 6px 0 0; }
           footer { display: flex; justify-content: space-between; gap: 16px; font-size: 7.5pt; color: #736D66; margin-top: 16px; }
+          table.ex td:first-child { width: auto; } table.ex td, table.ex th { white-space: nowrap; } table.ex td:first-child { white-space: normal; }
           @media print { html { background: #F7F7F5; } body { padding: 0; max-width: none; } .bar { display: none; } }
           @media (max-width: 640px) { .kpis, .two { grid-template-columns: 1fr; } td:first-child { width: auto; } }
         </style></head><body>
@@ -17596,6 +17747,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         <header><div class="brand"><img src="${e(logo)}" alt="NOVA"><span class="ii">Investment Intelligence</span></div><div class="meta">NOVA Associates<br>${e(new Date().toLocaleDateString(loc, { day: 'numeric', month: 'long', year: 'numeric' }))}</div></header>
         <div class="title"><div class="eyebrow">${e(T('Estudo de viabilidade', 'Feasibility study'))}</div><h1>${e(p.name)}</h1>
           <div class="loc">${e([p.address, p.parish, p.municipality].filter(Boolean).join(', '))}${p.maps_url && /^https?:/i.test(p.maps_url) ? ` · <a href="${e(p.maps_url)}">${e(T('ver no mapa', 'view map'))}</a>` : ''}</div></div>
+        ${IND ? indBody() : `
         <div class="kpis">
           ${kpi(T('Custo', 'Cost'), T('Custo global', 'Total cost'), e(eur(c.costGlobal)), `${e(T('terreno', 'land'))} ${e(eur(c.acquisition))} · ${e(T('construção e outros', 'construction & other'))} ${e(eur(c.costGlobal - c.acquisition))}`)}
           ${kpi(T('Venda', 'Sale'), 'ROI', e(pc(c.roi)), `${e(T('Lucro', 'Profit'))} ${e(eur(c.profit))}${R ? ` · ${e(T('intervalo', 'range'))} ${e(pc(R[0].roi))} – ${e(pc(R[1].roi))}` : ''}`)}
@@ -17662,6 +17814,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           ${row(e(T('Terreno / custo global', 'Land / total cost')), '', '', e(pc(c.ratios.cost)))}
           ${c.ratios.unit ? row(e(T('Terreno por fração', 'Land per unit')), '', '', e(eur(c.ratios.unit))) : ''}
         </table></section>
+        `}
         <footer><span>${e(T(`Os valores considerados e estimados são sensíveis à data do estudo (${new Date().toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })}).`, `The values considered and estimated are sensitive to the date of the study (${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}).`))}</span><span>NOVA Investment Intelligence</span></footer>
         </body></html>`;
       const w = window.open('', '_blank');
@@ -17697,11 +17850,23 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             ${num('buyer_roi_pip', 'ROI pedido por quem compra com PIP (%)', cfg.buyer_roi_pip)}${num('buyer_roi_lic', 'ROI pedido por quem compra com projeto aprovado (%)', cfg.buyer_roi_lic)}
           </div>
           <div class="field-hint">A obra usa os meses da fiscalização. O valor do terreno com PIP ou com projeto aprovado é o que um promotor pagaria para ter o ROI que pede (método residual).</div>
+          <div class="section-label op-form-sec">Indústria / logística</div>
+          <div class="form-grid fz-grid3">
+            ${num('ind.road_eur_ml', 'Infraestruturas (€ por metro linear de rua)', cfg.ind.road_eur_ml)}${num('ind.ced_pct', 'Cedências ao domínio público (%)', cfg.ind.ced_pct)}${num('ind.height', 'Altura da nave por omissão (m)', cfg.ind.height)}
+            ${num('ind.pip_cost', 'PIP — projetos e taxas (€)', cfg.ind.pip_cost)}${num('ind.lot_proj', 'Licenciamento do loteamento (€)', cfg.ind.lot_proj)}${num('ind.build_m2', 'Construção dos pavilhões (€/m²)', cfg.ind.build_m2)}
+            ${num('ind.proj_pct', 'Projetos dos pavilhões (%)', cfg.ind.proj_pct)}${num('ind.lic_pct', 'Licenças dos pavilhões (%)', cfg.ind.lic_pct)}${num('ind.cont_pct', 'Contingência (%)', cfg.ind.cont_pct)}
+            ${num('ind.sale_pip', 'Terreno com PIP (€/m² de terreno)', cfg.ind.sale_pip)}${num('ind.sale_lot', 'Lotes infraestruturados (€/m² de lote)', cfg.ind.sale_lot)}${num('ind.sale_pav', 'Pavilhões (€/m² de construção)', cfg.ind.sale_pav)}
+            ${num('ind.rent_m2', 'Renda dos pavilhões (€/m² por mês)', cfg.ind.rent_m2)}${num('ind.occupancy', 'Ocupação (%)', cfg.ind.occupancy)}${num('ind.opex_pct', 'Despesas do arrendamento (%)', cfg.ind.opex_pct)}
+            ${num('ind.m_pip', 'PIP (meses)', cfg.ind.m_pip)}${num('ind.m_sell_land', 'Venda do terreno (meses)', cfg.ind.m_sell_land)}${num('ind.m_lot', 'Licenciamento do loteamento (meses)', cfg.ind.m_lot)}
+            ${num('ind.m_urb', 'Obras de urbanização (meses)', cfg.ind.m_urb)}${num('ind.m_build', 'Construção dos pavilhões (meses)', cfg.ind.m_build)}${num('ind.m_sell', 'Comercialização (meses)', cfg.ind.m_sell)}
+            ${num('ind.rent_years', 'Arrendamento (anos de rendas)', cfg.ind.rent_years)}
+          </div>
+          <div class="field-hint">Valores sem IVA. Em cada oportunidade escolhe-se se o IVA é recuperável (renúncia à isenção) ou soma ao custo.</div>
           <div class="field-hint">IMT: 6,5% em terrenos para construção e prédios urbanos, 5% em rústicos (2026). Escolhe-se em cada terreno.</div>
           <button type="button" class="primary-btn" id="fs-save">Guardar</button>
           <div id="fs-msg" class="form-msg"></div>`;
         document.getElementById('fs-save').addEventListener('click', async () => {
-          const next = { ...cfg, cost: { ...cfg.cost } };
+          const next = { ...cfg, cost: { ...cfg.cost }, ind: { ...IND_DEFAULT, ...(cfg.ind || {}) } };
           let bad = false;
           box.querySelectorAll('[data-fs]').forEach(el => {
             const v = numOrNull(el.value); if (v == null || Number.isNaN(v)) { bad = true; return; }
@@ -17946,7 +18111,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       if (devMode) {
         return {
           plots: mockPlots, investors: mockInvestors, presentations: mockPresentations, proposals: mockProposals,
-          types: typesOtherLast(MOCK_PROJECT_TYPES.map(t => ({ ...t, size_measure: MOCK_PT_EXTRA[t.id] || 'area' }))),
+          types: typesOtherLast((oppsTypeNames = Object.fromEntries(MOCK_PROJECT_TYPES.map(t => [t.id, t.name])), MOCK_PROJECT_TYPES).map(t => ({ ...t, size_measure: MOCK_PT_EXTRA[t.id] || 'area' }))),
           members: await loadAllMembers(), clients: MOCK_CLIENT_ROWS
         };
       }
@@ -17959,6 +18124,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         supabase.from('clients').select('id, name, email, language').order('name')
       ]);
       for (const r of [pl, iv, pr, fp, ty]) if (r.error) throw r.error;
+      oppsTypeNames = Object.fromEntries((ty.data || []).map(t => [t.id, t.name]));
       return { plots: pl.data || [], investors: iv.data || [], presentations: pr.data || [], proposals: fp.data || [],
         types: typesOtherLast(ty.data || []), members: await loadAllMembers().catch(() => []), clients: cl.data || [] };
     }
@@ -17967,6 +18133,13 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     function plotCalc(p) {
       const a = plotAreas(p), v = feasCalc(p);
       const price = p.asking_price == null || p.asking_price === '' ? null : Number(p.asking_price);
+      if (isIndPlot(p)) {
+        const ic = indCalc(p), x = ic.best || ic.exits.find(e => e.key === 'pav') || ic.exits[0] || null;
+        const rent = ic.exits.find(e => e.key === 'rent');
+        const vv = { ...v, ind: ic, hasSales: !!x, hasCosts: !!x, roi: x ? x.roi : null, profit: x ? x.profit : null, costGlobal: x ? x.cost : v.acquisition,
+          salesNet: x ? x.net : 0, salesGross: x ? x.gross : 0, yieldGross: rent?.yieldGross ?? null, units: ic.lots, bestExit: x };
+        return { build: ic.abc || a.build, buildAuto: !ic.typed, price, investment: x ? x.cost : price, investmentFull: !!x, feas: vv, margin: x ? x.profit : null, roi: x ? x.roi * 100 : null };
+      }
       return { build: a.build, buildAuto: a.buildAuto, price, investment: v.hasCosts ? v.costGlobal : price, investmentFull: v.hasCosts,
         feas: v, margin: v.hasSales && v.hasCosts ? v.profit : null, roi: v.hasSales && v.hasCosts ? v.roi * 100 : null };
     }
@@ -18572,6 +18745,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     }
     function renderPlotSheet(view, p, d, cfg, opts = {}) {
       const typeById = Object.fromEntries(d.types.map(t => [t.id, t]));
+      oppsTypeNames = { ...oppsTypeNames, ...Object.fromEntries(d.types.map(t => [t.id, t.name])) };
       const invById = Object.fromEntries(d.investors.map(i => [i.id, i]));
       const f = JSON.parse(JSON.stringify(feasInputs(p, cfg)));
       const S = { p, f, cfg, d };
@@ -18599,6 +18773,50 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const vheadV = () => `<div class="vt-row vt-v vt-head"><span>Rubrica</span><span>Unitário × quantidade</span><span>Valor</span><span>IVA</span><span>Total</span></div>`;
       const vhead = (u = 'Valor unitário', q = 'Quantidade', t = 'Valor global') => `<div class="vt-row vt-head"><span>Rubrica</span><span>${u}</span><span></span><span>${q}</span><span>${t}</span></div>`;
       const grp = (id, title, sub, body) => `<section class="vt-g" id="${id}"><h3 class="vt-gh">${title}${sub ? ` <small class="muted">${sub}</small>` : ''}</h3>${body}</section>`;
+      // Indústria / logística (só se vê com a tipologia Indústria / Logística marcada)
+      const igrp = (id, title, sub, body) => grp(id, title, sub, body).replace('class="vt-g"', 'class="vt-g ind-g"');
+      const iv = k => (f.ind || {})[k] ?? '';
+      const unitSel = (k, unitLabel) => `<select class="form-input vi-unit" data-f="ind.sale_${k}_mode" aria-label="Unidade">${[['m2', '€/m²'], ['unit', unitLabel]].map(([v, l]) => `<option value="${v}"${(iv('sale_' + k + '_mode') || 'm2') === v ? ' selected' : ''}>${l}</option>`).join('')}</select>`;
+      const indTop = () => `
+            ${igrp('vi-cap', 'Capacidade construtiva', 'sobre o terreno, antes das cedências · contam só os parâmetros preenchidos nas Condicionantes', `${vhead('Parâmetro', '', 'Área de construção')}
+              ${vrow('Área do terreno', '', '', pIn('land_area', 'm²', 'ex.: 25000'))}
+              <div id="vi-caps"></div>
+              ${vrow('Pavilhões — área de construção<small>o mais restritivo dos limites — ou escreve-a</small>', '', '', pIn('buildable_area', 'm²', ''), 'vt-sub')}`)}
+            ${igrp('vi-lot', 'Loteamento', 'lotes e arruamentos', `${vhead('%', 'Base', 'Área')}
+              ${vrow('Cedências ao domínio público<small>arruamentos, verdes, equipamentos</small>', fIn('ind.ced_pct', iv('ced_pct'), '%'), o('i_land'), o('i_ced'))}
+              ${vrow('Área de lotes', '', '', o('i_lotArea'), 'vt-sub')}
+              <div class="vi-sliders">
+                <label class="field-label" for="vi-lots">N.º de lotes <b id="vi-lots-v"></b></label><input type="range" id="vi-lots" min="1" max="40" step="1">
+                <label class="field-label" for="vi-avg">Área média do lote <b id="vi-avg-v"></b></label><input type="range" id="vi-avg" min="300" max="20000" step="50">
+              </div>
+              ${vrow('Pavilhão por lote<small>área de construção ÷ n.º de lotes</small>', '', '', o('i_pavLot'), 'vt-sub')}
+              ${vrow('Arruamentos a construir<small>metros lineares de rua — em branco, a app estima</small>', fIn('ind.road_ml', iv('road_ml'), 'm', ''), o('i_mlHint'), '')}
+              ${vrow('Infraestruturas<small>€ por metro linear de rua (sem IVA)</small>', fIn('ind.road_eur_ml', iv('road_eur_ml'), '€/m'), o('i_ml'), o('i_infraNet'))}`)}`;
+      const indBottom = () => `
+            ${igrp('vi-cost', `Custos por fase <span class="vt-in vi-vat"><select class="form-input" data-f="ind.vat_mode" aria-label="IVA">${[['recover', 'IVA recuperável (renúncia à isenção)'], ['cost', 'IVA não dedutível (soma ao custo)']].map(([v, l]) => `<option value="${v}"${(iv('vat_mode') || 'recover') === v ? ' selected' : ''}>${l}</option>`).join('')}</select></span>`, '', `${vhead('Valor unitário', 'Quantidade', 'Valor')}
+              ${vrow('PIP<small>projetos e taxas do pedido</small>', '', '', fIn('ind.pip_cost', iv('pip_cost'), '€'))}
+              ${vrow('Licenciamento do loteamento<small>projeto de loteamento e de infraestruturas</small>', '', '', fIn('ind.lot_proj', iv('lot_proj'), '€'))}
+              ${vrow('Taxas municipais<small>TMU, compensações</small>', '', '', fIn('ind.lot_fees', iv('lot_fees'), '€', '0'))}
+              ${vrow('Infraestruturas<small>da linha do loteamento</small>', '', '', o('i_infraNet2'))}
+              ${vrow('Construção dos pavilhões<small>custo único por m²</small>', fIn('ind.build_m2', iv('build_m2'), '€/m²'), o('i_abc'), o('i_buildNet'))}
+              ${vrow('Projetos', fIn('ind.proj_pct', iv('proj_pct'), '%'), o('i_buildNetA'), o('i_projB'))}
+              ${vrow('Licenças', fIn('ind.lic_pct', iv('lic_pct'), '%'), o('i_buildNetB'), o('i_licB'))}
+              ${vrow('Contingência<small>sobre construção + projetos</small>', fIn('ind.cont_pct', iv('cont_pct'), '%'), o('i_contBase'), o('i_contB'))}
+              ${vrow('IVA<small>só conta se não for dedutível</small>', fIn('vat_pct', f.vat_pct, '%'), '', o('i_vat'))}`)}
+            ${igrp('vi-sales', 'Valores de venda e renda', 'indicativos, sem IVA', `${vhead('Valor', 'Quantidade', 'Receita')}
+              ${vrow('Terreno com PIP aprovado', `<span class="vi-sale">${unitSel('pip', 'global')}${fIn('ind.sale_pip', iv('sale_pip'), '')}</span>`, o('i_qPip'), o('i_gPip'))}
+              ${vrow('Lotes infraestruturados', `<span class="vi-sale">${unitSel('lot', 'por lote')}${fIn('ind.sale_lot', iv('sale_lot'), '')}</span>`, o('i_qLot'), o('i_gLot'))}
+              ${vrow('Pavilhões chave na mão', `<span class="vi-sale">${unitSel('pav', 'por pavilhão')}${fIn('ind.sale_pav', iv('sale_pav'), '')}</span>`, o('i_qPav'), o('i_gPav'))}
+              ${vrow('Comissão imobiliária<small>sai de cada venda</small>', fIn('comm_pct', f.comm_pct, '%'), '', '')}
+              ${vrow('Renda dos pavilhões<small>€/m² por mês</small>', fIn('ind.rent_m2', iv('rent_m2'), '€/m²'), o('i_abc2'), o('i_rentMonth'))}
+              ${vrow('Renda anual<small>× 12 × ocupação</small>', fIn('ind.occupancy', iv('occupancy'), '%'), '', o('i_rentYear'))}
+              ${vrow('Despesas do arrendamento', fIn('ind.opex_pct', iv('opex_pct'), '%'), '', o('i_rentNet'))}`)}
+            ${igrp('vi-time', 'Prazos', 'meses — dão a TIR de cada saída', `
+              <div class="vi-times">
+                ${[['m_pip', 'PIP'], ['m_sell_land', 'Venda do terreno'], ['m_lot', 'Licenciamento do loteamento'], ['m_urb', 'Obras de urbanização'], ['m_build', 'Construção dos pavilhões'], ['m_sell', 'Comercialização'], ['rent_years', 'Arrendamento (anos)']]
+                  .map(([k, l]) => `<label><span>${l}</span><span class="vt-in">${num('ind.' + k, iv(k))}${sfx(k === 'rent_years' ? 'anos' : 'meses')}</span></label>`).join('')}
+              </div>`)}
+            ${igrp('vi-res', 'Saídas da cadeia de valor', 'receita líquida, custo até essa saída, lucro, ROI, margem e TIR', `<div id="vi-table" class="vi-table"></div>`)}`;
       const IMT_SHORT = { urban: 'Urbano', rustic: 'Rústico', custom: 'Outra taxa' };
       const COST_LINES = [['housing', 'Habitação', 'área vendável'], ['commerce', 'Comércio', ''], ['common', 'Áreas comuns', ''], ['parking', 'Estacionamento', 'abaixo do solo'], ['green', 'Áreas verdes', ''], ['infra', 'Infraestruturas', '']];
       const stageBtns = PLOT_OPEN.map(k => `<button type="button" data-st="${k}" class="${p.status === k ? 'active' : ''}">${escapeHtml(optLabel(PLOT_STATUSES, k))}</button>`).join('');
@@ -18648,6 +18866,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
                 <label>Índice de construção</label><span class="vt-in">${pnum('pdm_index', 'ex.: 1,2')}</span>
                 <label>Pisos acima do solo</label><span class="vt-in">${pnum('max_floors', 'ex.: 4')}</span>
                 <label>Pisos abaixo do solo</label><span class="vt-in">${cdNum('below_floors', 'ex.: 2')}</span>
+                <label>Índice volumétrico</label><span class="vt-in">${cdNum('vol_idx', 'ex.: 5')}${sfx('m³/m²')}</span>
+                <label>Altura máxima (cércea)</label><span class="vt-in">${cdNum('height', 'ex.: 12')}${sfx('m')}</span>
                 <label>Índice de impermeabilização</label><span class="vt-in">${cdNum('imperm_pct', 'ex.: 70')}${sfx('%')}</span>
                 <label>Área máxima de implantação</label><span class="vt-in cd-unit">${cdNum('footprint', '')}<select class="form-input" data-k="footprint_unit" aria-label="Unidade">${[['m2', 'm²'], ['pct', '%']].map(([k, l]) => `<option value="${k}"${(cons.footprint_unit || 'm2') === k ? ' selected' : ''}>${l}</option>`).join('')}</select></span>
                 <label>Afastamento à frente</label><span class="vt-in">${cdNum('setback_front', 'ex.: 5')}${sfx('m')}</span>
@@ -18664,7 +18884,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         </div>
         <div class="fz-defaults" id="fz-defaults" hidden></div>
         <div class="vt-layout">
-          <div class="gantt-wrap vt-sheet">
+          <div class="gantt-wrap vt-sheet${isIndPlot(p) ? ' is-ind' : ''}">
             <div class="card-head"><h2>Viabilidade</h2><small class="muted">valor unitário × quantidade = valor global · grava sozinho</small></div>
             ${grp('vt-areas', 'Áreas', '', `${vhead('Índice / %', 'Base', 'Área')}
               ${vrow('Área do terreno', '', '', pIn('land_area', 'm²', 'ex.: 1200'))}
@@ -18686,6 +18906,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
                 <div class="fz-sizes" id="fz-sizes"></div>
               </div>
               <div id="vt-frac-rows" class="vt-typ"></div>`)}
+            ${indTop()}
             ${grp('vt-acq', 'Custos de aquisição do terreno', '', `${vhead()}
               ${vrow('Preço do terreno', '', '', pIn('asking_price', '€', 'ex.: 450000'))}
               ${vrow(`IMT <label class="vt-chk"><input type="checkbox" data-f="imt_exempt"${f.imt_exempt ? ' checked' : ''}> isento (revenda — confirmar)</label>`,
@@ -18694,6 +18915,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               ${vrow('Imposto do Selo', fIn('stamp_pct', f.stamp_pct, '%'), o('price'), o('stamp'))}
               ${vrow('Escritura e registos', '', '', fIn('acq_other', f.acq_other, '€', 'ex.: 3000'))}
               ${vrow('Total da aquisição', '', '', o('acquisition'), 'vt-sub')}`)}
+            ${indBottom()}
             ${grp('vt-cost', 'Custos de construção e outros custos', `IVA não dedutível <span class="vt-in vt-vatpct">${num('vat_pct', f.vat_pct)}${sfx('%')}</span>`, `${vheadV()}
               ${COST_LINES.map(([k, l, h], i) => vrowV(l + (h ? `<small>${h}</small>` : ''), fIn('cost.' + k, f.cost[k], '€/m²'), o('lq' + i), o('lv' + i), o('li' + i), o('lt' + i))).join('')}
               ${vrowV('Construção', '', '', o('construction'), o('vatConstruction'), o('constrTot'), 'vt-sub')}
@@ -18728,7 +18950,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               ${vrow('Aprovar o projeto e vender o terreno<small>prazo do licenciamento</small>', fIn('lic_months', f.lic_months, 'meses'), '', o('mod_lic'))}
               ${vrow('Construir e vender<small>licenciamento + obra (meses da fiscalização) + vendas</small>', fIn('sales_months', f.sales_months, 'meses'), '', o('mod_sale'))}
               ${vrow('Construir e arrendar<small>só rendas líquidas, sem venda no fim</small>', fIn('rent_years', f.rent_years, 'anos'), '', o('mod_rent'))}`)}
-            <div class="vt-foot"><button type="button" class="text-btn" id="fz-reset">Repor os valores de referência</button></div>
+            <div class="vt-foot"><button type="button" class="vt-reset-link" id="fz-reset">Repor os valores de referência</button></div>
           </div>
           <aside class="vt-side"><div class="gantt-wrap ps-result" id="fz-result"></div></aside>
         </div>
@@ -18768,13 +18990,13 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const el = e.target; if (!el.dataset.k || el.type === 'checkbox' || el.tagName === 'SELECT') return;
         let v = el.value.trim();
         if (el.hasAttribute('data-kn')) { v = numOrNull(v.replace(/\s/g, '')); if (Number.isNaN(v)) { el.classList.add('fz-bad'); return; } el.classList.remove('fz-bad'); }
-        cons[el.dataset.k] = v === '' ? null : v; consSave();
+        cons[el.dataset.k] = v === '' ? null : v; consSave(); drawResult();
       });
       condBox.addEventListener('change', e => {
         const el = e.target; if (!el.dataset.k || !(el.type === 'checkbox' || el.tagName === 'SELECT')) return;
         cons[el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value;
         if (el.dataset.k === 'uopg') document.getElementById('cd-uopg').hidden = !el.checked;
-        consSave();
+        consSave(); drawResult();
       });
       // índice e pisos aparecem também na viabilidade: o mesmo valor nos dois sítios
       view.addEventListener('input', e => { const el = e.target, col = el.dataset?.p; if (!col) return; view.querySelectorAll(`[data-p="${col}"]`).forEach(x => { if (x !== el && x.value !== el.value) x.value = el.value; }); });
@@ -18829,6 +19051,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const out = {};
         Object.keys(f).forEach(k => {
           if (k === 'cost') { const c = {}; Object.keys(f.cost).forEach(x => { if (f.cost[x] !== cfg.cost[x]) c[x] = f.cost[x]; }); if (Object.keys(c).length) out.cost = c; }
+          else if (k === 'ind') { const c = {}, ref = { ...IND_DEFAULT, ...(cfg.ind || {}) }; Object.keys(f.ind || {}).forEach(x => { if (JSON.stringify(f.ind[x]) !== JSON.stringify(ref[x])) c[x] = f.ind[x]; }); if (Object.keys(c).length) out.ind = c; }
           else if (k === 'typologies') { if (JSON.stringify(f.typologies) !== JSON.stringify(cfg.typologies)) out.typologies = f.typologies; }
           else if (k === 'housing_area') { if ((p.feasibility || {}).housing_area != null || S.housingTyped) { if (f.housing_area != null && S.housingTyped !== false) out.housing_area = f.housing_area; } }
           else if (/_area$/.test(k)) { if (f[k] != null) out[k] = f[k]; }
@@ -18872,6 +19095,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         pPatch.project_type_ids = ids; pPatch.project_type_id = ids[0] || null; savePlot(); drawInvestors();
         const other = d.types.some(t => isOtherType(t) && ids.includes(t.id));
         document.getElementById('ps-type-other').hidden = !other;
+        // Indústria / Logística marcada: a viabilidade passa à cadeia industrial (e volta, ao desmarcar)
+        const sheet = view.querySelector('.vt-sheet'), ind = isIndPlot(p);
+        if (sheet && sheet.classList.contains('is-ind') !== ind) { sheet.classList.toggle('is-ind', ind); drawResult(); }
         if (other && !cons.type_other) document.getElementById('ps-type-other-in').focus();
       });
       document.getElementById('ps-type-other-in').addEventListener('input', e => { cons.type_other = e.target.value.trim() || null; pPatch.constraints = cons; savePlot(); });
@@ -18888,6 +19114,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         if (k === 'proj_pct') { f.proj_value = null; document.getElementById('vt-proj-v').value = ''; }
         saveFeas(); if (!typManual()) drawTyp(); drawResult(); drawInvestors(); markDefaults();
       }));
+      // Lotes: n.º de lotes e área média andam juntos (área de lotes ÷ n.º)
+      const lotsSet = n => { f.ind = { ...(f.ind || {}), lots: n }; saveFeas(); drawResult(); drawInvestors(); };
+      document.getElementById('vi-lots').addEventListener('input', e => lotsSet(Math.max(1, Number(e.target.value) || 1)));
+      document.getElementById('vi-avg').addEventListener('input', e => { const ic = indCalc(p, f); lotsSet(Math.max(1, Math.round((ic.lotArea || 0) / Math.max(1, Number(e.target.value) || 1)))); });
       // Tipologias do projeto: tick + peso (%) de cada uma; os pesos somam sempre 100
       const mixKeys = () => RGEU_MIN.map(([n]) => n).filter(n => Number((f.mix || {})[n]) > 0);
       const balance = (keys, fixed, val) => {
@@ -18999,8 +19229,63 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         }
       });
       // ---- Contas ao vivo: valores da folha + resumo ----
+      // ---- Indústria / logística: números da folha, comparação das saídas e resumo à direita ----
+      const drawInd = () => {
+        const ic = indCalc(p, f), E = n => n == null || !Number.isFinite(n) ? '—' : escapeHtml(Math.round(n).toLocaleString('pt-PT') + ' €');
+        const M = n => n ? escapeHtml(fmtM2(Math.round(n)) + ' m²') : '—';
+        const vals = {
+          i_land: M(ic.A), i_ced: M(ic.ced), i_lotArea: M(ic.lotArea), i_pavLot: M(ic.pavPerLot),
+          i_mlHint: ic.mlAuto ? `<small class="vt-rng">≈ ${escapeHtml(fmtNum(ic.mlEst))} m estimados</small>` : '', i_ml: `${escapeHtml(fmtNum(ic.ml))} m`,
+          i_infraNet: E(ic.infraNet), i_infraNet2: E(ic.infraNet), i_abc: M(ic.abc), i_abc2: M(ic.abc), i_buildNet: E(ic.buildNet), i_buildNetA: E(ic.buildNet), i_buildNetB: E(ic.buildNet),
+          i_projB: E(ic.projB), i_licB: E(ic.licB), i_contBase: E(ic.buildNet + ic.projB), i_contB: E(ic.contB),
+          i_vat: ic.vatR ? E(ic.vatTotal) : '<small class="muted">recuperável — não soma</small>',
+          i_qPip: ic.I.sale_pip_mode === 'unit' ? 'terreno' : M(ic.A), i_gPip: E(ic.gPip),
+          i_qLot: ic.I.sale_lot_mode === 'unit' ? `${ic.lots} lotes` : M(ic.lotArea), i_gLot: E(ic.gLot),
+          i_qPav: ic.I.sale_pav_mode === 'unit' ? `${ic.lots} pavilhões` : M(ic.abc), i_gPav: E(ic.gPav),
+          i_rentMonth: E(ic.rentMonth) + '<small class="vt-rng">por mês</small>', i_rentYear: E(ic.rentYear), i_rentNet: E(ic.rentNet) + '<small class="vt-rng">líquida por ano</small>'
+        };
+        view.querySelectorAll('.vt-sheet [data-o]').forEach(el => { if (el.dataset.o in vals) el.innerHTML = vals[el.dataset.o]; });
+        // limites da capacidade (os parâmetros vêm das Condicionantes)
+        document.getElementById('vi-caps').innerHTML = ic.caps.length ? ic.caps.map(c => `<div class="vt-row${ic.bind === c && !ic.typed ? ' vi-bind' : ''}"><span class="vt-l">${escapeHtml(c.label)}${ic.bind === c && !ic.typed ? '<small>é o que limita</small>' : ''}</span><span class="vt-u">${escapeHtml(c.param)}</span><span class="vt-x"></span><span class="vt-q"></span><span class="vt-t">${M(c.area)}</span></div>`).join('')
+          : '<div class="vt-row"><span class="vt-l"><small>Preenche nas Condicionantes o índice de construção, a impermeabilização, o índice volumétrico ou a implantação máxima — ou escreve a área abaixo.</small></span></div>';
+        const bp = view.querySelector('#vi-cap [data-p="buildable_area"]'); if (bp && !ic.typed) bp.placeholder = ic.bind ? `= ${fmtNum(Math.round(ic.bind.area))}` : 'ex.: 12000';
+        // sliders dos lotes
+        const sl = document.getElementById('vi-lots'), sa = document.getElementById('vi-avg');
+        const maxLots = Math.max(2, Math.min(80, Math.floor((ic.lotArea || 0) / 300) || 2));
+        sl.max = maxLots; sl.value = Math.min(ic.lots, maxLots);
+        sa.min = 300; sa.max = Math.max(350, Math.round(ic.lotArea || 350)); if (document.activeElement !== sa) sa.value = Math.round(ic.lotAvg || 300);
+        document.getElementById('vi-lots-v').textContent = `${ic.lots} ${ic.lots === 1 ? 'lote' : 'lotes'}`;
+        document.getElementById('vi-avg-v').textContent = `${fmtM2(Math.round(ic.lotAvg || 0))} m² · pavilhão ${fmtM2(Math.round(ic.pavPerLot || 0))} m²`;
+        // comparação das saídas
+        const ex = ic.exits;
+        document.getElementById('vi-table').innerHTML = ex.length ? `<div class="vi-tr vi-th"><span>Saída</span><span>Receita líquida</span><span>Custo até aqui</span><span>Lucro</span><span>ROI</span><span>Margem</span><span>TIR /ano</span><span>Prazo</span></div>
+          ${ex.map(x => `<div class="vi-tr${ic.best === x ? ' vi-best' : ''}"><span><b>${escapeHtml(x.name)}</b>${x.key === 'rent' ? `<small>yield bruta ${pct(x.yieldGross, 1)} · ${x.years} anos de rendas</small>` : ''}${ic.best === x ? '<small class="vi-tag">recomendada</small>' : ''}</span>
+            <span>${E(x.net)}</span><span>${E(x.cost)}</span><span class="${x.profit < 0 ? 'late' : ''}">${E(x.profit)}</span>
+            <span><b class="perf-pill ${perf(x.roi, ROI_GOAL)}">${pct(x.roi)}</b></span><span>${pct(x.margin)}</span>
+            <span><b class="${x.irr != null && x.irr < 0 ? 'late' : ''}">${x.irr == null ? '—' : pct(x.irr, 1)}</b></span><span>${x.months} m</span></div>`).join('')}`
+          : '<div class="gantt-empty">Falta a área do terreno, um parâmetro de capacidade e os valores de venda.</div>';
+        // resumo à direita
+        const b = ic.best, row = (l, val) => `<div><span>${l}</span><b>${val}</b></div>`;
+        document.getElementById('fz-result').innerHTML = `
+          <div class="rs-block rs-mod">
+            <div class="rs-tag">Indústria / logística · saída recomendada</div>
+            ${b ? `<div class="fz-big"><span>${escapeHtml(b.name)}</span><b class="${b.irr < 0 ? 'perf-bad' : 'perf-good'}">${pct(b.irr, 1)}<small> /ano</small></b>
+              <small>${escapeHtml(`${b.months} meses · capital no pico ${fmtEURShort(b.capital)} · lucro ${fmtEURShort(b.profit)} · ROI ${pct(b.roi)}`)}</small></div>
+              <div class="op-sum">${ic.ranked.map(x => row(escapeHtml(x.short), `${pct(x.irr, 1)}${x === b ? ' ✓' : ''}`)).join('')}</div>`
+              : '<div class="fz-big"><span>Ainda sem resultado</span><small>Falta a área do terreno, a capacidade e os valores de venda.</small></div>'}
+          </div>
+          <div class="rs-block">
+            <div class="rs-tag">Capacidade</div>
+            <div class="op-sum">${row('Área de construção', M(ic.abc))}${row('Lotes', `${ic.lots} × ${M(ic.lotAvg)}`)}${row('Pavilhão por lote', M(ic.pavPerLot))}${row('Arruamentos', escapeHtml(fmtNum(ic.ml)) + ' m')}</div>
+          </div>
+          <div class="rs-block">
+            <div class="rs-tag">Rácios do terreno</div>
+            <div class="op-sum">${row('Terreno por m² de construção', ic.ratios.landPerM2 ? E(ic.ratios.landPerM2) + '/m²' : '—')}${row('Terreno por lote', ic.ratios.landPerLot ? E(ic.ratios.landPerLot) : '—')}${row('Custo por m² (pavilhões)', ic.ratios.costPerM2 ? E(ic.ratios.costPerM2) + '/m²' : '—')}${b && b.net ? row('Terreno / receita (saída recomendada)', pct(Number(p.asking_price || 0) / b.net, 0)) : ''}</div>
+          </div>`;
+      };
       const drawResult = () => {
         drawParkEst();
+        if (view.querySelector('.vt-sheet')?.classList.contains('is-ind')) { drawInd(); return; }
         const c = feasCalc(p, f), mx = c.autoMix, sc = feasScenarios(p, f), Nn = v => Number(v) || 0;
         const R = c.hasRange ? [feasCalc(p, f, { sales: 1, build: 1, price: 'min' }), feasCalc(p, f, { sales: 1, build: 1, price: 'max' })] : null;
         const R2 = c.typs.some(t => Nn(t.rent) && Nn(t.rent_max) && Nn(t.rent) !== Nn(t.rent_max)) ? [feasCalc(p, f, { sales: 1, build: 1, price: 'min' }), feasCalc(p, f, { sales: 1, build: 1, price: 'max' })] : null;
@@ -19156,7 +19441,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         });
       };
       // ---- Valores diferentes dos de referência ----
-      const DEF_PATHS = ['typ_markup', 'sellable_pct', 'stamp_pct', 'fisc_visit', 'fisc_months', 'pip_months', 'lic_months', 'sales_months', 'rent_years', 'cost.housing', 'cost.common', 'cost.parking', 'cost.commerce', 'cost.green', 'cost.infra', 'lic_pct', 'proj_pct', 'cont_pct', 'vat_pct', 'comm_pct', 'occupancy', 'rent_opex_pct', 'delta_pct'];
+      const DEF_PATHS = ['ind.ced_pct', 'ind.road_eur_ml', 'ind.pip_cost', 'ind.lot_proj', 'ind.build_m2', 'ind.proj_pct', 'ind.lic_pct', 'ind.cont_pct', 'ind.rent_m2', 'ind.occupancy', 'ind.opex_pct',
+        'ind.m_pip', 'ind.m_sell_land', 'ind.m_lot', 'ind.m_urb', 'ind.m_build', 'ind.m_sell', 'ind.rent_years', 'typ_markup', 'sellable_pct', 'stamp_pct', 'fisc_visit', 'fisc_months', 'pip_months', 'lic_months', 'sales_months', 'rent_years', 'cost.housing', 'cost.common', 'cost.parking', 'cost.commerce', 'cost.green', 'cost.infra', 'lic_pct', 'proj_pct', 'cont_pct', 'vat_pct', 'comm_pct', 'occupancy', 'rent_opex_pct', 'delta_pct'];
       const markDefaults = () => {
         let n = 0;
         DEF_PATHS.forEach(path => {
