@@ -810,6 +810,8 @@
   .pp-th { font-size: var(--fs-xs); color: var(--text-2); margin-top: var(--sp-2); padding: 0 2px; }
   .pp-row .form-input { margin: 0; min-width: 0; }
   .pp-row textarea.form-input { min-height: 38px; }
+  textarea.form-input.pp-grow { resize: none; overflow: hidden; min-height: 38px; line-height: 1.4; }
+  .pp-group-head textarea.pp-grow { font-weight: var(--fw-semibold); }
   .pp-ro { padding: 9px 2px; text-align: right; font-size: var(--fs-sm); white-space: nowrap; }
   .pp-row-btns { display: flex; gap: 2px; justify-content: flex-end; padding-top: 4px; }
   .pp-row-month { font-size: var(--fs-sm); padding: 6px 2px; border-top: 1px dashed var(--border); }
@@ -1828,6 +1830,7 @@
   .cp-opt.active, .cp-opt:hover { background: var(--accent-soft); }
   .cp-new b { color: var(--accent); }
   .cp-empty { padding: var(--sp-2-5); font-size: var(--fs-sm); color: var(--text-2); }
+  .ss-wrap .cp-list { z-index: 30; } .cp-opt.ss-blank b { font-weight: var(--fw-medium); color: var(--text-2); }
   .settings-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: var(--sp-6); align-items: start; }
   .settings-nav { position: sticky; top: 76px; display: flex; flex-direction: column; gap: var(--sp-0-5); }
   .settings-group { font-size: var(--fs-xs); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: .05em; color: var(--text-3); padding: var(--sp-4) var(--sp-2-5) var(--sp-1); }
@@ -4302,7 +4305,7 @@
 
             <div id="horas-project-fields">
               <label class="field-label">Projeto</label>
-              <select id="horas-project-select" class="form-input">
+              <select id="horas-project-select" class="form-input" data-search>
                 <option value="">A carregar...</option>
               </select>
               <label class="field-label">Fase</label>
@@ -4985,6 +4988,8 @@
       Promise.resolve(proposalState?.flush?.()).catch(() => {}).finally(() => openState(h.v));
     });
     function pushCurrentView(newState) {
+      // Sair de uma proposta nova por gravar: fica guardada como rascunho no Pipeline
+      if (currentViewState?.name === 'proposal' && !(newState.name === 'proposal' && !newState.proposalId)) ppLeaveSave();
       const sameView = JSON.stringify(currentViewState) === JSON.stringify(newState);
       // endereço e histórico do browser
       try {
@@ -13071,7 +13076,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       openQuickModal('Associar fatura', `
         <div class="field-hint" style="margin:0 0 10px;"><b>${escapeHtml(inv.external_ref || inv.invoice_number || '')}</b> · ${escapeHtml(fmtEUR(inv.amount))}<br>${escapeHtml([inv.customer_name, inv.customer_nif ? 'NIF ' + inv.customer_nif : null].filter(Boolean).join(' · '))}${inv.description ? '<br>' + escapeHtml(inv.description) : ''}</div>
         <label class="field-label">Projeto</label>
-        <select id="as-project" class="form-input"><option value="">Escolhe o projeto</option>${projects.map(p => `<option value="${escapeHtml(p.id)}">${clientIds.has(p.client_id) ? '★ ' : ''}${escapeHtml([p.code, p.name].filter(Boolean).join(' — '))}</option>`).join('')}</select>
+        <select id="as-project" class="form-input" data-search><option value="">Escolhe o projeto</option>${projects.map(p => `<option value="${escapeHtml(p.id)}">${clientIds.has(p.client_id) ? '★ ' : ''}${escapeHtml([p.code, p.name].filter(Boolean).join(' — '))}</option>`).join('')}</select>
         ${clientIds.size ? '<div class="field-hint">★ projetos do cliente com este NIF</div>' : ''}
         <label class="field-label">Fase</label>
         <select id="as-stage" class="form-input"><option value="">Sem fase</option></select>
@@ -13818,7 +13823,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       openQuickModal('Eliminar cliente', `
         <p style="margin-top:0">Vais eliminar <b>${escapeHtml(client.name)}</b>. ${facts.length ? 'Tem ' + escapeHtml(facts.join(', ').replace(/, ([^,]*)$/, ' e $1')) + '.' : 'Não tem projetos, propostas nem terrenos.'}</p>
         <label class="field-label">${must ? 'Passar os projetos para' : 'Passar o que tiver para outro cliente'}</label>
-        <select id="cd-to" class="form-input"><option value="">${must ? '— escolhe o cliente —' : 'Não, eliminar sem passar'}</option>${others.map(x => `<option value="${escapeHtml(x.id)}">${escapeHtml(x.name)}</option>`).join('')}</select>
+        <select id="cd-to" class="form-input" data-search><option value="">${must ? '— escolhe o cliente —' : 'Não, eliminar sem passar'}</option>${others.map(x => `<option value="${escapeHtml(x.id)}">${escapeHtml(x.name)}</option>`).join('')}</select>
         <div class="field-hint" id="cd-hint"></div>
         <button type="button" id="cd-go" class="secondary-btn danger-btn">Eliminar cliente</button>
         <div id="cd-msg" class="form-msg"></div>`);
@@ -14090,6 +14095,72 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       setValue(value);
       return { get: () => ({ ...value, name: value.clientId ? byId[value.clientId]?.name ?? null : null }) };
     }
+
+    // Listas longas com pesquisa: um <select data-search> ganha uma caixa onde se escreve e a lista
+    // vai filtrando (sem acentos, várias palavras). O <select> continua a ser o valor (fica escondido).
+    const SS_VALUE = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+    function searchSelect(sel) {
+      if (sel.dataset.ssDone) return;
+      sel.dataset.ssDone = '1';
+      const wrap = document.createElement('div');
+      wrap.className = 'client-picker ss-wrap';
+      wrap.innerHTML = '<input type="text" class="form-input" autocomplete="off" role="combobox" aria-expanded="false" aria-autocomplete="list"><button type="button" class="cp-clear" aria-label="Limpar" hidden>×</button><div class="cp-list" role="listbox" hidden></div>';
+      sel.parentNode.insertBefore(wrap, sel);
+      sel.hidden = true; sel.tabIndex = -1;
+      const input = wrap.querySelector('input'), list = wrap.querySelector('.cp-list'), clear = wrap.querySelector('.cp-clear');
+      if (sel.id) { input.id = sel.id + '-q'; document.querySelector(`label[for="${sel.id}"]`)?.setAttribute('for', input.id); }
+      const blank = () => [...sel.options].find(o => o.value === '');
+      const sync = () => {
+        const o = sel.selectedOptions[0];
+        input.value = o && o.value !== '' ? o.textContent.trim() : '';
+        input.placeholder = (blank()?.textContent.trim() || 'Escreve para procurar') + ' — escreve para procurar';
+        input.disabled = sel.disabled; clear.hidden = !SS_VALUE.get.call(sel) || sel.disabled;
+      };
+      let shown = [], active = 0;
+      const close = () => { list.hidden = true; input.setAttribute('aria-expanded', 'false'); };
+      const draw = () => {
+        const words = normTxt(input.value).split(/\s+/).filter(Boolean);
+        shown = [...sel.options].filter(o => !o.disabled && (words.length ? o.value !== '' && words.every(w => normTxt(o.textContent).includes(w)) : true)).slice(0, 80);
+        active = Math.max(0, Math.min(active, shown.length - 1));
+        list.innerHTML = shown.map((o, i) => `<div class="cp-opt${i === active ? ' active' : ''}${o.value === '' ? ' ss-blank' : ''}" role="option" data-i="${i}"><b>${escapeHtml(o.textContent.trim())}</b></div>`).join('')
+          || '<div class="cp-empty">Nada encontrado.</div>';
+        list.hidden = false; input.setAttribute('aria-expanded', 'true');
+        list.querySelector('.cp-opt.active')?.scrollIntoView({ block: 'nearest' });
+      };
+      const pick = el => {
+        const o = el && shown[Number(el.dataset.i)];
+        if (!o) return;
+        if (SS_VALUE.get.call(sel) !== o.value) {
+          SS_VALUE.set.call(sel, o.value);
+          if (sel.closest('#quick-modal-body')) quickModalDirty = true;
+          sel.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        sync(); close();
+      };
+      // Valor mudado pelo código (sel.value = …) ou opções redesenhadas: a caixa acompanha
+      Object.defineProperty(sel, 'value', { configurable: true, get() { return SS_VALUE.get.call(this); }, set(v) { SS_VALUE.set.call(this, v); sync(); } });
+      sel.addEventListener('change', sync);
+      new MutationObserver(sync).observe(sel, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled'] });
+      input.addEventListener('focus', () => { input.select(); active = 0; draw(); });
+      input.addEventListener('click', () => { if (list.hidden) draw(); });
+      input.addEventListener('input', () => { active = 0; draw(); });
+      input.addEventListener('keydown', e => {
+        if (e.key === 'ArrowDown') { e.preventDefault(); if (list.hidden) draw(); else { active = Math.min(shown.length - 1, active + 1); draw(); } }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); active = Math.max(0, active - 1); draw(); }
+        else if (e.key === 'Enter') { e.preventDefault(); if (!list.hidden) pick(list.querySelectorAll('.cp-opt')[active]); }
+        else if (e.key === 'Escape') { if (!list.hidden) { e.stopPropagation(); close(); sync(); } }
+      });
+      list.addEventListener('mousedown', e => { e.preventDefault(); pick(e.target.closest('.cp-opt')); });
+      input.addEventListener('blur', () => setTimeout(() => { if (!wrap.contains(document.activeElement)) { close(); sync(); } }, 120));
+      clear.addEventListener('click', () => { const b = blank(); if (b) { shown = [b]; pick({ dataset: { i: 0 } }); } input.focus(); });
+      sync();
+    }
+    let ssQueued = false;
+    new MutationObserver(() => {
+      if (ssQueued) return; ssQueued = true;
+      queueMicrotask(() => { ssQueued = false; document.querySelectorAll('select[data-search]:not([data-ss-done])').forEach(searchSelect); });
+    }).observe(document.body, { childList: true, subtree: true });
+    document.querySelectorAll('select[data-search]').forEach(searchSelect);
 
     // Definições: pesos do score de clientes
     async function loadClientScoreSettings() {
@@ -16144,6 +16215,16 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         steps: ['Abre [[Pipeline]] → [[+ Nova proposta]]. Escolhe **que proposta é** (o modelo pré-configura tudo), a **tipologia** e a **língua**. Se vier de uma oportunidade do Intelligence, escolhe-a: usa o **mesmo CST** e traz o local, a área e o cliente.', 'No editor ficam à vista só quatro partes: **Cliente e local**, **Serviços**, **Valor** e **Pagamento**. Ajusta o que for preciso — os valores do modelo são um ponto de partida.', 'A língua muda-se a qualquer momento no **PT | EN** do topo: os textos da biblioteca e do modelo passam para a outra língua.', 'O resto está em **Mais opções**: capa e manifesto, textos do âmbito (Base de trabalho, Pressupostos, Prazo…), secções próprias (ex.: Aperfeiçoamento), custo e margem, timeline, opcionais, exclusões e assinatura.', 'Nos textos, {h} é a taxa horária dos opcionais, {local} o local e concelho, {validade}/{ate} a validade, e {Opcionais} (ou outro título) o número dessa secção no documento.', 'Toca em [[Criar proposta]] (recebe o CST). A partir daí grava sozinha. Para que as próximas deste tipo comecem assim, toca em **Guardar como modelo**.', 'Para enviar: [[Enviar por email]]. A app gera o PDF e descarrega o email com o PDF e a tua assinatura: abre o ficheiro e o Outlook mostra a mensagem pronta (fica também nos Rascunhos). Carregas em **Enviar** e a proposta fica marcada como enviada a essa hora, com follow-up a 7 dias.'],
         kw: 'proposta honorarios orcamento preco valor fee nota de honorarios cst pdf modelo nova capa ambito exclusoes opcionais timeline pagamento biblioteca ingles email outlook enviar anexo pip viabilidade estudo preliminar projeto completo tipo lingua aperfeicoamento taxa horaria guardar como modelo',
         tour: [{ go: 'nav:pipeline', sel: '#pipe-new', text: 'Começa aqui uma proposta nova.' }] },
+      { id: 'proposta-rascunho', cat: 'clients', ctx: ['pipeline', 'proposal'],
+        q: 'guardo uma proposta a meio para acabar mais tarde',
+        a: 'No editor, toca em «Guardar rascunho». Fica no Pipeline, na coluna Rascunho; abres de lá e continuas. Se saíres sem guardar, a app guarda-a sozinha (desde que tenha cliente ou título).',
+        steps: ['Na proposta nova, escolhe o cliente (ou escreve um título).', 'Toca em [[Guardar rascunho]] — a partir daí grava sozinha a cada alteração.', 'Para continuar: [[Pipeline]] → coluna **Rascunho** → toca na proposta.', 'Quando estiver pronta, envia por email ou marca como enviada.'],
+        kw: 'rascunho guardar proposta meio acabar depois continuar mais tarde por fechar em trabalho gravar' },
+      { id: 'lista-pesquisa', cat: 'start', ctx: [],
+        q: 'procuro numa lista comprida (oportunidade, projeto, cliente)',
+        a: 'Nas listas compridas escreve-se por cima: a lista vai filtrando à medida que escreves (sem precisar de acentos, e podes escrever partes de várias palavras).',
+        steps: ['Toca na caixa da lista.', 'Escreve parte do nome, do CST ou do concelho (ex.: «alvares 26041» ou «gaia»).', 'Escolhe com o rato, ou com as setas e Enter.', 'O ✕ volta a deixar a lista vazia.'],
+        kw: 'pesquisar procurar filtrar lista escrever oportunidade projeto cliente escolher dropdown' },
       { id: 'eliminar-cliente', cat: 'clients', ctx: ['clients', 'client'],
         q: 'elimino um cliente (ou junto um cliente repetido)',
         a: 'Na ficha do cliente, ao fundo: «Eliminar cliente…». Se tiver projetos, escolhes para que cliente passam antes de o eliminar.',
@@ -18107,7 +18188,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const plots = d.plots.filter(p => PLOT_OPEN.includes(p.status));
       openQuickModal('Registar apresentação', `
         ${plot ? `<div class="field-hint" style="margin:0 0 8px;"><b>${escapeHtml(plot.name)}</b></div>` : `<label class="field-label" style="margin-top:0;">Oportunidade</label>
-          <select class="form-input" id="pr-plot">${plots.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('')}</select>`}
+          <select class="form-input" id="pr-plot" data-search>${plots.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('')}</select>`}
         <label class="field-label"${plot ? ' style="margin-top:0;"' : ''}>A quem</label>
         <select class="form-input" id="pr-inv"><option value="__ext">Alguém fora da base de dados…</option>${invs.map(i => `<option value="${escapeHtml(i.id)}"${String(i.id) === String(investorId) ? ' selected' : ''}>${escapeHtml(i.name)}${i.company ? ' · ' + escapeHtml(i.company) : ''}</option>`).join('')}</select>
         <div id="pr-ext"><label class="field-label">Nome do contacto</label><input type="text" id="pr-name" class="form-input" placeholder="ex.: Ana Costa (mediadora)" autocomplete="off"></div>
@@ -19436,7 +19517,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <div><label class="field-label">Língua</label><div class="segmented np-lang" role="radiogroup"><button type="button" data-lang="pt" class="${lang === 'pt' ? 'active' : ''}">Português</button><button type="button" data-lang="en" class="${lang === 'en' ? 'active' : ''}">English</button></div></div>
         </div>
         <label class="field-label">Oportunidade do Intelligence <small class="muted">(opcional)</small></label>
-        <select id="np-plot" class="form-input"><option value="">Sem oportunidade (CST novo)</option>${open.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml([p.cst ? 'CST ' + p.cst : null, p.name, p.municipality].filter(Boolean).join(' · '))}</option>`).join('')}</select>
+        <select id="np-plot" class="form-input" data-search><option value="">Sem oportunidade (CST novo)</option>${open.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml([p.cst ? 'CST ' + p.cst : null, p.name, p.municipality].filter(Boolean).join(' · '))}</option>`).join('')}</select>
         <div class="field-hint">Com oportunidade, a proposta usa o mesmo CST e já vem com o local, a área e o cliente. Tudo o resto vem do modelo — muda-se em Definições → Propostas.</div>
         <button type="button" class="primary-btn" id="np-go">Começar</button>`);
       const box = document;
@@ -19571,8 +19652,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             ${cols.map(x => x.ro ? `<span class="pp-ro num" data-ro="${path}.${i}.${x.k}">${x.ro(r)}</span>`
               : x.sel ? `<select class="form-input" data-pp="${path}.${i}.${x.k}" aria-label="${escapeHtml(x.ph || x.k)}">${x.sel(r[x.k])}</select>`
               : x.chk ? `<label class="pp-chk"><input type="checkbox" data-ppc="${path}.${i}.${x.k}"${r[x.k] ? ' checked' : ''}> ${escapeHtml(x.ph)}</label>`
-              : x.area ? `<textarea class="form-input" rows="${r[x.k] ? 2 : 1}" data-pp="${path}.${i}.${x.k}" placeholder="${escapeHtml(x.ph || '')}">${escapeHtml(r[x.k] ?? '')}</textarea>`
-              : `<input type="text"${x.n ? ' inputmode="decimal" data-n' : ''} class="form-input" data-pp="${path}.${i}.${x.k}" value="${escapeHtml(r[x.k] ?? '')}" placeholder="${escapeHtml(x.ph || '')}" aria-label="${escapeHtml(x.ph || x.k)}">`).join('')}
+              : x.area ? `<textarea class="form-input pp-grow" rows="1" data-pp="${path}.${i}.${x.k}" placeholder="${escapeHtml(x.ph || '')}" aria-label="${escapeHtml(x.ph || x.k)}">${escapeHtml(r[x.k] ?? '')}</textarea>`
+              : x.n ? `<input type="text" inputmode="decimal" data-n class="form-input" data-pp="${path}.${i}.${x.k}" value="${escapeHtml(r[x.k] ?? '')}" placeholder="${escapeHtml(x.ph || '')}" aria-label="${escapeHtml(x.ph || x.k)}">`
+              : `<textarea class="form-input pp-grow" rows="1" data-oneline data-pp="${path}.${i}.${x.k}" placeholder="${escapeHtml(x.ph || '')}" aria-label="${escapeHtml(x.ph || x.k)}">${escapeHtml(r[x.k] ?? '')}</textarea>`).join('')}
             <span class="pp-row-btns">${i ? `<button type="button" class="ck-x" data-act="up" data-path="${path}" data-i="${i}" aria-label="Subir">↑</button>` : '<span></span>'}<button type="button" class="ck-x" data-act="del" data-path="${path}" data-i="${i}" aria-label="Tirar">×</button></span>
           </div>`).join('')}</div>` : (empty ? `<div class="pp-empty">${empty}</div>` : '');
       // Notas: as da biblioteca (marca/desmarca) e as escritas à mão
@@ -19581,7 +19663,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const libRows = libOf(kind);
         const own = list.map((n, i) => ({ n, i })).filter(x => !x.n.lib || !libRows.some(l => l.id === x.n.lib));
         return `<div class="pp-notes">${libRows.map(l => `<label class="pp-chk pp-note"><input type="checkbox" data-libnote="${path}" value="${escapeHtml(l.id)}"${list.some(n => n.lib === l.id) ? ' checked' : ''}> ${escapeHtml(libT(l, en))}</label>`).join('')}
-          ${own.map(({ n, i }) => `<div class="pp-note-own"><input type="text" class="form-input" data-pp="${path}.${i}.t" value="${escapeHtml(n.t)}"><button type="button" class="ck-x" data-act="del" data-path="${path}" data-i="${i}" aria-label="Tirar">×</button></div>`).join('')}
+          ${own.map(({ n, i }) => `<div class="pp-note-own"><textarea class="form-input pp-grow" rows="1" data-oneline data-pp="${path}.${i}.t" aria-label="Nota">${escapeHtml(n.t)}</textarea><button type="button" class="ck-x" data-act="del" data-path="${path}" data-i="${i}" aria-label="Tirar">×</button></div>`).join('')}
           <button type="button" class="text-btn" data-act="add" data-path="${path}" data-tpl='{"t":""}'>+ Nota escrita à mão</button></div>`;
       };
       const introUI = (path, key) => {
@@ -19597,7 +19679,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const libRows = S.lib.filter(x => x.kind === 'block' && x.grp === grp && !on.has(x.id));
         return `<div class="pp-blocks">${list.map((x, i) => `
           <div class="pp-group pp-block">
-            <div class="pp-group-head"><input type="text" class="form-input" data-pp="${path}.${i}.t" value="${escapeHtml(x.t || '')}" placeholder="Título">
+            <div class="pp-group-head"><textarea class="form-input pp-grow" rows="1" data-oneline data-pp="${path}.${i}.t" placeholder="Título" aria-label="Título">${escapeHtml(x.t || '')}</textarea>
               <span class="pp-row-btns">${i ? `<button type="button" class="ck-x" data-act="up" data-path="${path}" data-i="${i}" aria-label="Subir">↑</button>` : ''}<button type="button" class="ck-x" data-act="del" data-path="${path}" data-i="${i}" aria-label="Tirar">×</button></span></div>
             ${area(`${path}.${i}.b`, x.b, Math.min(14, 3 + Math.round(String(x.b || '').length / 160)))}
           </div>`).join('')}
@@ -19611,7 +19693,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const groups = [...new Set(libRows.map(x => x.grp || ''))];
         const own = list.map((n, i) => ({ n, i })).filter(x => !x.n.lib || !libRows.some(l => l.id === x.n.lib));
         return `<div class="pp-notes">${groups.map(g => `<div class="pp-exgrp"><b>${escapeHtml(plSplit(g, en) || 'Outras')}</b>${libRows.filter(x => (x.grp || '') === g).map(l => `<label class="pp-chk pp-note"><input type="checkbox" data-libnote="content.exclusions.rows" value="${escapeHtml(l.id)}"${list.some(n => n.lib === l.id) ? ' checked' : ''}> ${escapeHtml(libT(l, en))}</label>`).join('')}</div>`).join('')}
-          ${own.map(({ n, i }) => `<div class="pp-note-own"><input type="text" class="form-input" data-pp="content.exclusions.rows.${i}.t" value="${escapeHtml(n.t)}"><button type="button" class="ck-x" data-act="del" data-path="content.exclusions.rows" data-i="${i}" aria-label="Tirar">×</button></div>`).join('')}
+          ${own.map(({ n, i }) => `<div class="pp-note-own"><textarea class="form-input pp-grow" rows="1" data-oneline data-pp="content.exclusions.rows.${i}.t" aria-label="Exclusão">${escapeHtml(n.t)}</textarea><button type="button" class="ck-x" data-act="del" data-path="content.exclusions.rows" data-i="${i}" aria-label="Tirar">×</button></div>`).join('')}
           <button type="button" class="text-btn" data-act="add" data-path="content.exclusions.rows" data-tpl='{"t":""}'>+ Exclusão escrita à mão</button></div>`;
       };
       const manifestos = S.lib.filter(x => x.kind === 'text' && x.grp === 'manifesto');
@@ -19640,12 +19722,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <div class="form-grid">
             <div><label class="field-label">Assinatura da marca</label><select class="form-input" data-pp="content.tagline">${PP_TAGLINES.map(([k, l]) => `<option value="${k}"${c.tagline === k ? ' selected' : ''}>${escapeHtml(l)}</option>`).join('')}</select></div>
             <div><label class="field-label">Manifesto</label><select class="form-input" id="pp-manifesto"><option value="">Sem manifesto</option>${manifestos.map(m => `<option value="${escapeHtml(m.id)}"${m.id === manOn ? ' selected' : ''}>${escapeHtml(libT(m, false))}</option>`).join('')}</select></div>
-            <div><label class="field-label">Oportunidade (Intelligence)</label><select class="form-input" id="pp-plot"${pp.id && pp.number ? ' disabled' : ''}><option value="">Sem oportunidade</option>${d.plots.map(x => `<option value="${escapeHtml(x.id)}"${x.id === pp.plot_id ? ' selected' : ''}>${escapeHtml([x.cst ? 'CST ' + x.cst : null, x.name].filter(Boolean).join(' · '))}</option>`).join('')}</select></div>
+            <div><label class="field-label">Oportunidade (Intelligence)</label><select class="form-input" id="pp-plot" data-search${pp.id && pp.number ? ' disabled' : ''}><option value="">Sem oportunidade</option>${d.plots.map(x => `<option value="${escapeHtml(x.id)}"${x.id === pp.plot_id ? ' selected' : ''}>${escapeHtml([x.cst ? 'CST ' + x.cst : null, x.name].filter(Boolean).join(' · '))}</option>`).join('')}</select></div>
           </div>`,
         scope: () => `
           <div class="pp-groups">${c.scope.groups.map((g, gi) => `
             <div class="pp-group">
-              <div class="pp-group-head"><input type="text" class="form-input" data-pp="content.scope.groups.${gi}.t" value="${escapeHtml(g.t)}" placeholder="Grupo, ex.: A \\ Projeto de Arquitetura">
+              <div class="pp-group-head"><textarea class="form-input pp-grow" rows="1" data-oneline data-pp="content.scope.groups.${gi}.t" placeholder="Grupo, ex.: A \\ Projeto de Arquitetura" aria-label="Grupo">${escapeHtml(g.t)}</textarea>
                 <span class="pp-row-btns">${gi ? `<button type="button" class="ck-x" data-act="up" data-path="content.scope.groups" data-i="${gi}" aria-label="Subir">↑</button>` : ''}<button type="button" class="ck-x" data-act="del" data-path="content.scope.groups" data-i="${gi}" aria-label="Tirar o grupo">×</button></span></div>
               ${rowsUI(`content.scope.groups.${gi}.items`, g.items, [{ k: 't', ph: 'Serviço', w: '1fr' }, { k: 'b', ph: 'Descritivo (opcional)', w: '1.4fr', area: true }])}
               <button type="button" class="text-btn" data-act="add" data-path="content.scope.groups.${gi}.items" data-tpl='{"t":"","b":""}'>+ Item</button>
@@ -19772,7 +19854,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               ${pp.id && !locked && pp.status !== 'declined' ? `<button type="button" class="primary-btn" id="pp-mail">${c.mail?.status === 'sent' ? 'Enviar outra vez por email' : 'Enviar por email'}</button>` : ''}
               ${c.mail?.status === 'draft' ? `<div class="pp-mailstate">Email pronto no Outlook (ficheiro descarregado e Rascunhos), à espera de ser enviado.${c.mail.link ? ` <a href="${escapeHtml(c.mail.link)}" target="_blank" rel="noopener">Abrir na web</a>` : ''}</div>` : c.mail?.status === 'sent' && c.mail.sent_at ? `<div class="pp-mailstate ok">Enviado por email a ${escapeHtml(fmtDayMonthYear(c.mail.sent_at.slice(0, 10)))}, ${escapeHtml(new Date(c.mail.sent_at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }))}.</div>` : ''}
               <button type="button" class="${pp.id ? 'secondary-btn' : 'primary-btn'}" id="pp-pdf">Ver proposta (PDF)</button>
-              ${!pp.id ? `<button type="button" class="secondary-btn" id="pp-create">Criar proposta${pp.number ? ' · CST ' + pp.number : ''}</button>` : ''}
+              ${!pp.id ? `<button type="button" class="secondary-btn" id="pp-create">Guardar rascunho${pp.number ? ' · CST ' + pp.number : ''}</button>
+                <div class="field-hint" style="margin:0">Fica no Pipeline, em Rascunho, para continuares mais tarde. Se saíres sem guardar, é guardada sozinha (precisa de cliente ou título).</div>` : ''}
               <button type="button" class="text-btn" id="pp-save-tpl">Guardar como modelo</button>
             </div>
             ${pp.id ? `<div class="gantt-wrap pp-pipe">
@@ -19819,11 +19902,16 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         if (pp.id && !locked) { clearTimeout(saveT); savedEl().textContent = 'Por gravar…'; saveT = setTimeout(() => ppSave().catch(() => {}), 1200); }
       };
       S.flush = async () => { clearTimeout(saveT); if (S.dirty && pp.id && !locked) await ppSave(); };
-      const redraw = id => { const body = view.querySelector(`[data-sec="${id}"]`); if (body) { body.innerHTML = secBodies[id](); if (locked) lockAll(body); } };
+      const redraw = id => { const body = view.querySelector(`[data-sec="${id}"]`); if (body) { body.innerHTML = secBodies[id](); if (locked) lockAll(body); ppGrow(body); } };
       // Campos: data-pp="caminho" (texto/número/select), data-ppc (caixa)
       const main = view.querySelector('.pp-layout');
+      // Campos que crescem com o texto (nada fica cortado); os de uma linha não aceitam Enter
+      ppGrow(main);
+      main.addEventListener('toggle', e => ppGrow(e.target), true);
+      main.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.hasAttribute?.('data-oneline')) e.preventDefault(); });
       main.addEventListener('input', e => {
         const el = e.target;
+        if (el.classList.contains('pp-grow')) ppGrow(el);
         if (el.dataset.pp && el.tagName !== 'SELECT') {
           let v = el.value;
           if (el.hasAttribute('data-n')) { v = numOrNull(v.replace(/\s/g, '')); if (Number.isNaN(v)) return; }
@@ -19996,7 +20084,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       ppWatchMail(pp);
       document.getElementById('pp-create')?.addEventListener('click', async () => {
         const r = await ppSave(); if (!r) return;
-        showToast(`Proposta ${ppRef(r)} criada`); suppressNavPush = true; openProposalView(r.id);
+        showToast(`Proposta ${ppRef(r)} guardada em Rascunho`); suppressNavPush = true; openProposalView(r.id);
       });
     }
     const ppGet = (o, path) => path.split('.').reduce((x, k) => x?.[k], o);
@@ -20051,7 +20139,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const saved = document.getElementById('pp-saved');
       if (S.picker) pp.client_id = S.picker.get().clientId ?? pp.client_id;
       const T = ppTotals(pp.content);
-      if (!pp.client_id && !(pp.client_name || '').trim() && !(pp.title || '').trim()) { formError('pp-msg', 'Escolhe o cliente (ou escreve um título) antes de criar a proposta.'); return null; }
+      if (!pp.client_id && !(pp.client_name || '').trim() && !(pp.title || '').trim()) { formError('pp-msg', 'Escolhe o cliente (ou escreve um título) antes de guardar a proposta.'); return null; }
       const row = {
         title: (pp.title || '').trim() || ppClientName(pp, d) || 'Proposta', plot_id: pp.plot_id || null, client_id: pp.client_id || null, investor_id: pp.investor_id || null,
         client_name: (pp.client_name || '').trim() || null, project_type_id: pp.project_type_id || null, method: 'global',
@@ -20099,6 +20187,26 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         if (saved) saved.textContent = '';
         formError('pp-msg', 'Não foi possível guardar: ' + err.message); return null;
       }
+    }
+    // Altura das caixas .pp-grow à medida do texto (as que estão fechadas acertam ao abrir)
+    function ppGrow(root) {
+      const els = root.matches?.('textarea.pp-grow') ? [root] : root.querySelectorAll('textarea.pp-grow');
+      els.forEach(el => { if (!el.offsetParent) return; el.style.height = 'auto'; el.style.height = el.scrollHeight + 2 + 'px'; });
+    }
+    let ppGrowT = null;
+    window.addEventListener('resize', () => { clearTimeout(ppGrowT); ppGrowT = setTimeout(() => { const v = document.getElementById('proposal-view'); if (v && v.style.display !== 'none') ppGrow(v); }, 150); });
+    // Proposta nova deixada a meio: grava-a como rascunho (precisa de cliente ou título; sem isso
+    // fica só a cópia neste aparelho, recuperada na próxima «Nova proposta»)
+    async function ppLeaveSave() {
+      const S = proposalState;
+      if (!S || S.pp.id || !S.dirty || S.leaving) return;
+      if (S.picker) S.pp.client_id = S.picker.get().clientId ?? S.pp.client_id;
+      if (!S.pp.client_id && !(S.pp.client_name || '').trim() && !(S.pp.title || '').trim()) return;
+      S.leaving = true;
+      const r = await ppSave().catch(() => null);
+      if (!r) { S.leaving = false; return; }
+      showToast(`Proposta ${ppRef(r)} guardada como rascunho — continua no Pipeline quando quiseres`);
+      if (currentViewState?.name === 'pipeline') { suppressNavPush = true; openPipelineModule(); }
     }
     // Ações do pipeline: enviada, negociação, nova versão, adjudicada, perdida, reabrir, eliminar
     async function ppAction(a) {
@@ -21675,7 +21783,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       };
       const chips = (k, val) => DBK_HOURS.map(([v, l]) => `<button type="button" class="dbk-h${v === val || (v === 4 && val > 4) ? ' on' : ''}" data-h="${k}" data-v="${v}">${l}</button>`).join('');
       const causes = (k, val) => DBK_CAUSES.map(([c, l]) => `<button type="button" class="band-chip${c === val ? ' on' : ''}" data-c="${k}" data-v="${c}">${escapeHtml(l)}</button>`).join('');
-      const projSel = (id, val) => `<select class="form-input" id="${id}"><option value="">Projeto (opcional)</option>${projects.map(p => `<option value="${escapeHtml(p.id)}"${p.id === val ? ' selected' : ''}>${escapeHtml(p.name)}</option>`).join('')}</select>`;
+      const projSel = (id, val) => `<select class="form-input" id="${id}" data-search><option value="">Projeto (opcional)</option>${projects.map(p => `<option value="${escapeHtml(p.id)}"${p.id === val ? ' selected' : ''}>${escapeHtml(p.name)}</option>`).join('')}</select>`;
       openQuickModal(`Fecho de ${dbkWeekday(day).toLowerCase()}`, `
         ${tasks.length ? `<div class="dbk-sub"><b>O plano de hoje</b><span id="dc-count"></span></div><div class="dbk-list" id="dc-tasks">${tasks.sort((a, b) => (b.priority - a.priority) || (a.sort_order - b.sort_order)).map(t => dbkTaskRow(t, { today: day })).join('')}</div>
           <div class="field-hint">O que ficar por marcar passa sozinho para amanhã.</div>` : '<div class="field-hint" style="margin-top:0">Hoje não havia plano. Amanhã, antes das 8:40, planeia o dia na Hoje.</div>'}
@@ -24141,7 +24249,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         <label class="field-label" for="mq-file">Ficheiro (.xlsx)</label><input type="file" id="mq-file" class="form-input" accept=".xlsx">
         <label class="field-label" for="mq-who">Empreiteiro</label><input type="text" id="mq-who" class="form-input" maxlength="120">
         <div class="mqt-g2"><div><label class="field-label" for="mq-date">Data da proposta</label><input type="date" id="mq-date" class="form-input" value="${dateKey(new Date())}"></div>
-        <div><label class="field-label" for="mq-proj">Projeto</label><select id="mq-proj" class="form-input"><option value="">—</option>${projects.map(p => `<option value="${escapeHtml(p.id)}"${p.id === mqtProjectId ? ' selected' : ''}>${escapeHtml(p.name)}</option>`).join('')}</select></div></div>
+        <div><label class="field-label" for="mq-proj">Projeto</label><select id="mq-proj" class="form-input" data-search><option value="">—</option>${projects.map(p => `<option value="${escapeHtml(p.id)}"${p.id === mqtProjectId ? ' selected' : ''}>${escapeHtml(p.name)}</option>`).join('')}</select></div></div>
         <div id="mq-prev" class="field-hint"></div>
         <div id="mq-msg" class="form-msg"></div>
         <button type="button" class="primary-btn" id="mq-save" disabled>Guardar preços</button>`);
@@ -24180,7 +24288,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
         <div class="mqt-g2"><div><label class="field-label" for="mp-p">Preço unitário (€)</label><input type="text" inputmode="decimal" id="mp-p" class="form-input"></div>
         <div><label class="field-label" for="mp-d">Data</label><input type="date" id="mp-d" class="form-input" value="${dateKey(new Date())}"></div></div>
         <label class="field-label" for="mp-w">De quem (empreiteiro / fornecedor)</label><input type="text" id="mp-w" class="form-input" maxlength="120">
-        <label class="field-label" for="mp-proj">Projeto <span class="muted">(opcional)</span></label><select id="mp-proj" class="form-input"><option value="">—</option>${projects.map(p => `<option value="${escapeHtml(p.id)}"${p.id === mqtProjectId ? ' selected' : ''}>${escapeHtml(p.name)}</option>`).join('')}</select>
+        <label class="field-label" for="mp-proj">Projeto <span class="muted">(opcional)</span></label><select id="mp-proj" class="form-input" data-search><option value="">—</option>${projects.map(p => `<option value="${escapeHtml(p.id)}"${p.id === mqtProjectId ? ' selected' : ''}>${escapeHtml(p.name)}</option>`).join('')}</select>
         <div id="mp-msg" class="form-msg"></div>
         <button type="button" class="primary-btn" id="mp-save">Guardar</button>`);
       const mpPick = attachMqtPicker('mp-pick', lib, { onPick: () => document.getElementById('mp-p').focus() }); setTimeout(() => mpPick.focus(), 60);
