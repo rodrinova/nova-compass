@@ -205,3 +205,8 @@ create policy "team_only" on public.plot_notes for all to authenticated using (p
 insert into public.plot_notes (plot_id, body, created_at, updated_at)
 select id, notes, coalesce(updated_at, created_at), coalesce(updated_at, created_at) from public.land_plots p
 where coalesce(notes, '') <> '' and not exists (select 1 from public.plot_notes n where n.plot_id = p.id);
+
+-- Condicionantes urbanísticas de cada oportunidade (variam de município para município):
+-- pisos abaixo do solo, impermeabilização, implantação máxima, afastamentos, regras de estacionamento,
+-- UOPG / REN / RAN / ARU / APA e informações excecionais. O índice e os pisos acima do solo ficam em pdm_index / max_floors.
+alter table public.land_plots add column if not exists constraints jsonb not null default '{}'::jsonb;
