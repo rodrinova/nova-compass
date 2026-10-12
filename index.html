@@ -8108,6 +8108,25 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         }
       };
     }
+    // Documentos abertos numa janela à parte (resumos, propostas, atas, mapa de férias): na app instalada no telemóvel
+    // essa janela não tem barra do browser, por isso leva um botão para voltar (não sai na impressão).
+    function kDocBack(w) {
+      try {
+        const d = w.document;
+        if (!d.body || d.getElementById('k-doc-back')) return;
+        const st = d.createElement('style');
+        st.textContent = '#k-doc-back{position:fixed;top:max(10px,env(safe-area-inset-top));left:10px;z-index:2147483647;font:600 14px -apple-system,"Segoe UI",Roboto,sans-serif;background:#fff;color:#4A2350;border:1px solid #D9D6D0;border-radius:999px;padding:9px 16px;box-shadow:0 2px 12px rgba(0,0,0,.14);cursor:pointer}@media print{#k-doc-back{display:none!important}}';
+        (d.head || d.body).appendChild(st);
+        const b = d.createElement('button');
+        b.id = 'k-doc-back'; b.type = 'button'; b.textContent = '← Voltar à app';
+        b.addEventListener('click', () => {
+          try { w.close(); } catch (_) { /* segue abaixo */ }
+          // se o sistema não deixar fechar a janela, abre a app nela
+          setTimeout(() => { try { if (!w.closed) w.location.href = location.href.split('#')[0]; } catch (_) { /* nada */ } }, 250);
+        });
+        d.body.insertBefore(b, d.body.firstChild);
+      } catch (_) { /* janela de outro domínio ou já fechada */ }
+    }
     // Ata pronta a imprimir / guardar em PDF (para o arquivo no servidor), com as imagens no fim como anexos
     async function exportAtaPdf(n) {
       const w = window.open('', '_blank');
@@ -8156,9 +8175,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <footer><span>${e(fileTitle)}</span><span>NOVA Compass</span></footer>
           ${files.map((f, i) => `<figure><img src="${e(urls[f.id] || '')}" alt="Fig. ${i + 1}"><figcaption><b>Fig. ${i + 1}</b>${f.caption ? ' — ' + e(f.caption) : ''}</figcaption></figure>`).join('')}
           </body></html>`;
-        w.document.open(); w.document.write(html); w.document.close();
+        w.document.open(); w.document.write(html); w.document.close(); kDocBack(w);
       } catch (err) {
-        w.document.open(); w.document.write('<p style="font:14px system-ui;padding:24px">Não foi possível preparar a ata: ' + escapeHtml(err.message) + '</p>'); w.document.close();
+        w.document.open(); w.document.write('<p style="font:14px system-ui;padding:24px">Não foi possível preparar a ata: ' + escapeHtml(err.message) + '</p>'); w.document.close(); kDocBack(w);
       }
     }
 
@@ -16067,8 +16086,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         kw: 'contactos fornecedores fornecedor materiais servicos especialidades engenheiro engenharia camara municipal caixilharia caixilhos rebocos avac empreiteiro telefone email lista' },
       { id: 'daybreak-passado', cat: 'start', ctx: ['home'],
         q: 'marco tarefas de um dia que já passou (Daybreak)',
-        a: 'Hoje → Daybreak → «Dias anteriores»: escolhe o dia e marca o que ficou feito. O que marcares sai dos dias seguintes.',
-        steps: ['No cartão **Daybreak** da [[Hoje]], toca em **Dias anteriores** (ou, no plano, nos dias à esquerda de «Hoje»).', 'Marca as tarefas que ficaram feitas nesse dia. Se uma já tinha passado para o dia seguinte, sai de lá sozinha.', 'Podes acrescentar algo que fizeste e não estava no plano (fica logo como feito).', 'Toca em **Pronto**: o plano de hoje atualiza-se.'],
+        a: 'Hoje → Daybreak → «Outros dias»: escolhe o dia (à esquerda de Hoje) e marca o que ficou feito. O que marcares sai dos dias seguintes.',
+        steps: ['No cartão **Daybreak** da [[Hoje]], toca em **Outros dias** e escolhe na fita um dia à esquerda de «Hoje».', 'Marca as tarefas que ficaram feitas nesse dia. Se uma já tinha passado para o dia seguinte, sai de lá sozinha.', 'Podes acrescentar algo que fizeste e não estava no plano (fica logo como feito).', 'Toca em **Pronto**: o plano de hoje atualiza-se.'],
         kw: 'daybreak dia anterior ontem passado tarefas feitas marcar esqueci update atualizar transitar passar plano' },
       { id: 'modelos-proposta', cat: 'opps', ctx: ['proposal', 'settings:proposals', 'pipeline'],
         q: 'mudo o que vem pré-preenchido numa proposta',
@@ -17298,7 +17317,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         </body></html>`;
       const w = window.open('', '_blank');
       if (!w) { showToast('O navegador bloqueou a janela. Permite janelas deste site e tenta outra vez.', { type: 'error', ms: 7000 }); return; }
-      w.document.open(); w.document.write(html); w.document.close();
+      w.document.open(); w.document.write(html); w.document.close(); kDocBack(w);
     }
 
     // ---------- Definições → Viabilidade de terrenos (valores de referência) ----------
@@ -18009,7 +18028,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         </body></html>`;
       const w = window.open('', '_blank');
       if (!w) { showToast('O navegador bloqueou a janela. Permite janelas deste site e tenta outra vez.', { type: 'error', ms: 7000 }); return; }
-      w.document.open(); w.document.write(html); w.document.close();
+      w.document.open(); w.document.write(html); w.document.close(); kDocBack(w);
     }
 
     // ---------- Registar uma apresentação: a um investidor da base ou a alguém de fora; data e comissão ----------
@@ -20133,7 +20152,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const w = window.open('', '_blank');
       if (!w) { showToast('O navegador bloqueou a janela da proposta. Permite janelas deste site e tenta outra vez.', { type: 'error', ms: 7000 }); return; }
       const { html } = ppDocHtml(pp, S);
-      w.document.open(); w.document.write(html); w.document.close();
+      w.document.open(); w.document.write(html); w.document.close(); kDocBack(w);
     }
     function ppDocHtml(pp, S) {
       const c = pp.content, en = pp.language === 'en', e = escapeHtml, md = ppMd;
@@ -21243,7 +21262,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         <div class="foot">Mapa de férias elaborado até 15 de abril e afixado entre 15 de abril e 31 de outubro (art. 241.º do Código do Trabalho). Dias indicados por mês (ex.: 3–14 = de 3 a 14). Total em dias úteis.</div>
         <div class="sig"><span>A gerência</span><span>Data</span></div>
         <script>window.onload=()=>setTimeout(()=>window.print(),200)<\/script></body></html>`);
-      w.document.close();
+      w.document.close(); kDocBack(w);
     }
 
     // ================= DAYBREAK: a reunião diária das 8:40 =================
@@ -21422,7 +21441,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             ${mine.length ? `<div class="dbk-list">${mine.map(t => dbkTaskRow(t, { today })).join('')}</div>` : `<div class="gantt-empty">${isAway ? 'Hoje estás fora. Bom descanso.' : 'Ainda sem plano. Escolhe tarefas das tuas fases ou escreve as tuas.'}</div>`}
             <button type="button" class="secondary-btn" id="dbk-plan">${mine.length ? 'Editar o plano' : 'Planear o dia'}</button>
             <div class="dbk-ahead">${nextDays.length ? `<span>Já planeado:</span>${nextDays.map(x => `<button type="button" class="dbk-ahead-chip" data-dbk-ahead="${x.d}">${escapeHtml(dbkDayName(x.d, today).replace(/^./, c => c.toUpperCase()).replace(/,.*$/, '') + (x.d === addDaysKey(today, 1) ? '' : ' ' + parseDateKey(x.d).getDate()))} · ${x.n}</button>`).join('')}` : ''}
-              <button type="button" class="text-btn" id="dbk-plan-ahead">Planear outros dias</button><button type="button" class="text-btn" id="dbk-past">Dias anteriores</button></div>
+              <button type="button" class="text-btn" id="dbk-other" title="Pôr em dia os dias anteriores ou planear os seguintes">Outros dias</button></div>
           </div>
           ${team ? `<div class="dbk-team">${team}</div>` : ''}`;
         box.querySelectorAll('[data-dbk-done]').forEach(c => c.addEventListener('change', async () => {
@@ -21433,8 +21452,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         }));
         document.getElementById('dbk-plan').addEventListener('click', () => openDbkPlan(me, today, () => renderDaybreakCard(me)));
         box.querySelectorAll('[data-dbk-ahead]').forEach(b => b.addEventListener('click', () => openDbkPlan(me, b.dataset.dbkAhead, () => renderDaybreakCard(me))));
-        document.getElementById('dbk-plan-ahead').addEventListener('click', () => { let d = addDaysKey(today, 1); while (!isWorkday(d)) d = addDaysKey(d, 1); openDbkPlan(me, d, () => renderDaybreakCard(me)); });
-        document.getElementById('dbk-past').addEventListener('click', () => openDbkPlan(me, dbkPastDays(today, 1)[0], () => renderDaybreakCard(me)));
+        document.getElementById('dbk-other').addEventListener('click', () => openDbkPlan(me, today, () => renderDaybreakCard(me)));
         document.getElementById('dbk-start').addEventListener('click', () => openDaybreak());
         document.getElementById('dbk-close-prev')?.addEventListener('click', () => openDbkClose(me, prev, () => renderDaybreakCard(me)));
         document.getElementById('dbk-link')?.addEventListener('click', () => openDbkLink(() => renderDaybreakCard(me)));
