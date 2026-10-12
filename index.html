@@ -21104,7 +21104,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         }
         pp.content.mail = { status: 'draft', link: res.webLink, created_at: new Date().toISOString() };
         if (devMode) { const x = mockProposals.find(y => y.id === pp.id); if (x) x.content = JSON.parse(JSON.stringify(pp.content)); window.__lastEml = { to, cc, subject, html, pdf }; }
-        ppDownload(ppEml({ to, cc, subject, html, pdf }), (pdf.filename || 'Proposta.pdf').replace(/\.pdf$/i, '') + '.eml');
+        // No ficheiro .eml vai só o texto: ao abrir um email novo, o Outlook acrescenta a assinatura configurada lá
+        // (se fosse também a da app, aparecia duas vezes). O rascunho nos Rascunhos leva a assinatura da app.
+        ppDownload(ppEml({ to, cc, subject, html: ppMailHtml(m.text, ''), pdf }), (pdf.filename || 'Proposta.pdf').replace(/\.pdf$/i, '') + '.eml');
         showToast(`Abre o ficheiro descarregado: o email aparece no Outlook pronto a enviar.${to.length ? '' : ' O cliente não tem email na ficha: escreve-o lá.'}`, { ms: 12000, undo: res.webLink && res.webLink !== 'about:blank' ? () => window.open(res.webLink, '_blank') : null, undoLabel: 'Abrir na web' });
         suppressNavPush = true; openProposalView(pp.id);
       } catch (err) {
