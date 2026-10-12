@@ -2164,6 +2164,29 @@
   .pp-cycles { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); margin-bottom: var(--sp-3); padding: var(--sp-2-5) var(--sp-3); background: var(--surface-2); border-radius: var(--r-md); }
   .pp-cycles > span { font-weight: var(--fw-semibold); font-size: var(--fs-sm); }
   .pp-cycles small { flex-basis: 100%; }
+  .cd-grid { display: grid; grid-template-columns: 1fr 1fr 1.25fr; gap: var(--sp-4) var(--sp-5); }
+  .cd-flags { margin: var(--sp-2) 0 0; }
+  .cd-params { display: grid; grid-template-columns: minmax(0, 1fr) 128px; gap: 6px var(--sp-2); align-items: center; }
+  .cd-params label { font-size: var(--fs-sm); color: var(--text-2); }
+  .cd-params .vt-in .form-input, .cd-pk-r .vt-in .form-input { margin: 0; }
+  .cd-unit { display: grid !important; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .cd-unit select { margin: 0; padding-left: 6px; font-size: var(--fs-xs); }
+  .cd-pk { margin-bottom: var(--sp-2-5); }
+  .cd-pk-h { display: flex; justify-content: space-between; align-items: baseline; font-size: var(--fs-sm); font-weight: var(--fw-semibold); margin-bottom: 4px; }
+  .cd-pk-r { display: grid; gap: 4px 6px; align-items: center; margin-bottom: 4px; }
+  .cd-pk-use { grid-template-columns: minmax(96px, 1.4fr) 54px auto 64px auto 26px; }
+  .cd-pk-typ { grid-template-columns: minmax(80px, 1fr) 54px 1fr 26px; }
+  .cd-pk-area { grid-template-columns: auto 58px auto 58px auto 50px auto 26px; }
+  .cd-pk-r .form-input { margin: 0; min-width: 0; text-align: right; }
+  .cd-pk-r select.form-input { text-align: left; }
+  .cd-per { font-size: var(--fs-xs); color: var(--text-3); white-space: nowrap; }
+  #cd-uopg { margin-top: var(--sp-2); }
+  .cd-pk-empty { font-size: var(--fs-sm); color: var(--text-3); }
+  .cd-park-est { margin-top: var(--sp-2); padding: var(--sp-2-5) var(--sp-3); background: var(--surface-2); border-radius: var(--r-md); font-size: var(--fs-sm); }
+  .cd-park-est > div { display: flex; justify-content: space-between; margin-top: 3px; }
+  .cd-park-est > b { display: block; }
+  @media (max-width: 1100px) { .cd-grid { grid-template-columns: 1fr 1fr; } .cd-grid > section:last-child { grid-column: 1 / -1; } }
+  @media (max-width: 680px) { .cd-grid { grid-template-columns: 1fr; } }
   .pn-add { display: grid; grid-template-columns: 1fr auto; gap: var(--sp-2); align-items: end; margin-bottom: var(--sp-3); }
   .pn-add .form-input { margin: 0; }
   .pn-list { display: flex; flex-direction: column; }
@@ -16246,6 +16269,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         a: 'Nas listas compridas escreve-se por cima: a lista vai filtrando à medida que escreves (sem precisar de acentos, e podes escrever partes de várias palavras).',
         steps: ['Toca na caixa da lista.', 'Escreve parte do nome, do CST ou do concelho (ex.: «alvares 26041» ou «gaia»).', 'Escolhe com o rato, ou com as setas e Enter.', 'O ✕ volta a deixar a lista vazia.'],
         kw: 'pesquisar procurar filtrar lista escrever oportunidade projeto cliente escolher dropdown' },
+      { id: 'condicionantes', cat: 'opps', ctx: ['plot'],
+        q: 'registo as condicionantes urbanísticas de um terreno (índice, pisos, estacionamento, REN, UOPG…)',
+        a: 'Na oportunidade, cartão «Condicionantes urbanísticas»: classe de espaço, UOPG (e qual), REN, RAN, ARU, APA, informações excecionais, índice de construção, pisos acima e abaixo do solo, impermeabilização, implantação máxima, afastamentos e as regras de estacionamento do município. Grava sozinho.',
+        steps: ['Abre a oportunidade no [[Investment Intelligence]].', 'Em **Enquadramento**, marca UOPG / REN / RAN / ARU / APA e escreve o que for excecional.', 'Em **Parâmetros**, preenche só o que o município aplica (uns usam índice, outros número de pisos).', 'Em **Estacionamento**, acrescenta as regras: por uso (lugares por cada m²), por tipologia ou por área da fração. A app estima os lugares exigidos com as frações da viabilidade.'],
+        kw: 'condicionantes indice construcao pisos acima abaixo solo impermeabilizacao implantacao afastamentos estacionamento lugares uopg ren ran aru apa pdm excecionais municipio' },
       { id: 'notas-oportunidade', cat: 'opps', ctx: ['plot', 'opps'],
         q: 'escrevo notas internas sobre uma oportunidade (Investment Intelligence)',
         a: 'Na página da oportunidade há o cartão «Notas internas da NOVA»: escreve e toca em «Guardar nota» (ou Ctrl+Enter). Fica com o teu nome e a data. Só a equipa vê — nunca vão para o resumo do investidor.',
@@ -17670,7 +17698,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       }
       // Características (palavras do perfil encontradas no terreno)
       if (inv.tags?.length) {
-        const txt = normTxt([plotTypeNames(p, typeById), p.pdm_class, p.notes, p.name, c.commerce ? 'comercio' : '', p.has_approved_project ? 'aprovado' : ''].join(' '));
+        const cn = p.constraints || {};
+        const txt = normTxt([plotTypeNames(p, typeById), p.pdm_class, p.notes, p.name, c.commerce ? 'comercio' : '', p.has_approved_project ? 'aprovado' : '',
+          ...CD_FLAGS.filter(([k]) => cn[k]).map(x => x[1]), cn.uopg_name, cn.exceptional].join(' '));
         const hit = inv.tags.filter(t => t && txt.includes(normTxt(t)));
         if (hit.length) add(5, 1, 'procura ' + hit.join(', '), 'tags', hit.join(', '));
       }
@@ -18317,6 +18347,30 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         view.innerHTML = `<div class="error-box">Não foi possível abrir a oportunidade: ${escapeHtml(err.message)}</div>`;
       }
     }
+    // ---------- Condicionantes urbanísticas ----------
+    const CD_FLAGS = [['uopg', 'UOPG', 'Unidade Operativa de Planeamento e Gestão'], ['ren', 'REN', 'Reserva Ecológica Nacional'], ['ran', 'RAN', 'Reserva Agrícola Nacional'],
+      ['aru', 'ARU', 'Área de Reabilitação Urbana'], ['apa', 'APA', 'Agência Portuguesa do Ambiente (domínio hídrico, servidões)']];
+    const CD_USES = ['Habitação', 'Comércio', 'Serviços', 'Turismo', 'Indústria / Logística', 'Equipamento'];
+    // Lugares exigidos por cada tipo de regra (cada linha é uma forma de contar; a Câmara aplica a sua)
+    function parkingEstimate(cons, c) {
+      const pk = cons?.park || {}, N = v => Number(v) || 0, out = [];
+      const typs = (c?.typs || []).filter(t => N(t.units) > 0);
+      if ((pk.typ || []).length && typs.length) {
+        const by = Object.fromEntries(pk.typ.map(r => [r.t, N(r.n)]));
+        const n = typs.reduce((s, t) => s + N(t.units) * (by[t.name] ?? 0), 0);
+        if (n) out.push({ label: 'Por tipologia', n: Math.ceil(n) });
+      }
+      if ((pk.area || []).length && typs.length) {
+        const n = typs.reduce((s, t) => { const r = pk.area.find(r => N(t.area) >= N(r.from) && (r.to == null || r.to === '' || N(t.area) < N(r.to))); return s + (r ? N(t.units) * N(r.n) : 0); }, 0);
+        if (n) out.push({ label: 'Por área da fração', n: Math.ceil(n) });
+      }
+      if ((pk.use || []).length) {
+        const area = { 'Habitação': N(c?.housing), 'Comércio': N(c?.commerce) };
+        const n = pk.use.reduce((s, r) => s + (N(r.per) && area[r.u] ? Math.ceil(area[r.u] / N(r.per)) * N(r.n) : 0), 0);
+        if (n) out.push({ label: 'Por uso (habitação e comércio)', n });
+      }
+      return out;
+    }
     // ---------- Notas internas da NOVA (por oportunidade) ----------
     // Registo com autor e data. Só a equipa vê: nunca entram no resumo para o investidor nem nos PDFs.
     let mockPlotNotes = [];
@@ -18374,9 +18428,14 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const invById = Object.fromEntries(d.investors.map(i => [i.id, i]));
       const f = JSON.parse(JSON.stringify(feasInputs(p, cfg)));
       const S = { p, f, cfg, d };
+      // Condicionantes urbanísticas (land_plots.constraints): variam de município para município
+      const cons = p.constraints = (p.constraints && typeof p.constraints === 'object') ? p.constraints : {};
+      cons.park = cons.park || { use: [], typ: [], area: [] };
+      let drawParkEst = () => {};
       const v = k => escapeHtml(p[k] ?? '');
       const num = (path, val, ph = '', extra = '') => `<input type="text" inputmode="decimal" class="form-input" data-f="${path}" value="${escapeHtml(val ?? '')}" placeholder="${escapeHtml(ph)}"${extra}>`;
       const pnum = (col, ph = '') => `<input type="text" inputmode="decimal" class="form-input" data-p="${col}" value="${v(col)}" placeholder="${escapeHtml(ph)}">`;
+      const cdNum = (k, ph = '') => `<input type="text" inputmode="decimal" class="form-input" data-k="${k}" data-kn value="${escapeHtml(cons[k] ?? '')}" placeholder="${escapeHtml(ph)}">`;
       const ptxt = (col, ph = '', type = 'text') => `<input type="${type}" class="form-input" data-p="${col}" value="${v(col)}" placeholder="${escapeHtml(ph)}">`;
       const root = p.variant_of ? d.plots.find(x => x.id === p.variant_of) : null;
       const variants = d.plots.filter(x => x.variant_of && x.variant_of === (p.variant_of || p.id) && x.id !== p.id);
@@ -18424,6 +18483,37 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         </div>
         <div class="op-chips ps-types" id="ps-types">${d.types.map(t => `<label class="op-chip"><input type="checkbox" value="${escapeHtml(t.id)}"${plotTypes(p).includes(t.id) ? ' checked' : ''}><span>${escapeHtml(t.name)}</span></label>`).join('')}</div>
 
+        <div class="gantt-wrap ps-cond" id="ps-cond">
+          <div class="card-head"><h2>Condicionantes urbanísticas</h2><small class="muted">o que se aplica a este terreno · deixa em branco o que não se aplica · grava sozinho</small></div>
+          <div class="cd-grid">
+            <section>
+              <div class="section-label">Enquadramento</div>
+              <label class="field-label" style="margin-top:0">Classe de espaço (PDM)</label>${ptxt('pdm_class', 'ex.: Espaço urbano de baixa densidade')}
+              <div class="op-chips cd-flags">${CD_FLAGS.map(([k, l, t]) => `<label class="op-chip" title="${escapeHtml(t)}"><input type="checkbox" data-k="${k}"${cons[k] ? ' checked' : ''}><span>${l}</span></label>`).join('')}</div>
+              <div id="cd-uopg"${cons.uopg ? '' : ' hidden'}><label class="field-label">Qual UOPG</label><input type="text" class="form-input" data-k="uopg_name" value="${escapeHtml(cons.uopg_name || '')}" placeholder="ex.: UOPG 12 — Frente ribeirinha"></div>
+              <label class="field-label">Informações excecionais</label>
+              <textarea class="form-input" data-k="exceptional" rows="3" placeholder="ex.: servidão de linha de água, alinhamento imposto pela Câmara, parecer prévio da APA…">${escapeHtml(cons.exceptional || '')}</textarea>
+            </section>
+            <section>
+              <div class="section-label">Parâmetros</div>
+              <div class="cd-params">
+                <label>Índice de construção</label><span class="vt-in">${pnum('pdm_index', 'ex.: 1,2')}</span>
+                <label>Pisos acima do solo</label><span class="vt-in">${pnum('max_floors', 'ex.: 4')}</span>
+                <label>Pisos abaixo do solo</label><span class="vt-in">${cdNum('below_floors', 'ex.: 2')}</span>
+                <label>Índice de impermeabilização</label><span class="vt-in">${cdNum('imperm_pct', 'ex.: 70')}${sfx('%')}</span>
+                <label>Área máxima de implantação</label><span class="vt-in cd-unit">${cdNum('footprint', '')}<select class="form-input" data-k="footprint_unit" aria-label="Unidade">${[['m2', 'm²'], ['pct', '%']].map(([k, l]) => `<option value="${k}"${(cons.footprint_unit || 'm2') === k ? ' selected' : ''}>${l}</option>`).join('')}</select></span>
+                <label>Afastamento à frente</label><span class="vt-in">${cdNum('setback_front', 'ex.: 5')}${sfx('m')}</span>
+                <label>Afastamento lateral</label><span class="vt-in">${cdNum('setback_side', 'ex.: 3')}${sfx('m')}</span>
+                <label>Afastamento de tardoz</label><span class="vt-in">${cdNum('setback_rear', 'ex.: 6')}${sfx('m')}</span>
+              </div>
+            </section>
+            <section>
+              <div class="section-label">Estacionamento</div>
+              <div id="cd-park"></div>
+              <div class="cd-park-est" id="cd-park-est"></div>
+            </section>
+          </div>
+        </div>
         <div class="fz-defaults" id="fz-defaults" hidden></div>
         <div class="vt-layout">
           <div class="gantt-wrap vt-sheet">
@@ -18509,8 +18599,6 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
                 <div><label class="field-label">Quem nos falou dele</label>${ptxt('source_name', 'mediador, contacto…')}</div>
                 <div><label class="field-label">Link do mapa</label>${ptxt('maps_url', 'Google Maps', 'url')}</div>
                 <div><label class="field-label">Pasta (fotos, documentos)</label>${ptxt('docs_url', 'Drive, Dropbox…', 'url')}</div>
-                <div><label class="field-label">Classe de espaço (PDM)</label>${ptxt('pdm_class')}</div>
-                <div><label class="field-label">Pisos máximos</label>${pnum('max_floors')}</div>
               </div>
               <label class="check-row"><input type="checkbox" data-p="has_approved_project"${p.has_approved_project ? ' checked' : ''}> Já tem projeto aprovado</label>
             </section>
@@ -18523,6 +18611,55 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         ${d.partner ? `<div class="gantt-wrap" id="ps-props"></div>` : ''}`;
 
       mountPlotNotes(document.getElementById('ps-notes'), p, d);
+      // ---- Condicionantes: campos (data-k), regras de estacionamento e estimativa de lugares ----
+      const consSave = () => { pPatch.constraints = cons; savePlot(); };
+      const condBox = document.getElementById('ps-cond');
+      condBox.addEventListener('input', e => {
+        const el = e.target; if (!el.dataset.k || el.type === 'checkbox' || el.tagName === 'SELECT') return;
+        let v = el.value.trim();
+        if (el.hasAttribute('data-kn')) { v = numOrNull(v.replace(/\s/g, '')); if (Number.isNaN(v)) { el.classList.add('fz-bad'); return; } el.classList.remove('fz-bad'); }
+        cons[el.dataset.k] = v === '' ? null : v; consSave();
+      });
+      condBox.addEventListener('change', e => {
+        const el = e.target; if (!el.dataset.k || !(el.type === 'checkbox' || el.tagName === 'SELECT')) return;
+        cons[el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value;
+        if (el.dataset.k === 'uopg') document.getElementById('cd-uopg').hidden = !el.checked;
+        consSave();
+      });
+      // índice e pisos aparecem também na viabilidade: o mesmo valor nos dois sítios
+      view.addEventListener('input', e => { const el = e.target, col = el.dataset?.p; if (!col) return; view.querySelectorAll(`[data-p="${col}"]`).forEach(x => { if (x !== el && x.value !== el.value) x.value = el.value; }); });
+      const PK = {
+        use: { label: 'Por uso', add: { u: 'Habitação', n: 1, per: 100 }, cols: r => `<select class="form-input" data-pk="u" aria-label="Uso">${CD_USES.map(x => `<option${x === r.u ? ' selected' : ''}>${x}</option>`).join('')}</select>${pkN('n', r.n)}<span class="cd-per">lug. por cada</span>${pkN('per', r.per)}<span class="cd-per">m²</span>` },
+        typ: { label: 'Por tipologia', add: { t: 'T2', n: 1 }, cols: r => `<select class="form-input" data-pk="t" aria-label="Tipologia">${RGEU_MIN.map(([x]) => `<option${x === r.t ? ' selected' : ''}>${x}</option>`).join('')}</select>${pkN('n', r.n)}<span class="cd-per">lugares por fração</span>` },
+        area: { label: 'Por área da fração', add: { from: 0, to: 90, n: 1 }, cols: r => `<span class="cd-per">de</span>${pkN('from', r.from)}<span class="cd-per">a</span>${pkN('to', r.to, 'mais')}<span class="cd-per">m²</span>${pkN('n', r.n)}<span class="cd-per">lug.</span>` }
+      };
+      function pkN(k, v, ph = '') { return `<input type="text" inputmode="decimal" class="form-input" data-pk="${k}" data-pkn value="${escapeHtml(v ?? '')}" placeholder="${escapeHtml(ph)}">`; }
+      const drawPark = () => {
+        const box = document.getElementById('cd-park');
+        box.innerHTML = Object.entries(PK).map(([kind, def]) => `<div class="cd-pk" data-kind="${kind}"><div class="cd-pk-h">${def.label}<button type="button" class="text-btn" data-pk-add="${kind}">+ Regra</button></div>
+          ${(cons.park[kind] || []).map((r, i) => `<div class="cd-pk-r cd-pk-${kind}" data-i="${i}">${def.cols(r)}<button type="button" class="ck-x" data-pk-del="${i}" aria-label="Tirar">×</button></div>`).join('') || '<div class="cd-pk-empty">—</div>'}</div>`).join('');
+      };
+      condBox.addEventListener('click', e => {
+        const a = e.target.closest('[data-pk-add]'), del = e.target.closest('[data-pk-del]');
+        if (a) { const k = a.dataset.pkAdd; (cons.park[k] = cons.park[k] || []).push({ ...PK[k].add }); drawPark(); drawParkEst(); consSave(); }
+        if (del) { const k = del.closest('.cd-pk').dataset.kind; cons.park[k].splice(Number(del.dataset.pkDel), 1); drawPark(); drawParkEst(); consSave(); }
+      });
+      const pkUpdate = e => {
+        const el = e.target; if (!el.dataset.pk) return;
+        const k = el.closest('.cd-pk').dataset.kind, i = Number(el.closest('.cd-pk-r').dataset.i);
+        let v = el.value;
+        if (el.hasAttribute('data-pkn')) { v = numOrNull(v.replace(/\s/g, '')); if (Number.isNaN(v)) return; }
+        cons.park[k][i][el.dataset.pk] = v; drawParkEst(); consSave();
+      };
+      condBox.addEventListener('input', pkUpdate); condBox.addEventListener('change', e => { if (e.target.tagName === 'SELECT') pkUpdate(e); });
+      // Lugares exigidos, com as frações e áreas da viabilidade
+      drawParkEst = () => {
+        const el = document.getElementById('cd-park-est'); if (!el) return;
+        const est = parkingEstimate(cons, feasCalc(p, f));
+        el.innerHTML = est.length ? `<b>Lugares exigidos (estimativa)</b>${est.map(x => `<div><span>${escapeHtml(x.label)}</span><b>${escapeHtml(fmtNum(x.n))}</b></div>`).join('')}<small class="muted">com as frações e áreas da viabilidade abaixo</small>`
+          : '<small class="muted">Acrescenta as regras do município. A app calcula os lugares exigidos com as frações e áreas da viabilidade.</small>';
+      };
+      drawPark(); drawParkEst();
       // ---- Gravação automática ----
       const savedEl = document.getElementById('ps-saved');
       let pTimer = null, fTimer = null; const pPatch = {};
@@ -18709,6 +18846,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       });
       // ---- Contas ao vivo: valores da folha + resumo ----
       const drawResult = () => {
+        drawParkEst();
         const c = feasCalc(p, f), mx = c.autoMix, sc = feasScenarios(p, f), Nn = v => Number(v) || 0;
         const R = c.hasRange ? [feasCalc(p, f, { sales: 1, build: 1, price: 'min' }), feasCalc(p, f, { sales: 1, build: 1, price: 'max' })] : null;
         const R2 = c.typs.some(t => Nn(t.rent) && Nn(t.rent_max) && Nn(t.rent) !== Nn(t.rent_max)) ? [feasCalc(p, f, { sales: 1, build: 1, price: 'min' }), feasCalc(p, f, { sales: 1, build: 1, price: 'max' })] : null;
