@@ -2952,7 +2952,7 @@
   /* ---- páginas: entram a subir e a focar ---- */
   @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
   @keyframes kPage { from { opacity: 0; transform: translateY(16px) scale(.995); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
-  #home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #feas-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view, #help-view, #tickets-view, #absences-view, #mqt-view {
+  #home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #feas-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view, #help-view, #tickets-view, #absences-view, #mqt-view, #contacts-view {
     animation: kPage .5s var(--expo) both; }
   .anim-in :is(.gantt-wrap, .hero-card, .fg, .tax-card, .stat-tile, .hs-tile, .kpi, .project-row, .tx-row, .rec-row, .ata-entry, .client-card, .hrow) { animation-duration: .55s; animation-timing-function: var(--expo); }
   .anim-in :is(.gantt-wrap, .hero-card, .fg, .tax-card, .stat-tile, .hs-tile, .kpi, .project-row, .tx-row, .rec-row, .ata-entry, .hrow):nth-child(n+7) { animation-delay: 200ms; }
@@ -3083,8 +3083,8 @@
   @keyframes kGhostOut { to { opacity: 0; transform: scale(.975); filter: blur(6px); } }
   @keyframes kGhostLeft { to { opacity: 0; transform: translateX(-48px) scale(.98); filter: blur(5px); } }
   @keyframes kGhostRight { to { opacity: 0; transform: translateX(48px) scale(.98); filter: blur(5px); } }
-  .content-area[data-kdir="1"] > :is(#home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #feas-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view, #help-view, #tickets-view, #absences-view, #mqt-view) { animation-name: kPageR; }
-  .content-area[data-kdir="-1"] > :is(#home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #feas-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view, #help-view, #tickets-view, #absences-view, #mqt-view) { animation-name: kPageL; }
+  .content-area[data-kdir="1"] > :is(#home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #feas-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view, #help-view, #tickets-view, #absences-view, #mqt-view, #contacts-view) { animation-name: kPageR; }
+  .content-area[data-kdir="-1"] > :is(#home-view, #projects-view, #clients-view, #client-view, #opps-view, #plot-view, #feas-view, #proposal-view, #billing-view, #finance-view, #agenda-view, #horas-view, #settings-view, #detail-panel, #atas-view, #despesas-view, #help-view, #tickets-view, #absences-view, #mqt-view, #contacts-view) { animation-name: kPageL; }
   @keyframes kPageR { from { opacity: 0; transform: translateX(56px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
   @keyframes kPageL { from { opacity: 0; transform: translateX(-56px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
 
@@ -3716,6 +3716,34 @@
   .rv-co { background: var(--accent-soft); border-radius: var(--r-md); padding: var(--sp-2) var(--sp-3); margin-top: var(--sp-2); }
   @media (max-width: 760px) { .co-row { grid-template-columns: auto 1fr auto; } .co-st { grid-column: 2; justify-self: start; } .co-val { grid-row: 1; grid-column: 3; } }
   /* MQT Studio */
+  .ct-top { display: flex; gap: var(--sp-2-5); align-items: center; flex-wrap: wrap; margin: var(--sp-1) 0 var(--sp-3); }
+  .ct-top #ct-q { flex: 1 1 280px; margin: 0; }
+  .ct-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: var(--sp-3); }
+  .ct-tag-f { border: 1px solid var(--border); background: var(--surface); color: var(--text-2); border-radius: 999px; padding: 4px 11px; font: inherit; font-size: var(--fs-sm); cursor: pointer; }
+  .ct-tag-f small { color: var(--text-3); margin-left: 2px; }
+  .ct-tag-f.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .ct-tag-f.on small { color: rgba(255,255,255,.8); }
+  .ct-list { display: flex; flex-direction: column; }
+  .ct-card { display: grid; grid-template-columns: 1fr auto; gap: var(--sp-3); padding: var(--sp-3) 0; border-top: 1px solid var(--border); cursor: pointer; }
+  .ct-card:first-child { border-top: 0; }
+  .ct-card:hover .ct-main b { color: var(--accent); }
+  .ct-main { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .ct-main > b { font-size: var(--fs-md); overflow-wrap: anywhere; }
+  .ct-main > span { font-size: var(--fs-sm); color: var(--text-2); }
+  .ct-notes { color: var(--text-3); font-size: var(--fs-xs); line-height: 1.4; }
+  .ct-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+  .ct-tags em, .ct-chip { font-style: normal; font-size: var(--fs-xs); background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 2px 9px; }
+  .ct-acts { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; font-size: var(--fs-sm); text-align: right; min-width: 0; }
+  .ct-a { color: var(--accent); text-decoration: none; overflow-wrap: anywhere; }
+  .ct-a:hover { text-decoration: underline; }
+  .ct-loc { color: var(--text-3); font-size: var(--fs-xs); }
+  .ct-tagbox { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 6px; min-height: 24px; align-items: center; }
+  .ct-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 4px 3px 10px; font-size: var(--fs-sm); }
+  .ct-chip button { border: 0; background: none; color: inherit; cursor: pointer; font-size: 15px; line-height: 1; padding: 0 4px; }
+  @media (max-width: 640px) { .ct-card { grid-template-columns: 1fr; } .ct-acts { align-items: flex-start; text-align: left; flex-direction: row; flex-wrap: wrap; gap: 4px 12px; } }
+  .dbk-day.past:not(.on) { opacity: .72; }
+  .dbk-pcheck { width: 18px; height: 18px; accent-color: var(--accent); flex: none; margin: 0 4px 0 2px; cursor: pointer; }
+  .dbk-past-hint { margin: 0 0 8px; }
   .mqt-top { display: flex; gap: var(--sp-2-5); align-items: center; flex-wrap: wrap; margin: var(--sp-1) 0 var(--sp-2); }
   .mqt-proj { flex: 1 1 260px; max-width: 460px; margin: 0; }
   .mqt-actions, .mqt-tabacts { display: flex; gap: var(--sp-2); flex-wrap: wrap; align-items: center; }
@@ -4067,6 +4095,7 @@
         <button type="button" class="nav-item" data-nav="agenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Agenda</span></button>
         <button type="button" class="nav-item" data-nav="projects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg><span>Projetos</span></button>
         <button type="button" class="nav-item" data-nav="clients"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 19.5c.8-3.3 3.4-5 6.5-5s5.7 1.7 6.5 5"/><path d="M15.5 5.2a3.5 3.5 0 010 6.6M17.8 14.8c1.9.7 3.2 2.3 3.7 4.7"/></svg><span>Clientes</span></button>
+        <button type="button" class="nav-item" data-nav="contacts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><circle cx="12" cy="10" r="2.6"/><path d="M8 17c.6-2 2.1-3 4-3s3.4 1 4 3"/><path d="M3 7.5h2M3 12h2M3 16.5h2"/></svg><span>Contactos</span></button>
         <button type="button" class="nav-item" data-nav="team"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M3 19.5c.6-3.2 3-5 6-5s5.4 1.8 6 5"/><path d="M15.5 14.8c2.5-.3 4.6 1.2 5.2 4.2"/></svg><span>Equipa</span></button>
         <button type="button" class="nav-item" data-nav="money"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 6.5A7 7 0 1 0 17.5 17.5"/><path d="M4.5 10.5h9M4.5 13.5h9"/></svg><span>Finanças</span></button>
       </nav>
@@ -4094,6 +4123,7 @@
       <button type="button" class="nav-item" data-nav="agenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Agenda</span></button>
       <button type="button" class="nav-item" data-nav="projects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg><span>Projetos</span></button>
       <button type="button" class="nav-item" data-nav="clients"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 19.5c.8-3.3 3.4-5 6.5-5s5.7 1.7 6.5 5"/><path d="M15.5 5.2a3.5 3.5 0 010 6.6M17.8 14.8c1.9.7 3.2 2.3 3.7 4.7"/></svg><span>Clientes</span></button>
+        <button type="button" class="nav-item" data-nav="contacts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><circle cx="12" cy="10" r="2.6"/><path d="M8 17c.6-2 2.1-3 4-3s3.4 1 4 3"/><path d="M3 7.5h2M3 12h2M3 16.5h2"/></svg><span>Contactos</span></button>
       <button type="button" class="nav-item" data-nav="team"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M3 19.5c.6-3.2 3-5 6-5s5.4 1.8 6 5"/><path d="M15.5 14.8c2.5-.3 4.6 1.2 5.2 4.2"/></svg><span>Equipa</span></button>
       <button type="button" class="nav-item" data-nav="money"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 6.5A7 7 0 1 0 17.5 17.5"/><path d="M4.5 10.5h9M4.5 13.5h9"/></svg><span>Finanças</span></button>
       <div class="side-sep"></div>
@@ -4170,6 +4200,7 @@
       <div id="tickets-view" style="display:none;"></div>
       <div id="absences-view" style="display:none;"></div>
       <div id="mqt-view" style="display:none;"></div>
+      <div id="contacts-view" style="display:none;"></div>
       <div id="billing-view" style="display:none;"><div id="billing-container"></div></div>
       <div id="finance-view" style="display:none;">
         <div class="mc-head">
@@ -4937,7 +4968,7 @@
       const byName = {
         projects: openProjectsModule, horas: openHorasModule, settings: openSettingsModule, atas: openAtasModule, despesas: openDespesasModule,
         clients: openClientsModule, billing: () => openBillingModule(), finance: () => openFinanceModule(), help: () => openHelpModule(),
-        opps: () => openOppsModule(), pipeline: () => openPipelineModule(), mqt: () => openMqtModule(), tickets: () => openTicketsModule(),
+        opps: () => openOppsModule(), pipeline: () => openPipelineModule(), mqt: () => openMqtModule(), tickets: () => openTicketsModule(), contacts: () => openContactsModule(),
         absences: () => openAbsencesModule(), agenda: () => openAgendaModule(st.mode || undefined),
         client: () => openClientDetail(st.clientId), investorView: () => openInvestorView(st.investorId), plot: () => openPlotView(st.plotId),
         feas: () => openFeasView(st.plotId), detail: () => openDetail(st.projectId), proposal: () => openProposalView(st.proposalId || null)
@@ -4977,7 +5008,7 @@
       document.querySelectorAll('[data-nav]').forEach(el => el.classList.toggle('active', el.dataset.nav === navKey || el.dataset.nav === NAV_GROUP_OF[navKey]));
       document.getElementById('more-sheet').classList.remove('open');
       closeSideUserMenu();
-      document.getElementById('tab-more').classList.toggle('active', ['clients', 'opps', 'pipeline', 'billing', 'finance', 'atas', 'despesas', 'settings', 'help', 'tickets', 'absences', 'mqt'].includes(navKey));
+      document.getElementById('tab-more').classList.toggle('active', ['clients', 'opps', 'pipeline', 'billing', 'finance', 'atas', 'despesas', 'settings', 'help', 'tickets', 'absences', 'mqt', 'contacts'].includes(navKey));
       requestAnimationFrame(() => syncNavInd());
       syncLargeTitle(newState.name);
       syncSubnav(newState.name);
@@ -5008,6 +5039,7 @@
       else if (prev.name === 'pipeline') openPipelineModule();
       else if (prev.name === 'agenda') openAgendaModule(prev.mode);
       else if (prev.name === 'mqt') openMqtModule();
+      else if (prev.name === 'contacts') openContactsModule();
       else if (prev.name === 'detail') openDetail(prev.projectId);
       else showHome();
     }
@@ -5119,7 +5151,7 @@
 
     function hideAllViews() {
       kGhostOut();
-      ['home-view', 'projects-view', 'clients-view', 'client-view', 'opps-view', 'plot-view', 'feas-view', 'proposal-view', 'pipeline-view', 'billing-view', 'finance-view', 'agenda-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view', 'despesas-view', 'help-view', 'tickets-view', 'absences-view', 'mqt-view'].forEach(id => {
+      ['home-view', 'projects-view', 'clients-view', 'client-view', 'opps-view', 'plot-view', 'feas-view', 'proposal-view', 'pipeline-view', 'billing-view', 'finance-view', 'agenda-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view', 'despesas-view', 'help-view', 'tickets-view', 'absences-view', 'mqt-view', 'contacts-view'].forEach(id => {
         document.getElementById(id).style.display = 'none';
       });
     }
@@ -6288,6 +6320,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       tickets: () => openTicketsModule(),
       absences: () => openAbsencesModule(),
       mqt: () => openMqtModule(),
+      contacts: () => openContactsModule(),
       team: () => openHorasModule(),
       money: () => openBillingModule()
     };
@@ -16027,6 +16060,16 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         steps: ['Abre [[Pipeline]] → [[+ Nova proposta]]. Escolhe **que proposta é** (o modelo pré-configura tudo), a **tipologia** e a **língua**. Se vier de uma oportunidade do Intelligence, escolhe-a: usa o **mesmo CST** e traz o local, a área e o cliente.', 'No editor ficam à vista só quatro partes: **Cliente e local**, **Serviços**, **Valor** e **Pagamento**. Ajusta o que for preciso — os valores do modelo são um ponto de partida.', 'A língua muda-se a qualquer momento no **PT | EN** do topo: os textos da biblioteca e do modelo passam para a outra língua.', 'O resto está em **Mais opções**: capa e manifesto, textos do âmbito (Base de trabalho, Pressupostos, Prazo…), secções próprias (ex.: Aperfeiçoamento), custo e margem, timeline, opcionais, exclusões e assinatura.', 'Nos textos, {h} é a taxa horária dos opcionais, {local} o local e concelho, {validade}/{ate} a validade, e {Opcionais} (ou outro título) o número dessa secção no documento.', 'Toca em [[Criar proposta]] (recebe o CST). A partir daí grava sozinha. Para que as próximas deste tipo comecem assim, toca em **Guardar como modelo**.', 'Para enviar: [[Enviar por email]]. A app gera o PDF e descarrega o email com o PDF e a tua assinatura: abre o ficheiro e o Outlook mostra a mensagem pronta (fica também nos Rascunhos). Carregas em **Enviar** e a proposta fica marcada como enviada a essa hora, com follow-up a 7 dias.'],
         kw: 'proposta honorarios orcamento preco valor fee nota de honorarios cst pdf modelo nova capa ambito exclusoes opcionais timeline pagamento biblioteca ingles email outlook enviar anexo pip viabilidade estudo preliminar projeto completo tipo lingua aperfeicoamento taxa horaria guardar como modelo',
         tour: [{ go: 'nav:pipeline', sel: '#pipe-new', text: 'Começa aqui uma proposta nova.' }] },
+      { id: 'contactos', cat: 'start', ctx: ['contacts'],
+        q: 'encontro um fornecedor ou um contacto (caixilharia, AVAC, Câmara…)',
+        a: 'Menu → Contactos: escreve o que procuras (ex.: caixilhos, AVAC, Câmara de Gaia) ou toca numa etiqueta. Toca no telefone ou no email para ligar ou escrever.',
+        steps: ['Abre [[Contactos]] no menu.', 'Escreve na pesquisa o que precisas — procura em tudo (nome, pessoa, etiquetas, zona, notas) e entende variações: «caixilhos» encontra «Caixilharia».', 'Ou toca nas etiquetas por baixo da pesquisa para filtrar (podes juntar várias).', 'Para acrescentar: [[+ Novo contacto]] → nome da empresa ou entidade, **o que faz / fornece** (escreve e carrega Enter para cada etiqueta), pessoa, telefone, email, site, zona e notas.', 'Toca num contacto para o corrigir ou apagar.'],
+        kw: 'contactos fornecedores fornecedor materiais servicos especialidades engenheiro engenharia camara municipal caixilharia caixilhos rebocos avac empreiteiro telefone email lista' },
+      { id: 'daybreak-passado', cat: 'start', ctx: ['home'],
+        q: 'marco tarefas de um dia que já passou (Daybreak)',
+        a: 'Hoje → Daybreak → «Dias anteriores»: escolhe o dia e marca o que ficou feito. O que marcares sai dos dias seguintes.',
+        steps: ['No cartão **Daybreak** da [[Hoje]], toca em **Dias anteriores** (ou, no plano, nos dias à esquerda de «Hoje»).', 'Marca as tarefas que ficaram feitas nesse dia. Se uma já tinha passado para o dia seguinte, sai de lá sozinha.', 'Podes acrescentar algo que fizeste e não estava no plano (fica logo como feito).', 'Toca em **Pronto**: o plano de hoje atualiza-se.'],
+        kw: 'daybreak dia anterior ontem passado tarefas feitas marcar esqueci update atualizar transitar passar plano' },
       { id: 'modelos-proposta', cat: 'opps', ctx: ['proposal', 'settings:proposals', 'pipeline'],
         q: 'mudo o que vem pré-preenchido numa proposta',
         a: 'Abre uma proposta do tipo que queres mudar, ajusta-a e toca em «Guardar como modelo». Assinatura, validade, língua e taxa horária ficam em Definições → Propostas.',
@@ -20690,6 +20733,155 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       }
     }
 
+    // ================= CONTACTOS: fornecedores, especialidades, entidades =================
+    // Uma lista partilhada para saber a quem ligar: caixilharia, rebocos, AVAC, engenharia, alguém da Câmara…
+    // O que cada um faz/fornece fica em etiquetas livres; a pesquisa procura em tudo e tolera variações
+    // ("caixilhos" encontra "caixilharia").
+    let mockContacts = [
+      { id: 'ct-1', name: 'Caixilharia Silva & Filhos', person: 'Joaquim Silva', role: 'Orçamentos', phone: '+351 912 345 678', email: 'orcamentos@caixsilva.pt', website: 'caixsilva.pt', location: 'Maia', tags: ['Caixilharia', 'Alumínio', 'Vidros'], notes: 'Rápidos a orçamentar. Pedir sempre amostra de cor.' },
+      { id: 'ct-2', name: 'Termoclima', person: 'Ana Costa', role: 'Engenheira', phone: '+351 220 000 111', email: 'ana@termoclima.pt', location: 'Porto', tags: ['AVAC', 'Engenharia', 'Térmica'], notes: '' },
+      { id: 'ct-3', name: 'C.M. Vila Nova de Gaia — Urbanismo', person: 'Dr.ª Marta Reis', role: 'Técnica de licenciamento', phone: '+351 223 742 400', email: '', location: 'Vila Nova de Gaia', tags: ['Câmara Municipal', 'Licenciamento'], notes: 'Atende melhor de manhã.' }
+    ];
+    let contactsQ = '', contactsTags = [];
+    async function loadContacts() {
+      if (devMode) return mockContacts.filter(c => !c.archived_at);
+      const r = await supabase.from('contacts').select('*').is('archived_at', null).order('name');
+      if (r.error) throw r.error;
+      return r.data || [];
+    }
+    // Pesquisa tolerante: cada palavra tem de aparecer; palavras longas comparam pela raiz (6 letras)
+    function contactMatches(c, q) {
+      const hay = normTxt([c.name, c.person, c.role, c.location, c.email, c.website, c.notes, ...(c.tags || [])].filter(Boolean).join(' '));
+      const words = hay.split(/[^a-z0-9@.]+/).filter(Boolean);
+      return normTxt(q).split(/\s+/).filter(Boolean).every(tok => {
+        if (hay.includes(tok)) return true;
+        const stem = tok.length > 6 ? tok.slice(0, 6) : tok;
+        return stem.length >= 4 && words.some(w => w.startsWith(stem));
+      });
+    }
+    function openContactsModule() {
+      pushCurrentView({ name: 'contacts' });
+      document.getElementById('nav-title').textContent = 'Contactos';
+      hideAllViews();
+      document.getElementById('contacts-view').style.display = 'block';
+      renderContacts();
+    }
+    async function renderContacts() {
+      const box = document.getElementById('contacts-view');
+      beginLoad(box, 'contacts', '<div class="gantt-wrap">' + SKELETON(6) + '</div>');
+      let all;
+      try { all = await loadContacts(); }
+      catch (err) {
+        box.innerHTML = /contacts/.test(err.message || '') ? '<div class="error-box">Para usar os Contactos, corre contactos.sql no Supabase.</div>' : `<div class="error-box">Não foi possível carregar: ${escapeHtml(err.message)}</div>`;
+        return;
+      }
+      // etiquetas por número de contactos (as mais usadas primeiro)
+      const count = {};
+      all.forEach(c => (c.tags || []).forEach(t => { const k = t.trim(); if (k) count[k] = (count[k] || 0) + 1; }));
+      const tags = Object.keys(count).sort((a, b) => count[b] - count[a] || a.localeCompare(b, 'pt'));
+      contactsTags = contactsTags.filter(t => count[t]);
+      const tel = x => String(x || '').replace(/[^\d+]/g, '');
+      const draw = () => {
+        const list = all.filter(c => (!contactsTags.length || contactsTags.every(t => (c.tags || []).includes(t))) && (!contactsQ.trim() || contactMatches(c, contactsQ)));
+        document.getElementById('ct-list').innerHTML = list.length ? list.map(c => `
+          <div class="ct-card" data-ct="${escapeHtml(c.id)}" tabindex="0" role="button" aria-label="Abrir ${escapeHtml(c.name)}">
+            <div class="ct-main"><b>${escapeHtml(c.name)}</b>${c.person ? `<span>${escapeHtml(c.person)}${c.role ? ' · ' + escapeHtml(c.role) : ''}</span>` : ''}
+              ${(c.tags || []).length ? `<div class="ct-tags">${c.tags.map(t => `<em>${escapeHtml(t)}</em>`).join('')}</div>` : ''}
+              ${c.notes ? `<small class="ct-notes">${escapeHtml(c.notes)}</small>` : ''}</div>
+            <div class="ct-acts">
+              ${c.phone ? `<a href="tel:${escapeHtml(tel(c.phone))}" class="ct-a" data-stop>${escapeHtml(c.phone)}</a>` : ''}
+              ${c.phone2 ? `<a href="tel:${escapeHtml(tel(c.phone2))}" class="ct-a" data-stop>${escapeHtml(c.phone2)}</a>` : ''}
+              ${c.email ? `<a href="mailto:${escapeHtml(c.email)}" class="ct-a" data-stop>${escapeHtml(c.email)}</a>` : ''}
+              ${c.website ? `<a href="${escapeHtml(/^https?:\/\//.test(c.website) ? c.website : 'https://' + c.website)}" target="_blank" rel="noopener" class="ct-a" data-stop>${escapeHtml(c.website.replace(/^https?:\/\//, ''))}</a>` : ''}
+              ${c.location ? `<span class="ct-loc">${escapeHtml(c.location)}</span>` : ''}
+            </div>
+          </div>`).join('')
+          : `<div class="gantt-empty">${all.length ? 'Ninguém com isso. Experimenta outra palavra ou tira um filtro.' : 'Ainda sem contactos. Acrescenta o primeiro: um fornecedor, uma especialidade, alguém da Câmara.'}</div>`;
+        document.getElementById('ct-count').textContent = `${list.length} de ${all.length}`;
+        box.querySelectorAll('.ct-tag-f').forEach(b => b.classList.toggle('on', contactsTags.includes(b.dataset.tag)));
+        document.querySelectorAll('#ct-list [data-ct]').forEach(el => {
+          const open = e => { if (e.target.closest('[data-stop]')) return; openContactModal(all.find(c => c.id === el.dataset.ct)); };
+          el.addEventListener('click', open);
+          el.addEventListener('keydown', e => { if (e.key === 'Enter') open(e); });
+        });
+      };
+      box.innerHTML = `
+        <div class="ct-top">
+          <input type="search" id="ct-q" class="form-input" placeholder="Quem faz caixilharia? AVAC? Alguém da Câmara de Gaia?" value="${escapeHtml(contactsQ)}" autocomplete="off">
+          <button type="button" class="primary-btn toolbar-btn" id="ct-new">+ Novo contacto</button>
+        </div>
+        ${tags.length ? `<div class="ct-filters">${tags.slice(0, 40).map(t => `<button type="button" class="ct-tag-f" data-tag="${escapeHtml(t)}">${escapeHtml(t)} <small>${count[t]}</small></button>`).join('')}</div>` : ''}
+        <div class="gantt-wrap"><div class="card-head"><h2>Contactos</h2><span id="ct-count"></span></div><div id="ct-list" class="ct-list"></div></div>`;
+      document.getElementById('ct-q').addEventListener('input', e => { contactsQ = e.target.value; draw(); });
+      document.getElementById('ct-new').addEventListener('click', () => openContactModal(null));
+      box.querySelectorAll('.ct-tag-f').forEach(b => b.addEventListener('click', () => {
+        const t = b.dataset.tag; contactsTags = contactsTags.includes(t) ? contactsTags.filter(x => x !== t) : [...contactsTags, t]; draw();
+      }));
+      draw();
+    }
+    async function openContactModal(c) {
+      const isNew = !c;
+      c = c ? { ...c, tags: [...(c.tags || [])] } : { name: '', person: '', role: '', phone: '', phone2: '', email: '', website: '', location: '', tags: [], notes: '' };
+      let known = [];
+      try { known = [...new Set((await loadContacts()).flatMap(x => x.tags || []))].sort((a, b) => a.localeCompare(b, 'pt')); } catch (_) { /* sem sugestões */ }
+      const f = (id, label, val, ph = '', type = 'text') => `<div><label class="field-label" for="${id}">${label}</label><input type="${type}" id="${id}" class="form-input" value="${escapeHtml(val || '')}" placeholder="${escapeHtml(ph)}"></div>`;
+      openQuickModal(isNew ? 'Novo contacto' : 'Contacto', `
+        <label class="field-label" for="cm-name" style="margin-top:0;">Empresa ou entidade</label>
+        <input type="text" id="cm-name" class="form-input" value="${escapeHtml(c.name)}" placeholder="ex.: Caixilharia Silva, Câmara Municipal de Gaia, Eng.º João Sousa">
+        <label class="field-label">O que faz / fornece</label>
+        <div class="ct-tagbox" id="cm-tags"></div>
+        <input type="text" id="cm-tag" class="form-input" list="cm-known" placeholder="Escreve e carrega Enter (ex.: caixilharia, rebocos, AVAC, engenharia, licenciamento)">
+        <datalist id="cm-known">${known.map(t => `<option value="${escapeHtml(t)}">`).join('')}</datalist>
+        <div class="form-grid">
+          ${f('cm-person', 'Pessoa de contacto', c.person, 'ex.: Joaquim Silva')}
+          ${f('cm-role', 'Cargo / função', c.role, 'ex.: Orçamentos')}
+          ${f('cm-phone', 'Telefone', c.phone, '+351 …', 'tel')}
+          ${f('cm-phone2', 'Outro telefone', c.phone2, '', 'tel')}
+          ${f('cm-email', 'Email', c.email, '', 'email')}
+          ${f('cm-web', 'Site', c.website, 'ex.: empresa.pt')}
+          ${f('cm-loc', 'Zona / morada', c.location, 'ex.: Maia')}
+        </div>
+        <label class="field-label" for="cm-notes">Notas</label>
+        <textarea id="cm-notes" class="form-input" rows="3" placeholder="Como trabalham, preços, prazos, com quem falar…">${escapeHtml(c.notes || '')}</textarea>
+        <button type="button" class="primary-btn" id="cm-save">${isNew ? 'Criar contacto' : 'Guardar'}</button>
+        ${isNew ? '' : '<button type="button" class="text-btn danger-text" id="cm-del">Apagar contacto</button>'}
+        <div id="cm-msg" class="form-msg"></div>`);
+      const tagsBox = document.getElementById('cm-tags'), tagIn = document.getElementById('cm-tag');
+      const drawTags = () => {
+        tagsBox.innerHTML = c.tags.map((t, i) => `<span class="ct-chip">${escapeHtml(t)}<button type="button" data-i="${i}" aria-label="Tirar ${escapeHtml(t)}">×</button></span>`).join('') || '<span class="muted">Ainda sem etiquetas.</span>';
+        tagsBox.querySelectorAll('[data-i]').forEach(b => b.addEventListener('click', () => { c.tags.splice(Number(b.dataset.i), 1); drawTags(); }));
+      };
+      const addTag = () => {
+        String(tagIn.value || '').split(/[,;]/).map(x => x.trim()).filter(Boolean).forEach(v => {
+          const same = known.find(k => normTxt(k) === normTxt(v)) || v.charAt(0).toUpperCase() + v.slice(1);
+          if (!c.tags.some(t => normTxt(t) === normTxt(same))) c.tags.push(same);
+        });
+        tagIn.value = ''; drawTags();
+      };
+      tagIn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTag(); } });
+      tagIn.addEventListener('change', () => { if (known.includes(tagIn.value)) addTag(); });
+      drawTags();
+      document.getElementById('cm-save').addEventListener('click', async () => {
+        if (tagIn.value.trim()) addTag();
+        const v = id => document.getElementById(id).value.trim();
+        const row = { name: v('cm-name'), person: v('cm-person') || null, role: v('cm-role') || null, phone: v('cm-phone') || null, phone2: v('cm-phone2') || null,
+          email: v('cm-email') || null, website: v('cm-web') || null, location: v('cm-loc') || null, tags: c.tags, notes: v('cm-notes') || null, updated_at: new Date().toISOString() };
+        if (!row.name) return formError('cm-msg', 'Escreve o nome da empresa, entidade ou pessoa.');
+        if (row.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(row.email)) return formError('cm-msg', 'Esse email não parece certo.');
+        try {
+          if (isNew) { const me = await getCurrentMember(); await dbInsert('contacts', { ...row, created_by: me?.id || null }, mockContacts); }
+          else await dbUpdate('contacts', c.id, row, mockContacts);
+          closeQuickModal(); showToast(isNew ? 'Contacto criado' : 'Contacto guardado');
+          if (currentViewState?.name === 'contacts') renderContacts();
+        } catch (err) { formError('cm-msg', 'Não foi possível guardar: ' + err.message); }
+      });
+      document.getElementById('cm-del')?.addEventListener('click', async () => {
+        if (!confirm(`Apagar «${c.name}» dos contactos?`)) return;
+        try { await dbUpdate('contacts', c.id, { archived_at: new Date().toISOString() }, mockContacts); closeQuickModal(); showToast('Contacto apagado'); renderContacts(); }
+        catch (err) { formError('cm-msg', 'Não foi possível apagar: ' + err.message); }
+      });
+    }
+
     // ================= AUSÊNCIAS: férias, doença, faltas justificadas e formação =================
     // Cada pessoa marca e fica logo (os outros veem na Hoje). Saldo de férias pelo Código do Trabalho:
     // 22 dias úteis por ano (art. 238.º); no ano de admissão, 2 dias úteis por mês completo, até 20, a gozar
@@ -21150,6 +21342,26 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         await dbUpdate('stage_checklist_items', t.checklist_item_id, { done, done_at: t.done_at, done_by: done ? me?.id || null : null }, mockChecklist).catch(() => {});
       }
     }
+    // Tarefa de um dia passado marcada como feita depois: as cópias por fazer que ela deixou nos dias seguintes
+    // saem (já não há nada a passar) e a tarefa deixa de contar como "passou".
+    async function dbkUncarry(t) {
+      const all = await loadDbTasks(t.day, addDaysKey(dateKey(new Date()), 30));
+      let front = [t.id], keptDone = false; const kill = [];
+      while (front.length) {
+        const next = all.filter(x => x.carried_from && front.includes(x.carried_from));
+        front = next.map(x => x.id);
+        next.forEach(x => { if (x.done) keptDone = true; else kill.push(x); });
+      }
+      for (const x of kill) await dbDelete('daybreak_tasks', x.id, mockDbTasks);
+      if (!keptDone && t.carried) { t.carried = false; await dbUpdate('daybreak_tasks', t.id, { carried: false }, mockDbTasks); }
+      return kill.length;
+    }
+    // Dias úteis para trás (para pôr em dia o que ficou feito e não se marcou)
+    function dbkPastDays(today, n = 5) {
+      const out = []; let d = addDaysKey(today, -1);
+      while (out.length < n) { if (isWorkday(d)) out.unshift(d); d = addDaysKey(d, -1); }
+      return out;
+    }
     // Dia anterior com plano ou fecho de uma pessoa (o "ontem" da reunião)
     function dbkPrevDay(memberId, today, tasks, days) {
       const ds = [...tasks.filter(t => t.member_id === memberId && t.day < today).map(t => t.day), ...days.filter(d => d.member_id === memberId && d.day < today).map(d => d.day)];
@@ -21210,7 +21422,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             ${mine.length ? `<div class="dbk-list">${mine.map(t => dbkTaskRow(t, { today })).join('')}</div>` : `<div class="gantt-empty">${isAway ? 'Hoje estás fora. Bom descanso.' : 'Ainda sem plano. Escolhe tarefas das tuas fases ou escreve as tuas.'}</div>`}
             <button type="button" class="secondary-btn" id="dbk-plan">${mine.length ? 'Editar o plano' : 'Planear o dia'}</button>
             <div class="dbk-ahead">${nextDays.length ? `<span>Já planeado:</span>${nextDays.map(x => `<button type="button" class="dbk-ahead-chip" data-dbk-ahead="${x.d}">${escapeHtml(dbkDayName(x.d, today).replace(/^./, c => c.toUpperCase()).replace(/,.*$/, '') + (x.d === addDaysKey(today, 1) ? '' : ' ' + parseDateKey(x.d).getDate()))} · ${x.n}</button>`).join('')}` : ''}
-              <button type="button" class="text-btn" id="dbk-plan-ahead">Planear outros dias</button></div>
+              <button type="button" class="text-btn" id="dbk-plan-ahead">Planear outros dias</button><button type="button" class="text-btn" id="dbk-past">Dias anteriores</button></div>
           </div>
           ${team ? `<div class="dbk-team">${team}</div>` : ''}`;
         box.querySelectorAll('[data-dbk-done]').forEach(c => c.addEventListener('change', async () => {
@@ -21222,6 +21434,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         document.getElementById('dbk-plan').addEventListener('click', () => openDbkPlan(me, today, () => renderDaybreakCard(me)));
         box.querySelectorAll('[data-dbk-ahead]').forEach(b => b.addEventListener('click', () => openDbkPlan(me, b.dataset.dbkAhead, () => renderDaybreakCard(me))));
         document.getElementById('dbk-plan-ahead').addEventListener('click', () => { let d = addDaysKey(today, 1); while (!isWorkday(d)) d = addDaysKey(d, 1); openDbkPlan(me, d, () => renderDaybreakCard(me)); });
+        document.getElementById('dbk-past').addEventListener('click', () => openDbkPlan(me, dbkPastDays(today, 1)[0], () => renderDaybreakCard(me)));
         document.getElementById('dbk-start').addEventListener('click', () => openDaybreak());
         document.getElementById('dbk-close-prev')?.addEventListener('click', () => openDbkClose(me, prev, () => renderDaybreakCard(me)));
         document.getElementById('dbk-link')?.addEventListener('click', () => openDbkLink(() => renderDaybreakCard(me)));
@@ -21258,12 +21471,14 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     const dbkDayName = (day, today) => day === today ? 'hoje' : day === addDaysKey(today, 1) ? 'amanhã' : dbkWeekday(day).toLowerCase();
     async function openDbkPlan(memberId, day, after) {
       const today = dateKey(new Date());
-      if (!day || day < today) day = today;
-      const strip = dbkPlanDays(today);
-      if (!strip.includes(day)) strip.push(day);
-      const last = strip.reduce((m, d) => d > m ? d : m, day);
+      const oldest = addDaysKey(today, -30);
+      if (!day || day < oldest) day = today;
+      const past = day < today;
+      const strip = [...dbkPastDays(today), ...dbkPlanDays(today)];
+      if (!strip.includes(day)) { strip.push(day); strip.sort(); }
+      const first = strip[0], last = strip[strip.length - 1];
       const [members, phases, ahead, absences] = await Promise.all([loadAllMembers(), fetchActivePhases().catch(() => []),
-        loadDbTasks(today, last).catch(() => []), loadAbsences(today, last).catch(() => [])]);
+        loadDbTasks(first, last).catch(() => []), loadAbsences(first, last).catch(() => [])]);
       const who = members.find(m => m.id === memberId);
       const myPhases = phases.filter(p => (p.assignee_ids || []).includes(memberId) && !isStageDone(p));
       const ck = await loadChecklistItemsFor(myPhases.map(p => p.id)).catch(() => []);
@@ -21274,23 +21489,25 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const away = awayOn(day);
       const dayName = dbkDayName(day, today);
       const L = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
-      openQuickModal(memberId === me?.id ? `Plano de ${dayName}` : `Plano de ${attFirst(who?.name)} · ${dayName}`, `
+      openQuickModal(past ? (memberId === me?.id ? `O que fiz ${dbkWeekday(day).toLowerCase()}` : `${attFirst(who?.name)} · ${dbkWeekday(day).toLowerCase()}`)
+        : memberId === me?.id ? `Plano de ${dayName}` : `Plano de ${attFirst(who?.name)} · ${dayName}`, `
         <div class="dbk-days" id="dp-days" role="tablist" aria-label="Dia a planear">${strip.map(d => {
           const n = ahead.filter(t => t.member_id === memberId && t.day === d).length;
-          return `<button type="button" class="dbk-day${d === day ? ' on' : ''}${d === today ? ' today' : ''}${awayOn(d) ? ' away' : ''}" data-day="${d}" role="tab" aria-selected="${d === day}" title="${escapeHtml(dbkWeekday(d))}${n ? ' · ' + n + (n === 1 ? ' tarefa' : ' tarefas') : ''}${awayOn(d) ? ' · fora' : ''}">
+          return `<button type="button" class="dbk-day${d === day ? ' on' : ''}${d === today ? ' today' : ''}${d < today ? ' past' : ''}${awayOn(d) ? ' away' : ''}" data-day="${d}" role="tab" aria-selected="${d === day}" title="${escapeHtml(dbkWeekday(d))}${n ? ' · ' + n + (n === 1 ? ' tarefa' : ' tarefas') : ''}${awayOn(d) ? ' · fora' : ''}">
             <span class="l">${d === today ? 'Hoje' : L[parseDateKey(d).getDay()]}</span><span class="n">${parseDateKey(d).getDate()}</span><span class="c">${n || (awayOn(d) ? 'fora' : '·')}</span></button>`;
         }).join('')}
-          <label class="dbk-day dbk-day-cal" title="Outro dia"><span class="l">Outro</span><span class="n">📅</span><input type="date" id="dp-date" min="${today}" max="${addDaysKey(today, 365)}" aria-label="Escolher outro dia"></label></div>
+          <label class="dbk-day dbk-day-cal" title="Outro dia"><span class="l">Outro</span><span class="n">📅</span><input type="date" id="dp-date" min="${oldest}" max="${addDaysKey(today, 365)}" aria-label="Escolher outro dia"></label></div>
         ${away ? `<div class="dbk-away"><span>${memberId === me?.id ? 'Nesse dia estás' : 'Nesse dia está'} fora · ${escapeHtml(absLabel(away))}</span></div>` : ''}
         <div class="dbk-sub"><b>Tarefas</b><span id="dp-count"></span></div>
         <div class="dbk-plan" id="dp-list"></div>
-        <div class="dbk-add"><input type="text" id="dp-new" class="form-input" maxlength="200" placeholder="Escrever uma tarefa…"><button type="button" class="secondary-btn" id="dp-add">Adicionar</button></div>
-        ${myPhases.length ? `<div class="section-label" style="margin:16px 0 6px">Das ${memberId === me?.id ? 'minhas' : 'suas'} fases</div><div class="dbk-pick" id="dp-pick">${myPhases.map(p => {
+        ${past ? '<div class="field-hint dbk-past-hint">Dia que já passou: marca o que ficou feito. O que marcares sai dos dias seguintes (já não passa para a frente).</div>' : ''}
+        <div class="dbk-add"><input type="text" id="dp-new" class="form-input" maxlength="200" placeholder="${past ? 'Algo que fizeste e não estava no plano…' : 'Escrever uma tarefa…'}"><button type="button" class="secondary-btn" id="dp-add">Adicionar</button></div>
+        ${myPhases.length && !past ? `<div class="section-label" style="margin:16px 0 6px">Das ${memberId === me?.id ? 'minhas' : 'suas'} fases</div><div class="dbk-pick" id="dp-pick">${myPhases.map(p => {
           const items = ck.filter(i => i.stage_id === p.id && !i.done);
           if (!items.length) return '';
           return `<div class="dbk-pg"><b>${escapeHtml(p.projects?.name || '')} · ${escapeHtml(phaseName(p))}</b>${items.map(i => `<button type="button" class="dbk-pi" data-ck="${escapeHtml(i.id)}" data-stage="${escapeHtml(p.id)}" data-project="${escapeHtml(p.project_id)}"><span>+</span>${escapeHtml(i.title)}${i.kind === 'deliverable' ? ' <em>Entregável</em>' : ''}</button>`).join('')}</div>`;
         }).join('') || '<div class="field-hint">As checklists das fases estão em dia.</div>'}</div>` : ''}
-        <div class="field-hint">★ marca até 3 prioridades (as que têm mesmo de sair ${day === today ? 'hoje' : 'nesse dia'}). Arrasta pela pega ⠿ para ordenar. O que ficar por fazer passa sozinho para o dia útil seguinte.</div>
+        ${past ? '' : `<div class="field-hint">★ marca até 3 prioridades (as que têm mesmo de sair ${day === today ? 'hoje' : 'nesse dia'}). Arrasta pela pega ⠿ para ordenar. O que ficar por fazer passa sozinho para o dia útil seguinte.</div>`}
         <button type="button" class="primary-btn" id="dp-done">Pronto</button>`);
       const onDay = document.querySelector('#dp-days .on');
       if (onDay) onDay.parentElement.scrollLeft = onDay.offsetLeft - onDay.parentElement.offsetLeft - 60;
@@ -21298,11 +21515,20 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const draw = () => {
         tasks.sort((a, b) => (b.priority - a.priority) || (a.sort_order - b.sort_order));
         list.innerHTML = tasks.length ? `<div class="ck-list">${tasks.map(t => `<div class="dbk-prow${t.priority ? ' prio' : ''}${t.done ? ' done' : ''}" data-id="${escapeHtml(t.id)}">
-            <span class="ck-grip" aria-label="Arrastar para ordenar">⠿</span>
-            <button type="button" class="dbk-star-btn${t.priority ? ' on' : ''}" data-star aria-label="Prioridade" title="Prioridade">★</button>
-            <span class="dbk-t"><b>${escapeHtml(t.title)}</b>${t.carry_count ? `<small class="${t.carry_count >= 2 ? 'warn-text' : ''}">↻ ${t.carry_count + 1}.º dia</small>` : ''}${t.is_action ? `<small>ação${t.due_date ? ' · até ' + escapeHtml(fmtDayMonth(t.due_date)) : ''}</small>` : ''}</span>
+            ${past ? `<input type="checkbox" class="dbk-pcheck" data-pdone${t.done ? ' checked' : ''} aria-label="Feita">` : `<span class="ck-grip" aria-label="Arrastar para ordenar">⠿</span>
+            <button type="button" class="dbk-star-btn${t.priority ? ' on' : ''}" data-star aria-label="Prioridade" title="Prioridade">★</button>`}
+            <span class="dbk-t"><b>${escapeHtml(t.title)}</b>${t.carry_count ? `<small class="${t.carry_count >= 2 ? 'warn-text' : ''}">↻ ${t.carry_count + 1}.º dia</small>` : ''}${t.is_action ? `<small>ação${t.due_date ? ' · até ' + escapeHtml(fmtDayMonth(t.due_date)) : ''}</small>` : ''}${past && !t.done && t.carried ? '<small>passou para o dia seguinte</small>' : ''}</span>
             <button type="button" class="ck-x" data-rm aria-label="Tirar do plano" title="Tirar do plano">×</button></div>`).join('')}</div>` : '<div class="gantt-empty">Ainda sem tarefas.</div>';
-        document.getElementById('dp-count').textContent = tasks.length ? `${tasks.length} ${tasks.length === 1 ? 'tarefa' : 'tarefas'} · ${tasks.filter(t => t.priority).length}/3 ★` : '';
+        document.getElementById('dp-count').textContent = !tasks.length ? '' : past ? `${tasks.filter(t => t.done).length}/${tasks.length} feitas` : `${tasks.length} ${tasks.length === 1 ? 'tarefa' : 'tarefas'} · ${tasks.filter(t => t.priority).length}/3 ★`;
+        list.querySelectorAll('[data-pdone]').forEach(c => c.addEventListener('change', async () => {
+          const t = tasks.find(x => x.id === c.closest('[data-id]').dataset.id);
+          c.closest('.dbk-prow').classList.toggle('done', c.checked);
+          try {
+            await dbkToggle(t, c.checked);
+            if (c.checked) { const n = await dbkUncarry(t); haptic(); if (n) showToast(`Feita. Saiu ${n === 1 ? 'do dia seguinte' : `de ${n} dias seguintes`}.`); }
+            draw();
+          } catch (err) { showToast('Não foi possível marcar: ' + err.message, { type: 'error' }); }
+        }));
         document.querySelectorAll('#dp-pick [data-ck]').forEach(b => b.classList.toggle('used', tasks.some(t => t.checklist_item_id === b.dataset.ck)));
         list.querySelectorAll('[data-star]').forEach(b => b.addEventListener('click', async () => {
           const t = tasks.find(x => x.id === b.closest('[data-id]').dataset.id);
@@ -21322,7 +21548,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       };
       const add = async row => {
         try {
-          const t = await dbInsert('daybreak_tasks', { member_id: memberId, day, priority: false, done: false, carried: false, carry_count: 0, is_action: false, sort_order: tasks.length + 1, created_by: me?.id || null, created_at: new Date().toISOString(), ...row }, mockDbTasks);
+          const t = await dbInsert('daybreak_tasks', { member_id: memberId, day, priority: false, done: past, done_at: past ? new Date().toISOString() : null, carried: false, carry_count: 0, is_action: false, sort_order: tasks.length + 1, created_by: me?.id || null, created_at: new Date().toISOString(), ...row }, mockDbTasks);
           tasks.push(t); draw(); haptic();
         } catch (err) { showToast('Não foi possível adicionar: ' + err.message, { type: 'error' }); }
       };
@@ -21333,13 +21559,13 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const item = ck.find(i => i.id === b.dataset.ck);
         add({ title: item.title, checklist_item_id: item.id, stage_id: b.dataset.stage, project_id: b.dataset.project });
       }));
-      const markReady = async () => { try { if (tasks.length) await saveDbDay({ member_id: memberId, day, plan_ready_at: new Date().toISOString() }); } catch (_) { /* não impede */ } };
+      const markReady = async () => { if (past) return; try { if (tasks.length) await saveDbDay({ member_id: memberId, day, plan_ready_at: new Date().toISOString() }); } catch (_) { /* não impede */ } };
       document.getElementById('dp-done').addEventListener('click', async () => {
         await markReady();
         closeQuickModal(); if (after) after();
       });
       // Mudar de dia: guarda este e abre o plano do outro (o "depois" corre só ao fechar)
-      const goDay = async d => { if (!d || d === day) return; await markReady(); openDbkPlan(memberId, d < today ? today : d, after); };
+      const goDay = async d => { if (!d || d === day) return; await markReady(); openDbkPlan(memberId, d < oldest ? today : d, after); };
       document.querySelectorAll('#dp-days [data-day]').forEach(b => b.addEventListener('click', () => goDay(b.dataset.day)));
       document.getElementById('dp-date').addEventListener('change', e => goDay(e.target.value));
       draw();
@@ -24175,7 +24401,8 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       despesas: ['Despesas', 'Gastos, recibos e reembolsos.'], settings: ['Definições', 'Como a app trabalha para a NOVA.'], help: ['Ajuda', 'Como é que…'],
       tickets: ['Melhorias', 'Erros, melhorias e ideias da equipa para a app.'],
       absences: ['Ausências', 'Férias, faltas e formação. Quem está fora, e quando.'],
-      mqt: ['MQT Studio', 'Do modelo Revit ao mapa de quantidades.']
+      mqt: ['MQT Studio', 'Do modelo Revit ao mapa de quantidades.'],
+      contacts: ['Contactos', 'Fornecedores, especialidades e entidades. Quem chamar para quê.']
     };
     const kLargeIO = typeof IntersectionObserver === 'function' ? new IntersectionObserver(([en]) => {
       const box = document.getElementById('k-large');
@@ -24340,7 +24567,7 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
     // Passagem entre páginas: pushCurrentView diz a direção (entrar numa ficha → da direita; voltar → da esquerda)
     var kNavDir = null;
     var K_DEEP = new Set(['detail', 'client', 'plot', 'proposal', 'feas', 'investorView']);
-    var K_VIEWS = ['home-view', 'projects-view', 'clients-view', 'client-view', 'opps-view', 'plot-view', 'feas-view', 'proposal-view', 'pipeline-view', 'billing-view', 'finance-view', 'agenda-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view', 'despesas-view', 'help-view', 'tickets-view', 'absences-view', 'mqt-view'];
+    var K_VIEWS = ['home-view', 'projects-view', 'clients-view', 'client-view', 'opps-view', 'plot-view', 'feas-view', 'proposal-view', 'pipeline-view', 'billing-view', 'finance-view', 'agenda-view', 'horas-view', 'settings-view', 'detail-panel', 'atas-view', 'despesas-view', 'help-view', 'tickets-view', 'absences-view', 'mqt-view', 'contacts-view'];
     function kGhostOut() {
       const dir = kNavDir; kNavDir = null;
       if (dir === null || reduceMotion.matches || document.getElementById('app-screen')?.style.display === 'none') return;
@@ -24940,6 +25167,8 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       { group: 'Criar', label: 'Sugerir melhoria ou reportar erro', keys: 'melhoria ticket erro bug ideia sugestao pedido feedback reportar', run: () => openTicketModal() },
       { group: 'Ajustes', label: 'Modo leve (computadores mais antigos): ligar / desligar', keys: 'modo leve lento rapido performance desempenho animacoes computador antigo', run: () => { const on = !document.documentElement.classList.contains('k-lite'); kLite.set(on); showToast(on ? 'Modo leve ligado: menos efeitos, mais rapidez.' : 'Modo leve desligado.'); } },
       { group: 'Ir para', label: 'Assinatura de email (Outlook)', keys: 'assinatura email outlook signature mail', run: () => { navStack = []; openSettingsModule(); showSettingsSection('sig'); } },
+      { group: 'Ir para', label: 'Contactos (fornecedores, especialidades, entidades)', keys: 'contactos fornecedores fornecedor materiais servicos especialidades engenheiros camara caixilharia avac empreiteiros telefone', run: () => NAV_ACTIONS.contacts() },
+      { group: 'Criar', label: 'Novo contacto (fornecedor, especialidade…)', keys: 'novo contacto fornecedor adicionar', run: () => openContactModal(null) },
       { group: 'Ir para', label: 'MQT Studio', keys: 'mqt mapa de quantidades medicoes revit keynotes orcamento estimativa empreiteiros concurso caderno', run: () => NAV_ACTIONS.mqt() },
       { group: 'Ir para', label: 'Ausências', keys: 'ferias ausencias faltas folga doenca baixa consulta formacao mapa de ferias', run: () => NAV_ACTIONS.absences() },
       { group: 'Criar', label: 'Marcar férias ou ausência', keys: 'ferias marcar ausencia falta doenca consulta formacao', run: () => openAbsenceModal({}) },
