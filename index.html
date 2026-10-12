@@ -890,6 +890,7 @@
     box-shadow: var(--shadow-pop); z-index: var(--z-modal);
     display: flex; flex-direction: column; overflow: hidden;
   }
+  #quick-modal.qm-wide { width: min(880px, calc(100% - 32px)); max-height: min(820px, calc(100% - 48px)); }
   .quick-modal-header { display: flex; align-items: center; justify-content: space-between; padding: var(--sp-4) var(--sp-4) var(--sp-4) var(--sp-5); border-bottom: 1px solid var(--border); flex-shrink: 0; }
   .quick-modal-header h3 { font-size: var(--fs-base); font-weight: var(--fw-semibold); }
   .quick-modal-body { padding: var(--sp-5) var(--sp-5) var(--sp-6); overflow-y: auto; -webkit-overflow-scrolling: touch; }
@@ -2190,6 +2191,29 @@
   .cd-park-est > b { display: block; }
   @media (max-width: 1100px) { .cd-grid { grid-template-columns: 1fr 1fr; } .cd-grid > section:last-child { grid-column: 1 / -1; } }
   @media (max-width: 680px) { .cd-grid { grid-template-columns: 1fr; } }
+  .hrs-cell { background: none; border: 0; padding: 2px 6px; margin: -2px -6px; border-radius: var(--r-sm); font: inherit; color: inherit; cursor: pointer; text-decoration: underline dotted var(--text-3); text-underline-offset: 3px; }
+  .hrs-cell:hover { background: var(--accent-soft); color: var(--accent); }
+  .sh-filters { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 8px; align-items: end; }
+  .sh-filters label { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-xs); color: var(--text-2); }
+  .sh-filters .form-input { margin: 0; }
+  .sh-quick { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; }
+  .sh-sum { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 12px 0; }
+  .sh-sum > div { background: var(--surface-2); border-radius: var(--r-md); padding: 8px 10px; display: flex; flex-direction: column; }
+  .sh-sum b { font-size: var(--fs-lg); font-variant-numeric: tabular-nums; } .sh-sum span { font-size: var(--fs-xs); color: var(--text-3); }
+  .sh-person { margin-top: 12px; }
+  .sh-ph { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+  .sh-ph span:last-child { margin-left: auto; font-size: var(--fs-sm); color: var(--text-2); font-variant-numeric: tabular-nums; }
+  .sh-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--pc); flex: none; }
+  .sh-row { display: grid; grid-template-columns: 138px 64px 128px minmax(110px, 1fr) minmax(120px, 1.4fr) 26px; gap: 6px; align-items: center; margin-bottom: 4px; }
+  .sh-row .form-input { margin: 0; min-width: 0; padding-top: 6px; padding-bottom: 6px; font-size: var(--fs-sm); }
+  .sh-row .sh-h { text-align: right; }
+  @media (max-width: 760px) {
+    .sh-filters { grid-template-columns: 1fr 1fr; } .sh-sum { grid-template-columns: 1fr 1fr; }
+    .sh-row { grid-template-columns: 1fr 1fr 26px; padding: 6px 0 8px; border-bottom: 1px dashed var(--border); }
+    .sh-row [data-f="date"] { grid-column: 1; grid-row: 1; } .sh-row [data-f="hours"] { grid-column: 2; grid-row: 1; } .sh-row [data-del] { grid-column: 3; grid-row: 1; }
+    .sh-row [data-f="billable"] { grid-column: 1; grid-row: 2; } .sh-row [data-f="category_id"] { grid-column: 2 / span 2; grid-row: 2; }
+    .sh-row [data-f="description"] { grid-column: 1 / -1; grid-row: 3; }
+  }
   .pn-add { display: grid; grid-template-columns: 1fr auto; gap: var(--sp-2); align-items: end; margin-bottom: var(--sp-3); }
   .pn-add .form-input { margin: 0; }
   .pn-list { display: flex; flex-direction: column; }
@@ -7041,7 +7065,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
                       <td class="lt-cell nowrap${isStageLate(s) ? ' late-text' : ''}" data-label="Prazo">${leadCellHtml(s)}</td>
                       <td class="ck-count${ckCountText(ckCounts[s.id]) ? '' : ' m-empty'}" data-label="Checklist">${escapeHtml(ckCountText(ckCounts[s.id]) || '—')}</td>
                       ${assignSupport ? `<td class="g-start st-people" data-label="Pessoas">${isAwardStage(s) ? '<span class="assign-na" title="A adjudicação não se atribui">—</span>' : `<button type="button" class="assign-cell" data-assign-stage="${escapeHtml(s.id)}" title="Escolher pessoas" aria-haspopup="true">${(stageAssignees[s.id] || []).length ? avatarsHtml(stageAssignees[s.id], ataMemberNames, meId) : '<span class="assign-empty">+ Atribuir</span>'}</button>`}</td>` : ''}
-                      <td class="col-value${assignSupport ? '' : ' g-start'}" data-label="Horas">${fmtHours(horas)}</td>
+                      <td class="col-value${assignSupport ? '' : ' g-start'}" data-label="Horas"><button type="button" class="hrs-cell" data-stage-hours="${escapeHtml(s.id)}" title="Ver e editar as horas imputadas a esta fase">${fmtHours(horas)}</button></td>
                       <td class="col-value g-start" data-label="Valor">${fmtEUR(budgeted)}</td>
                       <td data-label="Faturação">${invoiceCell}</td>
                       <td data-label="Pagamento"${paymentCell === '—' ? ' class="m-empty"' : ''}>${paymentCell}</td>
@@ -7305,10 +7329,15 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
 
         // Edição de fases, pausas, faturas e despesas
         detailBody.querySelectorAll('[data-phase-row]').forEach(tr => tr.addEventListener('click', (e) => {
-          if (e.target.closest('[data-assign-stage], [data-status-stage], [data-nps-id], .drag-handle') || tr.classList.contains('drag-settling')) return;
+          if (e.target.closest('[data-assign-stage], [data-status-stage], [data-nps-id], [data-stage-hours], .drag-handle') || tr.classList.contains('drag-settling')) return;
           openPhaseModal(tr.dataset.phaseRow, { fromProject: true, onSaved: reopen });
         }));
         detailBody.querySelectorAll('[data-nps-id]').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); openNpsModal(b.dataset.npsId, reopen); }));
+        detailBody.querySelectorAll('[data-stage-hours]').forEach(b => b.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const st = stages.find(x => String(x.id) === b.dataset.stageHours);
+          if (st) openStageHoursModal(project, st, reopen);
+        }));
         document.getElementById('add-break-btn').addEventListener('click', () => openBreakModal(null, project, breaks, reopen, stages));
         document.getElementById('co-add')?.addEventListener('click', () => openChangeOrderModal(project.id, { after: reopen }));
         detailBody.querySelectorAll('[data-co]').forEach(r => r.addEventListener('click', () => { const c = changeOrders.find(x => x.id === r.dataset.co); if (c) { if (!c.team_seen) dbUpdate('change_orders', c.id, { team_seen: true }, mockChangeOrders).catch(() => {}); openCoActions(c, reopen); } }));
@@ -7754,6 +7783,111 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       });
     }
 
+    // ---------- Horas imputadas a uma fase: registos por pessoa, com filtros, editáveis ----------
+    async function openStageHoursModal(project, stage, onChanged) {
+      const name = `${stage.stage_types?.name ?? 'Fase'}${stage.revision_label ? ' · ' + stage.revision_label : ''}`;
+      openQuickModal(`Horas · ${name}`, '<div class="gantt-empty">A carregar…</div>');
+      document.getElementById('quick-modal').classList.add('qm-wide');
+      let entries, members, cats, changed = false;
+      try {
+        if (devMode) {
+          entries = MOCK_TIME.filter(t => t.stage_id === stage.id).map((t, i) => { t.id = t.id || 'te-' + stage.id + '-' + i; t.date = t.date || addDaysKey(dateKey(new Date()), -i * 3); return t; });
+          cats = MOCK_CATEGORIES;
+        } else {
+          const [r, c] = await Promise.all([
+            selectAll(() => supabase.from('time_entries').select('id, date, hours, billable, user_id, category_id, description, project_id, stage_id').eq('stage_id', stage.id).order('date', { ascending: false }).order('id')),
+            supabase.from('time_categories').select('id, name').order('name')
+          ]);
+          if (r.error) throw r.error;
+          entries = r.data || []; cats = c.data || [];
+        }
+        members = await loadAllMembers().catch(() => []);
+      } catch (err) { document.getElementById('quick-modal-body').innerHTML = `<div class="error-box">Não foi possível carregar as horas: ${escapeHtml(err.message)}</div>`; return; }
+      quickModalCloseHook = () => { if (changed) onChanged && onChanged(); };
+      const nameOf = id => members.find(m => m.id === id)?.name || entries.find(t => t.user_id === id)?.member_name || 'Sem nome';
+      const people = [...new Set(entries.map(t => t.user_id))].sort((a, b) => nameOf(a).localeCompare(nameOf(b), 'pt'));
+      const F = { who: '', from: '', to: '', kind: '' };
+      const body = document.getElementById('quick-modal-body');
+      body.innerHTML = `
+        <div class="sh-filters">
+          <label>Pessoa<select class="form-input" id="sh-who"><option value="">Todas</option>${people.map(id => `<option value="${escapeHtml(id)}">${escapeHtml(nameOf(id))}</option>`).join('')}</select></label>
+          <label>De<input type="date" class="form-input" id="sh-from"></label>
+          <label>Até<input type="date" class="form-input" id="sh-to"></label>
+          <label>Tipo<select class="form-input" id="sh-kind"><option value="">Todas</option><option value="b">Faturáveis</option><option value="n">Não faturáveis</option></select></label>
+          <div class="sh-quick">${[['Este mês', 'm'], ['Últimos 30 dias', '30'], ['Tudo', 'all']].map(([l, k]) => `<button type="button" class="band-chip" data-sh-q="${k}">${l}</button>`).join('')}</div>
+        </div>
+        <div class="sh-sum" id="sh-sum"></div>
+        <div id="sh-list"></div>
+        <div class="field-hint" style="margin-top:10px">Muda a data, as horas, o tipo, a categoria ou a nota diretamente na linha — grava sozinho. O × apaga o registo (com Anular).</div>`;
+      const fmtD = k => k ? parseDateKey(k).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+      const draw = () => {
+        const list = entries.filter(t => (!F.who || t.user_id === F.who) && (!F.from || (t.date || '') >= F.from) && (!F.to || (t.date || '') <= F.to)
+          && (!F.kind || (F.kind === 'b' ? t.billable : !t.billable)));
+        const tot = list.reduce((a, t) => a + Number(t.hours || 0), 0), bill = list.filter(t => t.billable).reduce((a, t) => a + Number(t.hours || 0), 0);
+        const dates = list.map(t => t.date).filter(Boolean).sort();
+        document.getElementById('sh-sum').innerHTML = `<div><b>${escapeHtml(fmtHours(tot))}</b><span>no total</span></div><div><b>${escapeHtml(fmtHours(bill))}</b><span>faturáveis</span></div><div><b>${escapeHtml(fmtHours(tot - bill))}</b><span>não faturáveis</span></div><div><b>${list.length}</b><span>${list.length === 1 ? 'registo' : 'registos'}${dates.length ? ' · ' + escapeHtml(fmtD(dates[0])) + ' a ' + escapeHtml(fmtD(dates[dates.length - 1])) : ''}</span></div>`;
+        const by = {};
+        list.forEach(t => (by[t.user_id] = by[t.user_id] || []).push(t));
+        const ids = Object.keys(by).sort((a, b) => nameOf(a).localeCompare(nameOf(b), 'pt'));
+        document.getElementById('sh-list').innerHTML = ids.length ? ids.map(id => {
+          const rows = by[id].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+          const h = rows.reduce((a, t) => a + Number(t.hours || 0), 0);
+          return `<section class="sh-person"><div class="sh-ph"><span class="sh-dot" style="--pc:${escapeHtml(memberColor(id))}"></span><b>${escapeHtml(nameOf(id))}</b><span>${escapeHtml(fmtHours(h))} · ${rows.length} ${rows.length === 1 ? 'registo' : 'registos'}</span></div>
+            ${rows.map(t => `<div class="sh-row" data-te="${escapeHtml(t.id)}">
+              <input type="date" class="form-input" data-f="date" value="${escapeHtml(t.date || '')}" aria-label="Data">
+              <input type="text" inputmode="decimal" class="form-input sh-h" data-f="hours" value="${escapeHtml(fmtHoursInput(Number(t.hours || 0)))}" aria-label="Horas">
+              <select class="form-input" data-f="billable" aria-label="Tipo"><option value="1"${t.billable ? ' selected' : ''}>Faturável</option><option value="0"${t.billable ? '' : ' selected'}>Não faturável</option></select>
+              <select class="form-input" data-f="category_id" aria-label="Categoria"><option value="">Sem categoria</option>${cats.map(c => `<option value="${escapeHtml(c.id)}"${c.id === t.category_id ? ' selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}</select>
+              <input type="text" class="form-input" data-f="description" value="${escapeHtml(t.description || '')}" placeholder="Nota" aria-label="Nota">
+              <button type="button" class="ck-x" data-del aria-label="Apagar registo">×</button>
+            </div>`).join('')}</section>`;
+        }).join('') : '<div class="gantt-empty">Sem horas com estes filtros.</div>';
+      };
+      const save = async (t, patch, el) => {
+        try { await dbUpdate('time_entries', t.id, patch, MOCK_TIME); Object.assign(t, patch); changed = true; el?.classList.remove('fz-bad'); showToast('Guardado'); draw(); }
+        catch (err) { showError('guardar o registo', err); }
+      };
+      body.addEventListener('change', e => {
+        const el = e.target, row = el.closest('[data-te]');
+        if (!row) {
+          F.who = document.getElementById('sh-who').value; F.from = document.getElementById('sh-from').value; F.to = document.getElementById('sh-to').value; F.kind = document.getElementById('sh-kind').value;
+          return draw();
+        }
+        const t = entries.find(x => String(x.id) === row.dataset.te); if (!t) return;
+        const f = el.dataset.f;
+        if (f === 'hours') {
+          const v = numOrNull(el.value.replace(/\s/g, ''));
+          if (v == null || Number.isNaN(v) || v <= 0 || v > 24) { el.classList.add('fz-bad'); showToast('Horas entre 0 e 24', { type: 'error' }); return; }
+          return save(t, { hours: Math.round(v * 100) / 100 }, el);
+        }
+        if (f === 'date') { if (!el.value) return; return save(t, { date: el.value }, el); }
+        if (f === 'billable') return save(t, { billable: el.value === '1' }, el);
+        if (f === 'category_id') return save(t, { category_id: el.value || null }, el);
+        if (f === 'description') return save(t, { description: el.value.trim() || null }, el);
+      });
+      body.addEventListener('click', async e => {
+        const q = e.target.closest('[data-sh-q]');
+        if (q) {
+          const today = dateKey(new Date());
+          F.from = q.dataset.shQ === 'm' ? today.slice(0, 8) + '01' : q.dataset.shQ === '30' ? addDaysKey(today, -30) : '';
+          F.to = q.dataset.shQ === 'all' ? '' : today;
+          document.getElementById('sh-from').value = F.from; document.getElementById('sh-to').value = F.to;
+          return draw();
+        }
+        const del = e.target.closest('[data-del]'); if (!del) return;
+        const t = entries.find(x => String(x.id) === del.closest('[data-te]').dataset.te); if (!t) return;
+        try {
+          await deleteWithUndo('time_entries', t.id, MOCK_TIME, `Registo de ${fmtHours(Number(t.hours || 0))} apagado`, async () => {
+            // depois de Anular, o registo volta: recarregar a lista
+            if (!devMode) { const r = await supabase.from('time_entries').select('id, date, hours, billable, user_id, category_id, description, project_id, stage_id').eq('stage_id', stage.id); if (!r.error) entries = r.data || []; }
+            if (document.getElementById('sh-list')) draw();
+          });
+          entries = entries.filter(x => x !== t); changed = true; draw();
+        } catch (err) { showError('apagar o registo', err); }
+      });
+      draw();
+    }
+
     // ---------- Modal genérico de ações rápidas ----------
     let quickModalCloseHook = null;   // corre uma vez quando a janela fecha (qualquer via)
     // Alterações por guardar num formulário da janela: fechar por ✕, Esc ou toque fora pede confirmação
@@ -7779,6 +7913,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       document.getElementById('quick-modal-overlay').classList.remove('closing');
       quickModalCloseHook = null;
       quickModalDirty = false;
+      document.getElementById('quick-modal').classList.remove('qm-wide');
       document.getElementById('quick-modal-title').textContent = title;
       const qb = document.getElementById('quick-modal-body');
       qb.innerHTML = bodyHtml;
@@ -16278,6 +16413,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         a: 'Na oportunidade, cartão «Condicionantes urbanísticas»: classe de espaço, UOPG (e qual), REN, RAN, ARU, APA, informações excecionais, índice de construção, pisos acima e abaixo do solo, impermeabilização, implantação máxima, afastamentos e as regras de estacionamento do município. Grava sozinho.',
         steps: ['Abre a oportunidade no [[Investment Intelligence]].', 'Em **Enquadramento**, marca UOPG / REN / RAN / ARU / APA e escreve o que for excecional.', 'Em **Parâmetros**, preenche só o que o município aplica (uns usam índice, outros número de pisos).', 'Em **Estacionamento**, acrescenta as regras: por uso (lugares por cada m²), por tipologia ou por área da fração. A app estima os lugares exigidos com as frações da viabilidade.'],
         kw: 'condicionantes indice construcao pisos acima abaixo solo impermeabilizacao implantacao afastamentos estacionamento lugares uopg ren ran aru apa pdm excecionais municipio' },
+      { id: 'horas-fase', cat: 'proj', ctx: ['detail'],
+        q: 'vejo e corrijo as horas imputadas a uma fase',
+        a: 'No projeto → Fases, toca no número de horas da fase. Abre a lista dos registos agrupados por pessoa, com filtros por pessoa, datas e tipo. Muda a data, as horas, faturável/não faturável, a categoria ou a nota na própria linha (grava sozinho); o × apaga (com Anular).',
+        steps: ['Abre o projeto → [[Fases]].', 'Toca nas **horas** da fase (o número sublinhado).', 'Filtra por pessoa, datas («Este mês», «Últimos 30 dias») ou tipo.', 'Corrige diretamente na linha — grava sozinho. O × apaga o registo.'],
+        kw: 'horas fase registos imputacao logs pessoa editar corrigir apagar filtrar datas faturaveis timesheet' },
       { id: 'notas-oportunidade', cat: 'opps', ctx: ['plot', 'opps'],
         q: 'escrevo notas internas sobre uma oportunidade (Investment Intelligence)',
         a: 'Na página da oportunidade há o cartão «Notas internas da NOVA»: escreve e toca em «Guardar nota» (ou Ctrl+Enter). Fica com o teu nome e a data. Só a equipa vê — nunca vão para o resumo do investidor.',
