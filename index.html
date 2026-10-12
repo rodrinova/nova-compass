@@ -13694,9 +13694,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             <div class="invoice-row"><span>Aniversário</span><span>${c.birthday ? escapeHtml(parseDateKey(c.birthday).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long' })) : '—'}</span></div>
             <div class="invoice-row"><span>Inquéritos de satisfação</span><span>${c.nps_opt_out ? 'Não enviar' : c.email ? 'Sim, em ' + (c.language === 'en' ? 'inglês' : 'português') : '<span class="warn-text">Falta o email</span>'}</span></div>
             ${c.notes ? `<div class="invoice-row"><span>Notas</span><span style="white-space:pre-wrap;text-align:right">${escapeHtml(c.notes)}</span></div>` : ''}
-          </div>`;
+          </div>
+          <button type="button" class="text-btn danger-btn" id="cl-del" style="margin:4px 0 24px">Eliminar cliente…</button>`;
         const reopen = () => { suppressNavPush = true; openClientDetail(c.id); };
         document.getElementById('cl-edit').addEventListener('click', () => openClientModal(c, reopen));
+        document.getElementById('cl-del').addEventListener('click', () => openDeleteClient(c));
         document.getElementById('cl-inv-card')?.addEventListener('click', async () => { await (oppsCache || loadOppsData()); openInvestorModal(civ, reopen); });
         document.getElementById('cl-add-entity').addEventListener('click', () => openEntityModal(c, null, reopen));
         document.getElementById('cl-add-pm').addEventListener('click', () => openPmModal(c, null, reopen));
@@ -13791,13 +13793,76 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         } catch (err) { formError('cl-msg', 'Não foi possível guardar: ' + err.message); }
       });
       const del = document.getElementById('cl-delete');
-      if (del) del.addEventListener('click', async () => {
-        const n = (clientsCache?.scores?.[client.id]?.projects || []).length;
-        if (n) return formError('cl-msg', `Este cliente tem ${n} projeto(s). Muda-os primeiro para outro cliente.`);
-        if (!window.confirm(`Eliminar o cliente "${client.name}" e as suas entidades de faturação?`)) return;
-        try { await dbDelete('clients', client.id, MOCK_CLIENT_ROWS); closeQuickModal(); showToast('Cliente eliminado'); navStack = []; openClientsModule(); }
-        catch (err) { formError('cl-msg', 'Não foi possível eliminar: ' + err.message); }
+      if (del) del.addEventListener('click', () => { closeQuickModal(); openDeleteClient(client); });
+    }
+
+    // Eliminar cliente. Com projetos, só depois de os passar para outro cliente (é o caso típico
+    // do cliente repetido); sem projetos pode apagar-se de vez ou passar o resto para outro cliente.
+    async function openDeleteClient(client) {
+      let data;
+      try { data = clientsCache?.data || await loadClientsData(); } catch (err) { return showError('abrir o cliente', err); }
+      const projs = data.projects.filter(p => p.client_id === client.id);
+      const ents = data.entities.filter(e => e.client_id === client.id);
+      let nProps = 0, nPlots = 0;
+      if (!devMode) {
+        const [a, b] = await Promise.all([
+          supabase.from('fee_proposals').select('id', { count: 'exact', head: true }).eq('client_id', client.id),
+          supabase.from('land_plots').select('id', { count: 'exact', head: true }).eq('client_id', client.id)]);
+        nProps = a.count || 0; nPlots = b.count || 0;
+      }
+      const pl = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+      const facts = [projs.length && pl(projs.length, 'projeto', 'projetos'), ents.length && pl(ents.length, 'entidade de faturação', 'entidades de faturação'),
+        nProps && pl(nProps, 'proposta', 'propostas'), nPlots && pl(nPlots, 'terreno', 'terrenos')].filter(Boolean);
+      const must = projs.length > 0;
+      const others = data.clients.filter(x => x.id !== client.id).sort((a, b) => a.name.localeCompare(b.name, 'pt'));
+      openQuickModal('Eliminar cliente', `
+        <p style="margin-top:0">Vais eliminar <b>${escapeHtml(client.name)}</b>. ${facts.length ? 'Tem ' + escapeHtml(facts.join(', ').replace(/, ([^,]*)$/, ' e $1')) + '.' : 'Não tem projetos, propostas nem terrenos.'}</p>
+        <label class="field-label">${must ? 'Passar os projetos para' : 'Passar o que tiver para outro cliente'}</label>
+        <select id="cd-to" class="form-input"><option value="">${must ? '— escolhe o cliente —' : 'Não, eliminar sem passar'}</option>${others.map(x => `<option value="${escapeHtml(x.id)}">${escapeHtml(x.name)}</option>`).join('')}</select>
+        <div class="field-hint" id="cd-hint"></div>
+        <button type="button" id="cd-go" class="secondary-btn danger-btn">Eliminar cliente</button>
+        <div id="cd-msg" class="form-msg"></div>`);
+      const sel = document.getElementById('cd-to'), hint = document.getElementById('cd-hint');
+      const upd = () => {
+        hint.textContent = sel.value
+          ? `Os projetos, entidades de faturação, project managers, propostas e terrenos passam para "${others.find(x => String(x.id) === sel.value)?.name}". Contactos em falta nesse cliente são completados com os deste.`
+          : must ? 'Este cliente tem projetos: escolhe para quem passam (por exemplo, quando o cliente está repetido).'
+          : 'As entidades de faturação e os project managers deste cliente são apagados. Propostas e terrenos ficam, mas sem cliente.';
+      };
+      sel.addEventListener('change', upd); upd();
+      document.getElementById('cd-go').addEventListener('click', async () => {
+        const to = sel.value, target = others.find(x => String(x.id) === to);
+        if (must && !target) return formError('cd-msg', 'Escolhe para que cliente passam os projetos.');
+        if (!window.confirm(target ? `Passar tudo para "${target.name}" e eliminar "${client.name}"?` : `Eliminar "${client.name}"? Não dá para desfazer.`)) return;
+        const btn = document.getElementById('cd-go'); btn.disabled = true;
+        try {
+          if (target) await moveClientData(client, target, data);
+          await dbDelete('clients', client.id, MOCK_CLIENT_ROWS);
+          clientsCache = null; oppsCache = null;
+          closeQuickModal(); showToast(target ? `Cliente eliminado · tudo passou para ${target.name}` : 'Cliente eliminado');
+          navStack = []; openClientsModule();
+        } catch (err) { btn.disabled = false; formError('cd-msg', 'Não foi possível eliminar: ' + err.message); }
       });
+    }
+    async function moveClientData(from, to, data) {
+      // Contactos que faltam no cliente que fica
+      const fill = {};
+      ['email', 'phone', 'address', 'nif', 'birthday', 'notes'].forEach(k => { if (!to[k] && from[k]) fill[k] = from[k]; });
+      if (devMode) {
+        MOCK_CLIENT_ENTITIES.forEach(e => { if (e.client_id === from.id) e.client_id = to.id; });
+        mockClientPms.forEach(x => { if (x.client_id === from.id) x.client_id = to.id; });
+        Object.values(MOCK_CLIENT_LINKS).forEach(l => { if (l[0] === from.id) l[0] = to.id; });
+        if (Object.keys(fill).length) await dbUpdate('clients', to.id, fill, MOCK_CLIENT_ROWS);
+        return;
+      }
+      const mv = (t, extra) => supabase.from(t).update({ client_id: to.id, ...(extra || {}) }).eq('client_id', from.id);
+      // Primeiro o que os projetos referenciam (entidades, PMs), depois os projetos
+      for (const r of await Promise.all([mv('client_entities'), mv('client_pms')])) if (r.error) throw r.error;
+      const steps = [mv('projects', { client: to.name }), mv('gpl_scores'), mv('fee_proposals', { client_name: to.name }), mv('land_plots'), mv('nps_requests')];
+      // Só um perfil de investidor por cliente: se o outro já tem, este fica sem cliente
+      if (!(data.investors || []).some(i => i.client_id === to.id)) steps.push(mv('investors'));
+      for (const r of await Promise.all(steps)) if (r.error) throw r.error;
+      if (Object.keys(fill).length) await dbUpdate('clients', to.id, fill, MOCK_CLIENT_ROWS);
     }
 
     // ---------- Project managers do cliente (intermediário): registo por cliente, um por projeto ----------
@@ -16079,6 +16144,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         steps: ['Abre [[Pipeline]] → [[+ Nova proposta]]. Escolhe **que proposta é** (o modelo pré-configura tudo), a **tipologia** e a **língua**. Se vier de uma oportunidade do Intelligence, escolhe-a: usa o **mesmo CST** e traz o local, a área e o cliente.', 'No editor ficam à vista só quatro partes: **Cliente e local**, **Serviços**, **Valor** e **Pagamento**. Ajusta o que for preciso — os valores do modelo são um ponto de partida.', 'A língua muda-se a qualquer momento no **PT | EN** do topo: os textos da biblioteca e do modelo passam para a outra língua.', 'O resto está em **Mais opções**: capa e manifesto, textos do âmbito (Base de trabalho, Pressupostos, Prazo…), secções próprias (ex.: Aperfeiçoamento), custo e margem, timeline, opcionais, exclusões e assinatura.', 'Nos textos, {h} é a taxa horária dos opcionais, {local} o local e concelho, {validade}/{ate} a validade, e {Opcionais} (ou outro título) o número dessa secção no documento.', 'Toca em [[Criar proposta]] (recebe o CST). A partir daí grava sozinha. Para que as próximas deste tipo comecem assim, toca em **Guardar como modelo**.', 'Para enviar: [[Enviar por email]]. A app gera o PDF e descarrega o email com o PDF e a tua assinatura: abre o ficheiro e o Outlook mostra a mensagem pronta (fica também nos Rascunhos). Carregas em **Enviar** e a proposta fica marcada como enviada a essa hora, com follow-up a 7 dias.'],
         kw: 'proposta honorarios orcamento preco valor fee nota de honorarios cst pdf modelo nova capa ambito exclusoes opcionais timeline pagamento biblioteca ingles email outlook enviar anexo pip viabilidade estudo preliminar projeto completo tipo lingua aperfeicoamento taxa horaria guardar como modelo',
         tour: [{ go: 'nav:pipeline', sel: '#pipe-new', text: 'Começa aqui uma proposta nova.' }] },
+      { id: 'eliminar-cliente', cat: 'clients', ctx: ['clients', 'client'],
+        q: 'elimino um cliente (ou junto um cliente repetido)',
+        a: 'Na ficha do cliente, ao fundo: «Eliminar cliente…». Se tiver projetos, escolhes para que cliente passam antes de o eliminar.',
+        steps: ['Abre o cliente em [[Clientes]].', 'Desce até ao fundo da ficha e toca em «Eliminar cliente…».', 'Se o cliente tem projetos (ou é um repetido), escolhe o cliente que fica: projetos, entidades de faturação, project managers, propostas e terrenos passam para ele, e os contactos em falta são completados.', 'Sem projetos podes eliminar sem passar nada: as propostas e os terrenos ficam, mas sem cliente.'],
+        kw: 'eliminar apagar remover cliente repetido duplicado juntar fundir passar projetos clientes' },
       { id: 'contactos', cat: 'start', ctx: ['contacts'],
         q: 'encontro um fornecedor ou um contacto (caixilharia, AVAC, Câmara…)',
         a: 'Menu → Contactos: escreve o que procuras (ex.: caixilhos, AVAC, Câmara de Gaia) ou toca numa etiqueta. Toca no telefone ou no email para ligar ou escrever.',
