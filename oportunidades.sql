@@ -210,3 +210,6 @@ where coalesce(notes, '') <> '' and not exists (select 1 from public.plot_notes 
 -- pisos abaixo do solo, impermeabilização, implantação máxima, afastamentos, regras de estacionamento,
 -- UOPG / REN / RAN / ARU / APA e informações excecionais. O índice e os pisos acima do solo ficam em pdm_index / max_floors.
 alter table public.land_plots add column if not exists constraints jsonb not null default '{}'::jsonb;
+
+-- N.º do processo do projeto aprovado (quando has_approved_project)
+alter table public.land_plots add column if not exists approved_process text;
