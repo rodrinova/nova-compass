@@ -20668,7 +20668,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const { html } = ppDocHtml(pp, S);
       w.document.open(); w.document.write(html); w.document.close(); kDocBack(w);
     }
-    function ppDocHtml(pp, S) {
+    function ppDocHtml(pp, S, opts = {}) {
       const c = pp.content, en = pp.language === 'en', e = escapeHtml, md = ppMd;
       const loc = en ? 'en-GB' : 'pt-PT';
       // Como nas propostas da NOVA: "€ 2 310,00" (milhares com espaço, sempre)
@@ -20905,6 +20905,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           #flow { position: absolute; left: -9999px; top: 0; width: 174mm; }
           @media print { body { background: none; } .bar { display: none; } .page { margin: 0; box-shadow: none; } }
           @media screen and (max-width: 820px) { .page { transform: scale(calc((100vw - 16px) / 793.7)); transform-origin: top left; margin: 8px; } }
+          ${opts.capture ? `/* PDF do email (html2canvas): sem translineação nem variantes tipográficas, que ele não sabe desenhar */
+          body { font-feature-settings: normal; text-rendering: auto; -webkit-font-smoothing: auto; }
+          .txt p, .item .ib p { hyphens: manual; -webkit-hyphens: manual; }
+          .bar { display: none; } .page { margin: 0; box-shadow: none; } @media screen and (max-width: 820px) { .page { transform: none; margin: 0; } }` : ''}
         </style></head><body>
         <div class="bar"><button onclick="window.print()">${e(en ? 'Print / save as PDF' : 'Imprimir / guardar em PDF')}</button><span>${e(fileTitle)}.pdf</span></div>
         <div class="page cover">
@@ -20980,10 +20984,21 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       if (!ppScripts[url]) ppScripts[url] = new Promise((res, rej) => { const el = document.createElement('script'); el.src = url; el.onload = res; el.onerror = () => { delete ppScripts[url]; rej(new Error('não foi possível carregar ' + url.split('/').pop())); }; document.head.appendChild(el); });
       return ppScripts[url];
     }
+    // A Inter tem de estar carregada nesta janela: o html2canvas desenha o texto aqui, não no documento.
+    // Sem ela desenhava com outra letra nas posições medidas com a Inter (palavras afastadas, letras a sobrepor).
+    async function ppEnsureInter() {
+      if (!document.getElementById('pp-inter')) {
+        const l = document.createElement('link'); l.id = 'pp-inter'; l.rel = 'stylesheet';
+        l.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap';
+        document.head.appendChild(l);
+        await new Promise(r => { l.onload = r; l.onerror = r; setTimeout(r, 4000); });
+      }
+      await Promise.all([300, 400, 500, 600, 700].map(w => document.fonts.load(`${w} 12px Inter`, 'Àãç€').catch(() => null)));
+    }
     // PDF a partir do documento da proposta (cada página A4 como imagem)
     async function ppMakePdf(pp, S, onStep) {
-      await Promise.all([ppLoadScript(H2C_URL), ppLoadScript(JSPDF_URL)]);
-      const { html, fileTitle } = ppDocHtml(pp, S);
+      await Promise.all([ppLoadScript(H2C_URL), ppLoadScript(JSPDF_URL), ppEnsureInter()]);
+      const { html, fileTitle } = ppDocHtml(pp, S, { capture: true });
       const fr = document.createElement('iframe');
       fr.setAttribute('aria-hidden', 'true');
       fr.style.cssText = 'position:fixed;left:-10000px;top:0;width:900px;height:1200px;border:0;';
@@ -20998,9 +21013,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const pdf = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
         for (let i = 0; i < pages.length; i++) {
           onStep && onStep(i + 1, pages.length);
-          const canvas = await window.html2canvas(pages[i], { scale: 1.7, backgroundColor: '#FFFFFF', useCORS: true, logging: false, windowWidth: 900 });
+          const canvas = await window.html2canvas(pages[i], { scale: 1.8, backgroundColor: '#FFFFFF', useCORS: true, logging: false, windowWidth: 900 });
           if (i) pdf.addPage();
-          pdf.addImage(canvas.toDataURL('image/jpeg', 0.84), 'JPEG', 0, 0, 210, 297);
+          pdf.addImage(canvas.toDataURL('image/jpeg', 0.8), 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
         }
         const b64 = pdf.output('datauristring').split(',')[1];
         return { b64, filename: fileTitle + '.pdf', pages: pages.length };
