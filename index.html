@@ -2166,6 +2166,7 @@
   .pp-cycles { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); margin-bottom: var(--sp-3); padding: var(--sp-2-5) var(--sp-3); background: var(--surface-2); border-radius: var(--r-md); }
   .pp-cycles > span { font-weight: var(--fw-semibold); font-size: var(--fs-sm); }
   .pp-cycles small { flex-basis: 100%; }
+  .ps-type-other { max-width: 420px; margin: -4px 0 var(--sp-3); } .ps-type-other .form-input { margin: 0; }
   .cd-grid { display: grid; grid-template-columns: 1fr 1fr 1.25fr; gap: var(--sp-4) var(--sp-5); }
   .cd-flags { margin: var(--sp-2) 0 0; }
   .cd-params { display: grid; grid-template-columns: minmax(0, 1fr) 128px; gap: 6px var(--sp-2); align-items: center; }
@@ -4613,7 +4614,8 @@
     const MOCK_PROJECT_TYPES = [
       { id: 'pt-1', name: 'Habitação Coletiva' },
       { id: 'pt-2', name: 'Habitação Unifamiliar' },
-      { id: 'pt-3', name: 'Reabilitação' }
+      { id: 'pt-3', name: 'Reabilitação' },
+      { id: 'pt-9', name: 'Outro' }
     ];
 
     const MOCK_CLIENTS = [
@@ -17595,7 +17597,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     };
     // Um terreno pode ter várias tipologias de uso (ex.: habitação multifamiliar + comércio)
     const plotTypes = p => p?.project_type_ids?.length ? p.project_type_ids : (p?.project_type_id ? [p.project_type_id] : []);
-    const plotTypeNames = (p, typeById) => plotTypes(p).map(t => typeById[t]?.name).filter(Boolean).join(' + ');
+    // «Outro»: escreve-se qual é (constraints.type_other) e aparece assim nas listas e resumos
+    const isOtherType = t => /^outr[oa]s?$/i.test(String(t?.name || '').trim());
+    const typesOtherLast = list => [...list].sort((a, b) => isOtherType(a) - isOtherType(b));
+    const plotTypeNames = (p, typeById) => plotTypes(p).map(t => { const ty = typeById[t]; if (!ty) return null; const o = p.constraints?.type_other; return isOtherType(ty) && o ? `Outro (${o})` : ty.name; }).filter(Boolean).join(' + ');
     const SEGMENTS = [['economico', 'Económico'], ['medio', 'Médio'], ['premium', 'Premium']];
     const STRATEGIES = [['sale', 'Construir e vender'], ['rent', 'Construir e arrendar'], ['both', 'Venda ou arrendamento']];
     // Segmento do produto pelo preço de venda (€/m² ou preço médio por fração)
@@ -17801,7 +17806,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       if (devMode) {
         return {
           plots: mockPlots, investors: mockInvestors, presentations: mockPresentations, proposals: mockProposals,
-          types: MOCK_PROJECT_TYPES.map(t => ({ ...t, size_measure: MOCK_PT_EXTRA[t.id] || 'area' })),
+          types: typesOtherLast(MOCK_PROJECT_TYPES.map(t => ({ ...t, size_measure: MOCK_PT_EXTRA[t.id] || 'area' }))),
           members: await loadAllMembers(), clients: MOCK_CLIENT_ROWS
         };
       }
@@ -17815,7 +17820,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       ]);
       for (const r of [pl, iv, pr, fp, ty]) if (r.error) throw r.error;
       return { plots: pl.data || [], investors: iv.data || [], presentations: pr.data || [], proposals: fp.data || [],
-        types: ty.data || [], members: await loadAllMembers().catch(() => []), clients: cl.data || [] };
+        types: typesOtherLast(ty.data || []), members: await loadAllMembers().catch(() => []), clients: cl.data || [] };
     }
 
     // Contas do terreno (resumo do estudo de viabilidade): área de construção, investimento total e lucro
@@ -18484,6 +18489,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           ${p.project_id ? `<button type="button" class="text-btn" data-open-project="${escapeHtml(p.project_id)}">Abrir o projeto →</button>` : ''}
         </div>
         <div class="op-chips ps-types" id="ps-types">${d.types.map(t => `<label class="op-chip"><input type="checkbox" value="${escapeHtml(t.id)}"${plotTypes(p).includes(t.id) ? ' checked' : ''}><span>${escapeHtml(t.name)}</span></label>`).join('')}</div>
+        <div class="ps-type-other" id="ps-type-other"${d.types.some(t => isOtherType(t) && plotTypes(p).includes(t.id)) ? '' : ' hidden'}><input type="text" class="form-input" id="ps-type-other-in" maxlength="80" value="${escapeHtml(cons.type_other || '')}" placeholder="Que tipologia? ex.: Equipamento de saúde, Residência de estudantes"></div>
 
         <div class="gantt-wrap ps-cond" id="ps-cond">
           <div class="card-head"><h2>Condicionantes urbanísticas</h2><small class="muted">o que se aplica a este terreno · deixa em branco o que não se aplica · grava sozinho</small></div>
@@ -18724,7 +18730,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const ids = [...document.querySelectorAll('#ps-types input:checked')].map(cb => cb.value);
         p.project_type_ids = ids; p.project_type_id = ids[0] || null;
         pPatch.project_type_ids = ids; pPatch.project_type_id = ids[0] || null; savePlot(); drawInvestors();
+        const other = d.types.some(t => isOtherType(t) && ids.includes(t.id));
+        document.getElementById('ps-type-other').hidden = !other;
+        if (other && !cons.type_other) document.getElementById('ps-type-other-in').focus();
       });
+      document.getElementById('ps-type-other-in').addEventListener('input', e => { cons.type_other = e.target.value.trim() || null; pPatch.constraints = cons; savePlot(); });
       // Campos do estudo
       view.querySelectorAll('[data-f]').forEach(el => el.addEventListener(el.type === 'checkbox' || el.tagName === 'SELECT' ? 'change' : 'input', () => {
         const k = el.dataset.f;
