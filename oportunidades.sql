@@ -187,3 +187,21 @@ do $$ declare r record; cid uuid; begin
     update public.investors set client_id = cid where id = r.id;
   end loop;
 end $$;
+
+-- Notas internas da NOVA por oportunidade (registo com autor e data; nunca vão para investidores nem PDFs)
+create table if not exists public.plot_notes (
+  id uuid primary key default gen_random_uuid(),
+  plot_id uuid not null references public.land_plots(id) on delete cascade,
+  author_id uuid references public.team_members(id) on delete set null,
+  body text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists plot_notes_plot_idx on public.plot_notes (plot_id, created_at desc);
+alter table public.plot_notes enable row level security;
+drop policy if exists "team_only" on public.plot_notes;
+create policy "team_only" on public.plot_notes for all to authenticated using (private.is_team_member()) with check (private.is_team_member());
+-- As notas antigas (campo notes do terreno) passam a ser a primeira nota do registo
+insert into public.plot_notes (plot_id, body, created_at, updated_at)
+select id, notes, coalesce(updated_at, created_at), coalesce(updated_at, created_at) from public.land_plots p
+where coalesce(notes, '') <> '' and not exists (select 1 from public.plot_notes n where n.plot_id = p.id);

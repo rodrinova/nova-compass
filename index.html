@@ -2158,6 +2158,23 @@
   .ps-typ-note { font-style: normal; font-size: var(--fs-sm); color: var(--text-3); padding: var(--sp-2) 0; }
   .ps-result { position: sticky; top: 64px; }
   @media (max-width: 900px) { .ps-result { position: static; } }
+  .pp-dupes { border: 1px solid color-mix(in srgb, var(--warn, #c98a00) 40%, transparent); }
+  .pp-dupe { padding: 6px 0; border-top: 1px solid var(--border); font-size: var(--fs-sm); }
+  .pp-dupe q { display: block; color: var(--text); } .pp-dupe small { color: var(--text-3); font-size: var(--fs-xs); }
+  .pp-cycles { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); margin-bottom: var(--sp-3); padding: var(--sp-2-5) var(--sp-3); background: var(--surface-2); border-radius: var(--r-md); }
+  .pp-cycles > span { font-weight: var(--fw-semibold); font-size: var(--fs-sm); }
+  .pp-cycles small { flex-basis: 100%; }
+  .pn-add { display: grid; grid-template-columns: 1fr auto; gap: var(--sp-2); align-items: end; margin-bottom: var(--sp-3); }
+  .pn-add .form-input { margin: 0; }
+  .pn-list { display: flex; flex-direction: column; }
+  .pn-item { padding: var(--sp-2-5) 0; border-top: 1px solid var(--border); }
+  .pn-meta { display: flex; gap: var(--sp-2); align-items: baseline; flex-wrap: wrap; font-size: var(--fs-sm); }
+  .pn-meta span { color: var(--text-3); font-size: var(--fs-xs); }
+  .pn-acts { margin-left: auto; display: inline-flex; gap: var(--sp-2); }
+  .pn-body { white-space: pre-wrap; margin-top: 4px; line-height: 1.5; }
+  .pn-body .form-input { margin: 0; }
+  .pn-edit-btns { display: flex; justify-content: flex-end; gap: var(--sp-2); margin-top: var(--sp-2); }
+  @media (max-width: 640px) { .pn-add { grid-template-columns: 1fr; } }
   .ps-detail > summary { cursor: pointer; list-style: none; display: flex; gap: var(--sp-2); align-items: baseline; flex-wrap: wrap; }
   .ps-detail > summary::-webkit-details-marker { display: none; }
   .ps-detail > summary::before { content: '›'; color: var(--accent); font-weight: var(--fw-semibold); transition: transform var(--t) var(--ease); display: inline-block; }
@@ -16209,6 +16226,16 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         steps: ['Abre [[Pipeline]] → [[+ Nova proposta]]. Escolhe **que proposta é** (o modelo pré-configura tudo), a **tipologia** e a **língua**. Se vier de uma oportunidade do Intelligence, escolhe-a: usa o **mesmo CST** e traz o local, a área e o cliente.', 'No editor ficam à vista só quatro partes: **Cliente e local**, **Serviços**, **Valor** e **Pagamento**. Ajusta o que for preciso — os valores do modelo são um ponto de partida.', 'A língua muda-se a qualquer momento no **PT | EN** do topo: os textos da biblioteca e do modelo passam para a outra língua.', 'O resto está em **Mais opções**: capa e manifesto, textos do âmbito (Base de trabalho, Pressupostos, Prazo…), secções próprias (ex.: Aperfeiçoamento), custo e margem, timeline, opcionais, exclusões e assinatura.', 'Nos textos, {h} é a taxa horária dos opcionais, {local} o local e concelho, {validade}/{ate} a validade, e {Opcionais} (ou outro título) o número dessa secção no documento.', 'Toca em [[Criar proposta]] (recebe o CST). A partir daí grava sozinha. Para que as próximas deste tipo comecem assim, toca em **Guardar como modelo**.', 'Para enviar: [[Enviar por email]]. A app gera o PDF e descarrega o email com o PDF e a tua assinatura: abre o ficheiro e o Outlook mostra a mensagem pronta (fica também nos Rascunhos). Carregas em **Enviar** e a proposta fica marcada como enviada a essa hora, com follow-up a 7 dias.'],
         kw: 'proposta honorarios orcamento preco valor fee nota de honorarios cst pdf modelo nova capa ambito exclusoes opcionais timeline pagamento biblioteca ingles email outlook enviar anexo pip viabilidade estudo preliminar projeto completo tipo lingua aperfeicoamento taxa horaria guardar como modelo',
         tour: [{ go: 'nav:pipeline', sel: '#pipe-new', text: 'Começa aqui uma proposta nova.' }] },
+      { id: 'pip-ciclos', cat: 'clients', ctx: ['pipeline', 'proposal'],
+        q: 'escolho se o PIP inclui só um ciclo de aperfeiçoamento ou todas as respostas até à decisão',
+        a: 'Ao criar um PIP escolhe «Só um ciclo» ou «Até à decisão». Também se muda no editor, no topo dos Serviços: a app troca o texto do Aperfeiçoamento, o serviço, o momento do último pagamento e o opcional das notificações seguintes.',
+        steps: ['[[Pipeline]] → [[+ Nova proposta]] → **PIP**.', 'Em **Aperfeiçoamento**, escolhe **Só um ciclo** (só a resposta à primeira notificação) ou **Até à decisão** (todas as respostas, desde que não obriguem a reformular a solução).', 'Para mudar depois: no editor, secção **Serviços**, no topo.'],
+        kw: 'pip ciclo aperfeicoamento revisao notificacao resposta camara decisao limite oficio' },
+      { id: 'proposta-repetidos', cat: 'clients', ctx: ['proposal'],
+        q: 'sei se a proposta tem texto repetido',
+        a: 'Se a mesma frase aparecer duas vezes na proposta (mesmo em secções diferentes), surge à direita a caixa «Texto repetido» com a frase e as secções onde está. Tira uma das ocorrências e a caixa desaparece.',
+        steps: ['Escreve normalmente no editor.', 'Se aparecer **Texto repetido** no painel da direita, lê a frase e as secções indicadas.', 'Apaga a frase num dos sítios.'],
+        kw: 'repetido duplicado repetida frase igual secoes proposta limpar' },
       { id: 'proposta-rascunho', cat: 'clients', ctx: ['pipeline', 'proposal'],
         q: 'guardo uma proposta a meio para acabar mais tarde',
         a: 'No editor, toca em «Guardar rascunho». Fica no Pipeline, na coluna Rascunho; abres de lá e continuas. Se saíres sem guardar, a app guarda-a sozinha (desde que tenha cliente ou título).',
@@ -16219,6 +16246,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         a: 'Nas listas compridas escreve-se por cima: a lista vai filtrando à medida que escreves (sem precisar de acentos, e podes escrever partes de várias palavras).',
         steps: ['Toca na caixa da lista.', 'Escreve parte do nome, do CST ou do concelho (ex.: «alvares 26041» ou «gaia»).', 'Escolhe com o rato, ou com as setas e Enter.', 'O ✕ volta a deixar a lista vazia.'],
         kw: 'pesquisar procurar filtrar lista escrever oportunidade projeto cliente escolher dropdown' },
+      { id: 'notas-oportunidade', cat: 'opps', ctx: ['plot', 'opps'],
+        q: 'escrevo notas internas sobre uma oportunidade (Investment Intelligence)',
+        a: 'Na página da oportunidade há o cartão «Notas internas da NOVA»: escreve e toca em «Guardar nota» (ou Ctrl+Enter). Fica com o teu nome e a data. Só a equipa vê — nunca vão para o resumo do investidor.',
+        steps: ['Abre a oportunidade no [[Investment Intelligence]].', 'No cartão **Notas internas da NOVA**, escreve o que soubeste (conversas, contactos, próximos passos).', 'Toca em **Guardar nota**. As tuas notas podem ser editadas ou apagadas.'],
+        kw: 'notas internas nota oportunidade terreno intelligence equipa registo conversa mediador privado' },
       { id: 'eliminar-cliente', cat: 'clients', ctx: ['clients', 'client'],
         q: 'elimino um cliente (ou junto um cliente repetido)',
         a: 'Na ficha do cliente, ao fundo: «Eliminar cliente…». Se tiver projetos, escolhes para que cliente passam antes de o eliminar.',
@@ -18285,6 +18317,58 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         view.innerHTML = `<div class="error-box">Não foi possível abrir a oportunidade: ${escapeHtml(err.message)}</div>`;
       }
     }
+    // ---------- Notas internas da NOVA (por oportunidade) ----------
+    // Registo com autor e data. Só a equipa vê: nunca entram no resumo para o investidor nem nos PDFs.
+    let mockPlotNotes = [];
+    async function loadPlotNotes(plotId) {
+      if (devMode) return mockPlotNotes.filter(n => n.plot_id === plotId).sort((a, b) => b.created_at.localeCompare(a.created_at));
+      const r = await supabase.from('plot_notes').select('*').eq('plot_id', plotId).order('created_at', { ascending: false });
+      return r.error ? null : (r.data || []);
+    }
+    async function mountPlotNotes(box, p, d) {
+      if (!box) return;
+      const me = await getCurrentMember().catch(() => null);
+      const nameOf = id => (d.members || []).find(m => m.id === id)?.name || '';
+      const mine = n => !n.author_id || n.author_id === me?.id;
+      const draw = async () => {
+        const list = await loadPlotNotes(p.id);
+        if (list === null) { box.innerHTML = '<div class="gantt-empty">Para usar as notas internas, corre oportunidades.sql no Supabase.</div>'; return; }
+        box.innerHTML = `
+          <div class="card-head"><h2>Notas internas da NOVA</h2><span class="muted">só a equipa vê · não vão para o investidor</span></div>
+          <div class="pn-add"><textarea class="form-input" id="pn-body" rows="2" placeholder="Conversas, contactos, próximos passos… (Ctrl+Enter para guardar)"></textarea>
+            <button type="button" class="secondary-btn" id="pn-save">Guardar nota</button></div>
+          ${list.length ? `<div class="pn-list">${list.map(n => `
+            <div class="pn-item" data-id="${escapeHtml(n.id)}">
+              <div class="pn-meta"><b>${escapeHtml(nameOf(n.author_id) || 'Nota')}</b><span>${escapeHtml(fmtDateTime(n.created_at))}${n.updated_at && n.updated_at.slice(0, 16) !== n.created_at.slice(0, 16) ? ' · editada' : ''}</span>
+                ${mine(n) ? `<span class="pn-acts"><button type="button" class="text-btn" data-pn-edit>Editar</button><button type="button" class="text-btn danger-text" data-pn-del>Apagar</button></span>` : ''}</div>
+              <div class="pn-body">${escapeHtml(n.body)}</div>
+            </div>`).join('')}</div>` : '<div class="gantt-empty">Ainda sem notas. O que se for sabendo desta oportunidade fica aqui, com nome e data.</div>'}`;
+        const ta = box.querySelector('#pn-body'), btn = box.querySelector('#pn-save');
+        const add = async () => {
+          const body = ta.value.trim(); if (!body) return ta.focus();
+          btn.disabled = true;
+          try { const now = new Date().toISOString(); await dbInsert('plot_notes', { plot_id: p.id, author_id: me?.id ?? null, body, created_at: now, updated_at: now }, mockPlotNotes); await draw(); showToast('Nota guardada'); }
+          catch (err) { btn.disabled = false; showError('guardar a nota', err); }
+        };
+        btn.addEventListener('click', add);
+        ta.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); add(); } });
+        box.querySelectorAll('.pn-item').forEach(it => {
+          const n = list.find(x => String(x.id) === it.dataset.id);
+          it.querySelector('[data-pn-del]')?.addEventListener('click', () => deleteWithUndo('plot_notes', n.id, mockPlotNotes, 'Nota apagada', draw).catch(err => showError('apagar', err)));
+          it.querySelector('[data-pn-edit]')?.addEventListener('click', () => {
+            const bodyEl = it.querySelector('.pn-body');
+            bodyEl.innerHTML = `<textarea class="form-input" rows="3">${escapeHtml(n.body)}</textarea><div class="pn-edit-btns"><button type="button" class="text-btn" data-c>Cancelar</button><button type="button" class="secondary-btn" data-s>Guardar</button></div>`;
+            const e = bodyEl.querySelector('textarea'); e.focus();
+            bodyEl.querySelector('[data-c]').addEventListener('click', draw);
+            bodyEl.querySelector('[data-s]').addEventListener('click', async () => {
+              const body = e.value.trim(); if (!body) return;
+              try { await dbUpdate('plot_notes', n.id, { body, updated_at: new Date().toISOString() }, mockPlotNotes); draw(); } catch (err) { showError('guardar a nota', err); }
+            });
+          });
+        });
+      };
+      await draw();
+    }
     function renderPlotSheet(view, p, d, cfg, opts = {}) {
       const typeById = Object.fromEntries(d.types.map(t => [t.id, t]));
       const invById = Object.fromEntries(d.investors.map(i => [i.id, i]));
@@ -18411,10 +18495,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <aside class="vt-side"><div class="gantt-wrap ps-result" id="fz-result"></div></aside>
         </div>
 
+        <div class="gantt-wrap ps-notes" id="ps-notes"></div>
         <div class="gantt-wrap" id="ps-investors"></div>
 
         <details class="gantt-wrap ps-detail" id="ps-detail"${opts.detail ? ' open' : ''}>
-          <summary><b>Dados do terreno e notas</b> <small class="muted">morada, contacto, PDM, notas e riscos</small></summary>
+          <summary><b>Dados do terreno e riscos</b> <small class="muted">morada, contacto, PDM e riscos</small></summary>
           <div class="ps-dgrid">
             <section>
               <div class="section-label">Terreno e contacto</div>
@@ -18430,14 +18515,14 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               <label class="check-row"><input type="checkbox" data-p="has_approved_project"${p.has_approved_project ? ' checked' : ''}> Já tem projeto aprovado</label>
             </section>
             <section>
-              <div class="section-label">Notas e riscos</div>
-              <textarea class="form-input" data-p="notes" rows="3" placeholder="Notas">${v('notes')}</textarea>
-              <textarea class="form-input" data-p="risks" rows="3" placeholder="Riscos: servidões, RAN/REN, acessos…" style="margin-top:8px;">${v('risks')}</textarea>
+              <div class="section-label">Riscos</div>
+              <textarea class="form-input" data-p="risks" rows="3" placeholder="Riscos: servidões, RAN/REN, acessos…">${v('risks')}</textarea>
             </section>
           </div>
         </details>
         ${d.partner ? `<div class="gantt-wrap" id="ps-props"></div>` : ''}`;
 
+      mountPlotNotes(document.getElementById('ps-notes'), p, d);
       // ---- Gravação automática ----
       const savedEl = document.getElementById('ps-saved');
       let pTimer = null, fTimer = null; const pPatch = {};
@@ -19155,25 +19240,25 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         valueIntro: 'Valor — Estudo', lines: [[['Estudo Preliminar', 'Preliminary Study'], null]],
         valueNotes: ['Aos valores apresentados acresce IVA', 'Aumentos de área superiores a 5%', 'Em concordância com os mais atuais'],
         payIntro: 'Pagamento — Ritmo', pay: [[['Adjudicação', 'Award'], 30, 'Adjudicação'], [['Apresentação e Entrega do Estudo', 'Presentation and Delivery of the Study'], 70, 'Estudo Preliminar']],
-        payNotes: ['Aplica-se IVA'], terms: [['pay_terms', 'Momento de faturação', 'marco indicado na tabela.'], ['pay_terms', 'Prazo e forma de pagamento']],
+        payNotes: [], terms: [['pay_terms', 'Momento de faturação', '=Cada fatura é emitida no marco indicado na tabela.'], ['pay_terms', 'Prazo e forma de pagamento']],
         optionals: ['Reformulação da solução urbanística', 'Reuniões adicionais com o Cliente', 'Visitas ao imóvel', 'Análise e integração de estudos', 'Imagens 3D complementares', 'Cedência de Modelos Editáveis'],
-        exclIntro: 'Exclusões', exclusions: ['Levantamento topográfico, cadastral', 'Avaliação técnica do estado', 'Reuniões de certificação', 'Entrega de Ficheiros', 'Qualquer fase de projeto subsequente', 'Taxas, licenças, certidões'] },
-      { key: 'pip', name: 'PIP — Pedido de Informação Prévia', desc: 'Análise urbanística, estudo prévio, PIP e um ciclo de aperfeiçoamento.',
+        exclIntro: 'Exclusões', exclusions: ['Levantamento topográfico, cadastral', 'Avaliação técnica do estado', 'Reuniões de certificação', 'Entrega de Ficheiros', 'Taxas, licenças'] },
+      { key: 'pip', name: 'PIP — Pedido de Informação Prévia', desc: 'Análise urbanística, estudo prévio e PIP (n.º 1 do art. 14.º do RJUE).',
         cover: [['NOVA Investment Intelligence', 'NOVA Investment Intelligence'], ['Pedido de Informação Prévia', 'Pre-Application Enquiry']],
         intro: ['O presente documento descreve a proposta de prestação de serviços para desenvolvimento de um Pedido de Informação Prévia (PIP), ao abrigo do n.º 1 do artigo 14.º do RJUE, relativo ao imóvel localizado em {local}.\n\nO objetivo do trabalho consiste em avaliar e obter informação municipal sobre o potencial construtivo do imóvel, criando uma base documental que permita ao Cliente valorizar o ativo e suportar uma futura decisão de investimento ou alienação.\n\nO estudo procurará definir a solução urbanística que permita atingir a maior área de construção possível e urbanisticamente viável, avaliando para esse efeito a implantação, volumetria, número de pisos, cércea, afastamentos e demais parâmetros relevantes. A análise poderá considerar diferentes configurações volumétricas, sempre com o objetivo de maximizar a capacidade construtiva potencial do imóvel.',
           'This document sets out our proposal for preparing a Pre-Application Enquiry (PIP), under article 14(1) of the RJUE, for the property located in {local}.\n\nThe purpose of the work is to assess and obtain municipal information on the building potential of the property, creating a documented basis that allows the Client to add value to the asset and support a future investment or sale decision.\n\nThe study will seek the planning solution that achieves the largest possible and viable gross floor area, assessing the site layout, massing, number of storeys, building height, setbacks and other relevant parameters. Different massing options may be considered, always with the aim of maximising the building potential of the property.'],
         facts: [['Área do Terreno', 'Plot Area'], ['Área de Implantação potencial', 'Potential Footprint']],
         manifesto: 'Uma abordagem NOVA',
-        blocks: [['scope_before', 'Base de trabalho'], ['scope_before', 'Pressupostos do Cliente', 'maximizar']],
+        blocks: [['scope_before', 'Base de trabalho'], ['scope_before', 'Pressupostos do Cliente', 'uso pretendido']],
         lead: 'O trabalho inclui', groups: [['Análise Urbanística'], ['Estudo Prévio|', ['Estudo da implantação', 'Estudo da volumetria', 'Estimativa da área de construção', 'Uma reunião de arranque']], ['Pedido de Informação Prévia', ['Memória descritiva e justificativa', 'Peças desenhadas necessárias', 'Quadro síntese', 'Preparação e submissão', 'Um ciclo de aperfeiçoamento']]],
-        after: [['scope_after', 'Prazo de Execução', 'PIP será submetido'], ['scope_after', 'Natureza da Pretensão']],
+        after: [['scope_after', 'Prazo de Execução', 'PIP será submetido']],
         extra: [['section', 'Aperfeiçoamento', 'único ciclo']],
         valueIntro: 'Valor — Oportunidade', lines: [[['Análise e Enquadramento Urbanístico', 'Planning Analysis and Framing'], 1500], [['Estudo Prévio', 'Concept Design'], 4000], [['Pedido de Informação Prévia', 'Pre-Application Enquiry'], 500]],
         valueNotes: ['Aplica-se IVA', 'Em concordância com os mais atuais', 'Estaremos sempre disponíveis', 'Esta proposta é válida por {validade}'],
         payIntro: 'Pagamento — Investimento', pay: [[['Adjudicação', 'Award'], 30, 'Adjudicação'], [['Entrega do Estudo Prévio', 'Concept Design Delivery'], 40, 'Estudo Prévio'], [['Entrega e Submissão do PIP', 'PIP Delivery and Submission'], 20, 'PIP'], [['Ciclo de Aperfeiçoamento / Decisão Municipal', 'Review Cycle / Municipal Decision'], 10, 'Resposta a Ofício']],
-        payNotes: ['Aplica-se IVA'], terms: [['pay_terms', 'Momento de faturação', 'último pagamento'], ['pay_terms', 'Prazo e forma de pagamento'], ['pay_terms', 'Independência do resultado']],
+        payNotes: [], terms: [['pay_terms', 'Momento de faturação', 'resposta à primeira notificação'], ['pay_terms', 'Prazo e forma de pagamento']],
         optIntro: '', optionals: ['Estudos volumétricos', 'Reformulação da solução urbanística', 'Reuniões adicionais com o Cliente', 'Reuniões com o Município', 'Visitas ao imóvel', 'Análise e integração de estudos', 'Elementos adicionais solicitados', 'Adaptação da solução', 'Respostas a notificações posteriores', 'Estudos ou reformulação decorrentes', 'Coordenação de consultores externos'],
-        exclIntro: 'Exclusões — Não assumidos', exclusions: ['Levantamento topográfico, cadastral', 'Verificação in loco', 'Levantamento ou correção de informação predial', 'Obtenção de certidões', 'Estudos geotécnicos', 'Projetos de especialidades e respetivos', 'Projeto de Arquitetura e quaisquer fases posteriores ao PIP', 'Regularização ou legalização', 'Processos de alteração de uso', 'Consultoria jurídica', 'Taxas, licenças, certidões', 'Honorários de consultores', 'Qualquer garantia quanto ao teor'] },
+        exclIntro: 'Exclusões — Não assumidos', exclusions: ['Levantamento topográfico, cadastral', 'Verificação in loco', 'Levantamento ou correção de informação predial', 'Obtenção de certidões', 'Estudos geotécnicos', 'Projetos de especialidades e respetivos', 'Projeto de Arquitetura e quaisquer fases posteriores ao PIP', 'Regularização ou legalização', 'Processos de alteração de uso', 'Consultoria jurídica', 'Taxas, licenças', 'Honorários de consultores'] },
       { key: 'viab', name: 'Estudo de Viabilidade', desc: 'Programa, custos e retorno indicativos para apoiar uma decisão.',
         cover: [['Estudo de Viabilidade Preliminar', 'Preliminary Feasibility Study']],
         intro: ['O presente documento descreve a proposta de realização de um Estudo de Viabilidade Preliminar para o imóvel sito em {local}.\n\nO objetivo desta análise é fornecer ao Cliente uma base técnica e financeira de suporte à decisão, avaliando a viabilidade conceptual da intervenção pretendida.',
@@ -19185,9 +19270,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         valueIntro: 'Valor — Estudo', lines: [[['Estudo de Viabilidade', 'Feasibility Study'], null]],
         valueNotes: ['Aos valores apresentados acresce IVA', 'Em concordância com os mais atuais'],
         payIntro: 'Pagamento — Ritmo', pay: [[['Apresentação e Entrega do Estudo', 'Presentation and Delivery of the Study'], 100, 'Estudo Preliminar']],
-        payNotes: ['Aplica-se IVA'], terms: [['pay_terms', 'Momento de faturação', 'marco indicado na tabela.'], ['pay_terms', 'Prazo e forma de pagamento']],
+        payNotes: [], terms: [['pay_terms', 'Momento de faturação', '=Cada fatura é emitida no marco indicado na tabela.'], ['pay_terms', 'Prazo e forma de pagamento']],
         optionals: ['Estudos volumétricos', 'Reuniões adicionais com o Cliente', 'Visitas ao imóvel', 'Análise e integração de estudos'],
-        exclIntro: 'Exclusões', exclusions: ['Levantamento topográfico, cadastral', 'Reuniões de certificação', 'Estudo de mercado imobiliário', 'Avaliação técnica do estado', 'Qualquer fase de projeto subsequente'] },
+        exclIntro: 'Exclusões', exclusions: ['Levantamento topográfico, cadastral', 'Reuniões de certificação'] },
       { key: 'full', name: 'Projeto Completo', desc: 'Arquitetura e especialidades, do estudo prévio à assistência técnica.',
         cover: [['Projeto de Arquitetura', 'Architecture Project']],
         intro: ['O presente documento descreve a proposta de prestação de serviços para o desenvolvimento do Projeto de Arquitetura e Especialidades para o imóvel sito em {local}.',
@@ -19197,11 +19282,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         blocks: [['scope_before', 'Elementos-base a fornecer']],
         lead: 'Com base nos pressupostos', groups: [['A \\ Projeto de Arquitetura'], ['B \\ Projetos de Engenharia']],
         after: [['scope_after', 'Prazo de Execução', 'cronograma']],
-        extra: [['section', 'Metodologia'], ['section', 'BIM'], ['section', 'Aperfeiçoamento', 'procedimento de licenciamento']],
+        extra: [['section', 'BIM'], ['section', 'Aperfeiçoamento', 'procedimento de licenciamento']],
         valueIntro: null, lines: [[['Projeto de Arquitetura e Especialidades', 'Architecture and Engineering Projects'], null]],
         valueNotes: ['Aos valores apresentados acresce IVA', 'Aumentos de área superiores a 5%', 'Em concordância com os mais atuais'],
         payIntro: null, pay: null,
-        payNotes: ['Aplica-se IVA'], terms: [['pay_terms', 'Momento de faturação', 'marco indicado na tabela.'], ['pay_terms', 'Prazo e forma de pagamento'], ['pay_terms', 'Independência do resultado']],
+        payNotes: [], terms: [['pay_terms', 'Momento de faturação', '=Cada fatura é emitida no marco indicado na tabela.'], ['pay_terms', 'Prazo e forma de pagamento']],
         timeline: true,
         optionals: ['Assistência Técnica em Obra', 'Levantamento Topográfico', 'Imagens 3D complementares', 'Cedência de Modelos Editáveis', 'Reuniões com o Município', 'Adaptação da solução', 'Respostas a notificações posteriores', 'Coordenação de consultores externos'],
         exclIntro: 'Exclusões', exclusions: null }
@@ -19219,7 +19304,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       if (!tpl) return c;
       const L2 = (x, i) => Array.isArray(x) ? (en ? x[1] ?? x[0] : x[0]) : x;
       const n = normTxt;
-      const find = (kind, title, has, grp) => lib.find(x => x.kind === kind && (!grp || x.grp === grp) && n(x.title_pt).startsWith(n(title)) && (!has || n(x.title_pt + ' ' + (x.body_pt || '')).includes(n(has))));
+      // has: texto que o bloco contém; com «=» à frente, o texto tem de ser exatamente esse
+      const find = (kind, title, has, grp) => lib.find(x => x.kind === kind && (!grp || x.grp === grp) && n(x.title_pt).startsWith(n(title))
+        && (!has || (has[0] === '=' ? n(x.body_pt || '').trim() === n(has.slice(1)).trim() : n(x.title_pt + ' ' + (x.body_pt || '')).includes(n(has)))));
       const fill = t => String(t || '');   // {local} fica: o documento troca-o pelo local e concelho do momento
       // Proposta guardada como modelo: copia o conteúdo e, se a língua for outra, troca os blocos da biblioteca
       if (tpl.snap) {
@@ -19257,9 +19344,71 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const stageId = name => (ctx.stageTypes || []).find(x => n(x.name) === n(name))?.id || null;
       if (tpl.pay) c.pay.rows = tpl.pay.map(([t, pct, st]) => ({ t: L2(t), pt: t[0], en: t[1], pct, stage: stageId(st) }));
       if (tpl.timeline) c.timeline.on = true;
+      if (tpl.key === 'pip') c.cycles = 'one';
       if (tpl.optionals) c.optionals.rows = tpl.optionals.map(t => find('optional', t)).filter(Boolean).map(x => ({ lib: x.id, t: libT(x, en), v: plSplit(x.value_text, en) }));
       if (tpl.exclusions) c.exclusions.rows = tpl.exclusions.map(t => find('exclusion', t)).filter(Boolean).map(x => ({ lib: x.id, t: libT(x, en), grp: x.grp || '' }));
       return c;
+    }
+    // Frases que se repetem no documento final (≥ 7 palavras), com as secções onde aparecem
+    function ppDupes(pp, S) {
+      const doc = new DOMParser().parseFromString(ppDocHtml(pp, S).html, 'text/html');
+      let sec = 'Capa'; const seen = new Map();
+      doc.querySelectorAll('.b').forEach(b => {
+        const h = b.querySelector('h2'); if (h) { sec = h.textContent.replace(/\s+/g, ' ').trim(); return; }
+        if (b.classList.contains('sign')) return;
+        b.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+        b.querySelectorAll('p, li, tr, td, div').forEach(el => el.append('\n'));
+        b.textContent.split(/(?<=[.!?:])\s+|\n+/).forEach(raw => {
+          const t = raw.replace(/\s+/g, ' ').trim();
+          const k = normTxt(t).replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
+          if (k.split(' ').length < 7) return;
+          const o = seen.get(k) || { text: t, where: [] }; o.where.push(sec); seen.set(k, o);
+        });
+      });
+      return [...seen.values()].filter(o => o.where.length > 1).map(o => {
+        const w = [...new Set(o.where)].map(x => x.replace(/^(\d+) \\ /, '$1. '));
+        return { text: o.text, where: w.length === 1 ? [`${w[0]} (${o.where.length} vezes)`] : w };
+      });
+    }
+    // PIP: aperfeiçoamento limitado a um ciclo (como na 26041) ou com todas as respostas até à decisão.
+    // Troca a secção «Aperfeiçoamento», o serviço, o «Momento de faturação», o opcional e o último pagamento.
+    const PP_CYCLES = {
+      one: { sec: 'único ciclo', svc: 'Um ciclo de aperfeiçoamento', pay: 'resposta à primeira notificação', opt: true, row: ['Ciclo de Aperfeiçoamento / Decisão Municipal', 'Review Cycle / Municipal Decision'] },
+      all: { sec: 'até à decisão final', svc: 'Resposta às notificações municipais', pay: 'devido com a comunicação da decisão', opt: false, row: ['Decisão Municipal', 'Municipal Decision'] }
+    };
+    const ppIsPip = c => c?.kind === 'pip' || (c?.extra || []).some(x => /aperfei/i.test(x.t || '')) && (c?.scope?.groups || []).some(g => /informa..o pr.via|PIP/i.test(g.t || ''));
+    function ppSetCycles(c, mode, lib, en) {
+      const n = normTxt, A = PP_CYCLES[c.cycles || 'one'], B = PP_CYCLES[mode];
+      if (!B || (c.cycles || 'one') === mode) return;
+      const byId = Object.fromEntries(lib.map(x => [x.id, x]));
+      const has = (x, t) => x && n(x.title_pt + ' ' + (x.body_pt || '')).includes(n(t));
+      const blockOf = (grp, title, t) => lib.find(x => x.kind === 'block' && x.grp === grp && n(x.title_pt).startsWith(n(title)) && has(x, t));
+      const swap = (arr, grp, title) => {
+        const to = blockOf(grp, title, grp === 'section' ? B.sec : B.pay); if (!arr || !to) return;
+        const i = arr.findIndex(o => { const x = byId[o.lib]; return x ? x.grp === grp && n(x.title_pt).startsWith(n(title)) : n(o.t || '').startsWith(n(title)); });
+        const row = { lib: to.id, t: libT(to, en), b: libB(to, en) };
+        if (i >= 0) arr[i] = row; else if (grp === 'section') arr.push(row);
+      };
+      swap(c.extra, 'section', 'Aperfeiçoamento');
+      swap(c.pay.terms, 'pay_terms', 'Momento de faturação');
+      const svc = lib.find(x => x.kind === 'service' && n(x.title_pt).startsWith(n(B.svc)));
+      c.scope.groups.forEach(g => g.items.forEach((it, k) => {
+        const x = byId[it.lib];
+        if (svc && (x ? n(x.title_pt).startsWith(n(A.svc)) : n(it.t || '').startsWith(n(A.svc)))) g.items[k] = { lib: svc.id, t: libT(svc, en), b: libB(svc, en) };
+      }));
+      const opt = lib.find(x => x.kind === 'optional' && n(x.title_pt).startsWith(n('Respostas a notificações posteriores')));
+      if (opt) {
+        const i = c.optionals.rows.findIndex(o => o.lib === opt.id);
+        if (!B.opt && i >= 0) c.optionals.rows.splice(i, 1);
+        if (B.opt && i < 0) {
+          const at = c.optionals.rows.findIndex(o => /^(Estudos ou reformula|Studies or redesign)/i.test(o.t || ''));
+          c.optionals.rows.splice(at >= 0 ? at : c.optionals.rows.length, 0, { lib: opt.id, t: libT(opt, en), v: plSplit(opt.value_text, en) });
+        }
+      }
+      c.pay.rows.forEach(r => {
+        if ([r.pt, r.t].includes(A.row[0]) || r.t === A.row[1]) { r.pt = B.row[0]; r.en = B.row[1]; r.t = en ? B.row[1] : B.row[0]; }
+      });
+      c.cycles = mode;
     }
     // Completa o conteúdo guardado com as secções que faltem (propostas antigas)
     function ppFillContent(c, lib, en, me) {
@@ -19510,12 +19659,18 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <div><label class="field-label">Tipologia</label><select id="np-type" class="form-input"><option value="">—</option>${d.types.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('')}</select></div>
           <div><label class="field-label">Língua</label><div class="segmented np-lang" role="radiogroup"><button type="button" data-lang="pt" class="${lang === 'pt' ? 'active' : ''}">Português</button><button type="button" data-lang="en" class="${lang === 'en' ? 'active' : ''}">English</button></div></div>
         </div>
+        <div id="np-cycles-row"${tpl === 'pip' ? '' : ' hidden'}><label class="field-label">Aperfeiçoamento</label>
+          <div class="segmented np-cycles" role="radiogroup"><button type="button" data-cy="one" class="active">Só um ciclo</button><button type="button" data-cy="all">Até à decisão</button></div>
+          <div class="field-hint" id="np-cycles-hint">Inclui a resposta à primeira notificação da Câmara; as seguintes são trabalho adicional.</div></div>
         <label class="field-label">Oportunidade do Intelligence <small class="muted">(opcional)</small></label>
         <select id="np-plot" class="form-input" data-search><option value="">Sem oportunidade (CST novo)</option>${open.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml([p.cst ? 'CST ' + p.cst : null, p.name, p.municipality].filter(Boolean).join(' · '))}</option>`).join('')}</select>
         <div class="field-hint">Com oportunidade, a proposta usa o mesmo CST e já vem com o local, a área e o cliente. Tudo o resto vem do modelo — muda-se em Definições → Propostas.</div>
         <button type="button" class="primary-btn" id="np-go">Começar</button>`);
       const box = document;
-      box.querySelectorAll('.np-tpl').forEach(b => b.addEventListener('click', () => { tpl = b.dataset.tpl; box.querySelectorAll('.np-tpl').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', x === b); }); }));
+      let cycles = 'one';
+      const cyHint = { one: 'Inclui a resposta à primeira notificação da Câmara; as seguintes são trabalho adicional.', all: 'Inclui todas as respostas até à decisão, desde que não obriguem a reformular a solução.' };
+      box.querySelectorAll('.np-tpl').forEach(b => b.addEventListener('click', () => { tpl = b.dataset.tpl; box.querySelectorAll('.np-tpl').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', x === b); }); document.getElementById('np-cycles-row').hidden = tpl !== 'pip'; }));
+      box.querySelectorAll('.np-cycles button').forEach(b => b.addEventListener('click', () => { cycles = b.dataset.cy; box.querySelectorAll('.np-cycles button').forEach(x => x.classList.toggle('active', x === b)); document.getElementById('np-cycles-hint').textContent = cyHint[cycles]; }));
       box.querySelectorAll('.np-lang button').forEach(b => b.addEventListener('click', () => { lang = b.dataset.lang; box.querySelectorAll('.np-lang button').forEach(x => x.classList.toggle('active', x === b)); }));
       const plotSel = document.getElementById('np-plot'), typeSel = document.getElementById('np-type');
       plotSel.addEventListener('change', () => {
@@ -19529,7 +19684,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const plot = d.plots.find(p => String(p.id) === plotSel.value) || null;
         const keen = plot ? d.presentations.find(x => x.plot_id === plot.id && ['proposal', 'interested'].includes(x.status)) : null;
         closeQuickModal();
-        openProposalView(null, { plot, investor: keen ? d.investors.find(i => i.id === keen.investor_id) : null, tpl, lang, typeId: typeSel.value || null });
+        openProposalView(null, { plot, investor: keen ? d.investors.find(i => i.id === keen.investor_id) : null, tpl, lang, typeId: typeSel.value || null, cycles: tpl === 'pip' ? cycles : null });
       });
     }
 
@@ -19580,6 +19735,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               ? ppFromTemplate(tpl, lib, en, meM, cfg, { place, region, facts, typeName: typeById[typeId]?.name || '', stageTypes: modelData.stageTypes })
               : ppDefaultContent(lib, en, meM, { lines: [en ? 'Architecture Project' : 'Projeto de Arquitetura', typeById[typeId]?.name || ''], place, region, facts }, cfg)
           };
+          if (preset.cycles === 'all') ppSetCycles(pp.content, 'all', lib, en);
           pp.total = ppTotals(pp.content).total || null;
         } else {
           pp = JSON.parse(JSON.stringify(pp));
@@ -19719,6 +19875,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             <div><label class="field-label">Oportunidade (Intelligence)</label><select class="form-input" id="pp-plot" data-search${pp.id && pp.number ? ' disabled' : ''}><option value="">Sem oportunidade</option>${d.plots.map(x => `<option value="${escapeHtml(x.id)}"${x.id === pp.plot_id ? ' selected' : ''}>${escapeHtml([x.cst ? 'CST ' + x.cst : null, x.name].filter(Boolean).join(' · '))}</option>`).join('')}</select></div>
           </div>`,
         scope: () => `
+          ${ppIsPip(c) ? `<div class="pp-cycles"><span>Aperfeiçoamento</span><div class="segmented" role="radiogroup">${[['one', 'Só um ciclo'], ['all', 'Até à decisão']].map(([k, l]) => `<button type="button" data-cycles="${k}" class="${(c.cycles || 'one') === k ? 'active' : ''}"${locked ? ' disabled' : ''}>${l}</button>`).join('')}</div>
+            <small class="muted">${(c.cycles || 'one') === 'all' ? 'Todas as respostas à Câmara até à decisão, desde que não obriguem a reformular a solução.' : 'Só a resposta à primeira notificação; as seguintes são trabalho adicional (opcional «sob consulta»).'}</small></div>` : ''}
           <div class="pp-groups">${c.scope.groups.map((g, gi) => `
             <div class="pp-group">
               <div class="pp-group-head"><textarea class="form-input pp-grow" rows="1" data-oneline data-pp="content.scope.groups.${gi}.t" placeholder="Grupo, ex.: A \\ Projeto de Arquitetura" aria-label="Grupo">${escapeHtml(g.t)}</textarea>
@@ -19851,6 +20009,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
                 <div class="field-hint" style="margin:0">Fica no Pipeline, em Rascunho, para continuares mais tarde. Se saíres sem guardar, é guardada sozinha (precisa de cliente ou título).</div>` : ''}
               <button type="button" class="text-btn" id="pp-save-tpl">Guardar como modelo</button>
             </div>
+            <div class="gantt-wrap pp-dupes" id="pp-dupes" hidden></div>
             ${pp.id ? `<div class="gantt-wrap pp-pipe">
               <div class="card-head"><h2>Pipeline</h2>${pill(pp.status)}</div>
               <div class="form-grid pp-pipe-grid">
@@ -19887,8 +20046,18 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       // Gravar: proposta nova só com «Criar»; depois grava sozinha (com pausa de 1,2 s)
       let saveT = null;
       const savedEl = () => document.getElementById('pp-saved');
+      // Frases repetidas no documento (mesmo em secções diferentes): aviso no painel lateral
+      let dupT = null;
+      const dupCheck = () => { clearTimeout(dupT); dupT = setTimeout(() => {
+        const box = document.getElementById('pp-dupes'); if (!box) return;
+        let list = []; try { list = ppDupes(pp, S); } catch (_) { list = []; }
+        box.hidden = !list.length;
+        box.innerHTML = list.length ? `<div class="card-head"><h2>Texto repetido</h2><span>${list.length}</span></div>
+          <div class="field-hint" style="margin:0 0 6px">A mesma frase aparece mais do que uma vez na proposta. Tira uma das ocorrências.</div>
+          ${list.slice(0, 6).map(x => `<div class="pp-dupe"><q>${escapeHtml(x.text.length > 140 ? x.text.slice(0, 140) + '…' : x.text)}</q><small>${escapeHtml(x.where.join(' · '))}</small></div>`).join('')}` : '';
+      }, 700); };
       const touch = (redrawSec) => {
-        S.dirty = true;
+        S.dirty = true; dupCheck();
         if (!pp.id) { try { localStorage.setItem(PP_DRAFT_KEY, JSON.stringify({ at: Date.now(), pp })); } catch (_) { /* sem armazenamento */ } }
         if (redrawSec) redraw(redrawSec);
         recalc();
@@ -19902,6 +20071,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       ppGrow(main);
       main.addEventListener('toggle', e => ppGrow(e.target), true);
       main.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.hasAttribute?.('data-oneline')) e.preventDefault(); });
+      // PIP: um ciclo de aperfeiçoamento ou até à decisão (troca secção, serviço, faturação, opcional e último pagamento)
+      main.addEventListener('click', e => {
+        const b = e.target.closest('[data-cycles]'); if (!b || locked || b.classList.contains('active')) return;
+        ppSetCycles(c, b.dataset.cycles, S.lib, en); touch(); renderProposalEditor();
+        showToast(b.dataset.cycles === 'all' ? 'Aperfeiçoamento até à decisão' : 'Aperfeiçoamento limitado a um ciclo');
+      });
       main.addEventListener('input', e => {
         const el = e.target;
         if (el.classList.contains('pp-grow')) ppGrow(el);
@@ -20059,7 +20234,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       };
       const lockAll = root => root.querySelectorAll('input, select, textarea, button[data-act]').forEach(el => { el.disabled = true; });
       if (locked) lockAll(view.querySelector('.pp-main'));
-      recalc();
+      recalc(); dupCheck();
       // As horas previstas já não vêm preenchidas pelo histórico (ainda há poucos dados): só se alguém as escrever
       document.getElementById('pp-pdf').addEventListener('click', async () => { await S.flush?.(); printProposal(pp, S); });
       document.getElementById('pp-mail')?.addEventListener('click', () => openProposalMail());
@@ -20462,7 +20637,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       B.push(`<div class="b sign"><p class="place">${e(c.closing.place || 'Porto')}, ${e(dLong)}</p>
         <div class="sl"><b>${e(signer?.name || '')}</b><span>${e(c.closing.role || '')}</span></div>
         <div class="sl client"><b>${e(L.client)}</b></div>
-        <p class="note">${e(L.valid(pp.valid_days || 30))}</p></div>`);
+        ${(c.value.notes || []).some(x => /\{validade\}|válida por|valid for/i.test(x.t || '')) ? '' : `<p class="note">${e(L.valid(pp.valid_days || 30))}</p>`}</div>`);
       const foot = `<div class="foot"><b>novassociates.com</b><span>${e(tagline)}</span></div>`;
       const html = `<!doctype html><html lang="${en ? 'en' : 'pt'}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${e(fileTitle)}</title>
         <style>
