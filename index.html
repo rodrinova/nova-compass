@@ -2158,6 +2158,8 @@
   .ps-typ-note { font-style: normal; font-size: var(--fs-sm); color: var(--text-3); padding: var(--sp-2) 0; }
   .ps-result { position: sticky; top: 64px; }
   @media (max-width: 900px) { .ps-result { position: static; } }
+  .pp-savestate { font-size: var(--fs-xs); color: var(--text-3); text-align: center; margin-top: -2px; }
+  .pp-savestate.dirty { color: var(--warn, #b07a00); }
   .pp-dupes { border: 1px solid color-mix(in srgb, var(--warn, #c98a00) 40%, transparent); }
   .pp-dupe { padding: 6px 0; border-top: 1px solid var(--border); font-size: var(--fs-sm); }
   .pp-dupe q { display: block; color: var(--text); } .pp-dupe small { color: var(--text-3); font-size: var(--fs-xs); }
@@ -16262,8 +16264,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { id: 'proposta-rascunho', cat: 'clients', ctx: ['pipeline', 'proposal'],
         q: 'guardo uma proposta a meio para acabar mais tarde',
         a: 'No editor, toca em «Guardar rascunho». Fica no Pipeline, na coluna Rascunho; abres de lá e continuas. Se saíres sem guardar, a app guarda-a sozinha (desde que tenha cliente ou título).',
-        steps: ['Na proposta nova, escolhe o cliente (ou escreve um título).', 'Toca em [[Guardar rascunho]] — a partir daí grava sozinha a cada alteração.', 'Para continuar: [[Pipeline]] → coluna **Rascunho** → toca na proposta.', 'Quando estiver pronta, envia por email ou marca como enviada.'],
-        kw: 'rascunho guardar proposta meio acabar depois continuar mais tarde por fechar em trabalho gravar' },
+        steps: ['Na proposta nova, escolhe o cliente (ou escreve um título).', 'Toca em [[Guardar rascunho]] (ou Ctrl+S).', 'Depois disso, o botão **Guardar** fica no painel da direita: atualiza a proposta guardada quando quiseres (ou Ctrl+S). Por baixo vês «Guardado às…» ou «Alterações por guardar». Também grava sozinha a cada alteração.', 'Para continuar: [[Pipeline]] → coluna **Rascunho** → toca na proposta.', 'Quando estiver pronta, envia por email ou marca como enviada.'],
+        kw: 'rascunho guardar proposta meio acabar depois continuar mais tarde por fechar em trabalho gravar atualizar save ctrl s' },
       { id: 'lista-pesquisa', cat: 'start', ctx: [],
         q: 'procuro numa lista comprida (oportunidade, projeto, cliente)',
         a: 'Nas listas compridas escreve-se por cima: a lista vai filtrando à medida que escreves (sem precisar de acentos, e podes escrever partes de várias palavras).',
@@ -20143,6 +20145,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               ${pp.id && !locked && pp.status !== 'declined' ? `<button type="button" class="primary-btn" id="pp-mail">${c.mail?.status === 'sent' ? 'Enviar outra vez por email' : 'Enviar por email'}</button>` : ''}
               ${c.mail?.status === 'draft' ? `<div class="pp-mailstate">Email pronto no Outlook (ficheiro descarregado e Rascunhos), à espera de ser enviado.${c.mail.link ? ` <a href="${escapeHtml(c.mail.link)}" target="_blank" rel="noopener">Abrir na web</a>` : ''}</div>` : c.mail?.status === 'sent' && c.mail.sent_at ? `<div class="pp-mailstate ok">Enviado por email a ${escapeHtml(fmtDayMonthYear(c.mail.sent_at.slice(0, 10)))}, ${escapeHtml(new Date(c.mail.sent_at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }))}.</div>` : ''}
               <button type="button" class="${pp.id ? 'secondary-btn' : 'primary-btn'}" id="pp-pdf">Ver proposta (PDF)</button>
+              ${pp.id && !locked ? `<button type="button" class="secondary-btn" id="pp-save-now">Guardar</button>
+                <div class="pp-savestate" id="pp-savestate" aria-live="polite">${S.savedAt ? 'Guardado às ' + S.savedAt.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) : 'Guardado'} · também grava sozinho (Ctrl+S)</div>` : ''}
               ${!pp.id ? `<button type="button" class="secondary-btn" id="pp-create">Guardar rascunho${pp.number ? ' · CST ' + pp.number : ''}</button>
                 <div class="field-hint" style="margin:0">Fica no Pipeline, em Rascunho, para continuares mais tarde. Se saíres sem guardar, é guardada sozinha (precisa de cliente ou título).</div>` : ''}
               <button type="button" class="text-btn" id="pp-save-tpl">Guardar como modelo</button>
@@ -20199,7 +20203,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         if (!pp.id) { try { localStorage.setItem(PP_DRAFT_KEY, JSON.stringify({ at: Date.now(), pp })); } catch (_) { /* sem armazenamento */ } }
         if (redrawSec) redraw(redrawSec);
         recalc();
-        if (pp.id && !locked) { clearTimeout(saveT); savedEl().textContent = 'Por gravar…'; saveT = setTimeout(() => ppSave().catch(() => {}), 1200); }
+        if (pp.id && !locked) { clearTimeout(saveT); savedEl().textContent = 'Por gravar…'; ppSaveState('dirty'); saveT = setTimeout(() => ppSave().catch(() => {}), 1200); }
       };
       S.flush = async () => { clearTimeout(saveT); if (S.dirty && pp.id && !locked) await ppSave(); };
       const redraw = id => { const body = view.querySelector(`[data-sec="${id}"]`); if (body) { body.innerHTML = secBodies[id](); if (locked) lockAll(body); ppGrow(body); } };
@@ -20378,6 +20382,22 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       document.getElementById('pp-mail')?.addEventListener('click', () => openProposalMail());
       document.getElementById('pp-save-tpl')?.addEventListener('click', () => ppSaveAsTemplate());
       ppWatchMail(pp);
+      // Guardar já (atualiza a proposta guardada); Ctrl/Cmd+S faz o mesmo
+      const saveNow = async () => {
+        if (!pp.id || locked) return;
+        const b = document.getElementById('pp-save-now'); if (b) b.disabled = true;
+        clearTimeout(saveT); const r = await ppSave().catch(() => null);
+        if (b) b.disabled = false;
+        if (r) showToast('Proposta guardada');
+      };
+      document.getElementById('pp-save-now')?.addEventListener('click', saveNow);
+      if (S.keyHandler) document.removeEventListener('keydown', S.keyHandler);
+      S.keyHandler = e => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's' && currentViewState?.name === 'proposal' && proposalState === S) {
+          e.preventDefault(); if (pp.id) saveNow(); else document.getElementById('pp-create')?.click();
+        }
+      };
+      document.addEventListener('keydown', S.keyHandler);
       document.getElementById('pp-create')?.addEventListener('click', async () => {
         const r = await ppSave(); if (!r) return;
         showToast(`Proposta ${ppRef(r)} guardada em Rascunho`); suppressNavPush = true; openProposalView(r.id);
@@ -20478,6 +20498,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         Object.assign(pp, row); S.dirty = false;
         const i = d.proposals.findIndex(x => x.id === pp.id); if (i >= 0) d.proposals[i] = JSON.parse(JSON.stringify(pp));
         if (saved) saved.textContent = 'Guardado ✓';
+        S.savedAt = new Date(); ppSaveState();
         return pp;
       } catch (err) {
         if (saved) saved.textContent = '';
@@ -20491,6 +20512,13 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     }
     let ppGrowT = null;
     window.addEventListener('resize', () => { clearTimeout(ppGrowT); ppGrowT = setTimeout(() => { const v = document.getElementById('proposal-view'); if (v && v.style.display !== 'none') ppGrow(v); }, 150); });
+    // Estado da gravação no painel lateral (por guardar / guardado às …)
+    function ppSaveState(state) {
+      const el = document.getElementById('pp-savestate'), S = proposalState; if (!el) return;
+      const t = S?.savedAt ? S.savedAt.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) : '';
+      el.classList.toggle('dirty', state === 'dirty');
+      el.textContent = state === 'dirty' ? 'Alterações por guardar…' : (t ? 'Guardado às ' + t : 'Guardado') + ' · também grava sozinho (Ctrl+S)';
+    }
     // Proposta nova deixada a meio: grava-a como rascunho (precisa de cliente ou título; sem isso
     // fica só a cópia neste aparelho, recuperada na próxima «Nova proposta»)
     async function ppLeaveSave() {
