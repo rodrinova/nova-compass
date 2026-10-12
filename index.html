@@ -17701,7 +17701,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       // Características (palavras do perfil encontradas no terreno)
       if (inv.tags?.length) {
         const cn = p.constraints || {};
-        const txt = normTxt([plotTypeNames(p, typeById), p.pdm_class, p.notes, p.name, c.commerce ? 'comercio' : '', p.has_approved_project ? 'aprovado' : '',
+        const txt = normTxt([plotTypeNames(p, typeById), p.pdm_class, p.notes, p.name, c.commerce ? 'comercio' : '', p.has_approved_project ? 'aprovado ' + (p.approved_process || '') : '',
           ...CD_FLAGS.filter(([k]) => cn[k]).map(x => x[1]), cn.uopg_name, cn.exceptional].join(' '));
         const hit = inv.tags.filter(t => t && txt.includes(normTxt(t)));
         if (hit.length) add(5, 1, 'procura ' + hit.join(', '), 'tags', hit.join(', '));
@@ -18198,7 +18198,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const facts = [
           ['Localização', [p.parish, p.municipality].filter(Boolean).join(', ') || '—'], ['Tipologia', plotTypeNames(p, typeById) || '—'],
           ['Área do terreno', m2(p.land_area)], ['Área de construção', m2(a.build)], ['Frações', v.units || p.fractions_est || '—'],
-          ['Projeto aprovado', p.has_approved_project ? 'Sim' : 'Não'], ['Preço do terreno', eur(p.asking_price)],
+          ['Projeto aprovado', p.has_approved_project ? (p.approved_process ? `Sim · processo ${p.approved_process}` : 'Sim') : 'Não'], ['Preço do terreno', eur(p.asking_price)],
           ['Investimento total estimado', v.hasCosts ? eur(v.costGlobal) : '—'], ['Receita de venda estimada', v.hasSales ? eur(v.salesNet) : '—']
         ];
         const kpis = [ok ? ['ROI (venda)', pc(v.roi, 0)] : null, ok ? ['Resultado', eur(v.profit)] : null, rent ? ['Yield bruto (arrendamento)', pc(v.yieldGross, 1)] : null].filter(Boolean);
@@ -18603,6 +18603,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
                 <div><label class="field-label">Pasta (fotos, documentos)</label>${ptxt('docs_url', 'Drive, Dropbox…', 'url')}</div>
               </div>
               <label class="check-row"><input type="checkbox" data-p="has_approved_project"${p.has_approved_project ? ' checked' : ''}> Já tem projeto aprovado</label>
+              <div id="ps-proc"${p.has_approved_project ? '' : ' hidden'}><label class="field-label">N.º do processo</label>${ptxt('approved_process', 'ex.: 1234/22 — Câmara Municipal de Gaia')}</div>
             </section>
             <section>
               <div class="section-label">Riscos</div>
@@ -18613,6 +18614,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         ${d.partner ? `<div class="gantt-wrap" id="ps-props"></div>` : ''}`;
 
       mountPlotNotes(document.getElementById('ps-notes'), p, d);
+      view.querySelector('[data-p="has_approved_project"]')?.addEventListener('change', e => { document.getElementById('ps-proc').hidden = !e.target.checked; });
       // ---- Condicionantes: campos (data-k), regras de estacionamento e estimativa de lugares ----
       const consSave = () => { pPatch.constraints = cons; savePlot(); };
       const condBox = document.getElementById('ps-cond');
