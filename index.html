@@ -3193,19 +3193,23 @@
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --cg-a: #9F6AB3; --cg-b: #1AA39E; } }
   :root[data-theme="dark"] { --cg-a: #9F6AB3; --cg-b: #1AA39E; }
   .cg { position: relative; }
-  .cg-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: var(--fs-xs); color: var(--text-2); margin-bottom: 6px; }
-  .cg-legend span { display: inline-flex; align-items: center; gap: 6px; } .cg-legend small { color: var(--text-3); }
-  .cg-legend .ln, .cg-tip .ln { width: 14px; height: 2px; border-radius: 1px; display: inline-block; flex: none; } .ln.a { background: var(--cg-a); } .ln.b { background: var(--cg-b); }
-  .cg-legend .ar { width: 12px; height: 9px; border-radius: 2px; display: inline-block; background: var(--cg-a); opacity: .22; }
-  .cg-plot { width: 100%; } .cg-plot svg { display: block; width: 100%; height: auto; touch-action: pan-y; } .cg-hit { cursor: crosshair; }
-  .cg-tip { position: absolute; top: 28px; z-index: 2; pointer-events: none; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: var(--shadow-pop); padding: 8px 10px; font-size: var(--fs-xs); min-width: 160px; }
-  .cg-tip small { display: block; color: var(--text-3); margin-bottom: 4px; } .cg-tip div { display: flex; align-items: center; gap: 6px; } .cg-tip b { font-variant-numeric: tabular-nums; color: var(--text); } .cg-tip span { color: var(--text-3); }
-  .cg-tip div:last-child { margin-top: 2px; padding-top: 4px; border-top: 1px solid var(--border); padding-left: 20px; }
+  .cg-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 6px; }
+  .cg-k { display: block; font-size: var(--fs-xs); color: var(--text-2); font-weight: var(--fw-medium); }
+  .cg-big { display: block; font-size: 34px; line-height: 1.05; font-weight: 700; letter-spacing: -0.03em; color: var(--cg-a); font-variant-numeric: tabular-nums; transition: color .2s; }
+  .cg-date { display: block; font-size: var(--fs-xs); color: var(--text-3); margin-top: 2px; min-height: 1.3em; }
+  .cg.scrub .cg-date { color: var(--text-2); font-weight: var(--fw-medium); }
+  .cg-pair { display: flex; gap: 24px; } .cg-pair > div { text-align: right; }
+  .cg-pair span { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--text-2); }
+  .cg-pair b { display: block; font-size: var(--fs-xl); font-weight: var(--fw-semibold); letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+  .cg-pair small { display: block; font-size: 10.5px; color: var(--text-3); }
+  .cg-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; } .cg-dot.a { background: var(--cg-a); } .cg-dot.b { background: var(--cg-b); }
+  .cg-plot { width: 100%; } .cg-plot svg { display: block; width: 100%; height: auto; touch-action: pan-y; overflow: visible; } .cg-hit { cursor: crosshair; }
+  @media (max-width: 520px) { .cg-big { font-size: 28px; } .cg-pair { gap: 16px; } .cg-pair b { font-size: var(--fs-lg); } }
   .lg-chart { margin: 4px 0 14px; }
   .lg-pdfbar { display: inline-flex; align-items: center; gap: 10px; } .lg-lang { margin: 0; } .lg-lang button { height: 24px; padding: 0 8px; font-size: var(--fs-xs); }
   /* ---- Conta corrente ---- */
   .lg-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; } .lg-filters select { width: auto; min-width: 180px; flex: 1 1 200px; max-width: 360px; }
-  .lg-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+  .lg-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; } .lg-tiles[hidden] { display: none; }
   .lg-tiles div { background: var(--surface-2); border-radius: var(--r-lg); padding: 10px 12px; } .lg-tiles span { display: block; font-size: var(--fs-xs); color: var(--text-2); } .lg-tiles b { font-size: var(--fs-xl); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; }
   .lg-tiles .owe b { color: var(--accent); }
   .lg-table { max-height: 460px; overflow: auto; border-top: 1px solid var(--border); }
@@ -14203,73 +14207,132 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       inside.forEach(m => { inv += m.debit; rec += m.credit; const last = pts[pts.length - 1]; if (last.d === m.date) { last.inv = inv; last.rec = rec; } else pts.push({ d: m.date, inv, rec }); });
       return { pts, opening: Math.max(0, opening), from, to };
     }
-    function cgSvg(ser, { width = 720, height = 220, lang = 'pt', colors = null } = {}) {
-      const L = LG_T[lang] || LG_T.pt, loc = L.loc, narrow = width < 520;
-      const ca = colors ? colors.a : 'var(--cg-a)', cb = colors ? colors.b : 'var(--cg-b)', ink = colors ? '#6B6660' : 'var(--text-3)', grid = colors ? '#E8E6E1' : 'var(--border)', txt = colors ? '#1B1A19' : 'var(--text)';
-      const m = { l: 52, r: narrow ? 12 : 128, t: 12, b: 26 }, W = width - m.l - m.r, H = height - m.t - m.b;
+    // Curva monótona (Fritsch–Carlson): suave, sem passar acima nem abaixo dos valores reais
+    function cgMono(P) {
+      const n = P.length; if (n < 2) return [];
+      const dx = [], d = [], m = new Array(n).fill(0);
+      for (let i = 0; i < n - 1; i++) { dx[i] = P[i + 1].x - P[i].x; d[i] = dx[i] ? (P[i + 1].y - P[i].y) / dx[i] : 0; }
+      m[0] = d[0]; m[n - 1] = d[n - 2];
+      for (let i = 1; i < n - 1; i++) m[i] = d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2;
+      for (let i = 0; i < n - 1; i++) {
+        if (!d[i]) { m[i] = 0; m[i + 1] = 0; continue; }
+        const a = m[i] / d[i], b = m[i + 1] / d[i], h = a * a + b * b;
+        if (h > 9) { const t = 3 / Math.sqrt(h); m[i] = t * a * d[i]; m[i + 1] = t * b * d[i]; }
+      }
+      return P.slice(0, -1).map((p, i) => ({ x0: p.x, y0: p.y, x1: P[i + 1].x, y1: P[i + 1].y, c1x: p.x + dx[i] / 3, c1y: p.y + m[i] * dx[i] / 3, c2x: P[i + 1].x - dx[i] / 3, c2y: P[i + 1].y - m[i + 1] * dx[i] / 3 }));
+    }
+    const cgF = v => v.toFixed(1);
+    const cgFwd = S => `M${cgF(S[0].x0)} ${cgF(S[0].y0)}` + S.map(q => `C${cgF(q.c1x)} ${cgF(q.c1y)} ${cgF(q.c2x)} ${cgF(q.c2y)} ${cgF(q.x1)} ${cgF(q.y1)}`).join('');
+    const cgRev = S => [...S].reverse().map(q => `C${cgF(q.c2x)} ${cgF(q.c2y)} ${cgF(q.c1x)} ${cgF(q.c1y)} ${cgF(q.x0)} ${cgF(q.y0)}`).join('');
+    function cgYAt(S, x) {   // y da curva numa posição x (para os pontos ao passar o dedo)
+      const q = S.find(z => x >= z.x0 && x <= z.x1) || (x < S[0].x0 ? S[0] : S[S.length - 1]);
+      const bx = t => (1 - t) ** 3 * q.x0 + 3 * (1 - t) ** 2 * t * q.c1x + 3 * (1 - t) * t * t * q.c2x + t ** 3 * q.x1;
+      let lo = 0, hi = 1; for (let k = 0; k < 24; k++) { const mid = (lo + hi) / 2; if (bx(mid) < x) lo = mid; else hi = mid; }
+      const t = (lo + hi) / 2; return (1 - t) ** 3 * q.y0 + 3 * (1 - t) ** 2 * t * q.c1y + 3 * (1 - t) * t * t * q.c2y + t ** 3 * q.y1;
+    }
+    // Geometria do gráfico: degraus arredondados (cada fatura e cada recebimento sobe a linha com uma curva curta)
+    function cgGeom(ser, width, height) {
+      const m = { l: 10, r: 10, t: 14, b: 26 }, W = width - m.l - m.r, H = height - m.t - m.b;
       const t0 = parseDateKey(ser.from).getTime(), t1 = Math.max(t0 + 864e5, parseDateKey(ser.to).getTime());
-      const X = d => m.l + (parseDateKey(d).getTime() - t0) / (t1 - t0) * W;
+      const X = d => m.l + Math.min(1, Math.max(0, (parseDateKey(d).getTime() - t0) / (t1 - t0))) * W;
       const maxV = Math.max(1, ...ser.pts.map(p => Math.max(p.inv, p.rec)));
-      const step = (() => { const raw = maxV / 4, mag = Math.pow(10, Math.floor(Math.log10(raw))); return [1, 2, 2.5, 5, 10].map(k => k * mag).find(k => k >= raw); })();
-      const top = Math.ceil(maxV / step) * step, Y = v => m.t + H - v / top * H;
+      const top = maxV * 1.12, Y = v => m.t + H - v / top * H, endX = m.l + W, ramp = Math.max(8, Math.min(26, W * 0.03));
+      const series = key => {
+        const P = [{ x: m.l, y: Y(ser.pts[0][key]) }];
+        let prev = ser.pts[0][key];
+        ser.pts.slice(1).forEach(p => {
+          if (Math.abs(p[key] - prev) < 0.005) return;
+          const xi = X(p.d), last = P[P.length - 1], xs = Math.max(last.x + 0.5, xi - ramp);
+          if (xs > last.x + 0.5) P.push({ x: xs, y: Y(prev) });
+          P.push({ x: Math.max(xi, P[P.length - 1].x + 0.5), y: Y(p[key]) }); prev = p[key];
+        });
+        if (P[P.length - 1].x < endX - 0.5) P.push({ x: endX, y: Y(prev) });
+        if (P.length < 2) P.push({ x: endX, y: P[0].y });
+        return cgMono(P);
+      };
+      return { m, W, H, X, Y, top, endX, t0, t1, A: series('inv'), B: series('rec'), base: m.t + H };
+    }
+    function cgSvg(ser, { width = 720, height = 240, lang = 'pt', colors = null, uid = 'cg' + Math.random().toString(36).slice(2, 7) } = {}) {
+      const L = LG_T[lang] || LG_T.pt, loc = L.loc, g = cgGeom(ser, width, height);
+      const ca = colors ? colors.a : 'var(--cg-a)', cb = colors ? colors.b : 'var(--cg-b)', ink = colors ? '#8C8780' : 'var(--text-3)', faint = colors ? '#EEEDE9' : 'var(--border)';
       const short = v => v >= 1e6 ? (v / 1e6).toLocaleString(loc, { maximumFractionDigits: 1 }) + ' M€' : v >= 1e3 ? Math.round(v / 1e3).toLocaleString(loc) + ' k€' : Math.round(v).toLocaleString(loc) + ' €';
-      const endX = m.l + W;
-      const path = key => ser.pts.map((p, i) => (i ? `H${X(p.d).toFixed(1)}V${Y(p[key]).toFixed(1)}` : `M${X(p.d).toFixed(1)} ${Y(p[key]).toFixed(1)}`)).join('') + `H${endX.toFixed(1)}`;
-      // área entre as linhas: faturado para a frente, recebido para trás
-      const back = [...ser.pts].reverse(), lastP = ser.pts[ser.pts.length - 1];
-      const area = path('inv') + `V${Y(lastP.rec).toFixed(1)}` + back.map((p, i) => `H${X(p.d).toFixed(1)}` + (i < back.length - 1 ? `V${Y(back[i + 1].rec).toFixed(1)}` : '')).join('') + 'Z';
-      const ticksY = []; for (let v = 0; v <= top + 1e-6; v += step) ticksY.push(v);
-      // meses no eixo X (no máximo ~6 marcas)
       const months = []; { const a = parseDateKey(ser.from), b = parseDateKey(ser.to); let d = new Date(a.getFullYear(), a.getMonth() + (a.getDate() > 1 ? 1 : 0), 1); while (d <= b) { months.push(dateKey(d)); d = new Date(d.getFullYear(), d.getMonth() + 1, 1); } }
-      const every = Math.max(1, Math.ceil(months.length / (narrow ? 4 : 6)));
-      const mLabel = k => { const d = parseDateKey(k); return d.toLocaleDateString(loc, { month: 'short' }).replace('.', '') + (d.getMonth() === 0 || months.length <= 1 || k === months[0] ? ' ' + String(d.getFullYear()).slice(2) : ''); };
-      // etiquetas diretas no fim (afastadas se ficarem em cima uma da outra)
-      let yi = Y(lastP.inv), yr = Y(lastP.rec); if (Math.abs(yi - yr) < 30) { const mid = (yi + yr) / 2; yi = mid - 15; yr = mid + 15; }
-      const eur = v => Math.round(v).toLocaleString(loc, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
-      return `<svg class="cg-svg" data-top="${top}" data-h="${H}" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="${escapeHtml(L.chart)}" xmlns="http://www.w3.org/2000/svg" font-family="inherit">
-        ${ticksY.map(v => `<line x1="${m.l}" x2="${endX}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" style="stroke:${grid}" stroke-width="1"/><text x="${m.l - 8}" y="${(Y(v) + 4).toFixed(1)}" text-anchor="end" font-size="11" style="fill:${ink}">${escapeHtml(short(v))}</text>`).join('')}
-        ${months.map((k, i) => i % every ? '' : `<text x="${X(k).toFixed(1)}" y="${height - 6}" text-anchor="middle" font-size="11" style="fill:${ink}">${escapeHtml(mLabel(k))}</text>`).join('')}
-        <path d="${area}" style="fill:${ca}" fill-opacity="0.14" stroke="none"/>
-        <path d="${path('rec')}" fill="none" style="stroke:${cb}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-        <path d="${path('inv')}" fill="none" style="stroke:${ca}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-        ${narrow ? '' : `<line x1="${endX + 6}" x2="${endX + 16}" y1="${yi.toFixed(1)}" y2="${yi.toFixed(1)}" style="stroke:${ca}" stroke-width="2"/><text x="${endX + 20}" y="${(yi - 2).toFixed(1)}" font-size="11" style="fill:${ink}">${escapeHtml(L.inv)}</text><text x="${endX + 20}" y="${(yi + 11).toFixed(1)}" font-size="12" font-weight="600" style="fill:${txt}">${escapeHtml(eur(lastP.inv))}</text>
-          <line x1="${endX + 6}" x2="${endX + 16}" y1="${yr.toFixed(1)}" y2="${yr.toFixed(1)}" style="stroke:${cb}" stroke-width="2"/><text x="${endX + 20}" y="${(yr - 2).toFixed(1)}" font-size="11" style="fill:${ink}">${escapeHtml(L.rec)}</text><text x="${endX + 20}" y="${(yr + 11).toFixed(1)}" font-size="12" font-weight="600" style="fill:${txt}">${escapeHtml(eur(lastP.rec))}</text>`}
-        <g class="cg-hover" style="display:none"><line class="cg-x" y1="${m.t}" y2="${m.t + H}" style="stroke:${ink}" stroke-width="1" stroke-dasharray="3 3"/><circle class="cg-da" r="4.5" style="fill:${ca};stroke:var(--surface, #fff)" stroke-width="2"/><circle class="cg-db" r="4.5" style="fill:${cb};stroke:var(--surface, #fff)" stroke-width="2"/></g>
-        <rect class="cg-hit" x="${m.l}" y="${m.t}" width="${W}" height="${H}" fill="transparent"/>
+      const every = Math.max(1, Math.ceil(months.length / (width < 520 ? 4 : 6)));
+      const mLabel = k => { const d = parseDateKey(k); const s = d.toLocaleDateString(loc, { month: 'short' }).replace('.', ''); return d.getMonth() === 0 ? s + ' ' + String(d.getFullYear()).slice(2) : s; };
+      const lastA = g.A[g.A.length - 1], lastB = g.B[g.B.length - 1];
+      const band = cgFwd(g.A) + `L${cgF(lastB.x1)} ${cgF(lastB.y1)}` + cgRev(g.B) + 'Z';
+      const under = cgFwd(g.B) + `L${cgF(g.endX)} ${cgF(g.base)}L${cgF(g.m.l)} ${cgF(g.base)}Z`;
+      const mid = g.top / 2;
+      return `<svg class="cg-svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="${escapeHtml(L.chart)}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="${uid}-band" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:${ca}" stop-opacity="0.30"/><stop offset="1" style="stop-color:${ca}" stop-opacity="0.10"/></linearGradient>
+          <linearGradient id="${uid}-under" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:${cb}" stop-opacity="0.20"/><stop offset="1" style="stop-color:${cb}" stop-opacity="0"/></linearGradient>
+        </defs>
+        <line x1="${g.m.l}" x2="${g.endX}" y1="${cgF(g.base)}" y2="${cgF(g.base)}" style="stroke:${faint}" stroke-width="1"/>
+        <line x1="${g.m.l}" x2="${g.endX}" y1="${cgF(g.Y(mid))}" y2="${cgF(g.Y(mid))}" style="stroke:${faint}" stroke-width="1" stroke-dasharray="2 4"/>
+        <text x="${g.endX}" y="${cgF(g.Y(mid) - 6)}" text-anchor="end" font-size="10.5" style="fill:${ink}">${escapeHtml(short(mid))}</text>
+        ${months.map((k, i) => i % every ? '' : `<text x="${cgF(g.X(k))}" y="${height - 7}" text-anchor="middle" font-size="11" style="fill:${ink}">${escapeHtml(mLabel(k))}</text>`).join('')}
+        <path class="cg-fill" d="${under}" fill="url(#${uid}-under)"/>
+        <path class="cg-fill" d="${band}" fill="url(#${uid}-band)"/>
+        <path class="cg-line" d="${cgFwd(g.B)}" fill="none" style="stroke:${cb}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path class="cg-line" d="${cgFwd(g.A)}" fill="none" style="stroke:${ca}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <g class="cg-ends"><circle cx="${cgF(lastA.x1)}" cy="${cgF(lastA.y1)}" r="7" style="fill:${ca}" fill-opacity="0.18"/><circle cx="${cgF(lastA.x1)}" cy="${cgF(lastA.y1)}" r="3.5" style="fill:${ca}"/>
+          <circle cx="${cgF(lastB.x1)}" cy="${cgF(lastB.y1)}" r="7" style="fill:${cb}" fill-opacity="0.18"/><circle cx="${cgF(lastB.x1)}" cy="${cgF(lastB.y1)}" r="3.5" style="fill:${cb}"/></g>
+        <g class="cg-hover" style="display:none"><line class="cg-x" y1="${g.m.t}" y2="${cgF(g.base)}" style="stroke:${ink}" stroke-opacity="0.5" stroke-width="1"/>
+          <circle class="cg-da" r="5" style="fill:${ca};stroke:var(--surface, #fff)" stroke-width="2.5"/><circle class="cg-db" r="5" style="fill:${cb};stroke:var(--surface, #fff)" stroke-width="2.5"/></g>
+        <rect class="cg-hit" x="0" y="0" width="${width}" height="${height}" fill="transparent"/>
       </svg>`;
     }
-    const cgLegend = (L, opening) => `<div class="cg-legend"><span><i class="ln a"></i>${escapeHtml(L.inv)}${opening ? ` <small>(${escapeHtml(L.withOpen)})</small>` : ''}</span><span><i class="ln b"></i>${escapeHtml(L.rec)}</span><span><i class="ar"></i>${escapeHtml(L.gap)}</span></div>`;
-    // Interativo: mede a largura, redesenha ao mudar de tamanho, régua e etiqueta ao passar o rato / tocar
+    // Data do fim do período: «hoje» ou o último dia (ex.: 31 dez 2025)
+    const cgDay = (k, L) => { const d = parseDateKey(k); return `${d.getDate()} ${d.toLocaleDateString(L.loc, { month: 'short' }).replace('.', '')} ${d.getFullYear()}`; };
+    const cgEndLabel = (ser, L) => ser.to === dateKey(new Date()) ? (L.loc === 'en-GB' ? 'today' : 'hoje') : cgDay(ser.to, L);
+    // Cabeçalho: o que está em dívida em grande; faturado e recebido ao lado. Ao passar o dedo, mostra o dia escolhido.
+    function cgHead(ser, L, colors = null) {
+      const last = ser.pts[ser.pts.length - 1], eur = v => Math.round(v).toLocaleString(L.loc, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+      const now = cgEndLabel(ser, L);
+      return `<div class="cg-head">
+        <div class="cg-hero"><span class="cg-k">${escapeHtml(L.gap)}</span><b class="cg-big" data-v="gap">${escapeHtml(eur(Math.max(0, last.inv - last.rec)))}</b><span class="cg-date" data-v="date">${escapeHtml(now)}</span></div>
+        <div class="cg-pair">
+          <div><span><i class="cg-dot a"${colors ? ` style="background:${colors.a}"` : ''}></i>${escapeHtml(L.inv)}</span><b data-v="inv">${escapeHtml(eur(last.inv))}</b>${ser.opening ? `<small>${escapeHtml(L.withOpen)}</small>` : ''}</div>
+          <div><span><i class="cg-dot b"${colors ? ` style="background:${colors.b}"` : ''}></i>${escapeHtml(L.rec)}</span><b data-v="rec">${escapeHtml(eur(last.rec))}</b></div>
+        </div></div>`;
+    }
+    // Interativo: mede a largura, desenha-se a entrar, e ao arrastar o dedo/rato os números do topo acompanham o dia
     function cgMount(box, ser, lang = 'pt') {
       const L = LG_T[lang] || LG_T.pt;
       box.classList.add('cg');
-      box.innerHTML = `${cgLegend(L, ser.opening)}<div class="cg-plot"></div><div class="cg-tip" hidden></div>`;
-      const plot = box.querySelector('.cg-plot'), tip = box.querySelector('.cg-tip');
+      box.innerHTML = `${cgHead(ser, L)}<div class="cg-plot"></div>`;
+      const plot = box.querySelector('.cg-plot'), last = ser.pts[ser.pts.length - 1];
+      const eur = v => Math.round(v).toLocaleString(L.loc, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+      const setHead = (p, label) => {
+        box.querySelector('[data-v="gap"]').textContent = eur(Math.max(0, p.inv - p.rec));
+        box.querySelector('[data-v="inv"]').textContent = eur(p.inv); box.querySelector('[data-v="rec"]').textContent = eur(p.rec);
+        box.querySelector('[data-v="date"]').textContent = label;
+      };
+      let first = true;
       const draw = () => {
-        const w = Math.max(280, Math.floor(plot.clientWidth || box.clientWidth || 600));
-        plot.innerHTML = cgSvg(ser, { width: w, height: w < 520 ? 190 : 230, lang });
-        const svg = plot.querySelector('svg'), hit = svg.querySelector('.cg-hit'), hov = svg.querySelector('.cg-hover');
-        const mL = 52, W = Number(hit.getAttribute('width')), t0 = parseDateKey(ser.from).getTime(), t1 = Math.max(t0 + 864e5, parseDateKey(ser.to).getTime());
+        const w = Math.max(280, Math.floor(plot.clientWidth || box.clientWidth || 600)), h = w < 520 ? 200 : 250;
+        plot.innerHTML = cgSvg(ser, { width: w, height: h, lang });
+        const svg = plot.querySelector('svg'), g = cgGeom(ser, w, h), hov = svg.querySelector('.cg-hover');
+        if (first && !reduceMotion.matches) {
+          svg.querySelectorAll('.cg-line').forEach(pth => { const len = pth.getTotalLength(); pth.style.strokeDasharray = len; pth.style.strokeDashoffset = len; pth.getBoundingClientRect(); pth.style.transition = 'stroke-dashoffset 1.1s cubic-bezier(.22,1,.36,1)'; pth.style.strokeDashoffset = 0; });
+          svg.querySelectorAll('.cg-fill, .cg-ends').forEach(el => { el.style.opacity = 0; el.getBoundingClientRect(); el.style.transition = 'opacity .9s ease .35s'; el.style.opacity = 1; });
+        }
+        first = false;
         const move = ev => {
-          const r = svg.getBoundingClientRect(), x = Math.min(mL + W, Math.max(mL, (ev.clientX - r.left) * (svg.viewBox.baseVal.width / r.width)));
-          const t = t0 + (x - mL) / W * (t1 - t0), dk = dateKey(new Date(t));
+          const r = svg.getBoundingClientRect(), x = Math.min(g.endX, Math.max(g.m.l, (ev.clientX - r.left) * (w / r.width)));
+          const dk = dateKey(new Date(g.t0 + (x - g.m.l) / g.W * (g.t1 - g.t0)));
           let p = ser.pts[0]; for (const q of ser.pts) { if (q.d <= dk) p = q; else break; }
-          const top = Number(svg.dataset.top), Hh = Number(svg.dataset.h), mt = 12;
-          const Y = v => mt + Hh - v / top * Hh;
           hov.style.display = '';
-          hov.querySelector('.cg-x').setAttribute('x1', x); hov.querySelector('.cg-x').setAttribute('x2', x);
+          const lx = hov.querySelector('.cg-x'); lx.setAttribute('x1', x); lx.setAttribute('x2', x);
           const da = hov.querySelector('.cg-da'), db = hov.querySelector('.cg-db');
-          da.setAttribute('cx', x); da.setAttribute('cy', Y(p.inv)); db.setAttribute('cx', x); db.setAttribute('cy', Y(p.rec));
-          tip.hidden = false; tip.textContent = '';
-          const row = (cls, label, val) => { const d = document.createElement('div'); if (cls) { const i = document.createElement('i'); i.className = 'ln ' + cls; d.appendChild(i); } const b = document.createElement('b'); b.textContent = val; d.appendChild(b); const sp = document.createElement('span'); sp.textContent = label; d.appendChild(sp); tip.appendChild(d); };
-          const h = document.createElement('small'); h.textContent = parseDateKey(dk).toLocaleDateString(L.loc, { day: 'numeric', month: 'short', year: 'numeric' }); tip.appendChild(h);
-          const eur = v => (Math.round(v * 100) / 100).toLocaleString(L.loc, { style: 'currency', currency: 'EUR' });
-          row('a', L.inv, eur(p.inv)); row('b', L.rec, eur(p.rec)); row('', L.gap, eur(Math.max(0, p.inv - p.rec)));
-          const px = x * r.width / svg.viewBox.baseVal.width, tw = tip.offsetWidth;
-          tip.style.left = Math.min(Math.max(0, px + 12 + tw > r.width ? px - tw - 12 : px + 12), Math.max(0, r.width - tw)) + 'px';
+          da.setAttribute('cx', x); da.setAttribute('cy', cgYAt(g.A, x)); db.setAttribute('cx', x); db.setAttribute('cy', cgYAt(g.B, x));
+          box.classList.add('scrub');
+          setHead(p, cgDay(dk, L));
         };
-        const leave = () => { hov.style.display = 'none'; tip.hidden = true; };
-        hit.addEventListener('pointermove', move); hit.addEventListener('pointerdown', move); hit.addEventListener('pointerleave', leave);
+        const leave = () => { hov.style.display = 'none'; box.classList.remove('scrub'); setHead(last, cgEndLabel(ser, L)); };
+        const hit = svg.querySelector('.cg-hit');
+        hit.addEventListener('pointermove', move); hit.addEventListener('pointerdown', move); hit.addEventListener('pointerleave', leave); hit.addEventListener('pointercancel', leave);
       };
       draw();
       if (typeof ResizeObserver === 'function') { let lastW = plot.clientWidth; const ro = new ResizeObserver(() => { if (!box.isConnected) { ro.disconnect(); return; } if (Math.abs(plot.clientWidth - lastW) > 8) { lastW = plot.clientWidth; draw(); } }); ro.observe(plot); }
@@ -14302,7 +14365,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             <select class="form-input" id="lg-proj" aria-label="Projeto"><option value="all">Todos os projetos</option>${projs.filter(p => moves.some(m => m.project === p.id)).map(p => `<option value="${escapeHtml(p.id)}"${f.project === p.id ? ' selected' : ''}>${escapeHtml(pName(p.id))}</option>`).join('')}</select>
             <select class="form-input" id="lg-year" aria-label="Ano"><option value="all">Todos os anos</option>${years.map(y => `<option value="${y}"${String(f.year) === y ? ' selected' : ''}>${y}</option>`).join('')}</select>
           </div>
-          <div class="lg-tiles">
+          <div class="lg-tiles"${moves.filter(m => f.project === 'all' || m.project === f.project).length ? ' hidden' : ''}>
             <div><span>Faturado</span><b>${E(v.debit)}</b></div>
             <div><span>Recebido</span><b>${E(v.credit)}</b></div>
             <div class="${v.closing > 0.005 ? 'owe' : 'ok'}"><span>${v.closing > 0.005 ? 'Saldo em dívida' : 'Saldo'}</span><b>${E(Math.max(0, v.closing) || 0)}</b></div>
@@ -14347,7 +14410,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       // gráfico estático (cores fixas: o PDF não tem os temas da app)
       const scoped = moves.filter(m => f.project === 'all' || m.project === f.project), todayK = dateKey(new Date());
       const ser = scoped.length ? cgSeries(scoped, f.year === 'all' ? scoped[0].date : f.year + '-01-01', f.year === 'all' ? todayK : (String(f.year) === todayK.slice(0, 4) ? todayK : f.year + '-12-31')) : null;
-      const chart = ser && ser.pts.length > 1 ? cgSvg(ser, { width: 772, height: 210, lang: f.lang, colors: CG_HEX }) : '';
+      const chart = ser && ser.pts.length > 1 ? cgSvg(ser, { width: 772, height: 220, lang: f.lang, colors: CG_HEX }) : '';
       const html = `<!doctype html><html lang="${f.lang === 'en' ? 'en' : 'pt'}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${e(fileTitle)}</title>
         <style>
           @page { size: A4; margin: 16mm 16mm 18mm; }
@@ -14374,8 +14437,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           tr { break-inside: avoid; }
           .note { font-size: 7.5pt; color: #736D66; margin-top: 14px; }
           .chart { border: 1px solid #E4E3DE; border-radius: 12px; padding: 10px 12px 4px; margin-bottom: 18px; break-inside: avoid; } .chart svg { width: 100%; height: auto; display: block; }
-          .cg-legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 8pt; color: #6B6660; margin-bottom: 4px; } .cg-legend span { display: inline-flex; align-items: center; gap: 6px; } .cg-legend small { font-size: 7pt; }
-          .cg-legend .ln { width: 14px; height: 2px; display: inline-block; } .cg-legend .ln.a { background: #7A4589; } .cg-legend .ln.b { background: #008F94; } .cg-legend .ar { width: 12px; height: 9px; background: rgba(122,69,137,.18); display: inline-block; border-radius: 2px; }
+          .cg-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin: 4px 2px 8px; }
+          .cg-k { display: block; font-size: 8pt; color: #6B6660; } .cg-big { display: block; font-size: 20pt; font-weight: 600; letter-spacing: -0.02em; color: #7A4589; line-height: 1.1; } .cg-date { font-size: 7.5pt; color: #8C8780; }
+          .cg-pair { display: flex; gap: 22px; text-align: right; } .cg-pair span { display: inline-flex; align-items: center; gap: 6px; font-size: 8pt; color: #6B6660; } .cg-pair b { display: block; font-size: 12pt; font-weight: 600; } .cg-pair small { display: block; font-size: 7pt; color: #8C8780; }
+          .cg-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
           footer { font-size: 7.5pt; color: #736D66; margin-top: 24px; display: flex; justify-content: space-between; }
           @media print { body { padding: 0; max-width: none; } .bar { display: none; } }
         </style></head><body>
@@ -14384,8 +14449,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         <div class="eyebrow">${e(L.title)}</div>
         <h1>${e(who)}</h1>
         <div class="sub">${e([nif ? L.nif + ' ' + nif : '', scope].filter(Boolean).join(' · '))}</div>
-        <div class="tiles"><div><span>${e(L.inv)}</span><b>${e(eur(v.debit))}</b></div><div><span>${e(L.rec)}</span><b>${e(eur(v.credit))}</b></div><div class="${v.closing > 0.005 ? 'owe' : ''}"><span>${e(v.closing > 0.005 ? L.due : L.bal)}</span><b>${e(eur(Math.max(0, v.closing)))}</b></div></div>
-        ${chart ? `<div class="chart"><div class="cg-legend"><span><i class="ln a"></i>${e(L.inv)}${ser.opening ? ` <small>(${e(L.withOpen)})</small>` : ''}</span><span><i class="ln b"></i>${e(L.rec)}</span><span><i class="ar"></i>${e(L.gap)}</span></div>${chart}</div>` : ''}
+        ${chart ? '' : `<div class="tiles"><div><span>${e(L.inv)}</span><b>${e(eur(v.debit))}</b></div><div><span>${e(L.rec)}</span><b>${e(eur(v.credit))}</b></div><div class="${v.closing > 0.005 ? 'owe' : ''}"><span>${e(v.closing > 0.005 ? L.due : L.bal)}</span><b>${e(eur(Math.max(0, v.closing)))}</b></div></div>`}
+        ${chart ? `<div class="chart">${cgHead(ser, L, CG_HEX)}${chart}</div>` : ''}
         <table>
           <thead><tr><th>${e(L.date)}</th><th>${e(L.doc)}</th><th class="r">${e(L.debit)}</th><th class="r">${e(L.credit)}</th><th class="r">${e(L.bal)}</th></tr></thead>
           <tbody>
