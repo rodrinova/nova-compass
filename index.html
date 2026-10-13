@@ -3195,6 +3195,11 @@
   .nw-dots { display: flex; gap: 6px; margin-right: auto; } .nw-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--border-strong); } .nw-dots i.on { background: var(--accent); width: 18px; border-radius: 4px; }
   .nw-date { font-size: var(--fs-xs); color: var(--text-3); }
   .nw-help-link { margin-top: var(--sp-3); }
+  .nw-back { position: fixed; left: 50%; translate: -50% 0; max-width: calc(100vw - 32px); bottom: calc(24px + var(--safe-b)); z-index: var(--z-toast); display: flex; align-items: center; gap: 2px; padding: 4px; border-radius: var(--r-full); background: var(--text); box-shadow: 0 8px 28px rgba(0,0,0,.25); animation: nwIn .3s var(--ease, ease) both; }
+  .nw-back button { border: 0; background: none; color: var(--bg); font: inherit; font-size: var(--fs-md); font-weight: var(--fw-semibold); cursor: pointer; border-radius: var(--r-full); min-height: 40px; }
+  .nw-back-go { padding: 0 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .nw-back-x { width: 40px; opacity: .7; font-size: 18px !important; } .nw-back button:hover { background: rgba(255,255,255,.12); }
+  @keyframes nwIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  @media (max-width: 899px) { .nw-back { left: 16px; translate: none; max-width: calc(100vw - 104px); bottom: calc(var(--tab-h) + 14px + var(--safe-b)); } }
   /* ---- Cartão digital ---- */
   .bc-wrap { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: var(--sp-5); align-items: start; }
   .bc-card { position: relative; border-radius: 18px; background: #F4F3EF; color: #1B1A19; padding: 26px 26px 22px; display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: end; box-shadow: 0 1px 2px rgba(0,0,0,.05), 0 18px 40px rgba(0,0,0,.12); border: 1px solid #E4E3DE; overflow: hidden; }
@@ -23370,7 +23375,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { id: 'nw-1', title: 'Cartão digital com QR', body: 'Em **Brandbook → Cartão digital** tens o teu cartão de visita com um código QR. O cliente aponta a câmara e guarda o teu contacto, com WhatsApp.', image: 'assets/news/cartao.jpg', nav: 'brand:card', published_at: new Date().toISOString(), active: true },
       { id: 'nw-2', title: 'Desconto em % nas propostas', body: 'No Valor da proposta há **+ Desconto (%)**. Aplica-se aos honorários e aparece no documento com a percentagem.', image: 'assets/news/desconto.jpg', nav: 'nav:pipeline', published_at: new Date(Date.now() - 864e5).toISOString(), active: true }
     ], mockNewsSeen = null;
-    const nwWait = () => new Promise(res => { const t0 = Date.now(); const tick = () => { const m = document.getElementById('quick-modal'); if (m.style.display !== 'flex' && !document.querySelector('.tour-bubble, .bc-show')) res(true); else if (Date.now() - t0 > 120000) res(false); else setTimeout(tick, 1500); }; tick(); });
+    const nwWait = () => new Promise(res => { const t0 = Date.now(); const tick = () => { const m = document.getElementById('quick-modal'); if (m.style.display !== 'flex' && !document.querySelector('.tour-bubble, .bc-show, .nw-back')) res(true); else if (Date.now() - t0 > 120000) res(false); else setTimeout(tick, 1500); }; tick(); });
     const nwImg = src => src ? `<img class="nw-img" src="${escapeHtml(src)}" alt="" loading="lazy" onerror="this.remove()">` : '';
     async function appOpenNotices() {
       if (appOpenNotices.done) return; appOpenNotices.done = true;
@@ -23399,27 +23404,39 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       if (devMode) { mockNewsSeen = now; return; }
       supabase.from('app_news_reads').upsert({ member_id: id, last_seen: now }).then(() => {}, () => {});
     }
+    // Depois de «Mostrar-me»: botão flutuante para voltar ao aviso ou às novidades (× fecha de vez)
+    function nwBackPill(label, onBack, onDismiss) {
+      document.querySelector('.nw-back')?.remove();
+      const el = document.createElement('div'); el.className = 'nw-back';
+      el.innerHTML = `<button type="button" class="nw-back-go">↩ ${escapeHtml(label)}</button><button type="button" class="nw-back-x" aria-label="Fechar">×</button>`;
+      document.body.appendChild(el);
+      el.querySelector('.nw-back-go').addEventListener('click', () => { el.remove(); onBack(); });
+      el.querySelector('.nw-back-x').addEventListener('click', () => { el.remove(); onDismiss && onDismiss(); });
+    }
     function showTicketDone(t) {
       return new Promise(res => {
-        openQuickModal('O teu pedido está feito ✓', `<div class="nw">
-          ${nwImg(t.status_image)}
-          <div class="nw-kick">Melhorias · ${escapeHtml(fmtDayMonth((t.status_changed_at || '').slice(0, 10)) || 'hoje')}</div>
-          <h3 class="nw-title">${escapeHtml(t.title || '')}</h3>
-          <div class="nw-body">${ppMd(t.status_note || 'Já está na app.')}</div>
-          <div class="nw-foot"><span style="margin-right:auto"></span>${t.status_nav ? '<button type="button" class="secondary-btn" id="nw-ok">Fechar</button><button type="button" class="primary-btn" id="nw-go">Mostrar-me</button>' : '<button type="button" class="primary-btn" id="nw-ok">Obrigado</button>'}</div></div>`);
-        let go = false;
-        quickModalCloseHook = () => {
-          dbUpdate('app_tickets', t.id, { author_seen: true }, mockTickets).catch(() => {});
-          if (go && t.status_nav) setTimeout(() => helpGo(t.status_nav), 200);
-          res();
+        const finish = () => { dbUpdate('app_tickets', t.id, { author_seen: true }, mockTickets).catch(() => {}); res(); };
+        const open = () => {
+          openQuickModal('O teu pedido está feito ✓', `<div class="nw">
+            ${nwImg(t.status_image)}
+            <div class="nw-kick">Melhorias · ${escapeHtml(fmtDayMonth((t.status_changed_at || '').slice(0, 10)) || 'hoje')}</div>
+            <h3 class="nw-title">${escapeHtml(t.title || '')}</h3>
+            <div class="nw-body">${ppMd(t.status_note || 'Já está na app.')}</div>
+            <div class="nw-foot"><span style="margin-right:auto"></span>${t.status_nav ? '<button type="button" class="secondary-btn" id="nw-ok">Fechar</button><button type="button" class="primary-btn" id="nw-go">Mostrar-me</button>' : '<button type="button" class="primary-btn" id="nw-ok">Obrigado</button>'}</div></div>`);
+          let go = false;
+          quickModalCloseHook = () => {
+            if (go && t.status_nav) { setTimeout(() => helpGo(t.status_nav), 200); nwBackPill('Voltar ao aviso', open, finish); }
+            else finish();
+          };
+          document.getElementById('nw-ok').addEventListener('click', closeQuickModal);
+          document.getElementById('nw-go')?.addEventListener('click', () => { go = true; closeQuickModal(); });
         };
-        document.getElementById('nw-ok').addEventListener('click', closeQuickModal);
-        document.getElementById('nw-go')?.addEventListener('click', () => { go = true; closeQuickModal(); });
+        open();
       });
     }
     // Uma novidade de cada vez, com pontos e «Seguinte»
-    function showNews(list, { onClose, title = 'Novidades na app' } = {}) {
-      let i = 0, go = null;
+    function showNews(list, { onClose, title = 'Novidades na app', start = 0 } = {}) {
+      let i = Math.min(start, list.length - 1), go = null;
       const draw = () => {
         const n = list[i], last = i === list.length - 1;
         document.getElementById('quick-modal-body').innerHTML = `<div class="nw">
@@ -23439,7 +23456,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       };
       openQuickModal(title, '');
       draw();
-      quickModalCloseHook = () => { onClose && onClose(); if (go) setTimeout(() => helpGo(go), 200); };
+      quickModalCloseHook = () => {
+        if (!go) { onClose && onClose(); return; }
+        setTimeout(() => helpGo(go), 200);
+        nwBackPill(`Voltar às novidades${list.length > 1 ? ` · ${i + 1} de ${list.length}` : ''}`, () => showNews(list, { onClose, title, start: i }), onClose);
+      };
     }
     async function openNewsHistory() {
       let list = [];
