@@ -20,3 +20,9 @@ alter table app_news_reads enable row level security;
 create policy team_only on app_news for all using (private.is_team_member()) with check (private.is_team_member());
 create policy team_only on app_news_reads for all using (private.is_team_member()) with check (private.is_team_member());
 grant select, insert, update, delete on app_news, app_news_reads to authenticated;
+
+-- Reuniões do dia no «meu plano de hoje»
+alter table daybreak_tasks add column if not exists meeting_key text;
+alter table daybreak_tasks add column if not exists meeting_time text;
+alter table daybreak_tasks add column if not exists meeting_url text;
+create unique index if not exists daybreak_tasks_meeting_uq on daybreak_tasks (member_id, day, meeting_key) where meeting_key is not null;
