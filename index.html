@@ -14156,13 +14156,14 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         return { invs, pays: [] };
       }
       const inv = await selectAll(() => supabase.from('invoices').select('id, project_id, invoice_number, doc_type, issue_date, payment_date, amount, gross_amount, amount_paid, description, status, archived_at').in('project_id', projIds).is('archived_at', null).order('id'));
-      const ids = inv.map(i => i.id);
+      if (inv.error) throw inv.error;
+      const invs = inv.data || [], ids = invs.map(i => i.id);
       let pays = [];
       for (let k = 0; k < ids.length; k += 150) {
         const r = await supabase.from('invoice_payments').select('invoice_id, receipt_ref, amount, paid_at').in('invoice_id', ids.slice(k, k + 150));
         if (r.error) throw r.error; pays = pays.concat(r.data || []);
       }
-      return { invs: inv, pays };
+      return { invs, pays };
     }
     // Movimentos com IVA: os recebimentos guardam-se sem IVA e convertem-se na proporção da fatura
     function ledgerMoves(invs, pays) {
