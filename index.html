@@ -23386,21 +23386,26 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       else { const r = await supabase.from('app_tickets').select('id, title, status_note, status_image, status_nav, status_changed_at').eq('created_by', me.id).eq('author_seen', false).eq('status', 'done').order('status_changed_at'); done = r.error ? [] : (r.data || []); }
       for (const t of done) { if (!(await nwWait())) return; await showTicketDone(t); }
       // 2) novidades desde a última visita
-      let seen = null, list = [];
+      // Várias publicações sem abrir a app: aparecem todas juntas, da mais antiga para a mais recente.
+      // Quem fecha a meio fica com as que faltam para a próxima vez (nada se perde).
+      let seen = null, list = [], joined = null;
       if (devMode) { seen = mockNewsSeen; list = mockNews.filter(n => n.active); }
       else {
-        const [a, b] = await Promise.all([supabase.from('app_news_reads').select('last_seen').eq('member_id', me.id).maybeSingle(), supabase.from('app_news').select('id, title, body, image, nav, published_at').eq('active', true).order('published_at', { ascending: false }).limit(30)]);
-        if (b.error) return;
-        seen = a.data?.last_seen || null; list = b.data || [];
+        const [a, b, c] = await Promise.all([supabase.from('app_news_reads').select('last_seen').eq('member_id', me.id).maybeSingle(), supabase.from('team_members').select('created_at').eq('id', me.id).maybeSingle(), supabase.from('app_news').select('id, title, body, image, nav, published_at').eq('active', true).order('published_at', { ascending: false }).limit(80)]);
+        if (c.error) return;
+        seen = a.data?.last_seen || null; joined = b.data?.created_at || null; list = c.data || [];
       }
-      const since = seen ? new Date(seen).getTime() : Date.now() - 14 * 864e5;
-      const fresh = list.filter(n => new Date(n.published_at).getTime() > since).sort((x, y) => String(y.published_at).localeCompare(String(x.published_at)));
+      // sem registo: tudo desde que a pessoa entrou na equipa (quem já cá estava vê tudo o que ainda não viu)
+      const ts = v => Date.parse(String(v).replace(' ', 'T').replace(/(\.\d{3})\d+/, '$1').replace(/([+-]\d\d)$/, '$1:00')) || 0;   // Safari: no máximo milissegundos e fuso com «:00»
+      const since = seen ? ts(seen) : joined ? ts(joined) : 0;
+      const fresh = list.filter(n => ts(n.published_at) > since).sort((x, y) => String(x.published_at).localeCompare(String(y.published_at)));
       if (!fresh.length) { if (!seen) newsMarkSeen(me.id); return; }
       if (!(await nwWait())) return;
-      showNews(fresh, { onClose: () => newsMarkSeen(me.id) });
+      // visto até onde chegou: se fechar na 2.ª de 5, as 3 seguintes voltam na próxima abertura
+      showNews(fresh, { onClose: k => newsMarkSeen(me.id, k >= fresh.length - 1 ? null : fresh[k].published_at) });
     }
-    function newsMarkSeen(id) {
-      const now = new Date().toISOString();
+    function newsMarkSeen(id, upTo = null) {
+      const now = upTo || new Date().toISOString();
       if (devMode) { mockNewsSeen = now; return; }
       supabase.from('app_news_reads').upsert({ member_id: id, last_seen: now }).then(() => {}, () => {});
     }
@@ -23435,10 +23440,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       });
     }
     // Uma novidade de cada vez, com pontos e «Seguinte»
-    function showNews(list, { onClose, title = 'Novidades na app', start = 0 } = {}) {
-      let i = Math.min(start, list.length - 1), go = null;
+    function showNews(list, { onClose, title = 'Novidades na app', start = 0, reached = 0 } = {}) {
+      let i = Math.min(start, list.length - 1), go = null, maxI = Math.max(reached, i);
       const draw = () => {
-        const n = list[i], last = i === list.length - 1;
+        const n = list[i], last = i === list.length - 1; maxI = Math.max(maxI, i);
         document.getElementById('quick-modal-body').innerHTML = `<div class="nw">
           ${nwImg(n.image)}
           <div class="nw-kick">Novo${list.length > 1 ? ` · ${i + 1} de ${list.length}` : ''}${n.published_at ? ` · <span class="nw-date">${escapeHtml(fmtDayMonth(String(n.published_at).slice(0, 10)))}</span>` : ''}</div>
@@ -23457,9 +23462,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       openQuickModal(title, '');
       draw();
       quickModalCloseHook = () => {
-        if (!go) { onClose && onClose(); return; }
+        if (!go) { onClose && onClose(maxI); return; }
         setTimeout(() => helpGo(go), 200);
-        nwBackPill(`Voltar às novidades${list.length > 1 ? ` · ${i + 1} de ${list.length}` : ''}`, () => showNews(list, { onClose, title, start: i }), onClose);
+        nwBackPill(`Voltar às novidades${list.length > 1 ? ` · ${i + 1} de ${list.length}` : ''}`, () => showNews(list, { onClose, title, start: i, reached: maxI }), () => onClose && onClose(maxI));
       };
     }
     async function openNewsHistory() {
