@@ -2518,7 +2518,7 @@
   .op-note { margin: 0 0 var(--sp-2); white-space: pre-wrap; color: var(--text-2); }
   .op-risk b { color: var(--warning); }
   .op-chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
-  .op-chip { position: relative; }
+  .op-chip { position: relative; } .op-chip[hidden] { display: none; }
   .op-chip input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
   .op-chip span { display: inline-block; padding: 6px var(--sp-3); border: 1px solid var(--border); border-radius: var(--r-full); font-size: var(--fs-sm); color: var(--text-2); }
   .op-chip input:checked + span { background: var(--accent-soft); border-color: var(--accent); color: var(--text); font-weight: var(--fw-medium); }
@@ -18057,7 +18057,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     function investorMatch(inv, p, ctx) {
       const typeById = ctx.typeById || {};
       const hasFeas = !!(p.feasibility && Object.keys(p.feasibility).length);
-      const f = feasInputs(p), c = feasCalc(p, f);
+      // Indústria / logística: só para quem procura indústria; as contas são as da cadeia industrial (sem frações nem segmento)
+      const IND = isIndPlot(p);
+      if (IND && !(inv.project_type_ids || []).some(t => isIndTypeName(typeById[t]?.name || oppsTypeNames[t])))
+        return { score: 0, label: 'Fora', parts: [], pitch: [], hist: [], conf: 1, known: false, criteria: 0, excluded: true };
+      const f = feasInputs(p), c = IND ? plotCalc(p).feas : feasCalc(p, f);
       const ticket = c.hasCosts ? c.costGlobal : Number(p.asking_price) || null;
       const parts = [], pitch = [];
       // k = critério do perfil, v = valor do terreno nesse critério (para a página do cliente)
@@ -18091,7 +18095,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         add(15, exact ? 1 : near ? 0.6 : 0, exact ? `zona onde investe (${p.municipality || p.parish})` : near ? `mesma região (${pr}), não é a zona preferida` : `zona fora das que procura (${inv.zones.join(', ')})`, 'zones', p.municipality || p.parish || '');
       }
       // Dimensão (frações), com 40% de tolerância
-      const units = c.units || Number(p.fractions_est) || null;
+      const units = IND ? null : c.units || Number(p.fractions_est) || null;
       if (units && (inv.fractions_min != null || inv.fractions_max != null)) {
         const lo = Number(inv.fractions_min) || 0, hi = inv.fractions_max != null ? Number(inv.fractions_max) : Infinity;
         let s = 1, text = `${units} frações, na escala dele`;
@@ -18108,8 +18112,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         add(15, s, got >= want ? `ROI ${pct(got)} ≥ ${pct(want, 0)} que pede` : `ROI ${pct(got)} abaixo dos ${pct(want, 0)} que pede`, 'min_roi', pct(got));
         if (got < want) {
           cap = got <= 0 ? 35 : got < want * 0.75 ? 55 : 64;
-          const maxLand = maxLandPrice(p, f, want);
-          if (maxLand > 0) pitch.push(`para ${pct(want, 0)} de ROI, o terreno teria de custar até ${fmtEURShort(maxLand)} (pedem ${fmtEURShort(p.asking_price)}) — argumento para negociar`);
+          const maxLand = IND ? 0 : maxLandPrice(p, f, want);
+          if (IND) pitch.push(`a melhor saída (${c.bestExit?.name || 'pavilhões'}) dá ${pct(got)}: rever o preço do terreno ou a saída`);
+          else if (maxLand > 0) pitch.push(`para ${pct(want, 0)} de ROI, o terreno teria de custar até ${fmtEURShort(maxLand)} (pedem ${fmtEURShort(p.asking_price)}) — argumento para negociar`);
           else pitch.push(`nem com o terreno a custo zero chega aos ${pct(want, 0)}: rever o preço de venda, os custos ou a densidade`);
         }
       } else if (c.rentYear && (strat === 'rent' || strat === 'both') && inv.min_yield != null) {
@@ -18118,7 +18123,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         add(15, got >= want ? 1 : got / want, got >= want ? `yield bruto ${pct(got, 1)} ≥ ${pct(want, 1)}` : `yield bruto ${pct(got, 1)} abaixo de ${pct(want, 1)}`, 'min_yield', pct(got, 1));
       } else if ((inv.min_roi != null || inv.min_yield != null) && !hasFeas) pitch.push('faz a viabilidade para confirmar se dá a rentabilidade que ele pede');
       // Rácios do terreno: o máximo que o investidor aceita (o mesmo cálculo da viabilidade)
-      const R = c.ratios || {}, price = Number(p.asking_price) || 0;
+      const R = IND ? { abc: c.ind?.ratios?.landPerM2, cost: c.costGlobal ? (Number(p.asking_price) || 0) / c.costGlobal : null } : c.ratios || {}, price = Number(p.asking_price) || 0;
       [['max_land_abc', R.abc, 1, v => fmtEURShort(v) + '/m²', 'terreno por m² de construção', true],
        ['max_land_revenue', c.hasSales ? R.revenue : null, 100, v => pct(v), 'terreno na receita', true],
        ['max_land_cost', c.hasCosts ? R.cost : null, 100, v => pct(v), 'terreno no custo global', false],
@@ -18138,7 +18143,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         if (!ok && inv.approved_pref === 'approved') pitch.push('levar já um PIP aprovado ou um estudo prévio validado na Câmara');
       }
       // Segmento
-      const seg = productSegment(c, f);
+      const seg = IND ? null : productSegment(c, f);
       if (inv.segment && seg) {
         const order = ['economico', 'medio', 'premium'], d = Math.abs(order.indexOf(inv.segment) - order.indexOf(seg));
         add(5, d === 0 ? 1 : d === 1 ? 0.5 : 0, d === 0 ? `segmento ${optLabel(SEGMENTS, seg).toLowerCase()}, o dele` : `produto ${optLabel(SEGMENTS, seg).toLowerCase()} (ele: ${optLabel(SEGMENTS, inv.segment).toLowerCase()})`, 'segment', optLabel(SEGMENTS, seg));
@@ -18340,7 +18345,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         };
         const row = ({ p, c, v, ok, best }) => {
           const nPres = (presByPlot[p.id] || []).length;
-          const sub = [p.scout_id ? '● ' + (memberById[p.scout_id]?.name || '').split(' ')[0] : null, p.municipality, plotTypeNames(p, typeById), v.units ? v.units + (v.units === 1 ? ' fração' : ' frações') : null, c.price != null ? 'terreno ' + fmtEURShort(c.price) : null,
+          const sub = [p.scout_id ? '● ' + (memberById[p.scout_id]?.name || '').split(' ')[0] : null, p.municipality, plotTypeNames(p, typeById), v.units ? v.units + (v.ind ? (v.units === 1 ? ' lote' : ' lotes') : (v.units === 1 ? ' fração' : ' frações')) : null, c.price != null ? 'terreno ' + fmtEURShort(c.price) : null,
             p.variant_of ? 'variante' : null].filter(Boolean).join(' · ');
           return `<div class="invoice-row click-row op-row${p.variant_of ? ' op-variant' : ''}" data-plot="${escapeHtml(p.id)}">
             <span><b class="bl-title">${escapeHtml(p.name)}</b><br><small>${escapeHtml(sub)}</small></span>
@@ -18491,10 +18496,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const typeById = Object.fromEntries(d.types.map(t => [t.id, t]));
       const mctx = { typeById, plots: d.plots, presentations: d.presentations };
       return d.plots.filter(p => PLOT_OPEN.includes(p.status)).map(p => {
-        const m = investorMatch(inv, p, mctx), v = feasCalc(p);
+        const m = investorMatch(inv, p, mctx), v = plotCalc(p).feas;
         const pres = d.presentations.filter(x => x.plot_id === p.id && x.investor_id === inv.id).sort((a, b) => String(b.presented_on).localeCompare(String(a.presented_on)))[0] || null;
         return { p, m, v, pres, byK: Object.fromEntries(m.parts.filter(x => x.k).map(x => [x.k, x])) };
-      }).sort((a, b) => (b.m.known - a.m.known) || b.m.score - a.m.score || a.p.name.localeCompare(b.p.name, 'pt'));
+      }).filter(r => !r.m.excluded).sort((a, b) => (b.m.known - a.m.known) || b.m.score - a.m.score || a.p.name.localeCompare(b.p.name, 'pt'));
     }
     let invViewPick = null;   // oportunidades escolhidas para o PDF (por cliente)
     async function openInvestorView(invId) {
@@ -18651,7 +18656,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const a = plotAreas(p), ok = v.hasSales && v.hasCosts, rent = feasInputs(p).rent_on && v.rentYear > 0;
         const facts = [
           ['Localização', [p.parish, p.municipality].filter(Boolean).join(', ') || '—'], ['Tipologia', plotTypeNames(p, typeById) || '—'],
-          ['Área do terreno', m2(p.land_area)], ['Área de construção', m2(a.build)], ['Frações', v.units || p.fractions_est || '—'],
+          ['Área do terreno', m2(p.land_area)], ['Área de construção', m2(v.ind ? v.ind.abc : a.build)], v.ind ? ['Lotes', v.ind.lots || '—'] : ['Frações', v.units || p.fractions_est || '—'],
           ['Projeto aprovado', p.has_approved_project ? (p.approved_process ? `Sim · processo ${p.approved_process}` : 'Sim') : 'Não'], ['Preço do terreno', eur(p.asking_price)],
           ['Investimento total estimado', v.hasCosts ? eur(v.costGlobal) : '—'], ['Receita de venda estimada', v.hasSales ? eur(v.salesNet) : '—']
         ];
@@ -18808,8 +18813,13 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       ['aru', 'ARU', 'Área de Reabilitação Urbana'], ['apa', 'APA', 'Agência Portuguesa do Ambiente (domínio hídrico, servidões)']];
     const CD_USES = ['Habitação', 'Comércio', 'Serviços', 'Turismo', 'Indústria / Logística', 'Equipamento'];
     // Lugares exigidos por cada tipo de regra (cada linha é uma forma de contar; a Câmara aplica a sua)
-    function parkingEstimate(cons, c) {
+    function parkingEstimate(cons, c, ic) {
       const pk = cons?.park || {}, N = v => Number(v) || 0, out = [];
+      if (ic) {   // indústria: só regras por uso, sobre a área dos pavilhões
+        const n = (pk.use || []).reduce((s, r) => s + (N(r.per) && r.u === 'Indústria / Logística' && N(ic.abc) ? Math.ceil(N(ic.abc) / N(r.per)) * N(r.n) : 0), 0);
+        if (n) out.push({ label: 'Por uso (pavilhões)', n });
+        return out;
+      }
       const typs = (c?.typs || []).filter(t => N(t.units) > 0);
       if ((pk.typ || []).length && typs.length) {
         const by = Object.fromEntries(pk.typ.map(r => [r.t, N(r.n)]));
@@ -19142,9 +19152,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         area: { label: 'Por área da fração', add: { from: 0, to: 90, n: 1 }, cols: r => `<span class="cd-per">de</span>${pkN('from', r.from)}<span class="cd-per">a</span>${pkN('to', r.to, 'mais')}<span class="cd-per">m²</span>${pkN('n', r.n)}<span class="cd-per">lug.</span>` }
       };
       function pkN(k, v, ph = '') { return `<input type="text" inputmode="decimal" class="form-input" data-pk="${k}" data-pkn value="${escapeHtml(v ?? '')}" placeholder="${escapeHtml(ph)}">`; }
+      // Na indústria só há regras por uso (tipologias e áreas de fração são de habitação)
       const drawPark = () => {
-        const box = document.getElementById('cd-park');
-        box.innerHTML = Object.entries(PK).map(([kind, def]) => `<div class="cd-pk" data-kind="${kind}"><div class="cd-pk-h">${def.label}<button type="button" class="text-btn" data-pk-add="${kind}">+ Regra</button></div>
+        const box = document.getElementById('cd-park'), ind = isIndPlot(p);
+        PK.use.add.u = ind ? 'Indústria / Logística' : 'Habitação';
+        box.innerHTML = Object.entries(PK).filter(([kind]) => !ind || kind === 'use').map(([kind, def]) => `<div class="cd-pk" data-kind="${kind}"><div class="cd-pk-h">${def.label}<button type="button" class="text-btn" data-pk-add="${kind}">+ Regra</button></div>
           ${(cons.park[kind] || []).map((r, i) => `<div class="cd-pk-r cd-pk-${kind}" data-i="${i}">${def.cols(r)}<button type="button" class="ck-x" data-pk-del="${i}" aria-label="Tirar">×</button></div>`).join('') || '<div class="cd-pk-empty">—</div>'}</div>`).join('');
       };
       condBox.addEventListener('click', e => {
@@ -19163,9 +19175,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       // Lugares exigidos, com as frações e áreas da viabilidade
       drawParkEst = () => {
         const el = document.getElementById('cd-park-est'); if (!el) return;
-        const est = parkingEstimate(cons, feasCalc(p, f));
-        el.innerHTML = est.length ? `<b>Lugares exigidos (estimativa)</b>${est.map(x => `<div><span>${escapeHtml(x.label)}</span><b>${escapeHtml(fmtNum(x.n))}</b></div>`).join('')}<small class="muted">com as frações e áreas da viabilidade abaixo</small>`
-          : '<small class="muted">Acrescenta as regras do município. A app calcula os lugares exigidos com as frações e áreas da viabilidade.</small>';
+        const ind = isIndPlot(p), est = ind ? parkingEstimate(cons, null, indCalc(p, f)) : parkingEstimate(cons, feasCalc(p, f));
+        const base = ind ? 'a área dos pavilhões da viabilidade' : 'as frações e áreas da viabilidade';
+        el.innerHTML = est.length ? `<b>Lugares exigidos (estimativa)</b>${est.map(x => `<div><span>${escapeHtml(x.label)}</span><b>${escapeHtml(fmtNum(x.n))}</b></div>`).join('')}<small class="muted">com ${base} abaixo</small>`
+          : `<small class="muted">Acrescenta as regras do município${ind ? ' (por uso: Indústria / Logística)' : ''}. A app calcula os lugares exigidos com ${base}.</small>`;
       };
       drawPark(); drawParkEst();
       // ---- Gravação automática ----
@@ -19225,6 +19238,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         }
         savePlot(); drawResult(); drawInvestors(); if (!typManual()) drawTyp();
       }));
+      // Indústria marcada: as tipologias de habitação saem da vista (as que estiverem marcadas ficam, para se poderem desmarcar)
+      const psHousingChips = ind => document.querySelectorAll('#ps-types .op-chip').forEach(l => {
+        const cb = l.querySelector('input'), t = d.types.find(x => x.id === cb.value);
+        l.hidden = ind && !cb.checked && /habita|moradi|unifamiliar|multifamiliar|plurifamiliar|residen|apartament/i.test(t?.name || '');
+      });
+      psHousingChips(isIndPlot(p));
       document.getElementById('ps-types').addEventListener('change', () => {
         const ids = [...document.querySelectorAll('#ps-types input:checked')].map(cb => cb.value);
         p.project_type_ids = ids; p.project_type_id = ids[0] || null;
@@ -19233,7 +19252,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         document.getElementById('ps-type-other').hidden = !other;
         // Indústria / Logística marcada: a viabilidade passa à cadeia industrial (e volta, ao desmarcar)
         const sheet = view.querySelector('.vt-sheet'), ind = isIndPlot(p);
-        if (sheet && sheet.classList.contains('is-ind') !== ind) { sheet.classList.toggle('is-ind', ind); drawResult(); }
+        if (sheet && sheet.classList.contains('is-ind') !== ind) { sheet.classList.toggle('is-ind', ind); drawResult(); drawPark(); drawParkEst(); }
+        psHousingChips(ind);
         if (other && !cons.type_other) document.getElementById('ps-type-other-in').focus();
       });
       document.getElementById('ps-type-other-in').addEventListener('input', e => { cons.type_other = e.target.value.trim() || null; pPatch.constraints = cons; savePlot(); });
