@@ -19881,7 +19881,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     const PIPE_PROB = { draft: 20, sent: 40, negotiation: 60 };
     const LOST_REASONS = [['price', 'Preço'], ['timing', 'Prazo'], ['other_firm', 'Escolheu outro atelier'], ['cancelled', 'Projeto cancelado ou adiado'], ['no_reply', 'Sem resposta'], ['other', 'Outro']];
     const PP_TAGLINES = [['impact', 'Creating Impact. Driving Returns. Building Legacy.'], ['living', 'the future of living. redefined.']];
-    const PP_KINDS = [['fee', 'Honorários'], ['disc', 'Desconto'], ['month', 'Avença mensal']];
+    const PP_KINDS = [['fee', 'Honorários'], ['disc', 'Desconto €'], ['discp', 'Desconto %'], ['month', 'Avença mensal']];
     const cstLabel = (n, v) => n ? `CST ${n}${v ? ' V' + v : ''}` : '';
     const ppRef = p => cstLabel(p.number, p.version) || p.ref || '';
     const ppExpiry = p => p.sent_on ? addDaysKey(p.sent_on, Number(p.valid_days) || 30) : null;
@@ -20180,14 +20180,20 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     }
 
     // Contas do valor: linhas (quantidade × valor unitário, ou valor), descontos e avenças mensais
-    function ppLineAmount(l) {
+    // Desconto (%): a percentagem fica em «ou Valor» e aplica-se aos honorários (não às avenças nem a outros descontos)
+    function ppLineAmount(l, lines = []) {
+      if (l.kind === 'discp') {
+        const base = lines.filter(x => !x.kind || x.kind === 'fee').reduce((t, x) => t + ppLineAmount(x), 0);
+        return -ppR2(base * Math.abs(Number(l.v) || 0) / 100);
+      }
       const has = l.q != null && l.q !== '' && l.u != null && l.u !== '';
       const a = has ? Number(l.q) * Number(l.u) : Number(l.v) || 0;
       return l.kind === 'disc' ? -Math.abs(a) : a;
     }
+    const ppIsDisc = l => l.kind === 'disc' || l.kind === 'discp';
     function ppTotals(c) {
       const lines = c?.value?.lines || [];
-      const total = ppR2(lines.reduce((t, l) => t + ppLineAmount(l), 0));
+      const total = ppR2(lines.reduce((t, l) => t + ppLineAmount(l, lines), 0));
       const monthly = ppR2(lines.filter(l => l.kind === 'month').reduce((t, l) => t + ppLineAmount(l), 0));
       const base = ppR2(total - monthly);
       const pctSum = (c?.pay?.rows || []).reduce((t, x) => t + (Number(x.pct) || 0), 0);
@@ -20654,14 +20660,16 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           ${rowsUI('content.value.lines', c.value.lines, [
             { k: 'g', ph: 'ex.: Arquitetura', w: '1.1fr' }, { k: 't', ph: 'ex.: Projeto por fração', w: '1.7fr' }, { k: 'q', ph: 'qtd', n: true, w: '.5fr' }, { k: 'u', ph: '€/unid.', n: true, w: '.75fr' },
             { k: 'v', ph: '€', n: true, w: '.75fr' }, { k: 'kind', sel: v => PP_KINDS.map(([k, l]) => `<option value="${k}"${(v || 'fee') === k ? ' selected' : ''}>${l}</option>`).join(''), w: 'minmax(124px, 1.2fr)' },
-            { k: '_a', ro: l => escapeHtml(fmtEUR(ppLineAmount(l))), w: '.8fr' }], { empty: 'Ainda sem linhas de valor.' })}
+            { k: '_a', ro: l => escapeHtml(fmtEUR(ppLineAmount(l, c.value.lines))), w: '.8fr' }], { empty: 'Ainda sem linhas de valor.' })}
           <div class="pp-btnrow">
             <button type="button" class="text-btn" data-act="add" data-path="content.value.lines" data-tpl='{"g":"","t":"","q":null,"u":null,"v":null,"kind":"fee"}'>+ Linha</button>
             ${Number(pp.fractions) ? `<button type="button" class="text-btn" data-act="add-unit" data-unit="fr">+ Por fração (${escapeHtml(fmtNum(pp.fractions))})</button>` : ''}
             ${Number(pp.area) ? `<button type="button" class="text-btn" data-act="add-unit" data-unit="m2">+ Por m² (${escapeHtml(fmtNum(pp.area))} m²)</button>` : ''}
-            <button type="button" class="text-btn" data-act="add" data-path="content.value.lines" data-tpl='{"g":"","t":"Desconto","q":null,"u":null,"v":null,"kind":"disc"}'>+ Desconto</button>
+            <button type="button" class="text-btn" data-act="add" data-path="content.value.lines" data-tpl='{"g":"","t":"Desconto","q":null,"u":null,"v":null,"kind":"disc"}'>+ Desconto (€)</button>
+            <button type="button" class="text-btn" data-act="add" data-path="content.value.lines" data-tpl='{"g":"","t":"Desconto","q":null,"u":null,"v":10,"kind":"discp"}'>+ Desconto (%)</button>
             <button type="button" class="text-btn" data-act="add" data-path="content.value.lines" data-tpl='{"g":"","t":"Visita mensal à obra","q":18,"u":150,"v":null,"kind":"month"}'>+ Avença mensal</button>
           </div>
+          ${c.value.lines.some(l => l.kind === 'discp') ? '<div class="field-hint">Desconto (%): escreve a percentagem em «ou Valor». Aplica-se aos honorários, não às avenças.</div>' : ''}
           <div class="pp-total"><span>Total (sem IVA)</span><b class="num" id="pp-total">${escapeHtml(fmtEUR(T.total))}</b></div>`,
         pay: () => `
           <div class="pp-th" style="grid-template-columns:2fr .6fr 1.3fr .9fr 52px"><span>Descrição</span><span>%</span><span>Fase do projeto (ao adjudicar)</span><span>Valor</span><span></span></div>
@@ -20800,7 +20808,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         if (pp.id && !locked) { clearTimeout(saveT); savedEl().textContent = 'Por gravar…'; ppSaveState('dirty'); saveT = setTimeout(() => ppSave().catch(() => {}), 1200); }
       };
       S.flush = async () => { clearTimeout(saveT); if (S.dirty && pp.id && !locked) await ppSave(); };
-      const redraw = id => { const body = view.querySelector(`[data-sec="${id}"]`); if (body) { body.innerHTML = secBodies[id](); if (locked) lockAll(body); ppGrow(body); } };
+      const redraw = id => { const body = view.querySelector(`[data-sec="${id}"]`); if (body) { body.innerHTML = secBodies[id](); if (locked) lockAll(body); ppGrow(body); if (id === 'value') liveRows(); } };
       // Campos: data-pp="caminho" (texto/número/select), data-ppc (caixa)
       const main = view.querySelector('.pp-layout');
       // Campos que crescem com o texto (nada fica cortado); os de uma linha não aceitam Enter
@@ -20926,10 +20934,14 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           closeQuickModal(); if (ids.length) touch('scope');
         });
       };
+      // Nas linhas de desconto em %, o campo «ou Valor» pede a percentagem
+      function ppDiscPh() { c.value.lines.forEach((l, i) => { const el = view.querySelector(`[data-pp="content.value.lines.${i}.v"]`); if (el) el.placeholder = l.kind === 'discp' ? '%' : '€'; }); }
+      ppDiscPh();
       // Contas em direto (sem redesenhar os campos onde se está a escrever)
       const liveRows = () => {
         const T2 = ppTotals(c);
-        c.value.lines.forEach((l, i) => { const el = view.querySelector(`[data-ro="content.value.lines.${i}._a"]`); if (el) el.textContent = fmtEUR(ppLineAmount(l)); });
+        c.value.lines.forEach((l, i) => { const el = view.querySelector(`[data-ro="content.value.lines.${i}._a"]`); if (el) el.textContent = fmtEUR(ppLineAmount(l, c.value.lines)); });
+        ppDiscPh();
         c.pay.rows.forEach((x, i) => { const el = view.querySelector(`[data-ro="content.pay.rows.${i}._v"]`); if (el) el.textContent = fmtEUR(T2.base * (Number(x.pct) || 0) / 100); });
         (pp.specialties || []).forEach((s, i) => { const el = view.querySelector(`[data-ro="specialties.${i}._t"]`); if (el) el.textContent = fmtEUR(s.mode === 'm2' ? (Number(s.value) || 0) * (Number(pp.area) || 0) : Number(s.value) || 0); });
         const tot = document.getElementById('pp-total'); if (tot) tot.textContent = fmtEUR(T2.total);
@@ -21320,7 +21332,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       // Valor
       h2(L.value);
       p(md(c.value.intro?.t));
-      const lines = c.value.lines.filter(l => l.t || ppLineAmount(l));
+      const allL = c.value.lines, lines = allL.filter(l => l.t || ppLineAmount(l, allL));
+      const pctOf = l => l.kind === 'discp' ? nf(Math.abs(Number(l.v) || 0)) + '%' : '';
+      const discT = l => l.kind === 'discp' && !/%/.test(l.t || '') ? `${l.t || ''} (${pctOf(l)})` : l.t;
       if (lines.length) unit(() => {
         if (T.units) {
           const cols = '1fr 2.2fr .6fr 1fr 1fr';
@@ -21329,13 +21343,13 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           lines.forEach(l => {
             const g = l.g && l.g !== lastG ? l.g : ''; if (l.g) lastG = l.g;
             const hasQ = l.q != null && l.q !== '';
-            B.push(row(`<span class="strong">${e(g)}</span><span class="${l.kind === 'disc' ? 'muted' : ''}">${e(l.t)}</span><span class="r">${hasQ ? e(nf(l.q)) : ''}</span><span class="r">${hasQ && l.u != null && l.u !== '' ? e(eur(l.u)) : ''}</span><span class="r ${l.kind === 'disc' ? 'muted' : ''}">${e(eurNeg(ppLineAmount(l)))}</span>`, g ? 'gtop' : 'nog', cols));
+            B.push(row(`<span class="strong">${e(g)}</span><span class="${ppIsDisc(l) ? 'muted' : ''}">${e(l.t)}</span><span class="r">${hasQ && l.kind !== 'discp' ? e(nf(l.q)) : ''}</span><span class="r">${l.kind === 'discp' ? e(pctOf(l)) : hasQ && l.u != null && l.u !== '' ? e(eur(l.u)) : ''}</span><span class="r ${ppIsDisc(l) ? 'muted' : ''}">${e(eurNeg(ppLineAmount(l, allL)))}</span>`, g ? 'gtop' : 'nog', cols));
           });
           B.push(row(`<span>${e(L.total)}</span><span></span><span></span><span></span><span class="r">${e(eur(T.total))}</span>`, 'tot', cols));
         } else {
           const cols = '1fr auto';
           B.push(row(`<span>${e(L.desc)}</span><span class="r">${e(L.val)}</span>`, 'th', cols));
-          lines.forEach(l => B.push(row(`<span class="${l.kind === 'disc' ? 'muted' : ''}">${e(l.t)}</span><span class="r ${l.kind === 'disc' ? 'muted' : ''}">${e(eurNeg(ppLineAmount(l)))}</span>`, '', cols)));
+          lines.forEach(l => B.push(row(`<span class="${ppIsDisc(l) ? 'muted' : ''}">${e(discT(l))}</span><span class="r ${ppIsDisc(l) ? 'muted' : ''}">${e(eurNeg(ppLineAmount(l, allL)))}</span>`, '', cols)));
           B.push(row(`<span>${e(L.total)}</span><span class="r">${e(eur(T.total))}</span>`, 'tot', cols));
         }
         note(c.value.notes);
