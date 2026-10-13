@@ -3184,6 +3184,35 @@
 
   .k-fi { animation: kFill .6s var(--expo) both; animation-delay: var(--kd, 0ms); }
   @keyframes kFill { from { opacity: 0; transform: translateY(10px); filter: blur(3px); } to { opacity: 1; transform: none; filter: none; } }
+  /* ---- Janelas ao abrir: pedido resolvido e novidades ---- */
+  .nw { display: flex; flex-direction: column; gap: var(--sp-3); }
+  .nw-img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; object-position: top center; border-radius: var(--r-lg); border: 1px solid var(--border); background: var(--surface-2); }
+  .nw-kick { font-size: var(--fs-xs); font-weight: var(--fw-semibold); letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+  .nw-title { font-size: var(--fs-xl); font-weight: var(--fw-semibold); letter-spacing: -.01em; margin: 0; line-height: 1.3; }
+  .nw-body { color: var(--text-2); font-size: var(--fs-md); line-height: 1.6; } .nw-body p { margin: 0 0 8px; } .nw-body p:last-child { margin: 0; } .nw-body b { color: var(--text); }
+  .nw-foot { display: flex; align-items: center; gap: var(--sp-2); margin-top: var(--sp-1); }
+  .nw-foot .primary-btn, .nw-foot .secondary-btn { width: auto; margin: 0; padding: 0 18px; }
+  .nw-dots { display: flex; gap: 6px; margin-right: auto; } .nw-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--border-strong); } .nw-dots i.on { background: var(--accent); width: 18px; border-radius: 4px; }
+  .nw-date { font-size: var(--fs-xs); color: var(--text-3); }
+  .nw-help-link { margin-top: var(--sp-3); }
+  /* ---- Cartão digital ---- */
+  .bc-wrap { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: var(--sp-5); align-items: start; }
+  .bc-card { position: relative; border-radius: 18px; background: #F4F3EF; color: #1B1A19; padding: 26px 26px 22px; display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: end; box-shadow: 0 1px 2px rgba(0,0,0,.05), 0 18px 40px rgba(0,0,0,.12); border: 1px solid #E4E3DE; overflow: hidden; }
+  .bc-card img.bc-logo { height: 22px; display: block; margin-bottom: 30px; }
+  .bc-card .bc-name { font-size: 20px; font-weight: 600; letter-spacing: -.01em; line-height: 1.2; }
+  .bc-card .bc-role { font-size: 13px; color: #6B6660; margin-top: 2px; }
+  .bc-card .bc-lines { margin-top: 16px; font-size: 12.5px; line-height: 1.7; color: #3A3835; word-break: break-word; }
+  .bc-card .bc-lines span { color: #8C8780; display: inline-block; width: 14px; }
+  .bc-qr { background: #fff; border-radius: 12px; padding: 8px; box-shadow: 0 0 0 1px #E4E3DE; line-height: 0; }
+  .bc-qr svg { width: 128px; height: 128px; display: block; }
+  .bc-acts { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-4); }
+  .bc-acts .primary-btn, .bc-acts .secondary-btn { width: auto; margin: 0; padding: 0 16px; }
+  .bc-show { position: fixed; inset: 0; z-index: var(--z-tour); background: #fff; color: #1B1A19; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px; text-align: center; }
+  .bc-show svg { width: min(78vw, 62vh, 460px); height: auto; }
+  .bc-show b { font-size: 22px; font-weight: 600; } .bc-show small { color: #6B6660; font-size: 14px; }
+  .bc-show img { height: 26px; }
+  .bc-show .bc-close { position: absolute; top: max(14px, env(safe-area-inset-top)); right: 14px; border: 1px solid #D9D6D0; background: #fff; border-radius: 999px; padding: 9px 16px; font-family: inherit; font-size: 14px; font-weight: 600; color: #4A2350; cursor: pointer; }
+  @media (max-width: 760px) { .bc-wrap { grid-template-columns: 1fr; } .bc-card { padding: 20px; } .bc-qr svg { width: 104px; height: 104px; } }
   /* ---- Brandbook ---- */
   .br-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: var(--sp-5); }
   .br-bar .segmented { margin: 0; }
@@ -5602,6 +5631,7 @@
       loginScreen.style.display = 'none';
       appScreen.style.display = 'block';
       renderSideUser();
+      setTimeout(() => appOpenNotices().catch(() => {}), 1600);   // pedidos resolvidos e novidades
       const st = stateFromHash(location.hash);
       if (st && st.name !== 'home') { try { openState(st); return; } catch (_) { /* volta à Hoje */ } }
       showHome();
@@ -16391,6 +16421,17 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         steps: ['Toca no teu nome (em baixo, à esquerda) → [[Brandbook]] → **Assinatura de email** (ou ⌘K → «assinatura»).', 'Escolhe o teu nome e confirma o **cargo** e o **telefone** (ficam guardados).', 'Toca em **Copiar assinatura**.', 'No Outlook: **Definições → Contas → Assinaturas → + Nova**, cola com **Ctrl+V** e escolhe-a para mensagens novas e respostas.', 'No Outlook clássico, se o logo aparecer grande, usa **Descarregar .htm** e guarda o ficheiro na pasta das assinaturas (as instruções estão na página).'],
         kw: 'assinatura email outlook signature logotipo logo telefone cargo copiar brandbook',
         tour: [{ go: 'brand:sig', sel: '#brand-sig-container', text: 'Aqui geras e copias a assinatura.' }] },
+      { id: 'cartao', cat: 'start', ctx: ['brand'],
+        q: 'partilho o meu contacto com um cliente (cartão digital com QR)',
+        a: 'Brandbook → Cartão digital: «Mostrar ao cliente» abre o QR em grande; o cliente aponta a câmara e guarda o contacto.',
+        steps: ['Toca no teu nome (em baixo, à esquerda) → [[Brandbook]] → **Cartão digital** (ou ⌘K → «cartão»).', 'Confirma o **cargo**, o **telemóvel** e o **email** (ficam guardados; o cargo e o telemóvel são os da assinatura).', 'Toca em **Mostrar ao cliente**: o QR abre em ecrã inteiro. O cliente aponta a câmara do telemóvel e toca em «Guardar contacto».', 'Também podes enviar o contacto: **Partilhar contacto** (no telemóvel) ou **Descarregar contacto (.vcf)** (no computador).'],
+        kw: 'cartao visita digital qr codigo contacto vcard partilhar cliente whatsapp telefone',
+        tour: [{ go: 'brand:card', sel: '#bc-card', text: 'O teu cartão. O cliente aponta a câmara ao QR e guarda o contacto.' }] },
+      { id: 'novidades', cat: 'start', ctx: ['help', 'home'],
+        q: 'vejo as novidades da app',
+        a: 'Ao abrir a app aparecem as novidades desde a última visita. Para rever todas: Ajuda → «Novidades da app» (ou ⌘K → «novidades»).',
+        steps: ['As novidades aparecem sozinhas quando abres a app, uma de cada vez, com uma imagem e **Mostrar-me**.', 'Para as rever: abre [[Ajuda]] e toca em **Novidades da app** (ou ⌘K → «novidades»).', 'Quando um pedido teu em [[Melhorias]] fica feito, aparece também uma janela a explicar o que mudou.'],
+        kw: 'novidades novo novas funcionalidades atualizacoes o que mudou release pedido feito melhoria resolvida' },
       { id: 'fundos', cat: 'start', ctx: ['brand'],
         q: 'ponho o fundo de ecrã da NOVA',
         a: 'Brandbook (menu do teu nome) → Fundos de ecrã: escolhe claro ou escuro, o desenho e o tamanho (4K, 1080p, iPad ou iPhone).',
@@ -16865,8 +16906,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <p>Escreve a tua pergunta à tua maneira. Cada guia explica passo a passo e pode mostrar-te onde tocar.</p>
           ${helpSearchBarHtml('help-input', helpQuery)}
           <div class="help-suggest" id="help-suggest"></div>
+          <button type="button" class="text-btn nw-help-link" id="help-news">✦ Novidades da app</button>
         </div>
         <div id="help-results"></div>`;
+      document.getElementById('help-news').addEventListener('click', () => openNewsHistory());
       const input = document.getElementById('help-input');
       input.addEventListener('input', () => { helpQuery = input.value; helpCat = null; renderHelpResults(); });
       input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); const f = view.querySelector('.help-guide'); if (f && !f.classList.contains('open')) f.querySelector('.help-q').click(); } });
@@ -23265,7 +23308,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     // No telemóvel e no iPad abre-se a partilha («Guardar imagem» vai para as Fotografias)
     const brShareable = () => matchMedia('(pointer: coarse)').matches && typeof navigator.canShare === 'function';
     function openBrandModule(tab) {
-      if (tab === 'walls' || tab === 'sig') brTab = tab;
+      if (['walls', 'sig', 'card'].includes(tab)) brTab = tab;
       pushCurrentView({ name: 'brand' });
       document.getElementById('nav-title').textContent = 'Brandbook';
       hideAllViews();
@@ -23277,8 +23320,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       if (!brMode) brMode = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       const dl = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></svg>';
       const modeName = (BR_MODES.find(([k]) => k === brMode) || [])[1] || '';
-      const tabs = `<div class="segmented" id="br-tabs">${[['walls', 'Fundos de ecrã'], ['sig', 'Assinatura de email']].map(([k, l]) => `<button type="button" data-t="${k}"${k === brTab ? ' class="active"' : ''}>${l}</button>`).join('')}</div>`;
-      if (brTab === 'sig') {
+      const tabs = `<div class="segmented" id="br-tabs">${[['walls', 'Fundos de ecrã'], ['sig', 'Assinatura de email'], ['card', 'Cartão digital']].map(([k, l]) => `<button type="button" data-t="${k}"${k === brTab ? ' class="active"' : ''}>${l}</button>`).join('')}</div>`;
+      if (brTab === 'card') {
+        box.innerHTML = `<div class="br-bar">${tabs}</div><div id="brand-card-container"><div class="gantt-wrap"><div class="detail-loading">A carregar...</div></div></div>`;
+        loadBizCard();
+      } else if (brTab === 'sig') {
         box.innerHTML = `<div class="br-bar">${tabs}</div><div class="gantt-wrap" id="brand-sig-container"><div class="detail-loading">A carregar...</div></div>`;
         loadSignatureSettings();
       } else {
@@ -23316,6 +23362,181 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           } finally { a.classList.remove('busy'); }
         });
       });
+    }
+    // ================= AO ABRIR A APP: pedidos resolvidos e novidades =================
+    // Quem pediu uma melhoria vê, uma vez, que ficou feita: o que mudou, uma imagem e «Mostrar-me».
+    // Novidades da app: todos veem as que saíram desde a última visita (as de mais de 14 dias não aparecem a quem entra pela primeira vez).
+    let mockNews = [
+      { id: 'nw-1', title: 'Cartão digital com QR', body: 'Em **Brandbook → Cartão digital** tens o teu cartão de visita com um código QR. O cliente aponta a câmara e guarda o teu contacto, com WhatsApp.', image: 'assets/news/cartao.jpg', nav: 'brand:card', published_at: new Date().toISOString(), active: true },
+      { id: 'nw-2', title: 'Desconto em % nas propostas', body: 'No Valor da proposta há **+ Desconto (%)**. Aplica-se aos honorários e aparece no documento com a percentagem.', image: 'assets/news/desconto.jpg', nav: 'nav:pipeline', published_at: new Date(Date.now() - 864e5).toISOString(), active: true }
+    ], mockNewsSeen = null;
+    const nwWait = () => new Promise(res => { const t0 = Date.now(); const tick = () => { const m = document.getElementById('quick-modal'); if (m.style.display !== 'flex' && !document.querySelector('.tour-bubble, .bc-show')) res(true); else if (Date.now() - t0 > 120000) res(false); else setTimeout(tick, 1500); }; tick(); });
+    const nwImg = src => src ? `<img class="nw-img" src="${escapeHtml(src)}" alt="" loading="lazy" onerror="this.remove()">` : '';
+    async function appOpenNotices() {
+      if (appOpenNotices.done) return; appOpenNotices.done = true;
+      const me = await getCurrentMember(); if (!me?.id) return;
+      // 1) os meus pedidos que ficaram feitos e que ainda não vi
+      let done = [];
+      if (devMode) done = mockTickets.filter(t => t.created_by === me.id && t.author_seen === false && t.status === 'done');
+      else { const r = await supabase.from('app_tickets').select('id, title, status_note, status_image, status_nav, status_changed_at').eq('created_by', me.id).eq('author_seen', false).eq('status', 'done').order('status_changed_at'); done = r.error ? [] : (r.data || []); }
+      for (const t of done) { if (!(await nwWait())) return; await showTicketDone(t); }
+      // 2) novidades desde a última visita
+      let seen = null, list = [];
+      if (devMode) { seen = mockNewsSeen; list = mockNews.filter(n => n.active); }
+      else {
+        const [a, b] = await Promise.all([supabase.from('app_news_reads').select('last_seen').eq('member_id', me.id).maybeSingle(), supabase.from('app_news').select('id, title, body, image, nav, published_at').eq('active', true).order('published_at', { ascending: false }).limit(30)]);
+        if (b.error) return;
+        seen = a.data?.last_seen || null; list = b.data || [];
+      }
+      const since = seen ? new Date(seen).getTime() : Date.now() - 14 * 864e5;
+      const fresh = list.filter(n => new Date(n.published_at).getTime() > since).sort((x, y) => String(y.published_at).localeCompare(String(x.published_at)));
+      if (!fresh.length) { if (!seen) newsMarkSeen(me.id); return; }
+      if (!(await nwWait())) return;
+      showNews(fresh, { onClose: () => newsMarkSeen(me.id) });
+    }
+    function newsMarkSeen(id) {
+      const now = new Date().toISOString();
+      if (devMode) { mockNewsSeen = now; return; }
+      supabase.from('app_news_reads').upsert({ member_id: id, last_seen: now }).then(() => {}, () => {});
+    }
+    function showTicketDone(t) {
+      return new Promise(res => {
+        openQuickModal('O teu pedido está feito ✓', `<div class="nw">
+          ${nwImg(t.status_image)}
+          <div class="nw-kick">Melhorias · ${escapeHtml(fmtDayMonth((t.status_changed_at || '').slice(0, 10)) || 'hoje')}</div>
+          <h3 class="nw-title">${escapeHtml(t.title || '')}</h3>
+          <div class="nw-body">${ppMd(t.status_note || 'Já está na app.')}</div>
+          <div class="nw-foot"><span style="margin-right:auto"></span>${t.status_nav ? '<button type="button" class="secondary-btn" id="nw-ok">Fechar</button><button type="button" class="primary-btn" id="nw-go">Mostrar-me</button>' : '<button type="button" class="primary-btn" id="nw-ok">Obrigado</button>'}</div></div>`);
+        let go = false;
+        quickModalCloseHook = () => {
+          dbUpdate('app_tickets', t.id, { author_seen: true }, mockTickets).catch(() => {});
+          if (go && t.status_nav) setTimeout(() => helpGo(t.status_nav), 200);
+          res();
+        };
+        document.getElementById('nw-ok').addEventListener('click', closeQuickModal);
+        document.getElementById('nw-go')?.addEventListener('click', () => { go = true; closeQuickModal(); });
+      });
+    }
+    // Uma novidade de cada vez, com pontos e «Seguinte»
+    function showNews(list, { onClose, title = 'Novidades na app' } = {}) {
+      let i = 0, go = null;
+      const draw = () => {
+        const n = list[i], last = i === list.length - 1;
+        document.getElementById('quick-modal-body').innerHTML = `<div class="nw">
+          ${nwImg(n.image)}
+          <div class="nw-kick">Novo${list.length > 1 ? ` · ${i + 1} de ${list.length}` : ''}${n.published_at ? ` · <span class="nw-date">${escapeHtml(fmtDayMonth(String(n.published_at).slice(0, 10)))}</span>` : ''}</div>
+          <h3 class="nw-title">${escapeHtml(n.title)}</h3>
+          <div class="nw-body">${ppMd(n.body || '')}</div>
+          <div class="nw-foot">
+            <div class="nw-dots">${list.length > 1 ? list.map((_, k) => `<i class="${k === i ? 'on' : ''}"></i>`).join('') : ''}</div>
+            ${n.nav ? '<button type="button" class="secondary-btn" id="nw-go">Mostrar-me</button>' : ''}
+            ${i ? '<button type="button" class="secondary-btn" id="nw-prev" aria-label="Anterior">←</button>' : ''}
+            <button type="button" class="primary-btn" id="nw-next">${last ? 'Fechar' : 'Seguinte →'}</button>
+          </div></div>`;
+        document.getElementById('nw-next').addEventListener('click', () => { if (last) closeQuickModal(); else { i++; draw(); } });
+        document.getElementById('nw-prev')?.addEventListener('click', () => { i--; draw(); });
+        document.getElementById('nw-go')?.addEventListener('click', () => { go = n.nav; closeQuickModal(); });
+      };
+      openQuickModal(title, '');
+      draw();
+      quickModalCloseHook = () => { onClose && onClose(); if (go) setTimeout(() => helpGo(go), 200); };
+    }
+    async function openNewsHistory() {
+      let list = [];
+      if (devMode) list = mockNews.filter(n => n.active);
+      else { const r = await supabase.from('app_news').select('id, title, body, image, nav, published_at').eq('active', true).order('published_at', { ascending: false }).limit(60); if (r.error) { showError('carregar as novidades', r.error); return; } list = r.data || []; }
+      if (!list.length) { showToast('Ainda não há novidades registadas.'); return; }
+      showNews(list.sort((x, y) => String(y.published_at).localeCompare(String(x.published_at))), { title: 'Novidades da app' });
+    }
+
+    // ================= CARTÃO DIGITAL (Brandbook): QR com o contacto (vCard) =================
+    // O cliente aponta a câmara ao QR e o telemóvel propõe guardar o contacto (funciona sem internet).
+    // Cargo e telemóvel são os da assinatura de email (o mesmo registo): mudar aqui muda lá.
+    const QR_LIB = 'assets/vendor/qrcode-generator-1.4.4.js';
+    const BC_ORG = 'NOVA Associates';
+    const vcEsc = v => String(v || '').replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/([,;])/g, '\\$1');
+    const waNum = ph => { let d = String(ph || '').replace(/[^\d+]/g, ''); if (d.startsWith('+')) d = d.slice(1); else if (d.startsWith('00')) d = d.slice(2); else if (d.length === 9) d = '351' + d; return d; };
+    function bizVcard(c) {
+      const parts = String(c.name || '').trim().split(/\s+/), first = parts.shift() || '', last = parts.join(' ');
+      return ['BEGIN:VCARD', 'VERSION:3.0', `N:${vcEsc(last)};${vcEsc(first)};;;`, `FN:${vcEsc(c.name)}`, `ORG:${vcEsc(BC_ORG)}`,
+        c.title ? `TITLE:${vcEsc(c.title)}` : '', c.phone ? `TEL;TYPE=CELL,VOICE:${String(c.phone).replace(/[^\d+ ]/g, '').trim()}` : '',
+        c.email ? `EMAIL;TYPE=INTERNET,WORK:${c.email}` : '', c.phone && c.wa ? `URL;TYPE=WhatsApp:https://wa.me/${waNum(c.phone)}` : '',
+        'END:VCARD'].filter(Boolean).join('\r\n');
+    }
+    async function qrSvg(text, color = '#1B1A19') {
+      await ppLoadScript(QR_LIB);
+      const q = window.qrcode(0, 'M'); q.stringToBytes = window.qrcode.stringToBytesFuncs['UTF-8']; q.addData(text, 'Byte'); q.make();
+      const n = q.getModuleCount(), m = 3; let d = '';
+      for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) d += `M${c + m} ${r + m}h1v1h-1z`;
+      return `<svg viewBox="0 0 ${n + 2 * m} ${n + 2 * m}" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" role="img" aria-label="Código QR com o contacto"><rect width="100%" height="100%" fill="#fff"/><path d="${d}" fill="${color}"/></svg>`;
+    }
+    async function loadBizCard() {
+      const box = document.getElementById('brand-card-container');
+      try {
+        const [members, me] = await Promise.all([loadAllMembers(), getCurrentMember()]);
+        const m = members.find(x => x.id === me?.id) || me || {};
+        let saved = {};
+        if (devMode) saved = mockSigs;
+        else { const r = await supabase.from('app_settings').select('value').eq('key', 'email_signatures').maybeSingle(); saved = r.data?.value || {}; }
+        const s = saved[m.id] || {};
+        const card = { name: m.name || '', title: s.title ?? (m.role === 'Partner' ? 'Managing Partner' : (m.role || '')), phone: s.phone || '', email: s.card_email || m.email || '', wa: s.wa !== false };
+        const logo = 'assets/nova-logo-plum-cropped.png';
+        box.innerHTML = `<div class="bc-wrap">
+          <div>
+            <div class="bc-card" id="bc-card">
+              <div><img class="bc-logo" src="${logo}" alt="NOVA"><div class="bc-name" id="bc-name"></div><div class="bc-role" id="bc-role"></div><div class="bc-lines" id="bc-lines"></div></div>
+              <div class="bc-qr" id="bc-qr"></div>
+            </div>
+            <div class="bc-acts">
+              <button type="button" class="primary-btn" id="bc-show">Mostrar ao cliente</button>
+              <button type="button" class="secondary-btn" id="bc-vcf">${brShareable() ? 'Partilhar contacto' : 'Descarregar contacto (.vcf)'}</button>
+            </div>
+            <div class="field-hint">O cliente aponta a câmara do telemóvel ao QR e guarda o teu contacto: nome, empresa, cargo, telemóvel, email${card.wa ? ' e WhatsApp' : ''}. Não precisa de internet.</div>
+          </div>
+          <div class="gantt-wrap">
+            <div class="section-label" style="margin-top:0">Os teus dados</div>
+            <label class="field-label" for="bc-title">Cargo</label><input type="text" id="bc-title" class="form-input" maxlength="60" value="${escapeHtml(card.title)}">
+            <label class="field-label" for="bc-phone">Telemóvel</label><input type="tel" id="bc-phone" class="form-input" maxlength="30" placeholder="+351 912 345 678" value="${escapeHtml(card.phone)}">
+            <label class="field-label" for="bc-email">Email</label><input type="email" id="bc-email" class="form-input" maxlength="80" value="${escapeHtml(card.email)}">
+            <label class="check-row"><input type="checkbox" id="bc-wa"${card.wa ? ' checked' : ''}> WhatsApp neste número</label>
+            <div class="field-hint">Empresa: ${escapeHtml(BC_ORG)}. O cargo e o telemóvel são os mesmos da assinatura de email.</div>
+            <div id="bc-msg" class="form-msg"></div>
+          </div></div>`;
+        let qrT = null, saveT = null;
+        const draw = () => {
+          document.getElementById('bc-name').textContent = card.name;
+          document.getElementById('bc-role').textContent = [card.title, BC_ORG].filter(Boolean).join(' · ');
+          document.getElementById('bc-lines').innerHTML = [card.phone ? `<span>M</span>${escapeHtml(card.phone)}${card.wa ? ' · WhatsApp' : ''}` : '', card.email ? `<span>@</span>${escapeHtml(card.email)}` : ''].filter(Boolean).join('<br>');
+          clearTimeout(qrT); qrT = setTimeout(async () => { try { document.getElementById('bc-qr').innerHTML = await qrSvg(bizVcard(card)); } catch (err) { document.getElementById('bc-qr').textContent = 'Sem QR: ' + err.message; } }, 150);
+        };
+        const persist = () => {
+          clearTimeout(saveT); saveT = setTimeout(async () => {
+            saved = { ...saved, [m.id]: { ...(saved[m.id] || {}), title: card.title, phone: card.phone, wa: card.wa, card_email: card.email !== m.email ? card.email : undefined } };
+            if (devMode) { mockSigs = saved; return; }
+            const r = await supabase.from('app_settings').upsert({ key: 'email_signatures', value: saved, updated_at: new Date().toISOString() });
+            if (r.error) formError('bc-msg', 'Não gravou: ' + r.error.message);
+          }, 700);
+        };
+        [['bc-title', 'title'], ['bc-phone', 'phone'], ['bc-email', 'email']].forEach(([id, k]) => document.getElementById(id).addEventListener('input', e => { card[k] = e.target.value.trim(); draw(); persist(); }));
+        document.getElementById('bc-wa').addEventListener('change', e => { card.wa = e.target.checked; draw(); persist(); });
+        document.getElementById('bc-show').addEventListener('click', async () => {
+          const ov = document.createElement('div'); ov.className = 'bc-show';
+          ov.innerHTML = `<button type="button" class="bc-close">Fechar</button><img src="${logo}" alt="NOVA">${await qrSvg(bizVcard(card))}<b>${escapeHtml(card.name)}</b><small>${escapeHtml([card.title, BC_ORG].filter(Boolean).join(' · '))}</small><small>Aponta a câmara para guardar o contacto</small>`;
+          document.body.appendChild(ov);
+          const close = () => { ov.remove(); document.removeEventListener('keydown', esc); };
+          const esc = e => { if (e.key === 'Escape') close(); };
+          ov.addEventListener('click', close); document.addEventListener('keydown', esc);
+        });
+        document.getElementById('bc-vcf').addEventListener('click', async () => {
+          const name = `${card.name || 'Contacto'} - ${BC_ORG}.vcf`, blob = new Blob([bizVcard(card)], { type: 'text/vcard' });
+          if (brShareable()) {
+            try { const f = new File([blob], name, { type: 'text/vcard' }); if (navigator.canShare?.({ files: [f] })) { await navigator.share({ files: [f], title: card.name }); return; } }
+            catch (err) { if (err?.name === 'AbortError') return; }
+          }
+          const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+        });
+        draw();
+      } catch (err) { box.innerHTML = `<div class="error-box">${escapeHtml(err.message)}</div>`; }
     }
     // ================= ASSINATURA DE EMAIL (Outlook) =================
     // HTML "à prova de Outlook": tabelas, estilos em linha, Arial, logo PNG alojado com largura e altura fixas
@@ -25418,7 +25639,8 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
     const TK_OPEN = ['new', 'review', 'planned'];
     let mockTickets = [
       { id: 'tk-1', kind: 'improvement', title: 'Exportar a agenda da semana em PDF', body: 'Para levar para obra em papel.', priority: 'normal', status: 'planned', page: 'Agenda', device: 'Mac · 1440 px', created_by: 'm2', created_at: '2026-10-01T09:12:00Z', author_seen: true },
-      { id: 'tk-2', kind: 'bug', title: 'O separador Câmara demora a abrir no iPhone', body: '', priority: 'urgent', status: 'new', page: 'Projeto', device: 'iPhone · 390 px', created_by: 'mock-member-1', created_at: '2026-10-05T16:40:00Z', author_seen: true }
+      { id: 'tk-2', kind: 'bug', title: 'O separador Câmara demora a abrir no iPhone', body: '', priority: 'urgent', status: 'new', page: 'Projeto', device: 'iPhone · 390 px', created_by: 'mock-member-1', created_at: '2026-10-05T16:40:00Z', author_seen: true },
+      { id: 'tk-3', kind: 'improvement', title: 'Proposta de Honorários - permitir desconto em %', body: '', priority: 'urgent', status: 'done', status_note: 'Já está: no Valor da proposta há **+ Desconto (%)**. Escreves a percentagem em «ou Valor» e aplica-se aos honorários (não às avenças).', status_image: 'assets/news/desconto.jpg', status_nav: 'nav:pipeline', status_changed_at: '2026-10-13T10:00:00Z', page: 'Proposta de honorários', device: 'Mac · 1440 px', created_by: 'mock-member-1', created_at: '2026-10-12T16:40:00Z', author_seen: false }
     ];
     let mockTicketVotes = [{ ticket_id: 'tk-1', member_id: 'm3' }, { ticket_id: 'tk-1', member_id: 'mock-member-1' }];
     let mockTicketComments = [{ id: 'tc-1', ticket_id: 'tk-1', member_id: 'mock-member-1', body: 'Boa ideia, fica para a próxima ronda.', created_at: '2026-10-02T10:00:00Z' }];
@@ -26437,6 +26659,8 @@ ${phones ? row(phones, 'padding-top:2px;font-family:Arial,Helvetica,sans-serif;f
       { group: 'Ajustes', label: 'Modo leve (computadores mais antigos): ligar / desligar', keys: 'modo leve lento rapido performance desempenho animacoes computador antigo', run: () => { const on = !document.documentElement.classList.contains('k-lite'); kLite.set(on); showToast(on ? 'Modo leve ligado: menos efeitos, mais rapidez.' : 'Modo leve desligado.'); } },
       { group: 'Ir para', label: 'Assinatura de email (Outlook)', keys: 'assinatura email outlook signature mail', run: () => { navStack = []; openBrandModule('sig'); } },
       { group: 'Ir para', label: 'Brandbook', keys: 'brandbook marca imagem logotipo identidade', run: () => openBrandModule() },
+      { group: 'Ir para', label: 'O meu cartão digital (QR)', keys: 'cartao visita digital qr codigo contacto vcard partilhar cliente whatsapp', run: () => { navStack = []; openBrandModule('card'); } },
+      { group: 'Ir para', label: 'Novidades da app', keys: 'novidades novo novas funcionalidades atualizacoes o que mudou', run: () => openNewsHistory() },
       { group: 'Ir para', label: 'Fundos de ecrã', keys: 'fundo fundos ecra wallpaper papel parede ambiente trabalho iphone ipad 4k', run: () => { navStack = []; openBrandModule('walls'); } },
       { group: 'Ir para', label: 'Contactos (fornecedores, especialidades, entidades)', keys: 'contactos fornecedores fornecedor materiais servicos especialidades engenheiros camara caixilharia avac empreiteiros telefone', run: () => NAV_ACTIONS.contacts() },
       { group: 'Criar', label: 'Novo contacto (fornecedor, especialidade…)', keys: 'novo contacto fornecedor adicionar', run: () => openContactModal(null) },
