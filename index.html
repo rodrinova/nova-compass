@@ -8338,7 +8338,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     }
     // Documentos abertos numa janela à parte (resumos, propostas, atas, mapa de férias): na app instalada no telemóvel
     // essa janela não tem barra do browser, por isso leva um botão para voltar (não sai na impressão).
-    function kDocBack(w) {
+    function kDocBack(w, pdfOpts) {
+      kDocPdf(w, pdfOpts);
       try {
         const d = w.document;
         if (!d.body || d.getElementById('k-doc-back')) return;
@@ -8354,6 +8355,105 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         });
         d.body.insertBefore(b, d.body.firstChild);
       } catch (_) { /* janela de outro domínio ou já fechada */ }
+    }
+    // No iPad e no iPhone a app instalada não imprime (window.print não faz nada): aí o botão gera o PDF na própria
+    // app (páginas A4 como imagem, cortadas entre blocos) e abre a partilha (Guardar em Ficheiros, Mail, AirDrop, Imprimir).
+    const kTouchDoc = () => matchMedia('(pointer: coarse)').matches || /iPad|iPhone|iPod/.test(navigator.userAgent + navigator.platform) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform));
+    function kDocPdf(w, opts = {}) {
+      try {
+        const d = w.document, btn = d.querySelector('.bar button');
+        if (!btn || !kTouchDoc()) return;
+        const en = d.documentElement.lang === 'en', L = (pt, enT) => en ? enT : pt;
+        const name = (d.title || 'NOVA').replace(/[\\/:*?"<>|]/g, '-').trim() + '.pdf';
+        btn.removeAttribute('onclick'); btn.onclick = null;
+        btn.textContent = L('Guardar PDF', 'Save PDF');
+        let blob = null;
+        const share = async () => {
+          const file = new w.File([blob], name, { type: 'application/pdf' });
+          if (w.navigator.canShare?.({ files: [file] })) { await w.navigator.share({ files: [file], title: name }); return; }
+          const a = d.createElement('a'); a.href = w.URL.createObjectURL(blob); a.download = name; d.body.appendChild(a); a.click(); a.remove();
+        };
+        btn.addEventListener('click', async () => {
+          if (blob) { try { await share(); } catch (err) { if (err?.name !== 'AbortError') w.alert(L('Não foi possível partilhar: ', 'Could not share: ') + err.message); } return; }
+          btn.disabled = true; btn.textContent = L('A preparar o PDF…', 'Preparing PDF…');
+          try {
+            blob = await kMakeDocPdf(opts.html ? opts.html() : '<!doctype html>' + d.documentElement.outerHTML, (i, n) => { btn.textContent = L(`A preparar o PDF… ${i}/${n}`, `Preparing PDF… ${i}/${n}`); });
+            btn.textContent = L('Partilhar PDF', 'Share PDF');
+            try { await share(); }
+            catch (err) { if (err?.name !== 'AbortError') btn.textContent = L('PDF pronto · toca para partilhar', 'PDF ready · tap to share'); }   // a partilha pede um toque novo
+          } catch (err) {
+            blob = null; btn.textContent = L('Guardar PDF', 'Save PDF');
+            w.alert(L('Não foi possível gerar o PDF: ', 'Could not create the PDF: ') + err.message);
+          } finally { btn.disabled = false; }
+        });
+      } catch (_) { /* janela fechada */ }
+    }
+    async function kMakeDocPdf(html, onStep) {
+      await Promise.all([ppLoadScript(H2C_URL), ppLoadScript(JSPDF_URL)]);
+      if (/family=Inter/.test(html)) await ppEnsureInter();
+      const W = 794, H = 1123, M = 38;   // A4 a 96 dpi; margem ~10 mm
+      const fr = document.createElement('iframe');
+      fr.setAttribute('aria-hidden', 'true');
+      fr.style.cssText = `position:fixed;left:-10000px;top:0;width:${W}px;height:${H}px;border:0;`;
+      document.body.appendChild(fr);
+      try {
+        const doc = fr.contentDocument;
+        doc.open(); doc.write(html); doc.close();
+        const st = doc.createElement('style');
+        st.textContent = '.bar,#k-doc-back{display:none!important} *{hyphens:manual!important;-webkit-hyphens:manual!important;font-feature-settings:normal!important}';
+        doc.head.appendChild(st);
+        for (let i = 0; i < 100 && (doc.getElementById('flow') || (/class="page/.test(html) && !doc.querySelector('.page:not(.cover)'))); i++) await new Promise(r => setTimeout(r, 100));
+        await Promise.all([...doc.images].map(im => im.complete ? null : new Promise(r => { im.onload = im.onerror = r; setTimeout(r, 8000); })));
+        await doc.fonts?.ready;
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+        const shot = (el, o) => window.html2canvas(el, { scale: 2, useCORS: true, logging: false, windowWidth: W, ...o });
+        const pages = [...doc.querySelectorAll('.page')];
+        if (pages.length) {   // documento já paginado (proposta): uma imagem por página
+          for (let i = 0; i < pages.length; i++) {
+            onStep && onStep(i + 1, pages.length);
+            const c = await shot(pages[i], { backgroundColor: '#FFFFFF' });
+            if (i) pdf.addPage();
+            pdf.addImage(c.toDataURL('image/jpeg', 0.85), 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+          }
+          return pdf.output('blob');
+        }
+        // Documento contínuo: largura A4 e cortes entre blocos (nunca a meio de uma linha)
+        const st2 = doc.createElement('style');
+        st2.textContent = `body{max-width:none!important;margin:0!important;padding:${M}px ${M}px 0!important}`;
+        doc.head.appendChild(st2);
+        await new Promise(r => setTimeout(r, 60));
+        const body = doc.body, total = Math.ceil(body.scrollHeight), bg = getComputedStyle(doc.documentElement).backgroundColor;
+        const fill = /rgba?\(0, 0, 0, 0\)|transparent/.test(bg) ? '#FFFFFF' : bg;
+        const top = el => el.getBoundingClientRect().top + doc.defaultView.scrollY, bottom = el => el.getBoundingClientRect().bottom + doc.defaultView.scrollY;
+        const forced = [...body.querySelectorAll('*')].filter(el => /page|always/.test(getComputedStyle(el).breakBefore || '')).map(top).filter(y => y > M + 5);
+        const strong = [...body.querySelectorAll(':scope > *, section, .kpis, .two, .scen, figure, header, footer, h2 + *')].map(bottom);
+        const weak = [...body.querySelectorAll('tr, li, p, .kpi, img, h3, td > *')].map(bottom);
+        const cuts = [M];
+        let y = M;
+        while (y < total - 4) {
+          const room = H - 2 * M, lim = y + room;
+          if (lim >= total) break;
+          const f = forced.find(v => v > y + 20 && v <= lim);
+          const pick = (arr, minFrac) => arr.filter(v => v > y + room * minFrac && v <= lim).reduce((a, b) => Math.max(a, b), -1);
+          let next = f != null ? f : pick(strong, .55);
+          if (next < 0) next = pick(weak, .3);
+          if (next < 0) next = lim;
+          next = Math.ceil(next + 1);
+          cuts.push(next); y = next;
+        }
+        cuts.push(total);
+        const n = cuts.length - 1;
+        for (let i = 0; i < n; i++) {
+          onStep && onStep(i + 1, n);
+          const y0 = cuts[i], h = Math.max(1, cuts[i + 1] - y0);
+          const c = await shot(body, { x: 0, y: y0, width: W, height: h, backgroundColor: fill, windowHeight: total, scrollX: 0, scrollY: 0 });
+          if (i) pdf.addPage();
+          pdf.setFillColor(fill); pdf.rect(0, 0, 210, 297, 'F');
+          pdf.addImage(c.toDataURL('image/jpeg', 0.85), 'JPEG', 0, M * 210 / W, 210, h * 210 / W, undefined, 'FAST');
+        }
+        return pdf.output('blob');
+      } finally { fr.remove(); }
     }
     // Ata pronta a imprimir / guardar em PDF (para o arquivo no servidor), com as imagens no fim como anexos
     async function exportAtaPdf(n) {
@@ -21127,7 +21227,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const w = window.open('', '_blank');
       if (!w) { showToast('O navegador bloqueou a janela da proposta. Permite janelas deste site e tenta outra vez.', { type: 'error', ms: 7000 }); return; }
       const { html } = ppDocHtml(pp, S);
-      w.document.open(); w.document.write(html); w.document.close(); kDocBack(w);
+      w.document.open(); w.document.write(html); w.document.close(); kDocBack(w, { html: () => ppDocHtml(pp, S, { capture: true }).html });
     }
     function ppDocHtml(pp, S, opts = {}) {
       const c = pp.content, en = pp.language === 'en', e = escapeHtml, md = ppMd;
