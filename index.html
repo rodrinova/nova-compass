@@ -8407,14 +8407,15 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         await doc.fonts?.ready;
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
-        const shot = (el, o) => window.html2canvas(el, { scale: 2, useCORS: true, logging: false, windowWidth: W, ...o });
+        // 3× (≈290 dpi) e PNG, sem perdas: as letras ficam nítidas (o JPEG esbatia-as)
+        const shot = (el, o) => window.html2canvas(el, { scale: 3, useCORS: true, logging: false, windowWidth: W, ...o });
         const pages = [...doc.querySelectorAll('.page')];
         if (pages.length) {   // documento já paginado (proposta): uma imagem por página
           for (let i = 0; i < pages.length; i++) {
             onStep && onStep(i + 1, pages.length);
             const c = await shot(pages[i], { backgroundColor: '#FFFFFF' });
             if (i) pdf.addPage();
-            pdf.addImage(c.toDataURL('image/jpeg', 0.85), 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+            pdf.addImage(c, 'PNG', 0, 0, 210, 297, undefined, 'FAST');
           }
           return pdf.output('blob');
         }
@@ -8450,7 +8451,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           const c = await shot(body, { x: 0, y: y0, width: W, height: h, backgroundColor: fill, windowHeight: total, scrollX: 0, scrollY: 0 });
           if (i) pdf.addPage();
           pdf.setFillColor(fill); pdf.rect(0, 0, 210, 297, 'F');
-          pdf.addImage(c.toDataURL('image/jpeg', 0.85), 'JPEG', 0, M * 210 / W, 210, h * 210 / W, undefined, 'FAST');
+          pdf.addImage(c, 'PNG', 0, M * 210 / W, 210, h * 210 / W, undefined, 'FAST');
         }
         return pdf.output('blob');
       } finally { fr.remove(); }
