@@ -21901,14 +21901,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         p(md(c.exclusions.intro?.t));
         const ex = c.exclusions.rows.filter(x => x.t);
         const gOf = x => x.grp || (x.lib && S.lib.find(l => l.id === x.lib)?.grp) || '';
+        // Lista única, sem subcapítulos; os temas só servem para manter juntas as exclusões parecidas
         const gs = [...new Set(ex.map(gOf))];
-        if (gs.length > 1 || gs[0]) gs.forEach(g => unit(() => {
-          B.push(`<div class="b tr grp" data-keep="next"${U()}><span>${e(plSplit(g, en) || (en ? 'Other' : 'Outras'))}</span></div>`);
-          ex.filter(x => gOf(x) === g).forEach(x => B.push(row(`<span>${md(x.t, { para: false })}</span>`, '', '1fr')));
-        }));
-        else unit(() => {
+        unit(() => {
           B.push(row(`<span>${e(L.desc)}</span>`, 'th', '1fr'));
-          ex.forEach(x => B.push(row(`<span>${md(x.t, { para: false })}</span>`, '', '1fr')));
+          gs.forEach(g => ex.filter(x => gOf(x) === g).forEach(x => B.push(row(`<span>${md(x.t, { para: false })}</span>`, '', '1fr'))));
         });
         note(c.exclusions.notes);
       }
