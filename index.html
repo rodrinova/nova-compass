@@ -21835,7 +21835,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       // Valor
       h2(L.value);
       p(md(c.value.intro?.t));
-      const allL = c.value.lines, lines = allL.filter(l => l.t || ppLineAmount(l, allL));
+      const allL = c.value.lines, lines = allL.filter(l => ppIsDisc(l) ? ppLineAmount(l, allL) : l.t || ppLineAmount(l, allL)); // descontos a 0 € não aparecem
       const pctOf = l => l.kind === 'discp' ? nf(Math.abs(Number(l.v) || 0)) + '%' : '';
       const discT = l => l.kind === 'discp' && !/%/.test(l.t || '') ? `${l.t || ''} (${pctOf(l)})` : l.t;
       if (lines.length) unit(() => {
