@@ -15,6 +15,13 @@ function canvas(w, h) { const cv = document.getElementById('c'); cv.width = w; c
 
 window.render = (design, mode, w, h) => {
   const g = canvas(w, h), P = PAL[mode], port = h > w * 1.2;
+  if (design === 'assinatura') {   // o fundo da marca: o NOVA ao centro, com a luz à volta
+    const s = spot(w, h, true), fy = port ? .5 : .47;
+    D.background(g, design, mode, w, h, { focus: { fx: .5, fy } });
+    D.logo(g, w / 2, h * fy, s.lw * w * (port ? .85 : 1), P.ink);
+    D.grain(g, w, h, 1.6, 7);
+    return true;
+  }
   if (design === 'monograma') {
     const nh = (port ? 1.05 : 1.25) * h, k = nh / 382;
     D.background(g, design, mode, w, h, { mono: { x: port ? w / 2 - 353 * k * 0.55 : w - 353 * k * 0.78, y: port ? h * 0.08 : h * 0.06, h: nh } });
@@ -27,30 +34,19 @@ window.render = (design, mode, w, h) => {
 };
 
 // ---------- LinkedIn ----------
-// Os mesmos quatro desenhos dos fundos de ecrã (Essencial, Monograma, Topografia, Luz), em claro e escuro.
+// O fundo assinatura (o mesmo dos fundos de ecrã), em claro e escuro.
 // kind: cover (página da empresa, 4200×700), life (separador Vida, 2256×752), personal (perfil de cada pessoa, 1584×396)
 // O LinkedIn põe o logótipo da página / a fotografia de perfil por cima do canto inferior esquerdo da capa,
 // e no telemóvel corta as pontas: o logótipo e a frase ficam no meio (página) ou à direita (perfil pessoal).
 const TAGLINE = 'Creating Impact. Driving Returns. Building Legacy.';
 window.renderLI = async (kind, design, mode, w, h) => {
   await document.fonts.load('500 40px Inter');
-  const g = canvas(w, h), P = PAL[mode], sc = h / 700;
+  const g = canvas(w, h), P = PAL[mode];
+  // regras do logótipo: largura fixa por formato, frase a 4,6 % da largura do NOVA e a 1,6× o seu tamanho por baixo
   const cx = kind === 'personal' ? w * .74 : w * .5, cy = h * (kind === 'life' ? .5 : .46);
   const lw = kind === 'personal' ? w * .22 : kind === 'life' ? w * .2 : w * .16;
-  const mono = { x: w * (kind === 'personal' ? .02 : .74), y: -h * .35, h: h * 2.1 };
-  D.background(g, design, mode, w, h, {
-    sc, mono,
-    topo: { zoom: kind === 'cover' ? 1.35 : 1.2, density: 220 },
-    glow: kind === 'personal' ? { a: [.98, 1.1], b: [.3, -.3], ra: .55, rb: .5 } : { a: [.15, 1.3], b: [.9, -.4], ra: .6, rb: .55 }
-  });
-  // véu por trás do logótipo para as curvas não lhe passarem por cima
-  if (design === 'topografia') {
-    const gr = g.createRadialGradient(cx, cy, 0, cx, cy, lw * .85);
-    gr.addColorStop(0, P.bg); gr.addColorStop(.6, P.bg); gr.addColorStop(1, P.bg + '00');
-    g.fillStyle = gr; g.fillRect(0, 0, w, h);
-  }
-  const tag = kind !== 'life';
-  const lh = lw * D.LH / D.LW, ly = tag ? cy - lh * .35 : cy;
+  const lh = lw * D.LH / D.LW, tag = kind !== 'life', ly = tag ? cy - lh * .35 : cy;
+  D.background(g, 'assinatura', mode, w, h, { focus: { fx: cx / w, fy: ly / h } });
   D.logo(g, cx, ly, lw, P.ink);
   if (tag) {
     const fs = Math.round(lw * .046);
@@ -58,7 +54,7 @@ window.renderLI = async (kind, design, mode, w, h) => {
     if ('letterSpacing' in g) g.letterSpacing = (fs * .04) + 'px';
     g.fillText(TAGLINE, cx, ly + lh / 2 + fs * 1.6);
   }
-  D.grain(g, w, h, design === 'luz' ? 5 : 3, 23);
+  D.grain(g, w, h, 1.6, 23);
   return true;
 };
 // Logótipo da página (quadrado): palavra NOVA ou o N, em fundo claro ou ameixa
