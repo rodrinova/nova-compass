@@ -12,4 +12,11 @@ const only = process.argv[2] ? process.argv[2].split(',') : null, sizes = proces
    await pg.evaluate(([d, mode, w, h]) => window.render(d, mode, w, h), [d, mode, w, h]);
    await (await pg.$('#c')).screenshot({ path: `${__dirname}/../fundos/${d}-${mode}-${s}.png` });
  }
+ // iPhone sem logótipo, para o ecrã principal (os ícones ficam por cima do NOVA)
+ if (!only || only.includes('assinatura')) for (const mode of ['light', 'dark']) {
+   const [w, h] = SIZES.iphone;
+   await pg.setViewportSize({ width: w, height: h });
+   await pg.evaluate(([mode, w, h]) => window.render('assinatura', mode, w, h, { noLogo: true }), [mode, w, h]);
+   await (await pg.$('#c')).screenshot({ path: `${__dirname}/../fundos/assinatura-${mode}-iphone-limpo.png` });
+ }
  await b.close(); })();

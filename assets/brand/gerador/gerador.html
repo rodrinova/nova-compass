@@ -13,12 +13,12 @@ function spot(w, h, center) {
 const drawLogo = (g, w, h, s, color) => D.logo(g, s.x * w, s.y * h, s.lw * w, color);
 function canvas(w, h) { const cv = document.getElementById('c'); cv.width = w; cv.height = h; return cv.getContext('2d'); }
 
-window.render = (design, mode, w, h) => {
+window.render = (design, mode, w, h, opt = {}) => {
   const g = canvas(w, h), P = PAL[mode], port = h > w * 1.2;
-  if (design === 'assinatura') {   // o fundo da marca: o NOVA ao centro, com a luz à volta
-    const s = spot(w, h, true), fy = port ? .5 : .47;
-    D.background(g, design, mode, w, h, { focus: { fx: .5, fy } });
-    D.logo(g, w / 2, h * fy, s.lw * w * (port ? .85 : 1), P.ink);
+  if (design === 'assinatura') {   // o fundo da marca: o NOVA ao centro, o feixe a passar pelo N
+    const s = spot(w, h, true), fy = port ? .5 : .47, lw = s.lw * w * (port ? .85 : 1);
+    D.background(g, design, mode, w, h, { focus: { fx: .5, fy, bx: D.nCenterX(w / 2, lw) / w, by: fy } });
+    if (!opt.noLogo) D.logo(g, w / 2, h * fy, lw, P.ink);   // sem logótipo: ecrã principal do iPhone (os ícones ficam por cima)
     D.grain(g, w, h, 1.6, 7);
     return true;
   }
@@ -42,18 +42,18 @@ const TAGLINE = 'Creating Impact. Driving Returns. Building Legacy.';
 window.renderLI = async (kind, design, mode, w, h) => {
   await document.fonts.load('500 40px Inter');
   const g = canvas(w, h), P = PAL[mode];
-  // regras do logótipo: largura fixa por formato, frase a 4,6 % da largura do NOVA e a 1,6× o seu tamanho por baixo
-  const cx = kind === 'personal' ? w * .74 : w * .5, cy = h * (kind === 'life' ? .5 : .46);
-  const lw = kind === 'personal' ? w * .22 : kind === 'life' ? w * .2 : w * .16;
-  const lh = lw * D.LH / D.LW, tag = kind !== 'life', ly = tag ? cy - lh * .35 : cy;
-  D.background(g, 'assinatura', mode, w, h, { focus: { fx: cx / w, fy: ly / h } });
+  // Regras do logótipo: largura fixa por formato; a frase numa linha própria a 8 % da largura do NOVA
+  // (legível no tamanho a que o LinkedIn mostra a capa, ~1128 px no computador), a 0,9× esse tamanho por baixo.
+  const personal = kind === 'personal';
+  const cx = personal ? w * .72 : w * .5;
+  const lw = personal ? w * .2 : kind === 'life' ? w * .19 : w * .15;
+  const lh = lw * D.LH / D.LW, fs = Math.round(lw * (personal ? .072 : .08)), gap = fs * .9;
+  const ly = h * .5 - (fs + gap) / 2;
+  D.background(g, 'assinatura', mode, w, h, { focus: { fx: cx / w, fy: ly / h, bx: D.nCenterX(cx, lw) / w, by: ly / h } });
   D.logo(g, cx, ly, lw, P.ink);
-  if (tag) {
-    const fs = Math.round(lw * .046);
-    g.font = `500 ${fs}px Inter`; g.fillStyle = P.soft; g.textAlign = 'center'; g.textBaseline = 'top';
-    if ('letterSpacing' in g) g.letterSpacing = (fs * .04) + 'px';
-    g.fillText(TAGLINE, cx, ly + lh / 2 + fs * 1.6);
-  }
+  g.font = `500 ${fs}px Inter`; g.fillStyle = P.soft; g.textAlign = 'center'; g.textBaseline = 'top';
+  if ('letterSpacing' in g) g.letterSpacing = (fs * .005) + 'px';
+  g.fillText(TAGLINE, cx, ly + lh / 2 + gap);
   D.grain(g, w, h, 1.6, 23);
   return true;
 };
@@ -62,7 +62,7 @@ window.renderLogo = (kind, bg, w) => {
   const g = canvas(w, w), plum = '#714D79', light = '#F4F3EF';
   g.fillStyle = bg === 'ameixa' ? plum : light; g.fillRect(0, 0, w, w);
   const ink = bg === 'ameixa' ? light : plum;
-  if (kind === 'palavra') D.logo(g, w / 2, w / 2, w * .7, ink);
+  if (kind === 'palavra') D.logo(g, w / 2, w / 2, w * .78, ink);
   else { const nh = w * .5, nw = nh * 353 / 382; D.monogram(g, w / 2 - nw / 2, w / 2 - nh / 2, nh, ink); }
   return true;
 };

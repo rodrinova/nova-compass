@@ -64,15 +64,18 @@
     gr.addColorStop(0, rgba(P.glowB)); gr.addColorStop(.5, rgba(P.glowB, .35)); gr.addColorStop(1, rgba(P.glowB, 0)); g.fillStyle = gr; g.fillRect(0, 0, w, h);
   }
   // Fundo assinatura: um só desenho para toda a marca (fundos de ecrã, LinkedIn, posts, cartão).
-  // Luz ameixa a subir de baixo à esquerda, luz de areia a cair de cima à direita e um feixe suave
-  // na diagonal do N do logótipo (55,7°), que passa por trás do NOVA; um halo leve dá-lhe foco.
-  // Sem grão à vista: só o mínimo para não haver degraus nos gradientes.
+  // A ideia é o feixe: luz na diagonal do N do logótipo (55,7°), a passar pelo próprio traço do N e a ganhar
+  // força para baixo e para a direita (a direção certa). À volta, luz ameixa a subir de baixo à esquerda e areia
+  // a cair de cima à direita, discretas; um halo leve só para assentar o logótipo. Grão só para não haver degraus.
   const SIG = {
-    light: { base: ['#F7F6F2', '#EEEBE5'], a: [113, 77, 121, .2], b: [224, 205, 180, .62], beam: [255, 255, 255, .5], halo: [255, 255, 255, .42] },
-    dark: { base: ['#1A1817', '#0F0E0D'], a: [124, 84, 132, .5], b: [140, 108, 76, .18], beam: [196, 168, 206, .06], halo: [181, 155, 187, .07] }
+    light: { base: ['#F7F6F2', '#EEEBE5'], a: [113, 77, 121, .16], b: [224, 205, 180, .5], beam: [255, 255, 255, .62], halo: [255, 255, 255, .22] },
+    dark: { base: ['#1A1817', '#0F0E0D'], a: [124, 84, 132, .46], b: [140, 108, 76, .16], beam: [200, 172, 210, .15], halo: [181, 155, 187, .04] }
   };
   const N_ANGLE = 55.7 * Math.PI / 180;
-  function signature(g, mode, w, h, { fx = .5, fy = .47 } = {}) {
+  // Centro do N num logótipo com centro em cx e largura lw (o N ocupa x 0..353 de 1362)
+  const nCenterX = (cx, lw) => cx - lw * .37;
+  // fx, fy: halo (normalmente o centro do logótipo); bx, by: por onde passa o feixe (o centro do N), em fração
+  function signature(g, mode, w, h, { fx = .5, fy = .47, bx = null, by = null } = {}) {
     const S = SIG[mode], d = Math.hypot(w, h), m = Math.min(w, h);
     let gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, S.base[0]); gr.addColorStop(1, S.base[1]);
     g.fillStyle = gr; g.fillRect(0, 0, w, h);
@@ -83,13 +86,21 @@
     };
     bloom(w * .04, h * 1.08, d * .62, S.a);
     bloom(w * .97, -h * .1, d * .52, S.b);
-    // feixe na diagonal do N, a passar pelo foco
-    g.save(); g.translate(fx * w, fy * h); g.rotate(-(Math.PI / 2 - N_ANGLE));
-    const bw = Math.max(m * 1.7, w * .34);
-    gr = g.createLinearGradient(-bw / 2, 0, bw / 2, 0);
-    for (let k = 0; k <= 16; k++) { const t = k / 16; gr.addColorStop(t, rgba(S.beam, Math.exp(-(((t - .5) / .2) ** 2)))); }   // perfil gaussiano: luz, não faixa
-    g.fillStyle = gr; g.fillRect(-bw / 2, -d, bw, 2 * d); g.restore();
-    bloom(fx * w, fy * h, m * .55, S.halo);
+    // o feixe, desenhado à parte para se poder esbater ao longo do comprimento
+    const ax = (bx ?? fx) * w, ay = (by ?? fy) * h;
+    const off = document.createElement('canvas'); off.width = w; off.height = h;
+    const o = off.getContext('2d');
+    o.translate(ax, ay); o.rotate(-(Math.PI / 2 - N_ANGLE));   // o eixo y local segue a diagonal do N (para baixo e para a direita)
+    const bw = Math.max(m * 1.3, w * .28);
+    gr = o.createLinearGradient(-bw / 2, 0, bw / 2, 0);
+    for (let k = 0; k <= 20; k++) { const t = k / 20; gr.addColorStop(t, rgba(S.beam, Math.exp(-(((t - .5) / .11) ** 2)))); }   // gaussiano: luz, não risca
+    o.fillStyle = gr; o.fillRect(-bw / 2, -d, bw, 2 * d);
+    o.globalCompositeOperation = 'destination-in';
+    const lg = o.createLinearGradient(0, -d * .55, 0, d * .55);
+    lg.addColorStop(0, 'rgba(0,0,0,.18)'); lg.addColorStop(.5, 'rgba(0,0,0,.7)'); lg.addColorStop(1, 'rgba(0,0,0,1)');
+    o.fillStyle = lg; o.fillRect(-bw / 2, -d, bw, 2 * d);
+    g.drawImage(off, 0, 0);
+    bloom(fx * w, fy * h, m * .5, S.halo);
   }
   // Fundo de um desenho, sem logótipo nem grão. mono: onde fica o N do Monograma ({ x, y, h } em píxeis)
   function background(g, design, mode, w, h, o = {}) {
@@ -101,5 +112,5 @@
     if (design === 'luz') glow(g, w, h, P, o.glow || {});
   }
 
-  window.NOVA_DRAW = { PAL, signature, LW, LH, logo, monogram, grain, contours, glow, background, rgba, mulberry };
+  window.NOVA_DRAW = { PAL, signature, nCenterX, LW, LH, logo, monogram, grain, contours, glow, background, rgba, mulberry };
 })();
