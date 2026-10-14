@@ -15,8 +15,8 @@ const SIZES = { cover: [4200, 700], life: [2256, 752], personal: [1584, 396] };
    await (await pg.$('#c')).screenshot({ path: `${OUT}${kind}-${d}-${mode}.png` });
  }
  for (const k of ['palavra', 'n']) for (const bg of ['claro', 'ameixa']) {
-   await pg.setViewportSize({ width: 400, height: 400 });
-   await pg.evaluate(([k, bg]) => window.renderLogo(k, bg, 400), [k, bg]);
+   await pg.setViewportSize({ width: 800, height: 800 });
+   await pg.evaluate(([k, bg]) => window.renderLogo(k, bg, 800), [k, bg]);
    await (await pg.$('#c')).screenshot({ path: `${OUT}logo-${k}-${bg}.png` });
  }
  await b.close(); })();

@@ -3243,23 +3243,38 @@
   @media (max-width: 899px) { .nw-back { left: 16px; translate: none; max-width: calc(100vw - 104px); bottom: calc(var(--tab-h) + 14px + var(--safe-b)); } }
   /* ---- Cartão digital ---- */
   .bc-wrap { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: var(--sp-5); align-items: start; }
-  .bc-card { position: relative; border-radius: 18px; background: radial-gradient(120% 150% at 2% 108%, rgba(113,77,121,.22), rgba(113,77,121,.1) 35%, transparent 62%), radial-gradient(110% 130% at 98% -12%, rgba(224,205,180,.66), rgba(224,205,180,.25) 38%, transparent 64%), linear-gradient(55.7deg, transparent 28%, rgba(255,255,255,.5) 50%, transparent 72%), linear-gradient(180deg, #F7F6F2, #EEEBE5); color: #1B1A19; padding: 26px 26px 22px; display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: end; box-shadow: 0 1px 2px rgba(0,0,0,.05), 0 18px 40px rgba(0,0,0,.12); border: 1px solid #E4E3DE; overflow: hidden; }
-  .bc-card img.bc-logo { height: 22px; display: block; margin-bottom: 30px; }
+  /* Cartão digital: proporção de cartão de visita (85,6 × 54), a luz da marca e o feixe a passar pelo N do logótipo */
+  .bc-card { position: relative; isolation: isolate; width: 100%; max-width: 480px; aspect-ratio: 85.6 / 54; border-radius: 16px; background: radial-gradient(120% 150% at 2% 108%, rgba(113,77,121,.18), rgba(113,77,121,.08) 35%, transparent 62%), radial-gradient(110% 130% at 98% -12%, rgba(224,205,180,.52), rgba(224,205,180,.2) 38%, transparent 64%), linear-gradient(180deg, #F7F6F2, #EEEBE5); color: #1B1A19; padding: 24px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: end; box-shadow: 0 1px 2px rgba(27,26,25,.06), 0 12px 32px rgba(27,26,25,.10); overflow: hidden; }
+  .bc-card::before { content: ''; position: absolute; left: 34px; top: 35px; width: 1800px; height: 1800px; transform: translate(-50%, -50%); background: linear-gradient(55.7deg, transparent 44%, rgba(255,255,255,0.046) 46.2%, rgba(255,255,255,0.220) 48.3%, rgba(255,255,255,0.58) 50%, rgba(255,255,255,0.220) 51.7%, rgba(255,255,255,0.046) 53.8%, transparent 56%); pointer-events: none; z-index: -1; }
+  .bc-card > div:first-child { align-self: stretch; display: flex; flex-direction: column; justify-content: space-between; min-width: 0; }
+  .bc-card img.bc-logo { height: 22px; width: auto; display: block; align-self: flex-start; }
   .bc-card .bc-name { font-size: 20px; font-weight: 600; letter-spacing: -.01em; line-height: 1.2; }
-  .bc-card .bc-role { font-size: 13px; color: #6B6660; margin-top: 2px; }
-  .bc-card .bc-lines { margin-top: 16px; font-size: 12.5px; line-height: 1.7; color: #3A3835; word-break: break-word; }
-  .bc-card .bc-lines span { color: #8C8780; display: inline-block; width: 14px; }
+  .bc-card .bc-role { font-size: 13px; color: #5E5953; margin-top: 3px; }
+  .bc-card .bc-lines { margin-top: 12px; font-size: 12.5px; line-height: 1.6; color: #3A3835; display: grid; gap: 2px; }
+  .bc-line { display: grid; grid-template-columns: 16px minmax(0, 1fr); column-gap: 7px; align-items: center; }
+  .bc-line svg { width: 14px; height: 14px; display: block; color: #8C8780; }
+  .bc-line span:last-child { overflow-wrap: anywhere; }
   .bc-qr { background: #fff; border-radius: 12px; padding: 8px; box-shadow: 0 0 0 1px rgba(27,26,25,.08), 0 6px 18px rgba(27,26,25,.08); line-height: 0; }
-  .bc-show > svg { background: #fff; border-radius: 22px; padding: 14px; box-shadow: 0 0 0 1px rgba(27,26,25,.06), 0 18px 50px rgba(27,26,25,.12); }
-  .bc-qr svg { width: 128px; height: 128px; display: block; }
-  .bc-acts { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-4); }
-  .bc-acts .primary-btn, .bc-acts .secondary-btn { width: auto; margin: 0; padding: 0 16px; }
-  .bc-show { position: fixed; inset: 0; z-index: var(--z-tour); background: radial-gradient(120% 150% at 2% 108%, rgba(113,77,121,.22), rgba(113,77,121,.1) 35%, transparent 62%), radial-gradient(110% 130% at 98% -12%, rgba(224,205,180,.66), rgba(224,205,180,.25) 38%, transparent 64%), linear-gradient(55.7deg, transparent 28%, rgba(255,255,255,.5) 50%, transparent 72%), linear-gradient(180deg, #F7F6F2, #EEEBE5); color: #1B1A19; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px; text-align: center; }
-  .bc-show svg { width: min(78vw, 62vh, 460px); height: auto; }
-  .bc-show b { font-size: 22px; font-weight: 600; } .bc-show small { color: #6B6660; font-size: 14px; }
-  .bc-show img { height: 26px; }
-  .bc-show .bc-close { position: absolute; top: max(14px, env(safe-area-inset-top)); right: 14px; border: 1px solid #D9D6D0; background: #fff; border-radius: 999px; padding: 9px 16px; font-family: inherit; font-size: 14px; font-weight: 600; color: #4A2350; cursor: pointer; }
-  @media (max-width: 760px) { .bc-wrap { grid-template-columns: 1fr; } .bc-card { padding: 20px; } .bc-qr svg { width: 104px; height: 104px; } }
+  .bc-qr svg { width: 120px; height: 120px; display: block; }
+  .bc-acts { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-4); max-width: 480px; }
+  .bc-acts .primary-btn, .bc-acts .secondary-btn { width: auto; margin: 0; padding: 0 16px; flex: 1 1 auto; }
+  /* Mostrar ao cliente: o ecrã que o cliente vê. Hierarquia por espaçamento, não por gap igual */
+  .bc-show { position: fixed; inset: 0; z-index: var(--z-tour); isolation: isolate; overflow: hidden; background: radial-gradient(120% 150% at 2% 108%, rgba(113,77,121,.18), rgba(113,77,121,.08) 35%, transparent 62%), radial-gradient(110% 130% at 98% -12%, rgba(224,205,180,.52), rgba(224,205,180,.2) 38%, transparent 64%), linear-gradient(180deg, #F7F6F2, #EEEBE5); color: #1B1A19; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom)); text-align: center; touch-action: none; }
+  .bc-show::before { content: ''; position: absolute; left: 50%; top: 22%; width: 260vmax; height: 260vmax; transform: translate(-50%, -50%); background: linear-gradient(55.7deg, transparent 44%, rgba(255,255,255,0.044) 46.2%, rgba(255,255,255,0.209) 48.3%, rgba(255,255,255,0.55) 50%, rgba(255,255,255,0.209) 51.7%, rgba(255,255,255,0.044) 53.8%, transparent 56%); pointer-events: none; z-index: -1; }
+  .bc-show-logo img { height: 26px; width: auto; display: block; }
+  .bc-show-qr { margin-top: 40px; background: #fff; border-radius: 22px; padding: 14px; line-height: 0; box-shadow: 0 0 0 1px rgba(27,26,25,.06), 0 18px 50px rgba(27,26,25,.12); }
+  .bc-show-qr svg { width: min(72vw, 54vh, 420px); height: auto; display: block; }
+  .bc-show b { margin-top: 28px; font-size: 22px; font-weight: 600; letter-spacing: -.01em; }
+  .bc-show small { margin-top: 4px; color: #5E5953; font-size: 14px; }
+  .bc-show-hint { margin: 20px 0 0; color: #5E5953; font-size: 14px; }
+  .bc-show .bc-close { position: absolute; top: max(14px, env(safe-area-inset-top)); right: 14px; min-height: 44px; padding: 0 18px; border: 1px solid #D9D6D0; background: #fff; border-radius: 999px; font-family: inherit; font-size: 15px; font-weight: 600; color: #4A2350; cursor: pointer; }
+  @media (prefers-color-scheme: dark) {
+    .bc-show { background: radial-gradient(120% 150% at 2% 108%, rgba(124,84,132,.46), rgba(124,84,132,.2) 35%, transparent 62%), radial-gradient(110% 130% at 98% -12%, rgba(140,108,76,.16), rgba(140,108,76,.06) 38%, transparent 64%), linear-gradient(180deg, #1A1817, #0F0E0D); color: #F4F3EF; }
+    .bc-show::before { background: linear-gradient(55.7deg, transparent 44%, rgba(200,172,210,0.012) 46.2%, rgba(200,172,210,0.057) 48.3%, rgba(200,172,210,0.15) 50%, rgba(200,172,210,0.057) 51.7%, rgba(200,172,210,0.012) 53.8%, transparent 56%); }
+    .bc-show small, .bc-show-hint { color: #A8A29A; }
+    .bc-show .bc-close { background: #26232A; border-color: #3A3640; color: #E4D6E8; }
+  }
+  @media (max-width: 760px) { .bc-wrap { grid-template-columns: 1fr; } .bc-card { padding: 18px; gap: 12px; } .bc-qr svg { width: 92px; height: 92px; } .bc-card .bc-name { font-size: 18px; } }
   /* ---- Industrial: usos (indústria + comércio / serviços) ---- */
   .vt-sheet:not(.has-com) .vi-com { display: none; }
   .vi-mix-range { -webkit-appearance: none; appearance: none; width: 100%; height: 12px; margin: 12px 0 14px; border-radius: 99px; background: linear-gradient(90deg, var(--accent) var(--mixp, 80%), #C9A86A var(--mixp, 80%)); outline: none; }
@@ -3273,23 +3288,24 @@
   /* ---- Brandbook ---- */
   .br-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: var(--sp-5); }
   .br-bar .segmented { margin: 0; }
-  .br-lead { color: var(--text-2); font-size: var(--fs-md); line-height: 1.55; margin: 0 0 var(--sp-5); max-width: 640px; }
+  .br-lead { color: var(--text-2); font-size: var(--fs-md); line-height: 1.55; margin: 0 0 var(--sp-5); max-width: 62ch; text-wrap: pretty; }
   .br-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--sp-5); }
-  .br-grid.single { grid-template-columns: minmax(0, 720px); }
+  .br-grid.br-walls { grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); }
   .br-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-xl); overflow: hidden; display: flex; flex-direction: column; box-shadow: var(--shadow-sm); }
   .br-prev { position: relative; aspect-ratio: 16 / 10.5; background: var(--surface-2); border-bottom: 1px solid var(--border); overflow: hidden; }
   .br-prev img { position: absolute; display: block; transition: opacity .35s var(--ease, ease); }
   .br-desk { left: 6%; top: 9%; width: 76%; aspect-ratio: 16 / 9; border-radius: 6px; box-shadow: 0 0 0 1px rgba(0,0,0,.06), 0 10px 30px rgba(0,0,0,.12); }
-  .br-phone { right: 6%; bottom: 7%; height: 70%; aspect-ratio: 1320 / 2868; border-radius: 14px; border: 3px solid #1B1A19; box-shadow: 0 12px 30px rgba(0,0,0,.22); background: #1B1A19; }
+  .br-phone { right: 6%; bottom: 7%; height: 70%; aspect-ratio: 1320 / 2868; border-radius: 13% / 6%; border: 3px solid #1B1A19; box-shadow: 0 12px 30px rgba(0,0,0,.22); background: #1B1A19; }
   .br-info { padding: var(--sp-4) var(--sp-4) var(--sp-2); }
   .br-info b { display: block; font-size: var(--fs-lg); font-weight: var(--fw-semibold); letter-spacing: -.01em; }
   .br-info span { display: block; color: var(--text-2); font-size: var(--fs-sm); line-height: 1.5; margin-top: 2px; }
-  .br-dl { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-1-5); padding: var(--sp-2) var(--sp-4) var(--sp-4); margin-top: auto; }
-  .br-chip { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 7px 4px 6px; border-radius: var(--r-md); border: 1px solid var(--border); background: var(--surface-2); color: var(--text); text-decoration: none; transition: background .15s, border-color .15s, color .15s; min-height: var(--tap); justify-content: center; }
+  .br-dl { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: var(--sp-1-5); padding: var(--sp-2) var(--sp-4) var(--sp-4); margin-top: auto; }
+  .br-chip { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 7px 4px 6px; border-radius: var(--r-md); border: 1px solid var(--border); background: var(--surface-2); color: var(--text); text-decoration: none; transition: transform 120ms cubic-bezier(.23, 1, .32, 1), background .15s, border-color .15s, color .15s; min-height: var(--tap); justify-content: center; -webkit-tap-highlight-color: transparent; }
+  .br-chip:active { transform: scale(.97); }
   .br-chip b { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
   .br-chip b svg { width: 12px; height: 12px; color: var(--accent); }
-  .br-chip small { font-size: 10.5px; color: var(--text-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .br-chip:hover { background: var(--accent-soft); border-color: var(--accent-muted); }
+  .br-chip small { font-size: 11.5px; color: var(--text-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  @media (hover: hover) and (pointer: fine) { .br-chip:hover { background: var(--accent-soft); border-color: var(--accent-muted); } }
   .br-chip.busy { opacity: .55; pointer-events: none; }
   .br-how { margin-top: var(--sp-6); background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); }
   .br-how summary { cursor: pointer; padding: var(--sp-3) var(--sp-4); font-weight: var(--fw-semibold); font-size: var(--fs-md); list-style: none; display: flex; justify-content: space-between; align-items: center; }
@@ -3303,6 +3319,11 @@
   /* Brandbook → LinkedIn */
   .li-sub { margin: calc(-1 * var(--sp-2)) 0 var(--sp-5); }
   .li-sub .segmented { margin: 0; }
+  /* sub-separadores do LinkedIn: um nível abaixo dos separadores do Brandbook (sem caixa, ativo por cor e peso) */
+  .li-subtabs { display: flex; flex-wrap: wrap; gap: 4px 18px; border-bottom: 1px solid var(--border); }
+  .li-subtabs button { appearance: none; background: none; border: 0; padding: 8px 0 10px; margin-bottom: -1px; font: inherit; font-size: var(--fs-sm); font-weight: var(--fw-medium, 500); color: var(--text-2); cursor: pointer; border-bottom: 2px solid transparent; min-height: 36px; }
+  .li-subtabs button.active { color: var(--text); font-weight: var(--fw-semibold); border-bottom-color: var(--accent); }
+  @media (hover: hover) and (pointer: fine) { .li-subtabs button:hover { color: var(--text); } }
   .li-h { font-size: var(--fs-lg); font-weight: var(--fw-semibold); letter-spacing: -.01em; margin: var(--sp-6) 0 var(--sp-3); display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
   .li-h small { font-size: var(--fs-sm); font-weight: var(--fw-regular); color: var(--text-3); font-variant-numeric: tabular-nums; }
   .li-note { color: var(--text-2); font-size: var(--fs-sm); line-height: 1.55; margin: calc(-1 * var(--sp-1)) 0 var(--sp-3); max-width: 720px; }
@@ -3334,16 +3355,28 @@
   .li-form { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-xl); padding: var(--sp-4) var(--sp-5) var(--sp-5); box-shadow: var(--shadow-sm); min-width: 0; }
   .li-form .segmented { margin: 0; display: flex; flex-wrap: wrap; width: 100%; }
   .li-form .segmented button { flex: 1 1 auto; }
-  .li-form .segmented small { color: var(--text-3); font-size: 10.5px; margin-left: 3px; font-variant-numeric: tabular-nums; }
+  .li-form .segmented small { color: var(--text-2); font-size: 11.5px; margin-left: 3px; font-variant-numeric: tabular-nums; }
   .li-row { display: flex; gap: var(--sp-2); margin-top: var(--sp-3); }
   .li-row .segmented { flex: 1; }
   .li-photo { display: inline-flex; cursor: pointer; }
   .li-out { position: sticky; top: calc(var(--sp-4) + env(safe-area-inset-top, 0px)); min-width: 0; }
   .li-canvas-wrap { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-xl); padding: var(--sp-5); display: flex; justify-content: center; }
   #li-canvas { display: block; max-width: 100%; max-height: 60vh; width: auto; height: auto; border-radius: 6px; box-shadow: 0 0 0 1px rgba(0,0,0,.06), 0 14px 40px rgba(0,0,0,.14); }
-  .li-out-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); margin-top: var(--sp-3); }
+  .li-out-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); margin-top: var(--sp-3); }
+  #li-size { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .li-miss { margin-top: 6px; }
+  #li-dl:disabled { opacity: .45; cursor: not-allowed; }
   .li-out-foot .primary-btn { display: inline-flex; align-items: center; gap: 8px; }
-  @media (max-width: 900px) { .li-gen { grid-template-columns: 1fr; } .li-out { position: static; order: -1; } .li-canvas-wrap { padding: var(--sp-3); } #li-canvas { max-height: 55vh; } }
+  @media (max-width: 900px) {
+    .li-gen { grid-template-columns: 1fr; } .li-out { position: static; order: -1; } .li-canvas-wrap { padding: var(--sp-3); } #li-canvas { max-height: 55vh; }
+    /* enquanto se escreve, a pré-visualização (com o botão de descarregar) fica presa no topo, mais pequena */
+    .li-gen.typing .li-out { position: sticky; top: var(--li-top, 0px); z-index: 3; background: var(--bg); padding: 8px 0; }
+    .li-gen.typing #li-canvas { max-height: 30vh; }
+    .li-gen.typing .li-miss { display: none; }
+  }
+  /* o botão + flutuante não tapa as descargas do Brandbook */
+  body:has(#brand-view[style*="block"]) .fab-btn { display: none !important; }
+  @media (prefers-color-scheme: dark) { .br-prev .br-phone { border-color: #3A3836; } }
   @media (max-width: 520px) { .li-wide { grid-template-columns: 1fr; } .li-logos { grid-template-columns: 1fr 1fr; } }
   /* ---- Melhorias (tickets) ---- */
   .tk-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 10px; }
@@ -5303,10 +5336,10 @@
       if (reduceMotion.matches) return;
       root.querySelectorAll('.ind-main b, .hero-card b, .stat-value, .fg > b, .kpi b, .hours-total, .hs-tile b').forEach(el => {
         if (el.children.length || el.dataset.counted || el.closest('.rv:not(.rv-in)')) return;
-        const txt = el.textContent, m = txt.match(/-?\d{1,3}(?:[\s\u00a0\u202f]\d{3})*(?:,\d+)?|-?\d+(?:,\d+)?/);
+        const txt = el.textContent, m = txt.match(/-?\d{1,3}(?:[\s\u00a0\u00a0]\d{3})*(?:,\d+)?|-?\d+(?:,\d+)?/);
         if (!m) return;
         const numTxt = m[0], dec = (numTxt.split(',')[1] || '').length;
-        const target = Number(numTxt.replace(/[\s\u00a0\u202f]/g, '').replace(',', '.'));
+        const target = Number(numTxt.replace(/[\s\u00a0\u00a0]/g, '').replace(',', '.'));
         if (!isFinite(target) || Math.abs(target) < 2) return;
         const pre = txt.slice(0, m.index), post = txt.slice(m.index + numTxt.length);
         const fmt = v => pre + v.toLocaleString('pt-PT', { minimumFractionDigits: dec, maximumFractionDigits: dec }) + post;
@@ -23884,7 +23917,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     // A equipa só consulta e descarrega. Os fundos saem de assets/brand/gerador (o mesmo desenho em todos os tamanhos).
     const BR_DIR = 'assets/brand/fundos/';
     const BR_WALLS = [
-      ['assinatura', 'NOVA', 'O fundo da marca: o NOVA ao centro, com luz ameixa e areia à volta e um feixe suave na diagonal do N.']
+      ['assinatura', 'NOVA', 'O fundo da NOVA: luz suave na diagonal do N, a passar pelo logótipo, com ameixa e areia à volta.']
     ];
     const BR_SIZES = [['4k', '4K', '3840 × 2160'], ['1080p', '1080p', '1920 × 1080'], ['ipad', 'iPad', '2732 × 2732'], ['iphone', 'iPhone', '1320 × 2868']];
     const BR_MODES = [['light', 'Claro'], ['dark', 'Escuro']];
@@ -23904,10 +23937,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     }
     function renderBrand() {
       const box = document.getElementById('brand-view');
-      if (!brMode) brMode = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      const dl = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></svg>';
-      const modeName = (BR_MODES.find(([k]) => k === brMode) || [])[1] || '';
-      const tabs = `<div class="segmented" id="br-tabs">${[['walls', 'Fundos de ecrã'], ['li', 'LinkedIn'], ['sig', 'Assinatura de email'], ['card', 'Cartão digital']].map(([k, l]) => `<button type="button" data-t="${k}"${k === brTab ? ' class="active"' : ''}>${l}</button>`).join('')}</div>`;
+      // o foco do teclado sobrevive ao redesenho (cada clique volta a montar o ecrã)
+      const fk = (() => { const el = document.activeElement; if (!el || !box.contains(el)) return null; for (const k of ['t', 's', 'tpl', 'fmt', 'mode', 'plang', 'l']) if (el.dataset?.[k] != null) return `[data-${k}="${el.dataset[k]}"]`; return el.id ? '#' + el.id : null; })();
+      const dl = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></svg>';
+      const tabs = `<div class="segmented" id="br-tabs" role="tablist" aria-label="Brandbook">${[['walls', 'Fundos de ecrã'], ['li', 'LinkedIn'], ['sig', 'Assinatura de email'], ['card', 'Cartão digital']].map(([k, l]) => `<button type="button" role="tab" data-t="${k}" aria-selected="${k === brTab}"${k === brTab ? ' class="active"' : ''}>${l}</button>`).join('')}</div>`;
       if (brTab === 'li') renderBrandLI(box, tabs);
       else if (brTab === 'card') {
         box.innerHTML = `<div class="br-bar">${tabs}</div><div id="brand-card-container"><div class="gantt-wrap"><div class="detail-loading">A carregar...</div></div></div>`;
@@ -23916,25 +23949,25 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         box.innerHTML = `<div class="br-bar">${tabs}</div><div class="gantt-wrap" id="brand-sig-container"><div class="detail-loading">A carregar...</div></div>`;
         loadSignatureSettings();
       } else {
+        const [k, name, desc] = BR_WALLS[0];
         box.innerHTML = `
-          <div class="br-bar">${tabs}<div class="segmented" id="br-mode">${BR_MODES.map(([k, l]) => `<button type="button" data-m="${k}"${k === brMode ? ' class="active"' : ''}>${l}</button>`).join('')}</div></div>
-          <p class="br-lead">O fundo da NOVA para o computador, o iPad e o iPhone, o mesmo das capas do LinkedIn e do cartão digital. Em versão clara e escura: escolhe a que combina com o teu ecrã.</p>
-          <div class="br-grid${BR_WALLS.length === 1 ? ' single' : ''}">${BR_WALLS.map(([k, name, desc]) => `
+          <div class="br-bar">${tabs}</div>
+          <p class="br-lead">${escapeHtml(desc)} É o mesmo das capas do LinkedIn e do cartão digital. O escuro cansa menos à noite; o claro é o da app durante o dia.</p>
+          <div class="br-grid br-walls">${BR_MODES.map(([m, mn]) => `
             <article class="br-card">
-              <div class="br-prev"><img class="br-desk" src="${BR_DIR}${k}-${brMode}-thumb.jpg" alt="${escapeHtml(name)} no computador" loading="lazy"><img class="br-phone" src="${BR_DIR}${k}-${brMode}-thumb-phone.jpg" alt="${escapeHtml(name)} no iPhone" loading="lazy"></div>
-              <div class="br-info"><b>${escapeHtml(name)}</b><span>${escapeHtml(desc)}</span></div>
-              <div class="br-dl">${BR_SIZES.map(([s, l, res]) => `<a class="br-chip" href="${BR_DIR}${k}-${brMode}-${s}.jpg" download="NOVA - ${escapeHtml(name)} ${escapeHtml(modeName.toLowerCase())} - ${l}.jpg" title="Descarregar ${escapeHtml(name)} (${escapeHtml(modeName.toLowerCase())}) para ${l}, ${res}"><b>${dl}${l}</b><small>${res}</small></a>`).join('')}</div>
+              <div class="br-prev br-prev-${m}"><img class="br-desk" src="${BR_DIR}${k}-${m}-thumb.jpg" alt="Fundo ${mn.toLowerCase()} no computador" loading="lazy"><img class="br-phone" src="${BR_DIR}${k}-${m}-thumb-phone.jpg" alt="Fundo ${mn.toLowerCase()} no iPhone" loading="lazy"></div>
+              <div class="br-info"><b>${mn}</b></div>
+              <div class="br-dl">${BR_SIZES.map(([s, l, res]) => `<a class="br-chip" href="${BR_DIR}${k}-${m}-${s}.jpg" download="NOVA - fundo ${mn.toLowerCase()} - ${l}.jpg"><b>${dl}${l}</b><small>${res}</small></a>`).join('')}<a class="br-chip" href="${BR_DIR}${k}-${m}-iphone-limpo.jpg" download="NOVA - fundo ${mn.toLowerCase()} - iPhone sem logotipo.jpg"><b>${dl}iPhone</b><small>sem logótipo</small></a></div>
             </article>`).join('')}
           </div>
           <details class="br-how"><summary>Como pôr o fundo</summary><div class="br-how-g">
             <div><b>Mac</b><span>Definições do Sistema → Papel de parede → Adicionar fotografia. Ou, no Finder, botão direito no ficheiro → Definir imagem da secretária. Nos ecrãs Retina usa o 4K.</span></div>
             <div><b>Windows</b><span>Botão direito no ficheiro → Definir como fundo do ambiente de trabalho. Em monitores Full HD, o 1080p chega.</span></div>
-            <div><b>iPhone e iPad</b><span>Toca em iPhone ou iPad e escolhe Guardar imagem. Depois, em Fotografias, abre-a → Partilhar → Usar como papel de parede.</span></div>
-            <div><b>Claro ou escuro</b><span>O escuro cansa menos à noite e combina com o modo escuro. O claro é o da app durante o dia.</span></div>
+            <div><b>iPhone e iPad</b><span>Toca no tamanho e escolhe Guardar imagem. Depois, em Fotografias, abre-a → Partilhar → Usar como papel de parede. No ecrã principal usa o «iPhone sem logótipo»: os ícones ficam por cima do NOVA.</span></div>
           </div></details>`;
       }
       box.querySelectorAll('#br-tabs [data-t]').forEach(b => b.addEventListener('click', () => { if (brTab === b.dataset.t) return; brTab = b.dataset.t; renderBrand(); }));
-      box.querySelectorAll('#br-mode [data-m]').forEach(b => b.addEventListener('click', () => { if (brMode === b.dataset.m) return; brMode = b.dataset.m; renderBrand(); }));
+      if (fk) box.querySelector(fk)?.focus({ preventScroll: true });
       box.querySelectorAll('a.br-chip').forEach(a => {
         a.addEventListener('touchstart', () => { if (brShareable()) brFetch(a.href).catch(() => {}); }, { passive: true });
         a.addEventListener('click', async e => {
@@ -23969,21 +24002,21 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       </article>`;
     function liPageHtml() {
       const k = LI_DESIGN;
-      const logos = [['palavra-claro', 'NOVA, fundo claro', 'O mais legível em tamanho pequeno.'], ['palavra-ameixa', 'NOVA, fundo ameixa', 'Destaca-se na lista de empresas.'], ['n-claro', 'N, fundo claro', 'Só o monograma, mais sóbrio.'], ['n-ameixa', 'N, fundo ameixa', 'Monograma em cor.']];
+      const logos = [['n-ameixa', 'N, fundo ameixa', 'Recomendado. O que melhor se lê no tamanho pequeno do feed e destaca-se na lista de empresas.'], ['n-claro', 'N, fundo claro', 'O mesmo, mais sóbrio.'], ['palavra-claro', 'NOVA, fundo claro', 'A palavra inteira; lê-se bem na página, menos no feed.'], ['palavra-ameixa', 'NOVA, fundo ameixa', 'A palavra inteira, em cor.']];
       return `
-        <p class="br-lead">Tudo o que a página da NOVA no LinkedIn pede, nos tamanhos que o LinkedIn recomenda, com o fundo da marca (o mesmo dos fundos de ecrã e do cartão digital). Escolhe claro ou escuro e usa sempre o mesmo.</p>
-        <h3 class="li-h">Logótipo <small>400 × 400 · PNG</small></h3>
-        <div class="br-grid li-logos">${logos.map(([k, n, d]) => liCard(`${LI_DIR}logo-${k}.png`, n, d, liChip(`${LI_DIR}logo-${k}.png`, 'PNG', '400 × 400', `NOVA LinkedIn - logótipo ${n}.png`), '1 / 1')).join('')}</div>
+        <p class="br-lead">Tudo o que a página da NOVA no LinkedIn pede, nos tamanhos que o LinkedIn recomenda, com o fundo da marca. Para a capa recomendamos o claro: é o que combina com o LinkedIn de quase toda a gente.</p>
+        <h3 class="li-h">Logótipo <small>800 × 800 · PNG (o LinkedIn pede pelo menos 400)</small></h3>
+        <div class="br-grid li-logos">${logos.map(([k, n, d]) => liCard(`${LI_DIR}logo-${k}.png`, n, d, liChip(`${LI_DIR}logo-${k}.png`, 'PNG', '800 × 800', `NOVA LinkedIn - logótipo ${n}.png`), '1 / 1')).join('')}</div>
         <h3 class="li-h">Capa da página <small>4200 × 700 · JPG</small></h3>
         <p class="li-note">O LinkedIn põe o logótipo da página por cima do canto inferior esquerdo e, no telemóvel, corta as pontas: por isso o NOVA e a frase ficam ao centro.</p>
         <div class="br-grid li-wide">${LI_MODES.map(([m, mn]) => liCard(`${LI_DIR}cover-${k}-${m}-thumb.jpg`, mn, '', liChip(`${LI_DIR}cover-${k}-${m}.jpg`, 'Capa', '4200 × 700', `NOVA LinkedIn - capa ${mn.toLowerCase()}.jpg`), '6 / 1')).join('')}</div>
         <h3 class="li-h">Imagem do separador Vida <small>1128 × 376 (em dobro) · JPG</small></h3>
         <p class="li-note">O separador «Vida» faz parte das Páginas de Carreira do LinkedIn, que são pagas. Fica pronta para quando a ativarem; até lá, uma fotografia da equipa no atelier também resulta muito bem.</p>
         <div class="br-grid li-wide">${LI_MODES.map(([m, mn]) => liCard(`${LI_DIR}life-${k}-${m}-thumb.jpg`, mn, '', liChip(`${LI_DIR}life-${k}-${m}.jpg`, 'Vida', '2256 × 752', `NOVA LinkedIn - vida ${mn.toLowerCase()}.jpg`), '3 / 1')).join('')}</div>
-        <details class="br-how" open><summary>Como criar a página, passo a passo</summary><ol class="li-steps">
+        <details class="br-how"><summary>Como criar a página, passo a passo</summary><ol class="li-steps">
           <li><b>Criar</b><span>No LinkedIn, em <i>Para empresas</i> → <i>Criar uma Página da empresa</i> → <i>Empresa</i>. Tem de ser feito por alguém da equipa com perfil pessoal.</span></li>
-          <li><b>Dados base</b><span>Nome, URL público, site, setor, dimensão e tipo: estão em <a href="#" data-li-go="texts">Textos</a>, prontos a copiar. Carrega o logótipo <i>NOVA, fundo claro</i> (ou o que escolherem).</span></li>
-          <li><b>Capa</b><span>Com a página criada: <i>Editar página</i> → <i>Capa</i> → carrega a capa 4200 × 700.</span></li>
+          <li><b>Dados base</b><span>Nome, URL público, site, setor, dimensão e tipo: estão em <a href="#" data-li-go="texts">Textos</a>, prontos a copiar. Carrega o logótipo <i>N, fundo ameixa</i>: é o que melhor se lê no feed.</span></li>
+          <li><b>Capa</b><span>Com a página criada: <i>Editar página</i> → <i>Capa</i> → carrega a capa clara 4200 × 700.</span></li>
           <li><b>Sobre</b><span>Cola a descrição, as especialidades e a localização (Porto). Em <i>Botão</i> escolhe <i>Visitar site</i> com novassociates.com.</span></li>
           <li><b>Inglês</b><span>Em <i>Editar página</i> → <i>Gerir línguas</i> junta o inglês e cola o nome, a frase e a descrição em inglês. Quem tem o LinkedIn em inglês vê essa versão.</span></li>
           <li><b>Equipa</b><span>Cada pessoa indica a NOVA Associates como empresa atual no perfil e põe a capa pessoal (em <a href="#" data-li-go="personal">Capas pessoais</a>). Assim a página aparece ligada à equipa.</span></li>
@@ -24045,7 +24078,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     function liTextsHtml() {
       return `
         <div class="li-texts-bar"><p class="br-lead" style="margin:0">Os textos que o LinkedIn pede, prontos a copiar e colar. O LinkedIn deixa ter a página em português e em inglês.</p>
-          <div class="segmented" id="li-lang">${[['pt', 'Português'], ['en', 'English']].map(([k, l]) => `<button type="button" data-l="${k}"${k === liLang ? ' class="active"' : ''}>${l}</button>`).join('')}</div></div>
+          <div class="segmented" id="li-lang" role="group" aria-label="Língua">${[['pt', 'Português'], ['en', 'English']].map(([k, l]) => `<button type="button" data-l="${k}" aria-pressed="${k === liLang}"${k === liLang ? ' class="active"' : ''}>${l}</button>`).join('')}</div></div>
         <div class="li-texts">${LI_TEXTS[liLang].map(([k, v, max], i) => `
           <div class="li-text${v.length > 140 ? ' long' : ''}">
             <div class="li-text-h"><b>${escapeHtml(k)}</b>${max ? `<small class="${v.length > max ? 'over' : ''}">${v.length} / ${max}</small>` : ''}<button type="button" class="text-btn" data-li-copy="${i}">Copiar</button></div>
@@ -24058,46 +24091,57 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     // ---------- Gerador de posts ----------
     const LI_FORMATS = [['h', 'Horizontal', 1200, 627], ['q', 'Quadrado', 1080, 1080], ['v', 'Vertical', 1080, 1350]];
     const LI_TPLS = [['news', 'Novidade'], ['figure', 'Número'], ['project', 'Projeto'], ['quote', 'Citação'], ['hire', 'Recrutamento']];
-    const LI_KICK = { pt: { news: 'Novidade', project: 'Projeto', hire: 'Estamos a contratar', figure: '', quote: '' }, en: { news: 'News', project: 'Project', hire: "We're hiring", figure: '', quote: '' } };
-    const LI_EX = {   // exemplos que aparecem como sugestão nos campos
-      pt: { news: ['PIP aprovado: potencial confirmado', '1 960 m² de construção num terreno de 2 450 m², em Vila Nova de Gaia. O passo seguinte é o licenciamento.'], project: ['Casa da Arrábida', 'Porto · Habitação unifamiliar'], quote: ['Cada decisão é medida antes de ser tomada. Passos certos, na direção certa.', 'NOVA Associates', 'Como trabalhamos'], figure: ['1 960 m²', 'de potencial construtivo confirmado', 'Terreno de 2 450 m² · índice 0,80 · Vila Nova de Gaia'], hire: ['Analista de investimento imobiliário', 'Porto · Tempo inteiro', 'Envia o CV para careers@novassociates.com'] },
-      en: { news: ['PIP approved: potential confirmed', '1,960 m² of floor area on a 2,450 m² plot in Vila Nova de Gaia. Next step: planning approval.'], project: ['Arrábida House', 'Porto · Single-family house'], quote: ['Every decision is measured before it is made. The right steps, in the right direction.', 'NOVA Associates', 'How we work'], figure: ['1,960 m²', 'of confirmed development potential', '2,450 m² plot · FAR 0.80 · Vila Nova de Gaia'], hire: ['Real estate investment analyst', 'Porto · Full time', 'Send your CV to careers@novassociates.com'] }
+    // Exemplos: aparecem nos campos e na pré-visualização, nunca na imagem descarregada.
+    // Milhares com espaço inseparável (U+00A0): «1 960» não parte em duas linhas (a Inter não tem o espaço fino U+202F).
+    const LI_EX = {
+      pt: { news: ['PIP aprovado: potencial confirmado', '1 960 m² de construção num terreno de 2 450 m², em Vila Nova de Gaia. O passo seguinte é o licenciamento.'], project: ['Casa da Arrábida', 'Porto · Habitação unifamiliar'], quote: ['Cada decisão é medida antes de ser tomada. Passos certos, na direção certa.', 'Nome e apelido', 'Managing Partner, NOVA Associates'], figure: ['1 960 m²', 'de potencial construtivo confirmado', 'Terreno de 2 450 m² · índice 0,80 · Vila Nova de Gaia'], hire: ['Procuramos analista de investimento imobiliário', 'Porto · Tempo inteiro', 'Envia o CV para careers@novassociates.com'] },
+      en: { news: ['PIP approved: potential confirmed', '1,960 m² of floor area on a 2,450 m² plot in Vila Nova de Gaia. Next step: planning approval.'], project: ['Arrábida House', 'Porto · Single-family house'], quote: ['Every decision is measured before it is made. The right steps, in the right direction.', 'Full name', 'Managing Partner, NOVA Associates'], figure: ['1,960 m²', 'of confirmed development potential', '2,450 m² plot · FAR 0.80 · Vila Nova de Gaia'], hire: ["We're hiring a real estate investment analyst", 'Porto · Full time', 'Send your CV to careers@novassociates.com'] }
     };
-    const liPost = { tpl: 'news', fmt: 'q', mode: 'light', lang: 'pt', kicker: null, title: '', sub: '', extra: '', photo: null, photoName: '' };
-    const liVal = (k, i) => (liPost[k] || '').trim() || (LI_EX[liPost.lang][liPost.tpl] || [])[i] || '';
+    // Cada modelo guarda o seu rascunho: mudar de modelo e voltar não perde o que se escreveu.
+    const liPost = { tpl: 'news', fmt: 'q', mode: 'light', lang: 'pt', title: '', sub: '', extra: '', photo: null, photoName: '', drafts: {} };
+    const liVal = (k, i, preview = true) => (liPost[k] || '').trim() || (preview ? (LI_EX[liPost.lang][liPost.tpl] || [])[i] || '' : '');
+    // O que falta para descarregar (vazio = pronto)
+    function liMissing() {
+      const P = liPost;
+      if (P.tpl === 'project' && !P.photo) return P.title.trim() ? 'Escolhe a fotografia para descarregar.' : 'Escolhe a fotografia e escreve o nome do projeto para descarregar.';
+      if (!P.title.trim()) return { news: 'Escreve o título para descarregar.', figure: 'Escreve o número para descarregar.', project: 'Escreve o nome do projeto para descarregar.', quote: 'Escreve a citação para descarregar.', hire: 'Escreve o título para descarregar.' }[P.tpl];
+      return '';
+    }
     function liPostsHtml() {
-      const P = liPost, seg = (id, list, cur, attr) => `<div class="segmented li-seg" id="${id}">${list.map(([k, l]) => `<button type="button" data-${attr}="${k}"${k === cur ? ' class="active"' : ''}>${l}</button>`).join('')}</div>`;
+      const P = liPost;
+      const seg = (id, list, cur, attr, label) => `<div class="segmented li-seg" id="${id}" role="group" aria-label="${label}">${list.map(([k, l]) => `<button type="button" data-${attr}="${k}" aria-pressed="${k === cur}"${k === cur ? ' class="active"' : ''}>${l}</button>`).join('')}</div>`;
       const ex = LI_EX[P.lang][P.tpl] || [];
-      const f = (key, label, i, area, hint) => `<label class="field-label">${label}</label>${area ? `<textarea class="form-input" rows="3" data-li-f="${key}" placeholder="${escapeHtml(ex[i] || '')}">${escapeHtml(P[key])}</textarea>` : `<input type="text" class="form-input" data-li-f="${key}" placeholder="${escapeHtml(ex[i] || '')}" value="${escapeHtml(P[key])}">`}${hint ? `<div class="field-hint">${hint}</div>` : ''}`;
-      const kick = P.tpl === 'quote' || P.tpl === 'figure' ? '' : `<label class="field-label">Etiqueta</label><input type="text" class="form-input" data-li-f="kicker" placeholder="${escapeHtml(LI_KICK[P.lang][P.tpl])}" value="${escapeHtml(P.kicker || '')}">`;
+      const f = (key, label, i, area, hint) => `<label class="field-label" for="li-f-${key}">${label}</label>${area ? `<textarea class="form-input" rows="3" id="li-f-${key}" data-li-f="${key}" placeholder="${escapeHtml(ex[i] || '')}">${escapeHtml(P[key])}</textarea>` : `<input type="text" class="form-input" id="li-f-${key}" data-li-f="${key}" placeholder="${escapeHtml(ex[i] || '')}" value="${escapeHtml(P[key])}">`}${hint ? `<div class="field-hint">${hint}</div>` : ''}`;
       const fields = {
-        news: f('title', 'Título', 0, true) + f('sub', 'Texto curto', 1, true),
-        project: `<label class="field-label">Fotografia ou imagem 3D</label><label class="secondary-btn li-photo"><input type="file" accept="image/*" id="li-photo" hidden>${P.photo ? 'Trocar a fotografia' : 'Escolher fotografia'}</label>${P.photo ? `<div class="field-hint">${escapeHtml(P.photoName)} · <a href="#" id="li-photo-x">tirar</a></div>` : '<div class="field-hint">Fica só neste computador: não é enviada para lado nenhum.</div>'}` + f('title', 'Nome do projeto', 0) + f('sub', 'Local e tipologia', 1),
-        quote: f('title', 'Citação', 0, true) + f('sub', 'Quem disse', 1) + f('extra', 'Cargo ou origem', 2),
+        news: f('title', 'Título', 0, true) + f('sub', 'Texto curto (opcional)', 1, true),
+        project: `<label class="field-label">Fotografia ou imagem 3D</label><label class="secondary-btn li-photo"><input type="file" accept="image/*" id="li-photo" hidden>${P.photo ? 'Trocar a fotografia' : 'Escolher fotografia'}</label>${P.photo ? `<div class="field-hint">${escapeHtml(P.photoName)} · <a href="#" id="li-photo-x">tirar</a></div>` : '<div class="field-hint">Fica só neste computador: não é enviada para lado nenhum.</div>'}` + f('title', 'Nome do projeto', 0) + f('sub', 'Local e tipologia (opcional)', 1),
+        quote: f('title', 'Citação', 0, true) + f('sub', 'Quem disse (opcional)', 1) + f('extra', 'Cargo (opcional)', 2),
         figure: f('title', 'Número', 0, false, 'Curto: 12 500 m², 24 frações, 98 %…') + f('sub', 'O que significa', 1) + f('extra', 'Contexto (opcional)', 2, true),
-        hire: f('title', 'Função', 0) + f('sub', 'Local e regime', 1) + f('extra', 'Como se candidatar', 2, true)
+        hire: f('title', 'Título', 0, false, 'Diz que estão a contratar e para quê: «Procuramos…».') + f('sub', 'Local e regime (opcional)', 1) + f('extra', 'Como se candidatar (opcional)', 2, true)
       }[P.tpl];
+      const miss = liMissing();
       return `
-        <p class="br-lead">Escolhe o modelo e o formato, escreve e descarrega a imagem pronta a publicar, com o fundo da marca. O texto do post escreve-se no LinkedIn; a imagem é o apoio visual. Os campos vazios mostram um exemplo.</p>
+        <p class="br-lead">Escolhe o modelo e o formato, escreve e descarrega a imagem pronta a publicar, com o fundo da marca. O texto do post escreve-se no LinkedIn; a imagem é o apoio visual.</p>
         <div class="li-gen">
           <div class="li-form">
-            <label class="field-label" style="margin-top:0">Modelo</label>${seg('li-tpl', LI_TPLS, P.tpl, 'tpl')}
-            <label class="field-label">Formato</label>${seg('li-fmt', LI_FORMATS.map(([k, l, w, h]) => [k, `${l} <small>${w}×${h}</small>`]), P.fmt, 'fmt')}
-            <div class="li-row">${seg('li-mode', BR_MODES, P.mode, 'mode')}${seg('li-plang', [['pt', 'PT'], ['en', 'EN']], P.lang, 'plang')}</div>
-            ${kick}${fields}
+            <label class="field-label" style="margin-top:0">Modelo</label>${seg('li-tpl', LI_TPLS, P.tpl, 'tpl', 'Modelo')}
+            <label class="field-label">Formato</label>${seg('li-fmt', LI_FORMATS.map(([k, l, w, h]) => [k, `${l} <small>${w}×${h}</small>`]), P.fmt, 'fmt', 'Formato')}
+            <div class="li-row">${seg('li-mode', BR_MODES, P.mode, 'mode', 'Claro ou escuro')}${seg('li-plang', [['pt', 'PT'], ['en', 'EN']], P.lang, 'plang', 'Língua')}</div>
+            ${fields}
           </div>
           <div class="li-out">
-            <div class="li-canvas-wrap"><canvas id="li-canvas" aria-label="Pré-visualização do post"></canvas></div>
-            <div class="li-out-foot"><span class="muted" id="li-size"></span><button type="button" class="primary-btn" id="li-dl">${liDl.replace('<svg', '<svg width="16" height="16"')} Descarregar imagem</button></div>
+            <div class="li-canvas-wrap"><canvas id="li-canvas" role="img" aria-label="Pré-visualização do post"></canvas></div>
+            <div class="li-out-foot"><span class="muted" id="li-size"></span><button type="button" class="primary-btn" id="li-dl"${miss ? ' disabled' : ''}>${liDl.replace('<svg', '<svg width="16" height="16"')} Descarregar imagem</button></div>
+            <div class="field-hint li-miss" id="li-miss" aria-live="polite">${escapeHtml(miss || 'Os campos vazios mostram um exemplo na pré-visualização; não entram na imagem.')}</div>
           </div>
         </div>`;
     }
-    // quebra de linhas à medida da largura (respeita as mudanças de linha escritas)
+    // quebra de linhas à medida da largura (respeita as mudanças de linha escritas; não parte nos espaços inseparáveis)
     function liWrap(g, text, maxW) {
       const out = [];
       String(text).split('\n').forEach(par => {
         let line = '';
-        par.split(/\s+/).filter(Boolean).forEach(w => { const t = line ? line + ' ' + w : w; if (g.measureText(t).width > maxW && line) { out.push(line); line = w; } else line = t; });
+        par.split(/[ \t]+/).filter(Boolean).forEach(w => { const t = line ? line + ' ' + w : w; if (g.measureText(t).width > maxW && line) { out.push(line); line = w; } else line = t; });
         out.push(line);
       });
       return out;
@@ -24119,64 +24163,65 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       if ('letterSpacing' in g) g.letterSpacing = '0px';
       return y + lines.length * size * lh;
     }
-    function liDraw(cv) {
+    // preview: com os exemplos nos campos vazios e o aviso da fotografia; false: a imagem que se descarrega
+    function liDraw(cv, preview = true) {
       const D = window.NOVA_DRAW, P = liPost, [, , W, H] = LI_FORMATS.find(f => f[0] === P.fmt), C = D.PAL[P.mode];
+      const val = (k, i) => liVal(k, i, preview);
       cv.width = W; cv.height = H;
-      const g = cv.getContext('2d'), pad = Math.round(Math.min(W, H) * 0.075), u = Math.min(W, H) / 1080;
-      const wide = W / H > 1.5;
-      D.background(g, 'assinatura', P.mode, W, H, { focus: { fx: P.tpl === 'project' ? (wide ? .76 : .5) : .38, fy: P.tpl === 'project' && !wide ? .8 : .42 } });
+      const g = cv.getContext('2d'), m = Math.min(W, H), pad = Math.round(m * 0.075), u = m / 1080;
+      const wide = W / H > 1.5, photo = P.tpl === 'project';
       // área do texto (o projeto com fotografia ocupa metade ou o cimo)
-      let area = { x: pad, y: pad, w: W - 2 * pad, h: H - 2 * pad };
-      const photo = P.tpl === 'project';
+      let area = { x: pad, y: pad, w: W - 2 * pad, h: H - 2 * pad }, ph = null;
       if (photo) {
-        const ph = wide ? { x: 0, y: 0, w: Math.round(W * .52), h: H } : { x: 0, y: 0, w: W, h: Math.round(H * (P.fmt === 'v' ? .6 : .56)) };
+        ph = wide ? { x: 0, y: 0, w: Math.round(W * .52), h: H } : { x: 0, y: 0, w: W, h: Math.round(H * (P.fmt === 'v' ? .6 : .56)) };
+        area = wide ? { x: ph.w + pad, y: pad, w: W - ph.w - 2 * pad, h: H - 2 * pad } : { x: pad, y: ph.h + pad * .8, w: W - 2 * pad, h: H - ph.h - pad * 1.8 };
+      }
+      // rodapé com uma só regra: NOVA a 18 % do lado menor, site à direita na mesma linha
+      const lw = Math.round(.18 * m * (wide && photo ? .8 : 1)), lh = lw * D.LH / D.LW, fy = H - pad - lh / 2, lx = area.x + lw / 2;
+      // o feixe passa pelo N do NOVA do rodapé; o halo assenta o texto
+      D.background(g, 'assinatura', P.mode, W, H, { focus: { fx: photo ? (wide ? .76 : .5) : .4, fy: photo && !wide ? .82 : .55, bx: D.nCenterX(lx, lw) / W, by: fy / H } });
+      if (photo) {
         if (P.photo) {
           const img = P.photo, s = Math.max(ph.w / img.width, ph.h / img.height), iw = img.width * s, ih = img.height * s;
           g.save(); g.beginPath(); g.rect(ph.x, ph.y, ph.w, ph.h); g.clip(); g.drawImage(img, ph.x + (ph.w - iw) / 2, ph.y + (ph.h - ih) / 2, iw, ih); g.restore();
-        } else {
+        } else if (preview) {
           g.fillStyle = C.bg2; g.fillRect(ph.x, ph.y, ph.w, ph.h);
           D.monogram(g, ph.x + ph.w / 2 - ph.h * .22 * 353 / 382, ph.y + ph.h * .28, ph.h * .44, P.mode === 'dark' ? '#272523' : '#E4E1DA');
-          g.fillStyle = C.soft; g.font = `500 ${Math.round(22 * u)}px Inter`; g.textAlign = 'center'; g.fillText(P.lang === 'en' ? 'Your photo here' : 'A tua fotografia aqui', ph.x + ph.w / 2, ph.y + ph.h / 2); g.textAlign = 'left';
+          g.fillStyle = C.soft; g.font = `500 ${Math.round(26 * u)}px Inter`; g.textAlign = 'center'; g.fillText(P.lang === 'en' ? 'Your photo here' : 'A tua fotografia aqui', ph.x + ph.w / 2, ph.y + ph.h / 2); g.textAlign = 'left';
         }
-        area = wide ? { x: ph.w + pad, y: pad, w: W - ph.w - 2 * pad, h: H - 2 * pad } : { x: pad, y: ph.h + pad * .8, w: W - 2 * pad, h: H - ph.h - pad * 1.8 };
       }
-      // rodapé: NOVA à esquerda, site à direita
-      const lw = Math.round((wide ? .13 : .2) * Math.min(area.w + 2 * pad, W)), lh = lw * D.LH / D.LW, fy = H - pad - lh / 2;
-      D.logo(g, area.x + lw / 2, fy, lw, C.ink);
-      g.font = `500 ${Math.round(20 * u * (wide ? .95 : 1))}px Inter`; g.fillStyle = C.soft; g.textAlign = 'right'; g.textBaseline = 'middle';
+      D.logo(g, lx, fy, lw, C.ink);
+      g.font = `500 ${Math.round(28 * u)}px Inter`; g.fillStyle = C.soft; g.textAlign = 'right'; g.textBaseline = 'middle';
       g.fillText('novassociates.com', area.x + area.w, fy); g.textAlign = 'left';
-      const top = area.y, bottom = fy - lh / 2 - pad * .6, availH = bottom - top, maxW = area.w;
-      const kicker = (P.kicker ?? '').trim() || LI_KICK[P.lang][P.tpl];
+      const top = area.y, bottom = fy - lh / 2 - pad * .7, availH = bottom - top, maxW = area.w;
       const blocks = [];   // [altura, desenhar(y)]
-      const gapK = 26 * u;
-      if (kicker) { const s = Math.round(21 * u); blocks.push([s * 1.2 + gapK, y => { g.font = `600 ${s}px Inter`; liText(g, [kicker.toUpperCase()], area.x, y, s, 1.2, C.ink, .14); }]); }
       const used = () => blocks.reduce((t, b) => t + b[0], 0);
       if (P.tpl === 'quote') {
-        // em vez de aspas, uma linha curta na cor NOVA a abrir a citação
-        blocks.push([46 * u, y => { g.fillStyle = C.ink; g.fillRect(area.x, y + 6 * u, 56 * u, 4 * u); }]);
-        const by = Math.round(26 * u) * 3.2;
-        const t = liFit(g, liVal('title', 0), 400, maxW, availH - used() - by, 64 * u, 34 * u, 7, 1.25);
-        blocks.push([t.size * 1.25 * t.lines.length + 34 * u, y => { g.font = `400 ${t.size}px Inter`; liText(g, t.lines, area.x, y, t.size, 1.25, C.text, -.01); }]);
-        const a = liVal('sub', 1), r = liVal('extra', 2), s1 = Math.round(26 * u), s2 = Math.round(22 * u);
-        blocks.push([s1 * 1.3 + (r ? s2 * 1.4 : 0), y => { g.font = `600 ${s1}px Inter`; liText(g, [a], area.x, y, s1, 1.3, C.text); if (r) { g.font = `400 ${s2}px Inter`; liText(g, [r], area.x, y + s1 * 1.3, s2, 1.4, C.soft); } }]);
+        const a = val('sub', 1), r = val('extra', 2), s1 = Math.round(30 * u), s2 = Math.round(26 * u);
+        const attrH = a ? s1 * 1.3 + (r ? s2 * 1.4 : 0) : 0;
+        const t = liFit(g, val('title', 0), 400, maxW, availH - 46 * u - attrH - 34 * u, 66 * u, 36 * u, 7, 1.25);
+        // em vez de aspas, uma linha curta na cor NOVA, alinhada ao desenho da letra (não à caixa)
+        blocks.push([46 * u, y => { g.fillStyle = C.ink; g.fillRect(area.x + .04 * t.size, y + 6 * u, 48 * u, 3 * u); }]);
+        blocks.push([t.size * 1.25 * t.lines.length + (a ? 34 * u : 0), y => { g.font = `400 ${t.size}px Inter`; liText(g, t.lines, area.x, y, t.size, 1.25, C.text, -.01); }]);
+        if (a) blocks.push([attrH, y => { g.font = `600 ${s1}px Inter`; liText(g, [a], area.x, y, s1, 1.3, C.text); if (r) { g.font = `400 ${s2}px Inter`; liText(g, [r], area.x, y + s1 * 1.3, s2, 1.4, C.soft); } }]);
       } else if (P.tpl === 'figure') {
-        const fsz = liFit(g, liVal('title', 0), 600, maxW, availH * .5, 200 * u, 70 * u, 1, 1);
-        blocks.push([fsz.size * 1.02 + 18 * u, y => { g.font = `600 ${fsz.size}px Inter`; liText(g, fsz.lines, area.x, y, fsz.size, 1, C.ink, -.03); }]);
-        const t = liFit(g, liVal('sub', 1), 500, maxW, availH * .25, 46 * u, 28 * u, 3, 1.15);
-        blocks.push([t.size * 1.15 * t.lines.length + 22 * u, y => { g.font = `500 ${t.size}px Inter`; liText(g, t.lines, area.x, y, t.size, 1.15, C.text, -.01); }]);
-        const x = liVal('extra', 2);
-        if (x) { const s = liFit(g, x, 400, maxW, availH - used(), 28 * u, 20 * u, 4, 1.4); blocks.push([s.size * 1.4 * s.lines.length, y => { g.font = `400 ${s.size}px Inter`; liText(g, s.lines, area.x, y, s.size, 1.4, C.soft); }]); }
+        const fsz = liFit(g, val('title', 0), 600, maxW, availH * .5, 210 * u, 72 * u, 1, 1);
+        blocks.push([fsz.size * 1.02 + 20 * u, y => { g.font = `600 ${fsz.size}px Inter`; liText(g, fsz.lines, area.x, y, fsz.size, 1, C.ink, -.03); }]);
+        const sv = val('sub', 1);
+        if (sv) { const t = liFit(g, sv, 500, maxW, availH * .25, 48 * u, 30 * u, 3, 1.15); blocks.push([t.size * 1.15 * t.lines.length + 22 * u, y => { g.font = `500 ${t.size}px Inter`; liText(g, t.lines, area.x, y, t.size, 1.15, C.text, -.01); }]); }
+        const x = val('extra', 2);
+        if (x) { const s = liFit(g, x, 400, maxW, availH - used(), 30 * u, 26 * u, 4, 1.4); blocks.push([s.size * 1.4 * s.lines.length, y => { g.font = `400 ${s.size}px Inter`; liText(g, s.lines, area.x, y, s.size, 1.4, C.soft); }]); }
       } else {
-        // novidade, projeto, recrutamento: título grande e texto por baixo
-        const subTxt = liVal('sub', 1), extra = P.tpl === 'hire' ? liVal('extra', 2) : '';
-        const subMax = photo ? 26 * u : 32 * u, reserve = (subTxt ? subMax * 1.4 * 3 : 0) + (extra ? 26 * u * 1.4 * 3 : 0);
-        const t = liFit(g, liVal('title', 0), 600, maxW, Math.max(availH - used() - reserve, availH * .35), (photo ? 62 : wide ? 70 : 84) * u, 34 * u, photo ? 3 : 5, 1.08);
-        blocks.push([t.size * 1.08 * t.lines.length + 24 * u, y => { g.font = `600 ${t.size}px Inter`; liText(g, t.lines, area.x, y, t.size, 1.08, C.text, -.02); }]);
-        if (subTxt) { const s = liFit(g, subTxt, 400, maxW, availH - used() - (extra ? 26 * u * 1.4 * 2 : 0), subMax, 20 * u, 4, 1.4); blocks.push([s.size * 1.4 * s.lines.length + (extra ? 22 * u : 0), y => { g.font = `400 ${s.size}px Inter`; liText(g, s.lines, area.x, y, s.size, 1.4, C.soft); }]); }
-        if (extra) { const s = liFit(g, extra, 500, maxW, availH - used(), 26 * u, 18 * u, 3, 1.4); blocks.push([s.size * 1.4 * s.lines.length, y => { g.font = `500 ${s.size}px Inter`; liText(g, s.lines, area.x, y, s.size, 1.4, C.ink); }]); }
+        // novidade, projeto, recrutamento: o título fala por si (sem etiqueta por cima) e o texto por baixo
+        const subTxt = val('sub', 1), extra = P.tpl === 'hire' ? val('extra', 2) : '';
+        const subMax = photo ? 30 * u : 34 * u, reserve = (subTxt ? subMax * 1.4 * 3 : 0) + (extra ? 30 * u * 1.4 * 2 : 0);
+        const t = liFit(g, val('title', 0), 600, maxW, Math.max(availH - reserve, availH * .35), (photo ? 64 : wide ? 72 : 86) * u, 38 * u, photo ? 3 : 5, 1.08);
+        blocks.push([t.size * 1.08 * t.lines.length + 26 * u, y => { g.font = `600 ${t.size}px Inter`; liText(g, t.lines, area.x, y, t.size, 1.08, C.text, -.02); }]);
+        if (subTxt) { const s = liFit(g, subTxt, 400, maxW, availH - used() - (extra ? 30 * u * 1.4 * 2 : 0), subMax, 26 * u, 4, 1.4); blocks.push([s.size * 1.4 * s.lines.length + (extra ? 22 * u : 0), y => { g.font = `400 ${s.size}px Inter`; liText(g, s.lines, area.x, y, s.size, 1.4, C.soft); }]); }
+        if (extra) { const s = liFit(g, extra, 500, maxW, availH - used(), 30 * u, 24 * u, 3, 1.4); blocks.push([s.size * 1.4 * s.lines.length, y => { g.font = `500 ${s.size}px Inter`; liText(g, s.lines, area.x, y, s.size, 1.4, C.ink); }]); }
       }
-      // sem fotografia o bloco fica ao centro (um pouco acima); com fotografia, encostado em cima
-      let y = photo ? top : top + Math.max(0, (availH - used()) * .42);
+      // o bloco assenta em baixo, por cima do rodapé (o feixe e o halo ocupam o cimo); o projeto vertical começa logo abaixo da fotografia
+      let y = photo && !wide ? top : Math.max(top, bottom - used());
       blocks.forEach(([h, fn]) => { fn(y); y += h; });
       D.grain(g, W, H, 1.6, 29);
     }
@@ -24186,7 +24231,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const go = async () => {
         const cv = document.getElementById('li-canvas'); if (!cv) return;
         await Promise.all([ppLoadScript('assets/brand/nova-draw.js'), ppEnsureInter()]);
-        liDraw(cv);
+        liDraw(cv, true);
         const f = LI_FORMATS.find(x => x[0] === liPost.fmt);
         const el = document.getElementById('li-size'); if (el) el.textContent = `${f[2]} × ${f[3]} px · JPG`;
       };
@@ -24194,37 +24239,61 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     }
     function liBindPosts(box) {
       const P = liPost, rer = () => { renderBrand(); };
-      box.querySelectorAll('#li-tpl [data-tpl]').forEach(b => b.addEventListener('click', () => { if (P.tpl === b.dataset.tpl) return; P.tpl = b.dataset.tpl; P.kicker = null; P.title = P.sub = P.extra = ''; rer(); }));
+      const syncDl = () => {
+        const miss = liMissing(), btn = document.getElementById('li-dl'), hint = document.getElementById('li-miss');
+        if (btn) btn.disabled = !!miss;
+        if (hint) hint.textContent = miss || 'Os campos vazios mostram um exemplo na pré-visualização; não entram na imagem.';
+      };
+      box.querySelectorAll('#li-tpl [data-tpl]').forEach(b => b.addEventListener('click', () => {
+        if (P.tpl === b.dataset.tpl) return;
+        P.drafts[P.tpl] = { title: P.title, sub: P.sub, extra: P.extra };
+        P.tpl = b.dataset.tpl;
+        Object.assign(P, P.drafts[P.tpl] || { title: '', sub: '', extra: '' });
+        rer();
+      }));
       box.querySelectorAll('#li-fmt [data-fmt]').forEach(b => b.addEventListener('click', () => { P.fmt = b.dataset.fmt; rer(); }));
       box.querySelectorAll('#li-mode [data-mode]').forEach(b => b.addEventListener('click', () => { P.mode = b.dataset.mode; rer(); }));
       box.querySelectorAll('#li-plang [data-plang]').forEach(b => b.addEventListener('click', () => { P.lang = b.dataset.plang; rer(); }));
-      box.querySelectorAll('[data-li-f]').forEach(el => el.addEventListener('input', () => { P[el.dataset.liF] = el.value; liRedraw(); }));
+      box.querySelectorAll('[data-li-f]').forEach(el => {
+        el.addEventListener('input', () => { P[el.dataset.liF] = el.value; syncDl(); liRedraw(); });
+        // no telemóvel, enquanto se escreve, a pré-visualização fica presa no topo
+        el.addEventListener('focus', () => {
+          // a pré-visualização prende por baixo da barra de cima da app (fixa no telemóvel)
+          let hb = document.getElementById('nav-title'), top = 0;
+          while (hb && hb !== document.body) { const cs = getComputedStyle(hb); if (cs.position === 'fixed' || cs.position === 'sticky') { top = Math.max(0, hb.getBoundingClientRect().bottom); break; } hb = hb.parentElement; }
+          const gen = box.querySelector('.li-gen'); gen?.style.setProperty('--li-top', top + 'px'); gen?.classList.add('typing');
+        });
+        el.addEventListener('blur', () => box.querySelector('.li-gen')?.classList.remove('typing'));
+      });
       box.querySelector('#li-photo')?.addEventListener('change', e => {
         const file = e.target.files?.[0]; if (!file) return;
         const img = new Image(), url = URL.createObjectURL(file);
         img.onload = () => { P.photo = img; P.photoName = file.name; rer(); };
-        img.onerror = () => { URL.revokeObjectURL(url); showToast('Não consegui abrir essa imagem.'); };
+        img.onerror = () => { URL.revokeObjectURL(url); showToast('Não consegui abrir essa imagem. Experimenta um JPG ou PNG.'); };
         img.src = url;
       });
       box.querySelector('#li-photo-x')?.addEventListener('click', e => { e.preventDefault(); P.photo = null; P.photoName = ''; rer(); });
       box.querySelector('#li-dl').addEventListener('click', async () => {
-        await liRedraw(true);
+        if (liMissing()) return syncDl();
+        await Promise.all([ppLoadScript('assets/brand/nova-draw.js'), ppEnsureInter()]);
         const cv = document.getElementById('li-canvas'), btn = document.getElementById('li-dl');
         btn.disabled = true;
-        const name = `NOVA LinkedIn - ${(LI_TPLS.find(t => t[0] === P.tpl) || [])[1]} - ${(liVal('title', 0) || 'post').replace(/[\\/:*?"<>|\n]+/g, ' ').slice(0, 40).trim()}.jpg`;
+        liDraw(cv, false);   // a imagem final: sem exemplos nem avisos
+        const name = `NOVA LinkedIn - ${(LI_TPLS.find(t => t[0] === P.tpl) || [])[1]} - ${(P.title.trim() || 'post').replace(/[\\/:*?"<>|\n]+/g, ' ').slice(0, 40).trim()}.jpg`;
         cv.toBlob(async blob => {
-          btn.disabled = false;
-          if (!blob) return showToast('Não consegui gerar a imagem.');
+          liDraw(cv, true); btn.disabled = false;
+          if (!blob) return showToast('Não consegui gerar a imagem. Tenta outra vez.');
           const file = new File([blob], name, { type: 'image/jpeg' });
           if (brShareable() && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file] }); return; } catch (err) { if (err?.name === 'AbortError') return; } }
           const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
           setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+          showToast('Imagem descarregada.');
         }, 'image/jpeg', 0.93);
       });
       liRedraw(true);
     }
     function renderBrandLI(box, tabs) {
-      const secs = `<div class="segmented" id="li-secs">${LI_SECS.map(([k, l]) => `<button type="button" data-s="${k}"${k === liSec ? ' class="active"' : ''}>${l}</button>`).join('')}</div>`;
+      const secs = `<div class="li-subtabs" id="li-secs" role="tablist" aria-label="LinkedIn">${LI_SECS.map(([k, l]) => `<button type="button" role="tab" data-s="${k}" aria-selected="${k === liSec}"${k === liSec ? ' class="active"' : ''}>${l}</button>`).join('')}</div>`;
       const modeSeg = '';   // claro e escuro aparecem lado a lado
       box.innerHTML = `<div class="br-bar">${tabs}${modeSeg}</div><div class="li-sub">${secs}</div>` +
         ({ page: liPageHtml, personal: liPersonalHtml, posts: liPostsHtml, texts: liTextsHtml }[liSec])();
@@ -24380,7 +24449,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         box.innerHTML = `<div class="bc-wrap">
           <div>
             <div class="bc-card" id="bc-card">
-              <div><img class="bc-logo" src="${logo}" alt="NOVA"><div class="bc-name" id="bc-name"></div><div class="bc-role" id="bc-role"></div><div class="bc-lines" id="bc-lines"></div></div>
+              <div><img class="bc-logo" src="${logo}" alt="NOVA"><div class="bc-who"><div class="bc-name" id="bc-name"></div><div class="bc-role" id="bc-role"></div><div class="bc-lines" id="bc-lines"></div></div></div>
               <div class="bc-qr" id="bc-qr"></div>
             </div>
             <div class="bc-acts">
@@ -24402,26 +24471,35 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const draw = () => {
           document.getElementById('bc-name').textContent = card.name;
           document.getElementById('bc-role').textContent = [card.title, BC_ORG].filter(Boolean).join(' · ');
-          document.getElementById('bc-lines').innerHTML = [card.phone ? `<span>M</span>${escapeHtml(card.phone)}${card.wa ? ' · WhatsApp' : ''}` : '', card.email ? `<span>@</span>${escapeHtml(card.email)}` : ''].filter(Boolean).join('<br>');
-          clearTimeout(qrT); qrT = setTimeout(async () => { try { document.getElementById('bc-qr').innerHTML = await qrSvg(bizVcard(card)); } catch (err) { document.getElementById('bc-qr').textContent = 'Sem QR: ' + err.message; } }, 150);
+          document.getElementById('bc-lines').innerHTML = [card.phone ? `<div class="bc-line"><span aria-label="Telemóvel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg></span><span>${escapeHtml(card.phone)}${card.wa ? ' · WhatsApp' : ''}</span></div>` : '', card.email ? `<div class="bc-line"><span aria-label="Email"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg></span><span>${escapeHtml(card.email)}</span></div>` : ''].join('');
+          clearTimeout(qrT); qrT = setTimeout(async () => { try { document.getElementById('bc-qr').innerHTML = await qrSvg(bizVcard(card)); } catch (err) { document.getElementById('bc-qr').textContent = 'Não consegui gerar o QR. Confirma o telemóvel e o email.'; console.error(err); } }, 150);
         };
         const persist = () => {
           clearTimeout(saveT); saveT = setTimeout(async () => {
             saved = { ...saved, [m.id]: { ...(saved[m.id] || {}), title: card.title, phone: card.phone, wa: card.wa, card_email: card.email !== m.email ? card.email : undefined } };
             if (devMode) { mockSigs = saved; return; }
             const r = await supabase.from('app_settings').upsert({ key: 'email_signatures', value: saved, updated_at: new Date().toISOString() });
-            if (r.error) formError('bc-msg', 'Não gravou: ' + r.error.message);
+            if (r.error) { formError('bc-msg', 'Não consegui guardar. Verifica a ligação e tenta outra vez.'); console.error(r.error); }
           }, 700);
         };
         [['bc-title', 'title'], ['bc-phone', 'phone'], ['bc-email', 'email']].forEach(([id, k]) => document.getElementById(id).addEventListener('input', e => { card[k] = e.target.value.trim(); draw(); persist(); }));
         document.getElementById('bc-wa').addEventListener('change', e => { card.wa = e.target.checked; draw(); persist(); });
         document.getElementById('bc-show').addEventListener('click', async () => {
+          // À frente do cliente: só fecha no botão, no Esc ou a deslizar para baixo (tocar no QR não fecha) e o ecrã não se apaga.
           const ov = document.createElement('div'); ov.className = 'bc-show';
-          ov.innerHTML = `<button type="button" class="bc-close">Fechar</button><img src="${logo}" alt="NOVA">${await qrSvg(bizVcard(card))}<b>${escapeHtml(card.name)}</b><small>${escapeHtml([card.title, BC_ORG].filter(Boolean).join(' · '))}</small><small>Aponta a câmara para guardar o contacto</small>`;
+          ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Cartão de contacto');
+          ov.innerHTML = `<button type="button" class="bc-close">Fechar</button><picture class="bc-show-logo"><source srcset="assets/nova-logo-white-cropped.png" media="(prefers-color-scheme: dark)"><img src="${logo}" alt="NOVA"></picture><div class="bc-show-qr">${await qrSvg(bizVcard(card))}</div><b>${escapeHtml(card.name)}</b><small>${escapeHtml([card.title, BC_ORG].filter(Boolean).join(' · '))}</small><p class="bc-show-hint">Aponta a câmara do telemóvel para guardar o contacto</p>`;
           document.body.appendChild(ov);
-          const close = () => { ov.remove(); document.removeEventListener('keydown', esc); };
+          let lock = null;
+          try { lock = await navigator.wakeLock?.request('screen'); } catch (_) { /* sem bloqueio de ecrã: continua */ }
+          const close = () => { ov.remove(); document.removeEventListener('keydown', esc); lock?.release?.().catch(() => {}); document.getElementById('bc-show')?.focus(); };
           const esc = e => { if (e.key === 'Escape') close(); };
-          ov.addEventListener('click', close); document.addEventListener('keydown', esc);
+          ov.querySelector('.bc-close').addEventListener('click', close);
+          document.addEventListener('keydown', esc);
+          let y0 = null;
+          ov.addEventListener('pointerdown', e => { y0 = e.clientY; });
+          ov.addEventListener('pointerup', e => { if (y0 != null && e.clientY - y0 > 80) close(); y0 = null; });
+          ov.querySelector('.bc-close').focus();
         });
         document.getElementById('bc-vcf').addEventListener('click', async () => {
           const name = `${card.name || 'Contacto'} - ${BC_ORG}.vcf`, blob = new Blob([bizVcard(card)], { type: 'text/vcard' });
