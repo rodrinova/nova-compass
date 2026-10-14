@@ -20658,6 +20658,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     }
     // Mudar de língua: os blocos da biblioteca que não foram mudados à mão passam para a outra língua
     function ppRelang(c, lib, en) {
+      if (c.rehab) { ppRehab(c, false, !en); ppRelang({ ...c, rehab: false }, lib, en); ppRehab(c, true, en, c._rhType); return; }
       const byId = Object.fromEntries(lib.map(x => [x.id, x]));
       const swap = (o, get) => { const x = o && o.lib && byId[o.lib]; if (!x) return; if (!o.t || o.t === get(x, !en)) o.t = get(x, en); };
       // linhas dos modelos com as duas línguas (pt/en)
@@ -20694,6 +20695,45 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       return l.kind === 'disc' ? -Math.abs(a) : a;
     }
     const ppIsDisc = l => l.kind === 'disc' || l.kind === 'discp';
+    // Reabilitação: a capa passa a «Reabilitação de <tipologia>», a abertura fala da reabilitação do imóvel e as linhas do valor
+    // ganham «de Reabilitação». Ao desmarcar repõe-se o texto original, a não ser que tenha sido mudado à mão entretanto.
+    const ppRhHas = t => /reabilita|refurbish/i.test(t || '');
+    function ppRehabLine(t, en) {
+      if (!t || ppRhHas(t)) return t;
+      if (en) return /\b(projects?|study|design|enquiry)\b/i.test(t) ? `${t} — Refurbishment` : t;
+      if (/^Projeto por /i.test(t)) return t.replace(/^Projeto /i, 'Projeto de Reabilitação ');
+      return /^(Projeto|Estudo)\b/i.test(t) ? `${t} de Reabilitação` : t;
+    }
+    function ppRehabIntro(t, en) {
+      if (!t || ppRhHas(t)) return t;
+      return en ? t.replace(/\bfor the property\b/, 'for the refurbishment of the property')
+        : t.replace(/\bpara o imóvel/, 'para a reabilitação do imóvel').replace(/\brelativo ao imóvel/, 'relativo à reabilitação do imóvel');
+    }
+    const ppRehabCoverT = (type, en) => !type || ppRhHas(normTxt(type)) ? (en ? 'Refurbishment' : 'Reabilitação') : (en ? `Refurbishment of ${type}` : `Reabilitação de ${type}`);
+    // Linha da capa: troca a da tipologia (ou a que já tinha a reabilitação); se não houver, junta uma
+    function ppRehabCover(c, en, type) {
+      const R = c._rh || (c._rh = {}), lines = c.cover.lines || (c.cover.lines = []);
+      const n = ppRehabCoverT((type || '').trim(), en);
+      let i = R.cover ? lines.indexOf(R.cover.n) : -1;
+      if (i < 0 && type) i = lines.findIndex(x => normTxt(x || '').trim() === normTxt(type).trim());
+      const o = R.cover && lines[i] === R.cover.n ? R.cover.o : (i >= 0 ? lines[i] : null);
+      if (i >= 0) lines[i] = n; else lines.push(n);
+      R.cover = { o, n }; c._rhType = type || '';
+    }
+    function ppRehab(c, on, en, type) {
+      const R = c._rh || (c._rh = {});
+      if (on) {
+        if (!R.intro) { const n = ppRehabIntro(c.scope.intro, en); if (n !== c.scope.intro) { R.intro = { o: c.scope.intro, n }; c.scope.intro = n; } }
+        c.value.lines.forEach(l => { if ((l.kind && l.kind !== 'fee') || l._rh) return; const n = ppRehabLine(l.t, en); if (n !== l.t) { l._rh = { o: l.t, n }; l.t = n; } });
+        ppRehabCover(c, en, type);
+      } else {
+        if (R.intro && c.scope.intro === R.intro.n) c.scope.intro = R.intro.o;
+        c.value.lines.forEach(l => { if (l._rh && l.t === l._rh.n) l.t = l._rh.o; delete l._rh; });
+        const lines = c.cover.lines || [], i = R.cover ? lines.indexOf(R.cover.n) : -1;
+        if (i >= 0) { if (R.cover.o == null) lines.splice(i, 1); else lines[i] = R.cover.o; }
+        delete c._rh;
+      }
+    }
     function ppTotals(c) {
       const lines = c?.value?.lines || [];
       const total = ppR2(lines.reduce((t, l) => t + ppLineAmount(l, lines), 0));
@@ -20850,7 +20890,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         return `<div class="pp-card click-row" data-proposal="${escapeHtml(p.id)}" tabindex="0" role="button">
           <div class="pp-card-top"><span class="pp-cst">${escapeHtml(ppRef(p) || 'sem CST')}</span><b class="num">${p.total ? escapeHtml(fmtEURShort(p.total)) : '—'}</b></div>
           <div class="pp-card-title">${escapeHtml(ppClientName(p, d) || p.title || 'Sem cliente')}</div>
-          <div class="pp-card-sub">${escapeHtml([p.title && ppClientName(p, d) ? p.title : null, typeById[p.project_type_id]?.name, p.content?.cover?.region].filter(Boolean).join(' · '))}</div>
+          <div class="pp-card-sub">${escapeHtml([p.title && ppClientName(p, d) ? p.title : null, typeById[p.project_type_id]?.name, p.content?.rehab ? 'Reabilitação' : null, p.content?.cover?.region].filter(Boolean).join(' · '))}</div>
           <div class="pp-card-meta">${escapeHtml(meta.filter(Boolean).join(' · '))}${flags}</div>
         </div>`;
       };
@@ -21103,7 +21143,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             <div><label class="field-label">Tipologia</label><select class="form-input" data-pp="project_type_id" id="pp-type"><option value="">Escolhe…</option>${typeOpts}</select></div>
             <div><label class="field-label">Área de construção (m²)</label>${inp('area', pp.area, { n: true })}</div>
             <div><label class="field-label">Frações</label>${inp('fractions', pp.fractions, { n: true })}</div>
-          </div>`,
+          </div>
+          <label class="pp-chk"><input type="checkbox" data-ppc="content.rehab"${c.rehab ? ' checked' : ''}> Projeto de reabilitação <span class="muted">— a capa fica «Reabilitação de …» e a abertura e as linhas do valor ajustam-se</span></label>`,
         coverMore: () => `
           <div class="form-grid">
             <div><label class="field-label" style="margin-top:0;">Nome na capa (se não for o do cliente)</label>${inp('client_name', pp.client_name, { ph: 'ex.: Maria e Reynald Aeschlimann' })}</div>
@@ -21233,7 +21274,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         <div class="detail-header pp-header">
           <div class="titles"><div class="pp-ref">${escapeHtml(ppRef(pp) || 'CST por atribuir')} ${pill(pp.status)}${plot ? ` <button type="button" class="text-btn" data-open-plot="${escapeHtml(plot.id)}">oportunidade: ${escapeHtml(plot.name)}</button>` : ''}</div>
             <h2>${escapeHtml(ppClientName(pp, d) || pp.title || 'Nova proposta de honorários')}</h2>
-            <div class="sub">${escapeHtml([pp.title && ppClientName(pp, d) ? pp.title : null, S.typeById[pp.project_type_id]?.name, c.cover.region].filter(Boolean).join(' · '))}</div></div>
+            <div class="sub">${escapeHtml([pp.title && ppClientName(pp, d) ? pp.title : null, S.typeById[pp.project_type_id]?.name, c.rehab ? 'Reabilitação' : null, c.cover.region].filter(Boolean).join(' · '))}</div></div>
           <div class="pp-head-right"><div class="segmented pp-langseg" role="radiogroup" aria-label="Língua da proposta"><button type="button" data-lang="pt" class="${en ? '' : 'active'}">PT</button><button type="button" data-lang="en" class="${en ? 'active' : ''}">EN</button></div>
             <span class="pp-saved" id="pp-saved" aria-live="polite"></span></div>
         </div>
@@ -21338,12 +21379,17 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       });
       main.addEventListener('change', async e => {
         const el = e.target;
+        if (el.dataset.ppc === 'content.rehab') {
+          c.rehab = el.checked; ppRehab(c, el.checked, en, S.typeById[pp.project_type_id]?.name);
+          touch(); ['coverMore', 'scopeText', 'value', 'pay'].forEach(redraw); liveRows(); return;
+        }
         if (el.dataset.ppc) { setPathObj(pp, el.dataset.ppc, el.checked); touch(el.dataset.ppc === 'content.timeline.on' ? 'timeline' : null); return; }
         if (el.tagName === 'SELECT' && el.dataset.pp) {
           setPathObj(pp, el.dataset.pp, el.value || null);
           if (el.dataset.pp === 'project_type_id') {
             const had = (pp.specialties || []).some(s => Number(s.value));
             if (!had) pp.specialties = specialtyPreset(S.cfg, pp.project_type_id);
+            if (c.rehab) { ppRehabCover(c, en, S.typeById[pp.project_type_id]?.name); redraw('coverMore'); }
             if (!c.pay.rows.some(r => r.stage)) await ppPayFromModel();
             touch(); ['cost', 'pay'].forEach(redraw);
           } else touch(/value\.lines/.test(el.dataset.pp) ? 'pay' : null);
@@ -21547,6 +21593,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         if (!k) { if (!name) return formError('tp-msg', 'Dá um nome ao modelo.'); k = 'own-' + Date.now().toString(36); }
         const base = tpls.find(t => t.key === k);
         const snap = JSON.parse(JSON.stringify(c));
+        if (snap.rehab) ppRehab(snap, false, en);   // os modelos ficam sem a reabilitação; marca-se em cada proposta
+        ['rehab', '_rhType'].forEach(x => delete snap[x]);
         ['mail', 'referral', 'date', 'kind'].forEach(x => delete snap[x]);
         snap.cover = { lines: snap.cover.lines, i18n: snap.cover.i18n };
         snap.scope.facts = (snap.scope.facts || []).map(f => ({ ...f, v: '' }));
