@@ -20,9 +20,12 @@
 //   6. DAYBREAK: cria uma reunião Teams fixa para a reunião diária das 8:40 (só o link, sem evento no calendário;
 //      app_settings 'daybreak'.join_url). Precisa de OnlineMeetings.ReadWrite.All e da política do Teams.
 //   4. GRAVAÇÃO AUTOMÁTICA: nas reuniões Teams futuras organizadas pela equipa (14 dias), liga "Gravar e transcrever
-//      automaticamente" (recordAutomatically), para a transcrição arrancar sozinha, e define o idioma falado
+//      automaticamente" (recordAutomatically) e as opções «Permitir gravação» e «Permitir transcrição» (allowRecording,
+//      allowTranscription), para a transcrição arrancar sozinha, e define o idioma falado
 //      (meetingSpokenLanguageTag): o do marco (project_milestones.meeting_lang) ou português de Portugal.
-//      Precisa de OnlineMeetings.ReadWrite.All.
+//      Confirma-o em cada sincronização (alterar a reunião no Outlook pode desligá-lo) e volta a ligar.
+//      Precisa de OnlineMeetings.ReadWrite.All. Reuniões sem transcrição ficam com o que o Teams diz delas em
+//      meeting_transcripts.diag (gravação automática, opções e número de gravações).
 // Precisa (Edge Functions → Secrets): MS_TENANT_ID, MS_CLIENT_ID, MS_CLIENT_SECRET — uma aplicação registada
 // no Entra ID com as permissões de aplicação Calendars.ReadWrite e MailboxSettings.ReadWrite (consentimento do
 // administrador). Sem estes segredos, só regista "por configurar" e sai.
@@ -296,7 +299,7 @@ async function userId(email: string) {
 // Gravação e transcrição automáticas nas reuniões Teams futuras organizadas pela equipa
 const AUTOREC_DAYS = 14, DEFAULT_LANG = "pt-PT";
 async function syncAutoRecord(members: any[], links: any[]) {
-  const res = { set: 0, error: null as string | null };
+  const res = { set: 0, fixed: 0, error: null as string | null };
   const now = Date.now(), nowIso = new Date(now).toISOString(), until = new Date(now + AUTOREC_DAYS * 864e5).toISOString();
   const byEmail = Object.fromEntries(members.map((m) => [String(m.email).toLowerCase(), m]));
   const byId = Object.fromEntries(members.map((m) => [m.id, m]));
@@ -317,26 +320,49 @@ async function syncAutoRecord(members: any[], links: any[]) {
     }
   }
   if (!cand.size) return res;
-  let seen: any = await db.from("ms_autorecord").select("ical_uid, status, lang").in("ical_uid", [...cand.keys()]);
+  let seen: any = await db.from("ms_autorecord").select("ical_uid, status, lang, tx").in("ical_uid", [...cand.keys()]);
+  if (seen.error) seen = await db.from("ms_autorecord").select("ical_uid, status, lang").in("ical_uid", [...cand.keys()]);
   if (seen.error) seen = await db.from("ms_autorecord").select("ical_uid, status").in("ical_uid", [...cand.keys()]);
   const prevBy = Object.fromEntries((seen.data || []).map((x: any) => [x.ical_uid, x]));
   for (const c of cand.values()) {
     const p = prevBy[c.ical_uid];
-    if (p?.status === "ok" && (p.lang === undefined || p.lang === c.lang)) continue;   // já gravada e no idioma certo
+    // Confirma-se em cada sincronização: alterar a reunião no Outlook pode desligar a gravação automática
     const row: any = { ical_uid: c.ical_uid, subject: c.subject, start_at: c.start_at, status: "ok", error: null, set_at: nowIso };
     if (p?.lang !== undefined || !seen.error) { row.lang = null; row.lang_error = null; }
     try {
       const uid = await userId(c.org.email);
       const om = (await g("GET", `/users/${uid}/onlineMeetings?$filter=${encodeURIComponent(`JoinWebUrl eq '${c.join_url}'`)}`))?.value?.[0];
       if (!om) throw new Error("Reunião não encontrada no Teams");
-      if (!om.recordAutomatically) await g("PATCH", `/users/${uid}/onlineMeetings/${om.id}`, { recordAutomatically: true });
+      const fine = om.recordAutomatically && om.allowRecording !== false && om.allowTranscription !== false;
+      if (fine && p?.status === "ok" && (p.lang === undefined || p.lang === c.lang) && (p.tx === undefined || p.tx)) continue;   // tudo como deve ser
+      // Cada alteração leva sempre recordAutomatically, para nenhuma a desligar sem querer
+      let touched = false;
+      if (!om.recordAutomatically) { await g("PATCH", `/users/${uid}/onlineMeetings/${om.id}`, { recordAutomatically: true }); touched = true; }
+      // Opções da reunião «Permitir gravação» e «Permitir transcrição»: sem elas a gravação arranca mas a transcrição não
+      if (!seen.error) {
+        try {
+          if (om.allowRecording === false || om.allowTranscription === false) {
+            await g("PATCH", `/users/${uid}/onlineMeetings/${om.id}`, { recordAutomatically: true, allowRecording: true, allowTranscription: true });
+            touched = true;
+          }
+          row.tx = true;
+        } catch (te: any) { row.tx = false; row.error = "Transcrição: " + te.message; console.error("ms365 transcrição:", c.subject, te.status, te.message); }
+      }
       // idioma falado (para a transcrição sair na língua certa); se o Teams recusar, a gravação fica na mesma
       if ("lang" in row) {
         try {
-          if (String(om.meetingSpokenLanguageTag || "").toLowerCase() !== c.lang.toLowerCase())
-            await g("PATCH", `/users/${uid}/onlineMeetings/${om.id}`, { meetingSpokenLanguageTag: c.lang });
+          if (String(om.meetingSpokenLanguageTag || "").toLowerCase() !== c.lang.toLowerCase()) {
+            await g("PATCH", `/users/${uid}/onlineMeetings/${om.id}`, { recordAutomatically: true, meetingSpokenLanguageTag: c.lang });
+            touched = true;
+          }
           row.lang = c.lang;
         } catch (le: any) { row.lang_error = le.message; row.lang = c.lang; console.error("ms365 idioma:", c.subject, le.status, le.message); }
+      }
+      // Confirma que o Teams guardou a gravação automática
+      if (touched) {
+        const chk = await g("GET", `/users/${uid}/onlineMeetings/${om.id}`);
+        if (!chk?.recordAutomatically) throw new Error("O Teams não guardou a gravação automática desta reunião");
+        if (!om.recordAutomatically && p?.status === "ok") res.fixed++;   // estava ligada e alguém a desligou (ex.: reunião alterada no Outlook)
       }
       res.set++;
     } catch (e: any) {
@@ -429,6 +455,13 @@ async function syncTranscripts(members: any[], links: any[]) {
       const om = (await g("GET", `/users/${uid}/onlineMeetings?$filter=${f}`))?.value?.[0];
       const tr = om ? ((await g("GET", `/users/${uid}/onlineMeetings/${om.id}/transcripts`))?.value || []) : [];
       if (!tr.length) {
+        // O que o Teams diz da reunião, para se perceber porque não há transcrição
+        if (!om) row.diag = "Reunião não encontrada no Teams pelo link";
+        else {
+          let rec = "?";
+          try { rec = String(((await g("GET", `/users/${uid}/onlineMeetings/${om.id}/recordings`))?.value || []).length); } catch (_) { /* sem permissão para ver gravações */ }
+          row.diag = `gravar automaticamente: ${om.recordAutomatically ? "sim" : "não"} · permitir gravação: ${om.allowRecording === false ? "não" : om.allowRecording ? "sim" : "?"} · permitir transcrição: ${om.allowTranscription === false ? "não" : om.allowTranscription ? "sim" : "?"} · gravações: ${rec}`;
+        }
         row.status = late ? "none" : "waiting";
         late ? res.none++ : res.waiting++;
       } else {
