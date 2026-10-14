@@ -20694,6 +20694,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const a = has ? Number(l.q) * Number(l.u) : Number(l.v) || 0;
       return l.kind === 'disc' ? -Math.abs(a) : a;
     }
+    // Data do documento: acompanha o dia de hoje enquanto a proposta é rascunho; o envio fixa-a (sent_on)
+    const ppDocDate = pp => pp.sent_on || (!pp.status || pp.status === 'draft' ? dateKey(new Date()) : pp.content?.date || dateKey(new Date()));
     const ppIsDisc = l => l.kind === 'disc' || l.kind === 'discp';
     // Reabilitação: a capa passa a «Reabilitação de <tipologia>», a abertura fala da reabilitação do imóvel e as linhas do valor
     // ganham «de Reabilitação». Ao desmarcar repõe-se o texto original, a não ser que tenha sido mudado à mão entretanto.
@@ -21262,7 +21264,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             <div><label class="field-label">Assina</label><select class="form-input" data-pp="content.closing.signer">${S.members.map(m => `<option value="${escapeHtml(m.id)}"${m.id === c.closing.signer ? ' selected' : ''}>${escapeHtml(m.name)}</option>`).join('')}</select></div>
             <div><label class="field-label">Cargo</label>${inp('content.closing.role', c.closing.role)}</div>
             <div><label class="field-label">Local</label>${inp('content.closing.place', c.closing.place)}</div>
-            <div><label class="field-label">Data do documento</label><input type="date" class="form-input" data-pp="content.date" value="${escapeHtml(c.date || '')}"></div>
+            <div><label class="field-label">Data do documento</label><input type="text" class="form-input" readonly tabindex="-1" style="opacity:.75" title="Acompanha o dia de hoje até a proposta ser enviada; o envio fixa a data." value="${escapeHtml(ppDocDate(pp).split('-').reverse().join('/') + (pp.sent_on ? ' · data do envio' : ' · hoje, até ao envio'))}"></div>
             <div><label class="field-label">Validade (dias)</label>${inp('valid_days', pp.valid_days, { n: true })}</div>
           </div>`
       };
@@ -21826,7 +21828,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         : { scope: 'Âmbito', value: 'Valor', pay: 'Condições de Pagamento', timeline: 'Timeline', opt: 'Opcionais de Projeto', excl: 'Exclusões de Projeto', desc: 'Descrição', val: 'Valor', units: 'Unid.', unit: 'Valor unit.', tot: 'Valor total', total: 'Total', monthly: 'mensal', client: 'Cliente', valid: n => `Esta proposta é válida por ${n} dias.`, manifesto: 'Uma casa NOVA. Manifesto.' };
       const T = ppTotals(c);
       const client = ppClientName(pp, S.d) || pp.title || '';
-      const docDate = parseDateKey(c.date || dateKey(new Date()));
+      const docDate = parseDateKey(ppDocDate(pp));
       const dShort = `${String(docDate.getDate()).padStart(2, '0')}.${String(docDate.getMonth() + 1).padStart(2, '0')}.${docDate.getFullYear()}`;
       const dLong = en ? docDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
         : `${String(docDate.getDate()).padStart(2, '0')} de ${docDate.toLocaleDateString('pt-PT', { month: 'long' }).replace(/^./, x => x.toUpperCase())} de ${docDate.getFullYear()}`;
@@ -22064,7 +22066,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <div class="ref"><b>CST ${e(String(pp.number || ''))}</b> · V${e(String(pp.version || 1))}<br>${e(dShort)}</div>
         </div>
         <template id="tpl"><div class="page"><div class="rh"><img src="${e(logoP)}" alt="NOVA"><span>${e([pp.number ? 'CST ' + pp.number + ' V' + (pp.version || 1) : '', client].filter(Boolean).join('  ·  '))}</span></div><div class="content"></div>${foot}<span class="pno"></span></div></template>
-        <div id="flow" class="content">${ppTokens(B.join(''), { secs, rate: ppRate(S.cfg), days: pp.valid_days || 30, until: addDaysKey(c.date || dateKey(new Date()), Number(pp.valid_days) || 30), local: [c.cover.place, c.cover.region].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).join(', ') })}</div>
+        <div id="flow" class="content">${ppTokens(B.join(''), { secs, rate: ppRate(S.cfg), days: pp.valid_days || 30, until: addDaysKey(ppDocDate(pp), Number(pp.valid_days) || 30), local: [c.cover.place, c.cover.region].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).join(', ') })}</div>
         <script>
           // Paginação por capítulos: uma secção só muda de página se não couber inteira na que está;
           // se for maior do que uma página, parte-se entre unidades (tabela, grupo, título + texto), nunca a meio delas.
