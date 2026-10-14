@@ -6,7 +6,7 @@ const only = process.argv[2] ? process.argv[2].split(',') : null, sizes = proces
 (async () => { const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
  const ctx = await b.newContext({ viewport: { width: 800, height: 600 } }); const pg = await ctx.newPage();
  await pg.goto('file://' + __dirname + '/gerador.html');
- for (const d of (only || ['essencial', 'monograma', 'topografia', 'luz'])) for (const mode of ['light', 'dark']) for (const s of sizes) {
+ for (const d of (only || ['assinatura'])) for (const mode of ['light', 'dark']) for (const s of sizes) {
    const [w, h] = SIZES[s];
    await pg.setViewportSize({ width: w, height: h });
    await pg.evaluate(([d, mode, w, h]) => window.render(d, mode, w, h), [d, mode, w, h]);
