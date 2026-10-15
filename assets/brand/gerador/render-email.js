@@ -5,5 +5,5 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
  const pg = await (await b.newContext({ viewport: { width: 450, height: 150 } })).newPage();
  await pg.goto('file://' + __dirname + '/gerador.html');
  await pg.evaluate(() => window.renderPlate(450, 150));
- await (await pg.$('#c')).screenshot({ path: `${__dirname}/../email/assinatura-logo.png` });
+ await (await pg.$('#c')).screenshot({ path: `${__dirname}/../email/assinatura-logo-claro.png` });
  await b.close(); })();

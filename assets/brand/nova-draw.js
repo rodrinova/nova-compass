@@ -66,9 +66,9 @@
   // Fundo assinatura: um só desenho para toda a marca (fundos de ecrã, Teams, LinkedIn, posts, cartão, capas dos PDFs).
   // Escuro e calmo: luz ameixa a subir de baixo à esquerda, areia a cair de cima à direita, e um halo leve para assentar
   // o logótipo ao centro. Sem feixe nem desenho: só luz. Grão só para não haver degraus.
-  // (a versão clara fica para o fundo dos ecrãs da app; as peças da marca usam a escura)
+  // Claro «pedra»: nunca branco (o branco choca); é o do cartão digital e da assinatura de email.
   const SIG = {
-    light: { base: ['#F7F6F2', '#EEEBE5'], a: [113, 77, 121, .16], b: [224, 205, 180, .5], halo: [255, 255, 255, .22] },
+    light: { base: ['#E8E4DE', '#DAD5CE'], a: [113, 77, 121, .22], b: [214, 192, 162, .55], halo: [255, 255, 255, .20] },
     dark: { base: ['#1A1817', '#0F0E0D'], a: [124, 84, 132, .46], b: [140, 108, 76, .16], halo: [181, 155, 187, .05] }
   };
   // Centro do N num logótipo com centro em cx e largura lw (o N ocupa x 0..353 de 1362)
