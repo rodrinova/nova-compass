@@ -57,6 +57,18 @@ window.renderLI = async (kind, design, mode, w, h) => {
   D.grain(g, w, h, 1.6, 23);
   return true;
 };
+// Fundo de reunião (Teams), 1920×1080. A pessoa ocupa o centro e a parte de baixo, e o Teams corta as pontas
+// em algumas grelhas: o logótipo vai para o terço de cima, à direita, dentro dos 3/4 centrais da largura.
+// O fundo fica em meio-tom (nem branco puro nem preto) para o recorte da pessoa ficar limpo.
+window.renderTeams = (mode, w, h) => {
+  const g = canvas(w, h), P = PAL[mode];
+  const cx = w * .76, cy = h * .2, lw = w * .12;
+  D.background(g, 'assinatura', mode, w, h, { focus: { fx: cx / w, fy: cy / h, bx: D.nCenterX(cx, lw) / w, by: cy / h } });
+  g.fillStyle = mode === 'dark' ? 'rgba(255,248,240,.045)' : 'rgba(58,42,54,.075)'; g.fillRect(0, 0, w, h);
+  D.logo(g, cx, cy, lw, P.ink);
+  D.grain(g, w, h, 1, 31);
+  return true;
+};
 // Logótipo da página (quadrado): palavra NOVA ou o N, em fundo claro ou ameixa
 window.renderLogo = (kind, bg, w) => {
   const g = canvas(w, w), plum = '#714D79', light = '#F4F3EF';
