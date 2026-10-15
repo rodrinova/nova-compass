@@ -3288,6 +3288,9 @@
   /* ---- Brandbook ---- */
   .br-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: var(--sp-5); }
   .br-bar .segmented { margin: 0; }
+  #br-tabs { max-width: 100%; overflow-x: auto; scrollbar-width: none; flex-wrap: nowrap; }
+  #br-tabs::-webkit-scrollbar { display: none; }
+  #br-tabs button { flex: none; }
   .br-lead { color: var(--text-2); font-size: var(--fs-md); line-height: 1.55; margin: 0 0 var(--sp-5); max-width: 62ch; text-wrap: pretty; }
   .br-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--sp-5); }
   .br-grid.br-walls { grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); }
@@ -3297,6 +3300,7 @@
   .br-desk { left: 6%; top: 9%; width: 76%; aspect-ratio: 16 / 9; border-radius: 6px; box-shadow: 0 0 0 1px rgba(0,0,0,.06), 0 10px 30px rgba(0,0,0,.12); }
   .br-phone { right: 6%; bottom: 7%; height: 70%; aspect-ratio: 1320 / 2868; border-radius: 13% / 6%; border: 3px solid #1B1A19; box-shadow: 0 12px 30px rgba(0,0,0,.22); background: #1B1A19; }
   .br-info { padding: var(--sp-4) var(--sp-4) var(--sp-2); }
+  .br-teams-img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-bottom: 1px solid var(--border); background: var(--surface-2); }
   .br-info b { display: block; font-size: var(--fs-lg); font-weight: var(--fw-semibold); letter-spacing: -.01em; }
   .br-info span { display: block; color: var(--text-2); font-size: var(--fs-sm); line-height: 1.5; margin-top: 2px; }
   .br-dl { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: var(--sp-1-5); padding: var(--sp-2) var(--sp-4) var(--sp-4); margin-top: auto; }
@@ -16918,6 +16922,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         steps: ['Toca no teu nome (em baixo, à esquerda) → [[Brandbook]] → **Fundos de ecrã** (ou ⌘K → «fundo»).', 'Escolhe **Claro** ou **Escuro** no topo.', 'Toca no tamanho: **4K** para ecrãs Retina ou 4K, **1080p** para monitores Full HD, **iPad** ou **iPhone**.', 'No iPhone e no iPad abre-se a partilha: escolhe **Guardar imagem** e depois, em Fotografias, **Partilhar → Usar como papel de parede**.', 'No computador: Mac, Definições do Sistema → Papel de parede → Adicionar fotografia; Windows, botão direito no ficheiro → Definir como fundo do ambiente de trabalho.'],
         kw: 'fundo fundos ecra wallpaper papel parede ambiente trabalho imagem iphone ipad mac windows 4k 1080p brandbook',
         tour: [{ go: 'brand:walls', sel: '.br-grid', text: 'Toca no tamanho para descarregar.' }] },
+      { id: 'teams-fundo', cat: 'start', ctx: ['brand'],
+        q: 'ponho o fundo da NOVA nas reuniões do Teams',
+        a: 'Brandbook → Teams: descarrega o fundo claro ou escuro e carrega-o uma vez no Teams (Efeitos de fundo → Adicionar novo).',
+        steps: ['Toca no teu nome (em baixo, à esquerda) → [[Brandbook]] → **Teams** (ou ⌘K → «teams»).', 'Descarrega o **Claro** (roupa ou cabelo escuros) ou o **Escuro** (roupa ou cabelo claros).', 'No Teams, antes de entrar numa reunião: **Efeitos de fundo → Adicionar novo**, escolhe o ficheiro e **Aplicar**. Fica guardado para as próximas.', 'Na tua pré-visualização o logótipo aparece ao contrário: é só para ti. Os outros veem-no bem.'],
+        kw: 'teams reuniao reunioes videochamada chamada fundo virtual background efeitos camara video',
+        tour: [{ go: 'brand:teams', sel: '.br-grid', text: 'Descarrega o fundo e carrega-o no Teams.' }] },
       { id: 'linkedin', cat: 'start', ctx: ['brand'],
         q: 'faço um post ou ponho a capa da NOVA no LinkedIn',
         a: 'Brandbook → LinkedIn: logótipo e capas da página, capas pessoais, gerador de posts e os textos da página (PT e EN) prontos a copiar.',
@@ -23927,7 +23937,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     // No telemóvel e no iPad abre-se a partilha («Guardar imagem» vai para as Fotografias)
     const brShareable = () => matchMedia('(pointer: coarse)').matches && typeof navigator.canShare === 'function';
     function openBrandModule(tab) {
-      if (['walls', 'sig', 'card', 'li'].includes(tab)) brTab = tab;
+      if (['walls', 'teams', 'sig', 'card', 'li'].includes(tab)) brTab = tab;
       else if (tab && tab.startsWith('li-')) { brTab = 'li'; liSec = tab.slice(3); }
       pushCurrentView({ name: 'brand' });
       document.getElementById('nav-title').textContent = 'Brandbook';
@@ -23940,11 +23950,29 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       // o foco do teclado sobrevive ao redesenho (cada clique volta a montar o ecrã)
       const fk = (() => { const el = document.activeElement; if (!el || !box.contains(el)) return null; for (const k of ['t', 's', 'tpl', 'fmt', 'mode', 'plang', 'l']) if (el.dataset?.[k] != null) return `[data-${k}="${el.dataset[k]}"]`; return el.id ? '#' + el.id : null; })();
       const dl = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></svg>';
-      const tabs = `<div class="segmented" id="br-tabs" role="tablist" aria-label="Brandbook">${[['walls', 'Fundos de ecrã'], ['li', 'LinkedIn'], ['sig', 'Assinatura de email'], ['card', 'Cartão digital']].map(([k, l]) => `<button type="button" role="tab" data-t="${k}" aria-selected="${k === brTab}"${k === brTab ? ' class="active"' : ''}>${l}</button>`).join('')}</div>`;
+      const tabs = `<div class="segmented" id="br-tabs" role="tablist" aria-label="Brandbook">${[['walls', 'Fundos de ecrã'], ['teams', 'Teams'], ['li', 'LinkedIn'], ['sig', 'Assinatura de email'], ['card', 'Cartão digital']].map(([k, l]) => `<button type="button" role="tab" data-t="${k}" aria-selected="${k === brTab}"${k === brTab ? ' class="active"' : ''}>${l}</button>`).join('')}</div>`;
       if (brTab === 'li') renderBrandLI(box, tabs);
       else if (brTab === 'card') {
         box.innerHTML = `<div class="br-bar">${tabs}</div><div id="brand-card-container"><div class="gantt-wrap"><div class="detail-loading">A carregar...</div></div></div>`;
         loadBizCard();
+      } else if (brTab === 'teams') {
+        // Fundos de reunião: 1920 × 1080, logótipo no terço de cima (fora da cabeça e dos cortes do Teams), meio-tom para o recorte
+        box.innerHTML = `
+          <div class="br-bar">${tabs}</div>
+          <p class="br-lead">O fundo da NOVA para as reuniões do Teams. O logótipo fica em cima, à direita, onde a tua cabeça não o tapa e o Teams não o corta. Escolhe o que contrasta mais com a tua roupa e o teu cabelo: o recorte fica mais limpo.</p>
+          <div class="br-grid br-walls">${BR_MODES.map(([m, mn]) => `
+            <article class="br-card">
+              <img class="br-teams-img" src="assets/brand/teams/teams-${m}-thumb.jpg" alt="Fundo de reunião ${mn.toLowerCase()}" loading="lazy">
+              <div class="br-info"><b>${mn}</b><span>${m === 'light' ? 'Para roupa ou cabelo escuros, e salas com luz de dia.' : 'Para roupa ou cabelo claros, e fins de tarde.'}</span></div>
+              <div class="br-dl"><a class="br-chip" href="assets/brand/teams/teams-${m}.jpg" download="NOVA - Teams ${mn.toLowerCase()}.jpg"><b>${dl}Descarregar</b><small>1920 × 1080</small></a></div>
+            </article>`).join('')}
+          </div>
+          <details class="br-how" open><summary>Como pôr o fundo no Teams</summary><div class="br-how-g">
+            <div><b>Antes de entrar</b><span>No ecrã antes de entrar na reunião, abre <b>Efeitos de fundo</b> → <b>Adicionar novo</b>, escolhe o ficheiro que descarregaste e carrega em <b>Aplicar</b>. Só tens de o carregar uma vez: fica na lista para as próximas reuniões.</span></div>
+            <div><b>Durante a reunião</b><span>Carrega em <b>Mais (…)</b> → <b>Efeitos de vídeo</b> e escolhe o fundo da NOVA na lista.</span></div>
+            <div><b>Na tua imagem o logótipo aparece ao contrário</b><span>O Teams mostra-te a ti em espelho. Os outros veem o NOVA no sentido certo. Não inverta o ficheiro.</span></div>
+            <div><b>Para o recorte ficar limpo</b><span>Luz de frente (janela à tua frente, não atrás), câmara à altura dos olhos e uma parede lisa atrás de ti. Funciona melhor na app do Teams no computador.</span></div>
+          </div></details>`;
       } else if (brTab === 'sig') {
         box.innerHTML = `<div class="br-bar">${tabs}</div><div class="gantt-wrap" id="brand-sig-container"><div class="detail-loading">A carregar...</div></div>`;
         loadSignatureSettings();
@@ -23967,6 +23995,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           </div></details>`;
       }
       box.querySelectorAll('#br-tabs [data-t]').forEach(b => b.addEventListener('click', () => { if (brTab === b.dataset.t) return; brTab = b.dataset.t; renderBrand(); }));
+      { const bt = box.querySelector('#br-tabs'), on = bt?.querySelector('.active'); if (bt && on) bt.scrollLeft += on.getBoundingClientRect().left - bt.getBoundingClientRect().left - (bt.clientWidth - on.offsetWidth) / 2; }   // no telemóvel, o separador escolhido fica à vista
       if (fk) box.querySelector(fk)?.focus({ preventScroll: true });
       box.querySelectorAll('a.br-chip').forEach(a => {
         a.addEventListener('touchstart', () => { if (brShareable()) brFetch(a.href).catch(() => {}); }, { passive: true });
@@ -27637,6 +27666,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       { group: 'Ir para', label: 'O meu cartão digital (QR)', keys: 'cartao visita digital qr codigo contacto vcard partilhar cliente whatsapp', run: () => { navStack = []; openBrandModule('card'); } },
       { group: 'Ir para', label: 'Novidades da app', keys: 'novidades novo novas funcionalidades atualizacoes o que mudou', run: () => openNewsHistory() },
       { group: 'Ir para', label: 'LinkedIn: capas, posts e textos da NOVA', keys: 'linkedin capa banner post publicacao logotipo redes sociais rede social perfil pagina empresa', run: () => { navStack = []; openBrandModule('li'); } },
+      { group: 'Ir para', label: 'Fundo das reuniões do Teams', keys: 'teams reuniao videochamada fundo virtual background efeitos', run: () => { navStack = []; openBrandModule('teams'); } },
       { group: 'Ir para', label: 'Fundos de ecrã', keys: 'fundo fundos ecra wallpaper papel parede ambiente trabalho iphone ipad 4k', run: () => { navStack = []; openBrandModule('walls'); } },
       { group: 'Ir para', label: 'Contactos (fornecedores, especialidades, entidades)', keys: 'contactos fornecedores fornecedor materiais servicos especialidades engenheiros camara caixilharia avac empreiteiros telefone', run: () => NAV_ACTIONS.contacts() },
       { group: 'Criar', label: 'Novo contacto (fornecedor, especialidade…)', keys: 'novo contacto fornecedor adicionar', run: () => openContactModal(null) },
