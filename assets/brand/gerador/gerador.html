@@ -69,11 +69,19 @@ window.renderTeams = (mode, w, h) => {
   D.grain(g, w, h, 1, 31);
   return true;
 };
-// Logótipo da página (quadrado): palavra NOVA ou o N, em fundo claro ou ameixa
+// Placa da assinatura de email: o logótipo no fundo escuro da marca (o texto da assinatura fica escuro, sobre o branco do email)
+window.renderPlate = (w, h) => {
+  const g = canvas(w, h);
+  D.background(g, 'assinatura', 'dark', w, h, { focus: { fx: .5, fy: .5 } });
+  D.logo(g, w / 2, h / 2, w * .56, PAL.dark.ink);
+  return true;
+};
+// Logótipo da página (quadrado): palavra NOVA ou o N, no fundo escuro da marca ou em ameixa
 window.renderLogo = (kind, bg, w) => {
   const g = canvas(w, w), plum = '#714D79', light = '#F4F3EF';
-  g.fillStyle = bg === 'ameixa' ? plum : light; g.fillRect(0, 0, w, w);
-  const ink = bg === 'ameixa' ? light : plum;
+  if (bg === 'escuro') D.background(g, 'assinatura', 'dark', w, w, { focus: { fx: .5, fy: .5 } });
+  else { g.fillStyle = bg === 'ameixa' ? plum : light; g.fillRect(0, 0, w, w); }
+  const ink = bg === 'escuro' ? PAL.dark.ink : bg === 'ameixa' ? light : plum;
   if (kind === 'palavra') D.logo(g, w / 2, w / 2, w * .78, ink);
   else { const nh = w * .5, nw = nh * 353 / 382; D.monogram(g, w / 2 - nw / 2, w / 2 - nh / 2, nh, ink); }
   return true;

@@ -63,21 +63,20 @@
     gr = g.createRadialGradient(w * b[0], h * b[1], 0, w * b[0], h * b[1], d * rb);
     gr.addColorStop(0, rgba(P.glowB)); gr.addColorStop(.5, rgba(P.glowB, .35)); gr.addColorStop(1, rgba(P.glowB, 0)); g.fillStyle = gr; g.fillRect(0, 0, w, h);
   }
-  // Fundo assinatura: um só desenho para toda a marca (fundos de ecrã, LinkedIn, posts, cartão).
-  // A ideia é o feixe: luz na diagonal do N do logótipo (55,7°), a passar pelo próprio traço do N e a ganhar
-  // força para baixo e para a direita (a direção certa). À volta, luz ameixa a subir de baixo à esquerda e areia
-  // a cair de cima à direita, discretas; um halo leve só para assentar o logótipo. Grão só para não haver degraus.
+  // Fundo assinatura: um só desenho para toda a marca (fundos de ecrã, Teams, LinkedIn, posts, cartão, capas dos PDFs).
+  // Escuro e calmo: luz ameixa a subir de baixo à esquerda, areia a cair de cima à direita, e um halo leve para assentar
+  // o logótipo ao centro. Sem feixe nem desenho: só luz. Grão só para não haver degraus.
+  // (a versão clara fica para o fundo dos ecrãs da app; as peças da marca usam a escura)
   const SIG = {
-    light: { base: ['#F7F6F2', '#EEEBE5'], a: [113, 77, 121, .16], b: [224, 205, 180, .5], beam: [255, 255, 255, .62], halo: [255, 255, 255, .22] },
-    dark: { base: ['#1A1817', '#0F0E0D'], a: [124, 84, 132, .46], b: [140, 108, 76, .16], beam: [200, 172, 210, .15], halo: [181, 155, 187, .04] }
+    light: { base: ['#F7F6F2', '#EEEBE5'], a: [113, 77, 121, .16], b: [224, 205, 180, .5], halo: [255, 255, 255, .22] },
+    dark: { base: ['#1A1817', '#0F0E0D'], a: [124, 84, 132, .46], b: [140, 108, 76, .16], halo: [181, 155, 187, .05] }
   };
-  const N_ANGLE = 55.7 * Math.PI / 180;
   // Centro do N num logótipo com centro em cx e largura lw (o N ocupa x 0..353 de 1362)
   const nCenterX = (cx, lw) => cx - lw * .37;
-  // fx, fy: halo (normalmente o centro do logótipo); bx, by: por onde passa o feixe (o centro do N), em fração
-  function signature(g, mode, w, h, { fx = .5, fy = .47, bx = null, by = null } = {}) {
+  // fx, fy: halo (normalmente o centro do logótipo), em fração
+  function signature(g, mode, w, h, { fx = .5, fy = .47 } = {}) {
     const S = SIG[mode], d = Math.hypot(w, h), m = Math.min(w, h);
-    let gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, S.base[0]); gr.addColorStop(1, S.base[1]);
+    const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, S.base[0]); gr.addColorStop(1, S.base[1]);
     g.fillStyle = gr; g.fillRect(0, 0, w, h);
     const bloom = (x, y, r, c) => {
       const q = g.createRadialGradient(x, y, 0, x, y, r);
@@ -86,21 +85,7 @@
     };
     bloom(w * .04, h * 1.08, d * .62, S.a);
     bloom(w * .97, -h * .1, d * .52, S.b);
-    // o feixe, desenhado à parte para se poder esbater ao longo do comprimento
-    const ax = (bx ?? fx) * w, ay = (by ?? fy) * h;
-    const off = document.createElement('canvas'); off.width = w; off.height = h;
-    const o = off.getContext('2d');
-    o.translate(ax, ay); o.rotate(-(Math.PI / 2 - N_ANGLE));   // o eixo y local segue a diagonal do N (para baixo e para a direita)
-    const bw = Math.max(m * 1.3, w * .28);
-    gr = o.createLinearGradient(-bw / 2, 0, bw / 2, 0);
-    for (let k = 0; k <= 20; k++) { const t = k / 20; gr.addColorStop(t, rgba(S.beam, Math.exp(-(((t - .5) / .11) ** 2)))); }   // gaussiano: luz, não risca
-    o.fillStyle = gr; o.fillRect(-bw / 2, -d, bw, 2 * d);
-    o.globalCompositeOperation = 'destination-in';
-    const lg = o.createLinearGradient(0, -d * .55, 0, d * .55);
-    lg.addColorStop(0, 'rgba(0,0,0,.18)'); lg.addColorStop(.5, 'rgba(0,0,0,.7)'); lg.addColorStop(1, 'rgba(0,0,0,1)');
-    o.fillStyle = lg; o.fillRect(-bw / 2, -d, bw, 2 * d);
-    g.drawImage(off, 0, 0);
-    bloom(fx * w, fy * h, m * .5, S.halo);
+    bloom(fx * w, fy * h, m * .6, S.halo);
   }
   // Fundo de um desenho, sem logótipo nem grão. mono: onde fica o N do Monograma ({ x, y, h } em píxeis)
   function background(g, design, mode, w, h, o = {}) {

@@ -8,13 +8,13 @@ const SIZES = { cover: [4200, 700], life: [2256, 752], personal: [1584, 396] };
  const pg = await (await b.newContext({ viewport: { width: 800, height: 600 } })).newPage();
  await pg.goto('file://' + __dirname + '/gerador.html');
  if (process.argv[2]) await pg.addStyleTag({ path: process.argv[2] });
- for (const kind of (process.argv[3] ? process.argv[3].split(',') : Object.keys(SIZES))) for (const d of (process.argv[4] ? process.argv[4].split(',') : ['assinatura'])) for (const mode of ['light', 'dark']) {
+ for (const kind of (process.argv[3] ? process.argv[3].split(',') : Object.keys(SIZES))) for (const d of (process.argv[4] ? process.argv[4].split(',') : ['assinatura'])) for (const mode of ['dark']) {   // a marca usa só a versão escura
    const [w, h] = SIZES[kind];
    await pg.setViewportSize({ width: w, height: h });
    await pg.evaluate(([k, d, mode, w, h]) => window.renderLI(k, d, mode, w, h), [kind, d, mode, w, h]);
    await (await pg.$('#c')).screenshot({ path: `${OUT}${kind}-${d}-${mode}.png` });
  }
- for (const k of ['palavra', 'n']) for (const bg of ['claro', 'ameixa']) {
+ for (const k of ['palavra', 'n']) for (const bg of ['escuro', 'ameixa']) {
    await pg.setViewportSize({ width: 800, height: 800 });
    await pg.evaluate(([k, bg]) => window.renderLogo(k, bg, 800), [k, bg]);
    await (await pg.$('#c')).screenshot({ path: `${OUT}logo-${k}-${bg}.png` });
