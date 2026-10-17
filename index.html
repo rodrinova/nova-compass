@@ -3254,6 +3254,24 @@
   .mp-coords { font-size: var(--fs-sm); color: var(--text-2); padding-top: 10px; font-variant-numeric: tabular-nums; }
   .mp-acts { display: flex; justify-content: flex-end; gap: var(--sp-2); margin-top: var(--sp-3); }
   .mp-acts .primary-btn, .mp-acts .secondary-btn { width: auto; margin: 0; padding: 0 18px; }
+  .mp-map, .ps-loc-map { position: relative; z-index: 0; isolation: isolate; }
+  .mp-map .leaflet-container, .ps-loc-map.leaflet-container { font: inherit; background: var(--surface-2); }
+  .mp-pin { background: none; border: 0; }
+  .mp-pin i { position: absolute; left: 3px; top: 0; width: 22px; height: 22px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: var(--accent); border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+  .mp-pin i::after { content: ''; position: absolute; left: 6px; top: 6px; width: 6px; height: 6px; border-radius: 50%; background: #fff; }
+  .ps-loc { display: flex; align-items: stretch; gap: var(--sp-4); margin: 0 0 var(--sp-4); padding: var(--sp-3); border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--surface); }
+  .ps-loc:not(.has) { padding: var(--sp-2) var(--sp-3); }
+  .ps-loc-map { flex: 0 0 300px; height: 150px; border-radius: var(--r-md); overflow: hidden; cursor: pointer; background: var(--surface-2); }
+  .ps-loc-map:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .ps-loc-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; justify-content: center; }
+  .ps-loc-txt .section-label { margin: 0 0 2px; }
+  .ps-loc-txt small { color: var(--text-2); font-size: var(--fs-sm); }
+  .ps-loc-acts { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-4); margin-top: var(--sp-2); }
+  .ps-loc-empty { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); width: 100%; font-size: var(--fs-sm); color: var(--text-2); }
+  .ps-loc-empty b { color: var(--text); }
+  .ps-loc-empty .secondary-btn { width: auto; margin: 0; padding: 0 14px; flex: none; }
+  @media (max-width: 640px) { .ps-loc.has { flex-direction: column; gap: var(--sp-3); } .ps-loc-map { flex: none; width: 100%; height: 160px; } }
+  @media (prefers-color-scheme: dark) { .mp-map .leaflet-tile-pane, .ps-loc-map .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.92) contrast(.88) saturate(.7); } .mp-map .leaflet-control-attribution, .ps-loc-map .leaflet-control-attribution { background: rgba(28,28,30,.8); color: var(--text-2); } .mp-map .leaflet-bar a { background: var(--surface-2); color: var(--text); border-color: var(--border); } }
   .mp-picked { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-3); margin-top: var(--sp-2); padding: var(--sp-2) var(--sp-3); border-radius: var(--r-md); background: var(--accent-soft); font-size: var(--fs-sm); }
   .mp-picked span { display: grid; } .mp-picked small { color: var(--text-2); }
   .ps-mail { font: inherit; line-height: 1.55; margin-top: var(--sp-2); resize: vertical; }
@@ -19335,7 +19353,6 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     // ---------- Localização da oportunidade: link do Google Maps ou ponto marcado no mapa → morada para confirmar ----------
     const mapsCall = async (action, body = {}) => {
       if (devMode) {
-        if (action === 'key') return { key: null };
         if (action === 'expand') return { url: body.url };
         return { address: 'Rua do Campo, 120', parish: 'Mafamude e Vilar do Paraíso', municipality: 'Vila Nova de Gaia', postal: '4430-000', formatted: 'Rua do Campo 120, Vila Nova de Gaia' };
       }
@@ -19363,21 +19380,30 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       return c;
     }
     const mapsLink = c => `https://www.google.com/maps?q=${c.lat.toFixed(6)},${c.lng.toFixed(6)}`;
-    let gmapsReady = null;
-    function loadGoogleMaps() {
-      if (window.google?.maps?.Map) return Promise.resolve(true);
-      if (gmapsReady) return gmapsReady;
-      gmapsReady = mapsCall('key').then(({ key }) => {
-        if (!key) return false;
-        return new Promise((res, rej) => {
-          window.__gmReady = () => res(true);
-          const sc = document.createElement('script');
-          sc.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&v=weekly&language=pt-PT&region=PT&callback=__gmReady`;
-          sc.async = true; sc.onerror = () => rej(new Error('O Google Maps não carregou'));
-          document.head.appendChild(sc);
-        });
-      }).catch(e => { gmapsReady = null; throw e; });
-      return gmapsReady;
+    // Mapa: Leaflet + OpenStreetMap (gratuito, sem chave nem conta). A morada vem do OpenStreetMap (função maps).
+    const LEAFLET_JS = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js';
+    const LEAFLET_CSS = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css';
+    let leafletReady = null;
+    function loadLeaflet() {
+      if (window.L?.map) return Promise.resolve();
+      if (leafletReady) return leafletReady;
+      if (!document.getElementById('leaflet-css')) { const l = document.createElement('link'); l.id = 'leaflet-css'; l.rel = 'stylesheet'; l.href = LEAFLET_CSS; document.head.appendChild(l); }
+      leafletReady = new Promise((res, rej) => {
+        const sc = document.createElement('script'); sc.src = LEAFLET_JS; sc.async = true;
+        sc.onload = () => res(); sc.onerror = () => { leafletReady = null; rej(new Error('O mapa não carregou (sem internet?)')); };
+        document.head.appendChild(sc);
+      });
+      return leafletReady;
+    }
+    const mapPinIcon = () => L.divIcon({ className: 'mp-pin', html: '<i></i>', iconSize: [28, 38], iconAnchor: [14, 36] });
+    function osmMap(el, { center, zoom, interactive = true }) {
+      const map = L.map(el, { zoomControl: interactive, dragging: interactive, scrollWheelZoom: interactive, doubleClickZoom: interactive, boxZoom: interactive, keyboard: interactive, touchZoom: interactive });
+      map.attributionControl.setPrefix(false);
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>' }).addTo(map);
+      map.setView([center.lat, center.lng], zoom);
+      // dentro de janelas que ainda estão a abrir, o tamanho só fica certo depois da animação
+      setTimeout(() => map.invalidateSize(), 260);
+      return map;
     }
     // Janela do mapa: colar link ou tocar no mapa → morada proposta (editável) → Confirmar. onConfirm({ lat, lng, address, parish, municipality, maps_url })
     async function openMapPicker({ start = null, onConfirm, back = null }) {
@@ -19409,7 +19435,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       };
       const setPoint = async (c, pan) => {
         cur = c; found = null; showAddr();
-        if (map) { if (!marker) { marker = new google.maps.Marker({ map, position: c, draggable: true }); marker.addListener('dragend', ev => setPoint({ lat: ev.latLng.lat(), lng: ev.latLng.lng() }, false)); } else marker.setPosition(c); if (pan) { map.panTo(c); if (map.getZoom() < 16) map.setZoom(17); } }
+        if (map) {
+          if (!marker) { marker = L.marker([c.lat, c.lng], { draggable: true, icon: mapPinIcon(), keyboard: false }).addTo(map); marker.on('dragend', () => { const ll = marker.getLatLng(); setPoint({ lat: ll.lat, lng: ll.lng }, false); }); }
+          else marker.setLatLng([c.lat, c.lng]);
+          if (pan) map.setView([c.lat, c.lng], Math.max(map.getZoom(), 17));
+        }
         try { found = await mapsCall('reverse', c); } catch (e) { found = { address: null, parish: null, municipality: null, formatted: 'Não consegui encontrar a morada: escreve-a à mão.' }; }
         if (cur === c) showAddr();
       };
@@ -19423,15 +19453,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       el('mp-link').addEventListener('keydown', e => { if (e.key === 'Enter') fromLink(); });
       el('mp-link').addEventListener('paste', () => setTimeout(fromLink, 0));
       try {
-        const ok = await loadGoogleMaps();
+        await loadLeaflet();
         const box = el('mp-map'); if (!box) return;
-        if (!ok) { box.innerHTML = '<div class="mp-wait">O mapa do Google ainda não está ligado nesta app. Para já, cola o link do Google Maps em cima: a morada é encontrada na mesma.</div>'; el('mp-hint').hidden = true; }
-        else {
-          box.innerHTML = '';
-          map = new google.maps.Map(box, { center: cur || { lat: 41.1496, lng: -8.6110 }, zoom: cur ? 17 : 11, mapTypeId: 'hybrid', mapTypeControl: true, streetViewControl: false, fullscreenControl: true, clickableIcons: false, gestureHandling: 'greedy' });
-          map.addListener('click', ev => setPoint({ lat: ev.latLng.lat(), lng: ev.latLng.lng() }, false));
-        }
-      } catch (e) { const box = el('mp-map'); if (box) box.innerHTML = `<div class="mp-wait">${escapeHtml(e.message)}. Cola o link do Google Maps em cima.</div>`; }
+        box.innerHTML = '';
+        map = osmMap(box, { center: cur || { lat: 41.1496, lng: -8.6110 }, zoom: cur ? 17 : 11 });
+        map.on('click', ev => setPoint({ lat: ev.latlng.lat, lng: ev.latlng.lng }, false));
+      } catch (e) { const box = el('mp-map'); if (box) box.innerHTML = `<div class="mp-wait">${escapeHtml(e.message)}. Cola o link do Google Maps em cima: a morada é encontrada na mesma.</div>`; el('mp-hint').hidden = true; }
       if (cur) setPoint(cur, true);
       setTimeout(() => el('mp-link')?.focus(), 60);
     }
@@ -19729,6 +19756,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         </div>
         <div class="op-chips ps-types" id="ps-types">${d.types.map(t => `<label class="op-chip"><input type="checkbox" value="${escapeHtml(t.id)}"${plotTypes(p).includes(t.id) ? ' checked' : ''}><span>${escapeHtml(t.name)}</span></label>`).join('')}</div>
         <div class="ps-type-other" id="ps-type-other"${d.types.some(t => isOtherType(t) && plotTypes(p).includes(t.id)) ? '' : ' hidden'}><input type="text" class="form-input" id="ps-type-other-in" maxlength="80" value="${escapeHtml(cons.type_other || '')}" placeholder="Que tipologia? ex.: Equipamento de saúde, Residência de estudantes"></div>
+        <div class="ps-loc" id="ps-loc"></div>
 
         <div class="gantt-wrap ps-cond" id="ps-cond">
           <div class="card-head"><h2>Condicionantes urbanísticas</h2><small class="muted">o que se aplica a este terreno · deixa em branco o que não se aplica · grava sozinho</small></div>
@@ -19849,7 +19877,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
                 <div><label class="field-label">Morada</label>${ptxt('address')}</div>
                 <div><label class="field-label">Freguesia</label>${ptxt('parish')}</div>
                 <div><label class="field-label">Quem nos falou dele</label>${ptxt('source_name', 'mediador, contacto…')}</div>
-                <div><label class="field-label">Link do mapa</label><div class="mpk-row">${ptxt('maps_url', 'Google Maps', 'url')}<button type="button" class="secondary-btn" id="ps-map">${p.lat != null ? 'Ver no mapa' : 'Marcar no mapa'}</button></div></div>
+                <div><label class="field-label">Link do mapa</label>${ptxt('maps_url', 'Google Maps', 'url')}</div>
                 <div><label class="field-label">Pasta (fotos, documentos)</label>${ptxt('docs_url', 'Drive, Dropbox…', 'url')}</div>
               </div>
               <label class="check-row"><input type="checkbox" data-p="has_approved_project"${p.has_approved_project ? ' checked' : ''}> Já tem projeto aprovado</label>
@@ -19980,9 +20008,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         }
         savePlot(); drawResult(); drawInvestors(); if (!typManual()) drawTyp();
       }));
-      // Localização: marcar no mapa (ou colar o link) → morada confirmada vai para os campos e grava
-      view.querySelector('#ps-map')?.addEventListener('click', async () => {
-        const link = view.querySelector('[data-p="maps_url"]')?.value || '';
+      // Localização: cartão com mapa pequeno; tocar abre a janela do mapa → morada confirmada vai para os campos e grava
+      const openLoc = async () => {
+        const link = view.querySelector('[data-p="maps_url"]')?.value || p.maps_url || '';
         const start = p.lat != null ? { lat: Number(p.lat), lng: Number(p.lng) } : await coordsFromInput(link).catch(() => null);
         openMapPicker({ start, onConfirm: v => {
           closeQuickModal();
@@ -19991,10 +20019,35 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             if (inp) { inp.value = val; inp.dispatchEvent(new Event('input')); } else { p[k] = val; pPatch[k] = val; }
           });
           p.lat = v.lat; p.lng = v.lng; pPatch.lat = v.lat; pPatch.lng = v.lng; savePlot();
-          const b = view.querySelector('#ps-map'); if (b) b.textContent = 'Ver no mapa';
-          showToast('Localização guardada');
+          renderLoc(); showToast('Localização guardada');
         } });
-      });
+      };
+      const renderLoc = () => {
+        const box = view.querySelector('#ps-loc'); if (!box) return;
+        const has = p.lat != null && p.lng != null && Number.isFinite(Number(p.lat));
+        const sub = [p.parish, p.municipality].filter(Boolean).join(' · ');
+        box.innerHTML = has ? `
+          <div class="ps-loc-map" id="ps-loc-map" role="button" tabindex="0" aria-label="Mudar o ponto no mapa"></div>
+          <div class="ps-loc-txt">
+            <span class="section-label">Localização</span>
+            <b>${escapeHtml(p.address || 'Ponto marcado no mapa')}</b>${sub ? `<small>${escapeHtml(sub)}</small>` : ''}
+            <div class="ps-loc-acts"><button type="button" class="text-btn" data-loc-edit>Mudar o ponto</button><a class="text-btn" href="${escapeHtml(mapsLink({ lat: Number(p.lat), lng: Number(p.lng) }))}" target="_blank" rel="noopener">Abrir no Google Maps</a></div>
+          </div>`
+          : `<div class="ps-loc-empty"><span><b>Localização</b> · ainda sem ponto no mapa</span><button type="button" class="secondary-btn" data-loc-edit>Marcar no mapa</button></div>`;
+        box.classList.toggle('has', has);
+        box.querySelectorAll('[data-loc-edit]').forEach(b => b.addEventListener('click', openLoc));
+        const mEl = box.querySelector('#ps-loc-map');
+        if (!mEl) return;
+        mEl.addEventListener('click', e => { if (!e.target.closest('a')) openLoc(); });
+        mEl.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openLoc(); } });
+        loadLeaflet().then(() => {
+          if (!mEl.isConnected) return;
+          const c = { lat: Number(p.lat), lng: Number(p.lng) };
+          const m = osmMap(mEl, { center: c, zoom: 16, interactive: false });
+          L.marker([c.lat, c.lng], { icon: mapPinIcon(), interactive: false, keyboard: false }).addTo(m);
+        }).catch(() => { mEl.innerHTML = '<div class="mp-wait">O mapa não carregou.</div>'; });
+      };
+      renderLoc();
       // Indústria marcada: as tipologias de habitação saem da vista (as que estiverem marcadas ficam, para se poderem desmarcar)
       const psHousingChips = ind => document.querySelectorAll('#ps-types .op-chip').forEach(l => {
         const cb = l.querySelector('input'), t = d.types.find(x => x.id === cb.value);
