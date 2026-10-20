@@ -2209,7 +2209,7 @@
   .iip-mark { position: absolute; top: -7px; bottom: -7px; width: 1px; background: var(--ink); transition: left 1.2s cubic-bezier(.16,1,.3,1); }
   .iip-gap { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(135deg, rgba(110,63,115,.75) 0 2px, rgba(181,155,187,.35) 2px 6px); transition: left 1.2s cubic-bezier(.16,1,.3,1), width 1.2s cubic-bezier(.16,1,.3,1); }
   .iip-gap.loss { background: repeating-linear-gradient(135deg, rgba(226,140,132,.8) 0 2px, rgba(226,140,132,.25) 2px 6px); }
-  .iip-gap em { position: absolute; bottom: calc(100% + 9px); left: 0; font-style: normal; font-size: 13px; font-weight: 500; color: var(--lil-hi); white-space: nowrap; }
+  .iip-gap em { position: absolute; bottom: calc(100% + 9px); right: 0; font-style: normal; font-size: 13px; font-weight: 500; color: var(--lil-hi); white-space: nowrap; }
   .iip-gap.loss em { color: var(--red); }
   .iip-legend { display: flex; flex-wrap: wrap; gap: 10px 28px; margin: 4px 0 0 168px; padding: 0; list-style: none; }
   .iip-legend li { display: grid; grid-template-columns: 8px auto; column-gap: 8px; align-items: baseline; }
@@ -2218,6 +2218,8 @@
   .iip-legend b { grid-column: 2; font-size: 14px; font-weight: 500; }
   .iip-legend small { grid-column: 2; font-size: 11px; color: var(--ink3); }
   .iip-empty { color: var(--ink2); font-size: 14px; line-height: 1.5; max-width: 60ch; }
+  .iip-verdict { margin: -6px 0 0; max-width: 62ch; font-size: clamp(16px, 1.5vw, 20px); font-weight: 300; line-height: 1.45; color: var(--ink); text-wrap: balance; }
+  .iip-verdict:empty { display: none; }
   .iip-chs { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); border-top: 1px solid var(--line); margin-top: auto; }
   .iip-chb { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; column-gap: 12px; row-gap: 6px; align-items: center; text-align: left; padding: 20px clamp(12px, 1.8vw, 24px) 20px 0; background: none; border: 0; border-bottom: 1px solid var(--line); color: var(--ink); cursor: pointer; font: inherit; }
   .iip-chb + .iip-chb { padding-left: clamp(12px, 1.8vw, 24px); border-left: 1px solid var(--line); }
@@ -2281,7 +2283,7 @@
   .iip-tot span { font-size: 13px; color: var(--ink2); } .iip-tot b { font-size: 22px; font-weight: 300; }
   .iip-res { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line); }
   .iip-res span { display: block; font-size: 12px; color: var(--ink2); }
-  .iip-res b { display: block; margin-top: 4px; font-size: clamp(22px, 2.6vw, 34px); font-weight: 200; letter-spacing: -.03em; }
+  .iip-res b { display: block; margin-top: 4px; font-size: clamp(20px, 2.3vw, 32px); font-weight: 200; letter-spacing: -.03em; white-space: nowrap; }
   .iip-res.good b, .iip-big.good, .iip-ex-n b.good { color: var(--lil-hi); } .iip-res.low b, .iip-big.low, .iip-ex-n b.low { color: var(--amb); } .iip-res.bad b, .iip-big.bad, .iip-ex-n b.bad { color: var(--red); }
   .iip-mode h3:first-child { margin-top: 0; }
   .iip-big { font-size: clamp(48px, 6vw, 88px); font-weight: 200; letter-spacing: -.045em; line-height: 1; margin: 8px 0 18px; }
@@ -2328,7 +2330,7 @@
   .iip-step:hover { background: rgba(244,243,239,.07); } .iip-step:active { transform: scale(.94); }
   .iip-ed-v label { display: flex; align-items: baseline; justify-content: center; gap: 8px; min-width: 0; }
   .iip-ed-v input { width: 100%; min-width: 0; background: none; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; color: var(--ink); font: 200 clamp(34px, 7vw, 56px)/1.1 inherit; letter-spacing: -.035em; text-align: center; padding: 4px 0 8px; font-variant-numeric: tabular-nums; }
-  .iip-ed-v input:focus { outline: none; border-bottom-color: var(--lil); }
+  .iip-ed-v input:focus, .iip-ed-v input:focus-visible { outline: none; border-bottom-color: var(--lil); }
   .iip-ed-v label span { font-size: 15px; color: var(--ink2); flex: none; }
   .iip-range { -webkit-appearance: none; appearance: none; width: 100%; height: 28px; background: transparent; margin: 0; cursor: pointer; }
   .iip-range::-webkit-slider-runnable-track { height: 2px; background: rgba(244,243,239,.18); border-radius: 2px; }
@@ -19817,9 +19819,13 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     // capítulos que deslizam (Terreno, Custos e receitas, Venda ou arrendamento, E se…?). Tudo editável num cenário
     // temporário: o estudo só muda com «Aplicar ao estudo»; «Guardar como variante» cria uma cópia.
     // As contas são as da ficha (feasCalc, feasModalities, indCalc): os números nunca divergem.
-    const IIP_EUR = (n, dec) => { const v = Number(n) || 0, a = Math.abs(v); return a >= 1e6 ? [(v / 1e6).toLocaleString('pt-PT', { minimumFractionDigits: dec ?? 2, maximumFractionDigits: dec ?? 2 }), 'M€'] : [Math.round(v).toLocaleString('pt-PT'), '€']; };
-    const IIP_PCT = n => [(n * 100).toLocaleString('pt-PT', { minimumFractionDigits: 1, maximumFractionDigits: 1 }), '%'];
+    const iipMinus = t => t.replace(/^-/, '−');
+    const IIP_EUR = (n, dec) => { const v = Number(n) || 0, a = Math.abs(v); return a >= 1e6 ? [iipMinus((v / 1e6).toLocaleString('pt-PT', { minimumFractionDigits: dec ?? 2, maximumFractionDigits: dec ?? 2 })), 'M€'] : [iipMinus(Math.round(v).toLocaleString('pt-PT')), '€']; };
+    const IIP_PCT = n => [iipMinus((n * 100).toLocaleString('pt-PT', { minimumFractionDigits: 1, maximumFractionDigits: 1 })), '%'];
     const iipFmt = (v, kind) => v == null || !Number.isFinite(v) ? '—' : (kind === 'pct' ? IIP_PCT(v) : IIP_EUR(v)).join(' ');
+    // compacto para números grandes em pouco espaço: 1,24 M€ · 205 mil €
+    const iipFmtC = v => { if (v == null || !Number.isFinite(v)) return '—'; const a = Math.abs(v); return a >= 1e6 ? IIP_EUR(v).join(' ') : a >= 1e4 ? iipMinus(Math.round(v / 1000).toLocaleString('pt-PT')) + ' mil €' : IIP_EUR(v).join(' '); };
+    const iipPct = (v, dec) => iipMinus(pct(v, dec));
     // valores editáveis: p.* (campos do terreno), f.* (viabilidade, com caminhos), typ.T2.price / typ.T2.rent
     const IIP_HOUSE_IN = [
       ['Terreno', [['p.asking_price', 'Preço do terreno', '€', 5000], ['p.land_area', 'Área do terreno', 'm²', 10], ['p.pdm_index', 'Índice de construção', '', 0.05, 2],
@@ -19873,6 +19879,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             <div class="iip-q res"><span class="iip-l" data-l="c"></span><div class="iip-n" data-n="c"></div><span class="iip-s" data-s="c"></span></div>
           </section>
           <section class="iip-ledger" aria-label="Custos contra receita"></section>
+          <p class="iip-verdict" aria-live="polite"></p>
           <nav class="iip-chs" aria-label="Capítulos"></nav>
         </main>
         <section class="iip-ch" aria-hidden="true">
@@ -19946,7 +19953,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           la = 'Investimento'; lb = 'Receita líquida'; lc = b?.key === 'rent' ? 'Yield bruta' : 'ROI';
           A = b?.cost; B = b?.net; C = b?.key === 'rent' ? b.yieldGross : b?.roi;
           sa = b ? b.name : 'Faltam valores para calcular'; sb = b ? `${b.months} meses${b.key === 'rent' ? ` · ${fmtNum(b.years)} anos de rendas` : ''}` : '';
-          sc_ = b ? `TIR ${pct(b.irr)} ao ano · lucro ${iipFmt(b.profit)}` : '';
+          sc_ = b ? `TIR ${iipPct(b.irr)} ao ano · lucro ${iipFmtC(b.profit)}` : '';
           cls = goodCls(C, b?.key === 'rent' ? YIELD_GOAL : ROI_GOAL);
           const k = S.k;
           if (b) { segs = [['Terreno', k.acq], ['PIP', k.cPip], ['Loteamento e infraestruturas', b.key === 'pip' ? 0 : k.cLot + k.cInfra], ['Pavilhões', b.key === 'pav' || b.key === 'rent' ? k.cBuild : 0]].filter(s => s[1] > 0); rev = b.net; revLabel = b.key === 'rent' ? `Rendas líquidas em ${fmtNum(b.years)} anos` : 'Receita líquida'; }
@@ -19956,7 +19963,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           A = c.hasCosts ? c.costGlobal : null; B = rentOnly ? c.rentYear : c.hasSales ? c.salesNet : null; C = rentOnly ? c.yieldGross : c.hasSales && c.hasCosts ? c.roi : null;
           sa = c.hasCosts ? `${fmtNum(Math.round(c.housing + c.commerce))} m² de construção` : 'Falta o custo de construção';
           sb = rentOnly ? `${c.units || 0} frações · ocupação ${fmtNum(N(S.f.occupancy))}%` : c.hasSales ? `${c.units || 0} frações · ${iipFmt(c.avgPrice)} em média` : 'Falta o preço de venda';
-          sc_ = c.hasSales && c.hasCosts ? `Lucro ${iipFmt(c.profit)} · margem ${pct(c.margin)}${c.yieldGross ? ` · yield bruta ${pct(c.yieldGross)}` : ''}` : rentOnly ? `Yield líquida ${pct(c.yieldNet)}` : '';
+          sc_ = c.hasSales && c.hasCosts ? `Lucro ${iipFmtC(c.profit)} · margem ${iipPct(c.margin)}${c.yieldGross ? ` · yield bruta ${iipPct(c.yieldGross)}` : ''}` : rentOnly ? `Yield líquida ${iipPct(c.yieldNet)}` : '';
           cls = goodCls(C, rentOnly ? YIELD_GOAL : ROI_GOAL);
           segs = [['Terreno', c.acquisition], ['Construção', c.construction], ['Projetos, licenças e fiscalização', c.indirect], ['Contingência', c.reserves], ['IVA', c.vat]].filter(s => s[1] > 0);
           if (!rentOnly && c.hasSales) { rev = c.salesNet; revLabel = 'Receita líquida'; }
@@ -19966,10 +19973,20 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         $('[data-s="a"]').textContent = sa; $('[data-s="b"]').textContent = sb; $('[data-s="c"]').textContent = sc_;
         $('.iip-q.res').className = 'iip-q res ' + cls;
         paintLedger(segs, rev, revLabel);
+        $('.iip-verdict').textContent = verdict(S);
         paintChapters(S);
         const dirty = snap(sc) !== snap0;
         root.querySelectorAll('.iip-dirty, [data-a="reset"], [data-a="variant"], [data-a="apply"]').forEach(x => { x.hidden = !dirty; });
         firstPaint = false;
+      }
+      // uma frase com a leitura do resultado (metas da ficha: ROI 30%, yield 6%)
+      function verdict(S) {
+        if (ind) { const b = S.best; return b ? `Melhor saída: ${b.name.toLowerCase()}, com TIR de ${iipPct(b.irr)} ao ano em ${b.months} meses.` : ''; }
+        const c = S.c;
+        if (!c.hasSales || !c.hasCosts) return '';
+        const [t, n] = beText(S.f, 'sales');
+        if (c.profit <= 0) return `Com estes números há prejuízo: ${t.toLowerCase()} ${n} para empatar.`;
+        return `${c.roi >= ROI_GOAL ? `Acima da meta de ${pct(ROI_GOAL, 0)} de ROI.` : `Abaixo da meta de ${pct(ROI_GOAL, 0)} de ROI, mas com lucro.`} ${t} ${n} antes do prejuízo.`;
       }
       // barra dos custos (por parcelas) contra a barra da receita, na mesma escala
       function paintLedger(segs, rev, revLabel) {
@@ -19994,7 +20011,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             r.querySelector('.iip-seg.r').style.width = w(rev);
             r.querySelector('.iip-mark').style.left = w(cost);
             gap.style.left = w(lo); gap.style.width = w(hi - lo); gap.className = 'iip-gap' + (rev < cost ? ' loss' : '');
-            gap.querySelector('em').textContent = (rev >= cost ? 'Lucro ' : 'Prejuízo ') + iipFmt(Math.abs(rev - cost));
+            gap.querySelector('em').textContent = (rev >= cost ? 'Lucro ' : 'Prejuízo ') + iipFmtC(Math.abs(rev - cost));
             r.querySelector('[data-v="rev"]').textContent = iipFmt(rev);
           }
         };
@@ -20007,26 +20024,32 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const steps = [-0.2, -0.1, 0, 0.1, 0.2];
         return steps.slice().reverse().map(sv => steps.map(bv => ({ sv, bv, c: feasCalc(sc, f, { sales: 1 + sv, build: 1 + bv }) })));
       }
+      // fator (−0,12 = −12%) em que o lucro chega a zero, mexendo só nas vendas ou só no custo da obra; null = fora do alcance
       function breakEven(f, which) {
-        // quanto pode o preço de venda descer (ou a obra subir) até o lucro chegar a zero
         const prof = x => feasCalc(sc, f, which === 'sales' ? { sales: 1 + x, build: 1 } : { sales: 1, build: 1 + x }).profit;
-        if (prof(0) <= 0) return 0;
-        let lo = 0, hi = which === 'sales' ? -0.95 : 3;
-        if (prof(hi) > 0) return null;
-        for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (prof(m) > 0) lo = m; else hi = m; }
+        const p0 = prof(0); if (!p0) return 0;
+        const end = (which === 'sales') === (p0 > 0) ? -0.95 : 3;
+        if (Math.sign(prof(end)) === Math.sign(p0)) return null;
+        let lo = 0, hi = end;
+        for (let i = 0; i < 44; i++) { const m = (lo + hi) / 2; if (Math.sign(prof(m)) === Math.sign(p0)) lo = m; else hi = m; }
         return lo;
       }
+      const beText = (f, which) => {
+        const x = breakEven(f, which), n = x == null ? null : iipPct(Math.abs(x), 0);
+        if (which === 'sales') return x == null ? (feasCalc(sc, f).profit > 0 ? ['O preço de venda pode descer', 'mais de 95%'] : ['O preço de venda tem de subir', 'mais de 300%']) : x <= 0 ? ['O preço de venda pode descer', n] : ['O preço de venda tem de subir', n];
+        return x == null ? (feasCalc(sc, f).profit > 0 ? ['O custo da obra pode subir', 'mais de 300%'] : ['O custo da obra tem de descer', 'mais de 95%']) : x >= 0 ? ['O custo da obra pode subir', n] : ['O custo da obra tem de descer', n];
+      };
       function chapterSummary(key, S) {
         if (ind) {
           const k = S.k;
           if (key === 'land') return `${fmtNum(k.A)} m² · ${fmtNum(Math.round(k.abc))} m² de pavilhões · ${k.lots} ${k.lots === 1 ? 'lote' : 'lotes'}`;
-          return k.best ? `Melhor: ${k.best.short} · TIR ${pct(k.best.irr)}` : 'Faltam valores';
+          return k.best ? `${k.exits.length > 1 ? 'Melhor: ' : ''}${k.best.short} · TIR ${iipPct(k.best.irr)}` : 'Faltam valores';
         }
         const c = S.c, m = S.mod;
         if (key === 'land') return `${fmtNum(N(sc.land_area))} m² de terreno · ${fmtNum(Math.round(c.housing))} m² de construção · ${c.units || 0} frações`;
         if (key === 'money') return c.hasCosts ? `Custo ${iipFmt(c.costGlobal)} · receita ${c.hasSales ? iipFmt(c.salesNet) : '—'}` : 'Faltam custos';
-        if (key === 'mode') { const s = m?.list.find(x => x.key === 'sale'), r = m?.list.find(x => x.key === 'rent'); return [s ? `Vender: TIR ${pct(s.irr)}` : null, c.yieldGross ? `Arrendar: yield ${pct(c.yieldGross)}` : r ? `Arrendar: TIR ${pct(r.irr)}` : null].filter(Boolean).join(' · ') || 'Faltam preços de venda ou rendas'; }
-        if (key === 'whatif') { if (!c.hasSales || !c.hasCosts) return 'Precisa de custos e preço de venda'; const be = breakEven(S.f, 'sales'); return be == null ? 'Resiste a quedas fortes do preço' : `O preço de venda pode descer ${pct(-be, 0)} antes do prejuízo`; }
+        if (key === 'mode') { const s = m?.list.find(x => x.key === 'sale'), r = m?.list.find(x => x.key === 'rent'); return [s ? `Vender: TIR ${iipPct(s.irr)}` : null, c.yieldGross ? `Arrendar: yield ${iipPct(c.yieldGross)}` : r ? `Arrendar: TIR ${iipPct(r.irr)}` : null].filter(Boolean).join(' · ') || 'Faltam preços de venda ou rendas'; }
+        if (key === 'whatif') { if (!c.hasSales || !c.hasCosts) return 'Precisa de custos e preço de venda'; const [t, n] = beText(S.f, 'sales'); return `${t} ${n} ${c.profit > 0 ? 'antes do prejuízo' : 'para não dar prejuízo'}`; }
         return '';
       }
       function paintChapters(S) {
@@ -20095,7 +20118,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         return `<div class="iip-cols even">
           <div><h3>Custos</h3><ul class="iip-ln">${costs}</ul><div class="iip-tot"><span>Investimento total</span><b>${iipFmt(c.costGlobal)}</b></div></div>
           <div><h3>Receitas</h3><ul class="iip-ln">${revs}</ul><div class="iip-tot"><span>Receita líquida</span><b>${c.hasSales ? iipFmt(c.salesNet) : '—'}</b></div>
-            ${c.hasSales && c.hasCosts ? `<div class="iip-res ${goodCls(c.roi, ROI_GOAL)}"><div><span>Lucro</span><b>${iipFmt(c.profit)}</b></div><div><span>ROI</span><b>${pct(c.roi)}</b></div><div><span>Margem</span><b>${pct(c.margin)}</b></div></div>` : ''}
+            ${c.hasSales && c.hasCosts ? `<div class="iip-res ${goodCls(c.roi, ROI_GOAL)}"><div><span>Lucro</span><b>${iipFmtC(c.profit)}</b></div><div><span>ROI</span><b>${iipPct(c.roi)}</b></div><div><span>Margem</span><b>${iipPct(c.margin)}</b></div></div>` : ''}
           </div></div>`;
       }
       function chMode(S) {
@@ -20104,7 +20127,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const maxIrr = Math.max(0.0001, ...(m?.list || []).map(x => Math.abs(x.irr || 0)));
         return `<div class="iip-cols even">
           <div class="iip-mode"><h3>Construir e vender</h3>
-            <div class="iip-big ${goodCls(c.roi, ROI_GOAL)}">${c.hasSales && c.hasCosts ? pct(c.roi) : '—'}<small>ROI</small></div>
+            <div class="iip-big ${goodCls(c.roi, ROI_GOAL)}">${c.hasSales && c.hasCosts ? iipPct(c.roi) : '—'}<small>ROI</small></div>
             <ul class="iip-kv"><li><span>Lucro</span><b>${c.hasSales ? iipFmt(c.profit) : '—'}</b></li><li><span>Margem</span><b>${pct(c.margin)}</b></li>
               <li><span>TIR</span><b>${sale ? pct(sale.irr) : '—'}</b></li><li><span>Prazo</span><b>${sale ? sale.months + ' meses' : '—'}</b></li><li><span>Capital no pico</span><b>${sale ? iipFmt(sale.capital) : '—'}</b></li></ul></div>
           <div class="iip-mode"><h3>Construir e arrendar</h3>
@@ -20113,7 +20136,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               <li><span>TIR</span><b>${rent ? pct(rent.irr) : '—'}</b></li><li><span>Ocupação</span><b>${ev('f.occupancy')}</b></li><li><span>Encargos</span><b>${ev('f.rent_opex_pct')}</b></li></ul>
             ${typs.length ? `<h4>Renda por fração</h4><ul class="iip-kv">${typs.map(t => `<li><span>${escapeHtml(t.name)} <small>× ${N(t.units)}</small></span><b>${ev(`typ.${t.name}.rent`)}</b></li>`).join('')}</ul>` : ''}</div>
         </div>
-        ${m?.list.length ? `<h3>Onde parar na cadeia de valor</h3><ul class="iip-rank">${m.list.slice().sort((a, b) => (b.irr ?? -9) - (a.irr ?? -9)).map(x => `<li class="${x === m.best ? 'best' : ''}"><div><span>${escapeHtml(x.name)}</span><small>${x.months} meses · capital ${iipFmt(x.capital)}</small></div>${bar(Math.max(0, x.irr || 0), maxIrr)}<b>${pct(x.irr)}<small>TIR</small></b></li>`).join('')}</ul>
+        ${m?.list.length ? `<h3>Onde parar na cadeia de valor</h3><ul class="iip-rank">${m.list.slice().sort((a, b) => (b.irr ?? -9) - (a.irr ?? -9)).map(x => `<li class="${x === m.best ? 'best' : ''}"><div><span>${escapeHtml(x.name)}</span><small>${x.months} meses · capital ${iipFmt(x.capital)}</small></div>${bar(Math.max(0, x.irr || 0), maxIrr)}<b>${iipPct(x.irr)}<small>TIR</small></b></li>`).join('')}</ul>
           ${m.why?.length ? `<ul class="iip-why">${m.why.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>` : ''}` : ''}`;
       }
       let whatMetric = 'roi', whatSel = null;
@@ -20129,7 +20152,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         };
         const lab = x => (x > 0 ? '+' : x < 0 ? '−' : '') + Math.abs(x * 100) + '%';
         const fmt = v => whatMetric === 'roi' ? pct(v) : IIP_EUR(v, 1).join(' ');
-        const beS = breakEven(f, 'sales'), beB = breakEven(f, 'build');
+        const beS = beText(f, 'sales'), beB = beText(f, 'build');
         const sel = whatSel && G.flat().find(x => x.sv === whatSel[0] && x.bv === whatSel[1]);
         return `<div class="iip-what">
           <div class="iip-seg-ctl" role="tablist"><button type="button" data-wm="roi" class="${whatMetric === 'roi' ? 'on' : ''}">ROI</button><button type="button" data-wm="profit" class="${whatMetric === 'profit' ? 'on' : ''}">Lucro</button></div>
@@ -20140,9 +20163,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           </div>
           <p class="iip-whatsel">${sel ? `Venda ${lab(sel.sv)} e obra ${lab(sel.bv)}: ROI ${pct(sel.c.roi)}, lucro ${iipFmt(sel.c.profit)}, margem ${pct(sel.c.margin)}.` : 'Toca numa casa para ver o cenário. A casa marcada é o estudo de hoje.'}</p>
           <ul class="iip-kv wide">
-            <li><span>O preço de venda pode descer</span><b>${beS == null ? 'mais de 95%' : pct(-beS, 0)}</b></li>
-            <li><span>O custo da obra pode subir</span><b>${beB == null ? 'mais de 300%' : pct(beB, 0)}</b></li>
-          </ul><p class="iip-note">antes de o lucro chegar a zero, mantendo o resto igual.</p>
+            <li><span>${beS[0]}</span><b>${beS[1]}</b></li>
+            <li><span>${beB[0]}</span><b>${beB[1]}</b></li>
+          </ul><p class="iip-note">${c.profit > 0 ? 'antes de o lucro chegar a zero' : 'para o lucro chegar a zero'}, mexendo só nesse valor.</p>
         </div>`;
       }
       function chExits(S) {
@@ -20152,7 +20175,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const inK = { pip: 'f.ind.sale_pip', lot: 'f.ind.sale_lot', pav: 'f.ind.sale_pav', rent: 'f.ind.rent_m2' };
         return `<ul class="iip-exits">${k.exits.map(x => `<li class="${x === k.best ? 'best' : ''}">
             <div class="iip-ex-h"><b>${escapeHtml(x.name)}</b>${x === k.best ? '<span class="iip-tag">melhor relação TIR / capital</span>' : ''}</div>
-            <div class="iip-ex-n"><div><span>${x.key === 'rent' ? 'Yield bruta' : 'ROI'}</span><b class="${goodCls(x.key === 'rent' ? x.yieldGross : x.roi, x.key === 'rent' ? YIELD_GOAL : ROI_GOAL)}">${pct(x.key === 'rent' ? x.yieldGross : x.roi)}</b></div><div><span>TIR</span><b>${pct(x.irr)}</b></div><div><span>Lucro</span><b>${iipFmt(x.profit)}</b></div><div><span>Meses</span><b>${x.months}</b></div></div>
+            <div class="iip-ex-n"><div><span>${x.key === 'rent' ? 'Yield bruta' : 'ROI'}</span><b class="${goodCls(x.key === 'rent' ? x.yieldGross : x.roi, x.key === 'rent' ? YIELD_GOAL : ROI_GOAL)}">${iipPct(x.key === 'rent' ? x.yieldGross : x.roi)}</b></div><div><span>TIR</span><b>${iipPct(x.irr)}</b></div><div><span>Lucro</span><b>${iipFmtC(x.profit)}</b></div><div><span>Meses</span><b>${x.months}</b></div></div>
             ${bar(Math.max(0, x.irr || 0), maxIrr)}
             <small>Investimento ${iipFmt(x.cost)} · receita líquida ${iipFmt(x.net)} · ${x.key === 'rent' ? 'renda' : 'preço'} ${ev(inK[x.key])}${x.key === 'pav' || x.key === 'rent' ? ` · obra ${ev('f.ind.build_m2')}` : ''}</small>
           </li>`).join('')}</ul>`;
