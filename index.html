@@ -2154,6 +2154,230 @@
   .ps-saved { font-size: var(--fs-xs); color: var(--text-3); }
   .ps-saved.ok { color: var(--success); } .ps-saved.bad { color: var(--danger); }
   .ps-actions { display: flex; gap: var(--sp-2); align-items: center; }
+  /* ---- Modo Apresentar (Investment Intelligence): instrumento de precisão, sempre escuro ---- */
+  .ps-actions .primary-btn { width: auto; margin: 0; padding: 0 var(--sp-4); height: 38px; display: inline-flex; align-items: center; gap: 8px; }
+  .ps-actions .primary-btn svg { width: 14px; height: 14px; fill: currentColor; }
+  .iip { --ink: #F4F3EF; --ink2: rgba(244,243,239,.64); --ink3: rgba(244,243,239,.42); --line: rgba(244,243,239,.11); --lil: #B59BBB; --lil-hi: #DCCBDF; --amb: #DCC08A; --red: #E28C84;
+    position: fixed; inset: 0; z-index: 58; display: flex; flex-direction: column; overflow: hidden; color: var(--ink);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-feature-settings: "tnum" 1, "cv11" 1; -webkit-font-smoothing: antialiased;
+    background: radial-gradient(120% 150% at 2% 108%, rgba(124,84,132,.40), rgba(124,84,132,.14) 35%, transparent 62%), radial-gradient(110% 130% at 98% -12%, rgba(140,108,76,.14), rgba(140,108,76,.05) 38%, transparent 64%), linear-gradient(180deg, #1A1817, #0F0E0D);
+    opacity: 0; transition: opacity .35s ease; scrollbar-color: rgba(244,243,239,.16) transparent; color-scheme: dark; }
+  .iip.in { opacity: 1; } .iip.out { opacity: 0; }
+  .iip [hidden] { display: none !important; }
+  .iip ::selection { background: rgba(181,155,187,.38); }
+  .iip :focus-visible { outline: 2px solid var(--lil-hi); outline-offset: 2px; }
+  .iip-grid { position: absolute; inset: 0; pointer-events: none; background-image: linear-gradient(rgba(244,243,239,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(244,243,239,.035) 1px, transparent 1px); background-size: 56px 56px; -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, #000 20%, transparent 80%); mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, #000 20%, transparent 80%); }
+  .iip-top { position: relative; display: flex; align-items: center; gap: 12px 28px; flex-wrap: wrap; padding: calc(16px + env(safe-area-inset-top, 0px)) clamp(16px, 4vw, 48px) 14px; }
+  .iip-brand { display: flex; align-items: center; gap: 12px; }
+  .iip-brand img { height: 17px; width: auto; display: block; }
+  .iip-brand span { font-size: 11px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; color: var(--ink2); padding-left: 12px; border-left: 1px solid var(--line); }
+  .iip-title { flex: 1; min-width: 180px; display: grid; gap: 2px; }
+  .iip-title b { font-size: 15px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .iip-title span { font-size: 12px; color: var(--ink2); }
+  .iip-acts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .iip-btn { height: 36px; padding: 0 15px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--ink); font: 500 13px/1 inherit; cursor: pointer; white-space: nowrap; transition: background .15s, border-color .15s, transform .12s; }
+  .iip-btn:hover { background: rgba(244,243,239,.07); border-color: rgba(244,243,239,.22); }
+  .iip-btn:active { transform: scale(.97); }
+  .iip-btn.solid { background: #ECE6EE; color: #16121A; border-color: transparent; }
+  .iip-btn.solid:hover { background: #fff; }
+  .iip-icon { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); background: transparent; color: var(--ink); display: grid; place-items: center; cursor: pointer; flex: none; }
+  .iip-icon:hover { background: rgba(244,243,239,.07); }
+  .iip-icon svg, .iip-back svg, .iip-chb svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .iip-dirty { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--lil-hi); margin-right: 4px; }
+  .iip-dirty i { width: 6px; height: 6px; border-radius: 50%; background: var(--lil); box-shadow: 0 0 0 4px rgba(181,155,187,.18); }
+  .iip-main { position: relative; flex: 1; overflow: auto; padding: clamp(6px, 2.5vh, 32px) clamp(16px, 4vw, 48px) calc(28px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: clamp(22px, 4.5vh, 48px);
+    transition: transform .55s cubic-bezier(.32,.72,0,1), opacity .45s ease, filter .45s ease; transform-origin: 30% 40%; }
+  .iip.ch-on .iip-main, .iip.adj-on .iip-main { transform: scale(.975); opacity: .32; filter: blur(2px); pointer-events: none; }
+  .iip-read { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .iip-q { padding: clamp(16px, 3.2vh, 34px) clamp(14px, 2.2vw, 30px); border-left: 1px solid var(--line); min-width: 0; }
+  .iip-q:first-child { border-left: 0; padding-left: 0; }
+  .iip-l { display: block; font-size: 12px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--ink2); }
+  .iip-n { font-weight: 200; font-size: clamp(40px, 6.2vw, 100px); letter-spacing: -.045em; line-height: 1; margin: clamp(10px, 2vh, 18px) 0 clamp(8px, 1.6vh, 14px); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .iip-n small { font-size: .3em; font-weight: 400; letter-spacing: 0; margin-left: .3em; color: var(--ink2); }
+  .iip-s { display: block; font-size: 13px; color: var(--ink2); line-height: 1.45; }
+  .iip-q.res .iip-n { color: var(--lil-hi); }
+  .iip-q.res.low .iip-n { color: var(--amb); } .iip-q.res.bad .iip-n { color: var(--red); }
+  .iip-ledger { display: grid; gap: 18px; }
+  .iip-bars { display: grid; gap: 18px; }
+  .iip-row { display: grid; grid-template-columns: 150px minmax(0, 1fr) 110px; gap: 18px; align-items: center; }
+  .iip-rl { font-size: 12px; color: var(--ink2); }
+  .iip-rv { font-size: 15px; font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; }
+  .iip-track { position: relative; display: flex; height: 16px; background: rgba(244,243,239,.04); border-radius: 2px; }
+  .iip-seg { display: block; height: 100%; box-shadow: inset -1px 0 0 #121011; transition: width 1.2s cubic-bezier(.16,1,.3,1); }
+  .iip-seg:first-child { border-radius: 2px 0 0 2px; }
+  .iip-seg.r { background: #E7E1D8; border-radius: 2px; box-shadow: none; }
+  .iip-mark { position: absolute; top: -7px; bottom: -7px; width: 1px; background: var(--ink); transition: left 1.2s cubic-bezier(.16,1,.3,1); }
+  .iip-gap { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(135deg, rgba(110,63,115,.75) 0 2px, rgba(181,155,187,.35) 2px 6px); transition: left 1.2s cubic-bezier(.16,1,.3,1), width 1.2s cubic-bezier(.16,1,.3,1); }
+  .iip-gap.loss { background: repeating-linear-gradient(135deg, rgba(226,140,132,.8) 0 2px, rgba(226,140,132,.25) 2px 6px); }
+  .iip-gap em { position: absolute; bottom: calc(100% + 9px); left: 0; font-style: normal; font-size: 13px; font-weight: 500; color: var(--lil-hi); white-space: nowrap; }
+  .iip-gap.loss em { color: var(--red); }
+  .iip-legend { display: flex; flex-wrap: wrap; gap: 10px 28px; margin: 4px 0 0 168px; padding: 0; list-style: none; }
+  .iip-legend li { display: grid; grid-template-columns: 8px auto; column-gap: 8px; align-items: baseline; }
+  .iip-legend i { width: 8px; height: 8px; border-radius: 1px; align-self: center; }
+  .iip-legend span { font-size: 12px; color: var(--ink2); }
+  .iip-legend b { grid-column: 2; font-size: 14px; font-weight: 500; }
+  .iip-legend small { grid-column: 2; font-size: 11px; color: var(--ink3); }
+  .iip-empty { color: var(--ink2); font-size: 14px; line-height: 1.5; max-width: 60ch; }
+  .iip-chs { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); border-top: 1px solid var(--line); margin-top: auto; }
+  .iip-chb { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; column-gap: 12px; row-gap: 6px; align-items: center; text-align: left; padding: 20px clamp(12px, 1.8vw, 24px) 20px 0; background: none; border: 0; border-bottom: 1px solid var(--line); color: var(--ink); cursor: pointer; font: inherit; }
+  .iip-chb + .iip-chb { padding-left: clamp(12px, 1.8vw, 24px); border-left: 1px solid var(--line); }
+  .iip-chb b { font-size: 17px; font-weight: 500; transition: color .15s; }
+  .iip-chb span { grid-column: 1; font-size: 13px; color: var(--ink2); line-height: 1.4; }
+  .iip-chb svg { grid-row: 1 / span 2; grid-column: 2; color: var(--ink3); transition: transform .2s cubic-bezier(.16,1,.3,1), color .15s; }
+  .iip-chb:hover b { color: var(--lil-hi); } .iip-chb:hover svg { transform: translateX(3px); color: var(--lil-hi); }
+  .iip-ch { position: absolute; top: 0; right: 0; bottom: 0; width: min(1120px, 100%); z-index: 3; overflow: auto; background: rgba(20,18,19,.9); -webkit-backdrop-filter: blur(28px) saturate(140%); backdrop-filter: blur(28px) saturate(140%); border-left: 1px solid var(--line); box-shadow: -30px 0 80px rgba(0,0,0,.45);
+    transform: translateX(102%); transition: transform .55s cubic-bezier(.32,.72,0,1); overscroll-behavior: contain; }
+  .iip.ch-on .iip-ch { transform: none; }
+  .iip-ch-h { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; padding: calc(16px + env(safe-area-inset-top, 0px)) clamp(16px, 3vw, 40px) 16px; background: rgba(20,18,19,.92); border-bottom: 1px solid var(--line); }
+  .iip-ch-h h2 { margin: 0; font-size: 22px; font-weight: 500; letter-spacing: -.01em; }
+  .iip-ch-h > span { margin-left: auto; font-size: 13px; color: var(--ink2); }
+  .iip-back { display: inline-flex; align-items: center; gap: 4px; height: 34px; padding: 0 12px 0 6px; border-radius: 999px; border: 1px solid var(--line); background: none; color: var(--ink); font: 500 13px inherit; cursor: pointer; }
+  .iip-back:hover { background: rgba(244,243,239,.07); }
+  .iip-ch-b { padding: clamp(18px, 3vw, 40px) clamp(16px, 3vw, 40px) calc(40px + env(safe-area-inset-bottom, 0px)); }
+  .iip-ch-b.fresh > * { animation: iipUp .7s cubic-bezier(.16,1,.3,1) both; }
+  .iip-ch-b.fresh > *:nth-child(2) { animation-delay: .07s; } .iip-ch-b.fresh > *:nth-child(3) { animation-delay: .14s; }
+  .iip-ch-b.fresh .iip-mini i { animation: iipGrow 1.1s cubic-bezier(.16,1,.3,1) .15s both; }
+  .iip-ch-b.fresh .iip-cell { animation: iipFade .5s ease both; animation-delay: calc(var(--i, 0) * 18ms); }
+  @keyframes iipUp { from { opacity: 0; transform: translateY(14px); } }
+  @keyframes iipGrow { from { width: 0; } }
+  @keyframes iipFade { from { opacity: 0; } }
+  .iip-ch-b h3 { margin: 30px 0 8px; font-size: 12px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--ink2); }
+  .iip-ch-b h4 { margin: 22px 0 4px; font-size: 12px; font-weight: 500; color: var(--ink2); }
+  .iip-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: clamp(20px, 3.5vw, 56px); align-items: start; }
+  .iip-cols.even { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .iip-cols > div > h3:first-child { margin-top: 0; }
+  .iip-map { position: relative; z-index: 0; isolation: isolate; height: clamp(260px, 52vh, 520px); border-radius: 6px; overflow: hidden; border: 1px solid var(--line); background: rgba(244,243,239,.03); position: sticky; top: 92px; }
+  .iip-map .leaflet-container, .iip-map.leaflet-container { background: #1a1817; font: inherit; }
+  .iip-map .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.82) contrast(.88) saturate(.35); }
+  .iip-map .leaflet-control-attribution { background: rgba(15,14,13,.75); color: var(--ink3); } .iip-map .leaflet-control-attribution a { color: var(--ink2); }
+  .iip-map .leaflet-bar a { background: #1D1A1C; color: var(--ink); border-color: var(--line); }
+  .iip-maplab { position: absolute; left: 12px; bottom: 12px; z-index: 500; padding: 7px 11px; border-radius: 999px; background: rgba(15,14,13,.82); border: 1px solid var(--line); font-size: 12px; color: var(--ink); max-width: calc(100% - 24px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .iip-nomap { height: 100%; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--ink2); font-size: 14px; background-image: linear-gradient(rgba(244,243,239,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(244,243,239,.04) 1px, transparent 1px); background-size: 28px 28px; }
+  .iip-dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 28px; margin: 0; }
+  .iip-dl > div { padding: 14px 0 15px; border-bottom: 1px solid var(--line); min-width: 0; }
+  .iip-dl dt { font-size: 12px; color: var(--ink2); }
+  .iip-dl dd { margin: 6px 0 0; font-size: clamp(19px, 2vw, 24px); font-weight: 300; letter-spacing: -.01em; }
+  .iip-dl dd b { font-weight: 300; }
+  .iip-dl dd small { display: block; margin-top: 3px; font-size: 12px; color: var(--ink3); letter-spacing: 0; }
+  .iip-v { background: none; border: 0; border-bottom: 1px dashed rgba(181,155,187,.7); padding: 0 0 1px; margin: 0; color: inherit; font: inherit; letter-spacing: inherit; cursor: pointer; transition: color .15s, border-color .15s; font-variant-numeric: tabular-nums; }
+  .iip-v:hover { color: var(--lil-hi); border-bottom-style: solid; border-bottom-color: var(--lil-hi); }
+  .iip-v.empty { color: var(--lil-hi); }
+  .iip-mini { display: block; height: 3px; border-radius: 2px; background: rgba(244,243,239,.08); overflow: hidden; }
+  .iip-mini i { display: block; height: 100%; background: var(--lil); border-radius: 2px; transition: width .5s cubic-bezier(.16,1,.3,1); }
+  .iip-typ, .iip-kv, .iip-ln, .iip-rank, .iip-why, .iip-caps, .iip-exits { list-style: none; margin: 0; padding: 0; }
+  .iip-typ li { display: grid; grid-template-columns: 36px minmax(0, 1fr) 34px 64px; gap: 12px; align-items: center; padding: 8px 0; font-size: 14px; }
+  .iip-typ b { text-align: right; font-weight: 500; } .iip-typ small { color: var(--ink3); font-size: 12px; text-align: right; }
+  .iip-kv li { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+  .iip-kv span { font-size: 13px; color: var(--ink2); } .iip-kv span small { color: var(--ink3); }
+  .iip-kv b { font-size: 15px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .iip-p { font-size: 14px; color: var(--ink2); line-height: 1.5; margin: 0 0 10px; }
+  .iip-flags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .iip-flags span { font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 999px; border: 1px solid rgba(220,192,138,.45); color: var(--amb); }
+  .iip-ln li { display: grid; grid-template-columns: minmax(0, 1fr) clamp(60px, 9vw, 120px) 104px; gap: 16px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--line); }
+  .iip-ln li > div span { display: block; font-size: 14px; }
+  .iip-ln li > div small { display: block; margin-top: 3px; font-size: 12px; color: var(--ink2); }
+  .iip-ln li > b { text-align: right; font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .iip-tot { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 0 0; margin-top: -1px; border-top: 1px solid rgba(244,243,239,.4); }
+  .iip-tot span { font-size: 13px; color: var(--ink2); } .iip-tot b { font-size: 22px; font-weight: 300; }
+  .iip-res { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line); }
+  .iip-res span { display: block; font-size: 12px; color: var(--ink2); }
+  .iip-res b { display: block; margin-top: 4px; font-size: clamp(22px, 2.6vw, 34px); font-weight: 200; letter-spacing: -.03em; }
+  .iip-res.good b, .iip-big.good, .iip-ex-n b.good { color: var(--lil-hi); } .iip-res.low b, .iip-big.low, .iip-ex-n b.low { color: var(--amb); } .iip-res.bad b, .iip-big.bad, .iip-ex-n b.bad { color: var(--red); }
+  .iip-mode h3:first-child { margin-top: 0; }
+  .iip-big { font-size: clamp(48px, 6vw, 88px); font-weight: 200; letter-spacing: -.045em; line-height: 1; margin: 8px 0 18px; }
+  .iip-big small { font-size: 13px; font-weight: 400; letter-spacing: 0; margin-left: .6em; color: var(--ink2); }
+  .iip-rank li { display: grid; grid-template-columns: minmax(0, 1fr) clamp(80px, 16vw, 200px) 84px; gap: 16px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .iip-rank li > div span { display: block; font-size: 14px; } .iip-rank li > div small { display: block; margin-top: 3px; font-size: 12px; color: var(--ink2); }
+  .iip-rank li > b { text-align: right; font-size: 18px; font-weight: 300; } .iip-rank li > b small { display: block; font-size: 11px; color: var(--ink3); }
+  .iip-rank li.best > div span, .iip-rank li.best > b { color: var(--lil-hi); } .iip-rank li.best .iip-mini i { background: var(--lil-hi); }
+  .iip-why { margin-top: 18px; display: grid; gap: 8px; max-width: 72ch; }
+  .iip-why li { font-size: 14px; line-height: 1.55; color: var(--ink2); padding-left: 16px; position: relative; }
+  .iip-why li::before { content: ''; position: absolute; left: 0; top: .72em; width: 6px; height: 1px; background: var(--ink3); }
+  .iip-what { max-width: 860px; }
+  .iip-seg-ctl { display: inline-flex; padding: 3px; border: 1px solid var(--line); border-radius: 999px; }
+  .iip-seg-ctl button { height: 30px; padding: 0 16px; border: 0; border-radius: 999px; background: none; color: var(--ink2); font: 500 13px inherit; cursor: pointer; }
+  .iip-seg-ctl button.on { background: rgba(244,243,239,.12); color: var(--ink); }
+  .iip-heat { position: relative; display: grid; grid-template-columns: 52px repeat(5, minmax(0, 1fr)); gap: 5px; margin: 40px 0 0 26px; }
+  .iip-hh { font-size: 12px; color: var(--ink2); text-align: center; align-self: center; font-variant-numeric: tabular-nums; }
+  .iip-hh.v { text-align: right; padding-right: 8px; }
+  .iip-hx { position: absolute; top: -28px; right: 0; font-size: 12px; color: var(--ink3); }
+  .iip-hy { position: absolute; left: -26px; bottom: 0; writing-mode: vertical-rl; transform: rotate(180deg); font-size: 12px; color: var(--ink3); }
+  .iip-cell { aspect-ratio: 1.75; min-height: 40px; border: 0; border-radius: 4px; color: var(--ink); font: 500 clamp(11px, 1.3vw, 15px) inherit; font-variant-numeric: tabular-nums; cursor: pointer; transition: transform .18s cubic-bezier(.16,1,.3,1), box-shadow .18s; }
+  .iip-cell:hover { transform: scale(1.04); }
+  .iip-cell.now { box-shadow: inset 0 0 0 1.5px var(--ink); }
+  .iip-cell.sel { box-shadow: 0 0 0 2px var(--lil-hi), 0 8px 24px rgba(0,0,0,.35); transform: scale(1.04); }
+  .iip-whatsel { margin: 18px 0 6px; min-height: 2.8em; font-size: 14px; line-height: 1.5; color: var(--ink2); }
+  .iip-kv.wide { max-width: 520px; }
+  .iip-note { margin: 8px 0 0; font-size: 12px; color: var(--ink3); }
+  .iip-caps li { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; color: var(--ink2); }
+  .iip-caps li small { color: var(--ink3); } .iip-caps li.on { color: var(--ink); } .iip-caps li.on b { color: var(--lil-hi); }
+  .iip-exits li { padding: 22px 0; border-bottom: 1px solid var(--line); display: grid; gap: 14px; }
+  .iip-ex-h { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; } .iip-ex-h b { font-size: 18px; font-weight: 500; }
+  .iip-tag { font-size: 11px; font-weight: 500; color: var(--lil-hi); border: 1px solid rgba(181,155,187,.55); border-radius: 999px; padding: 3px 9px; }
+  .iip-ex-n { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .iip-ex-n span { display: block; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink3); }
+  .iip-ex-n b { display: block; margin-top: 6px; font-size: clamp(22px, 2.6vw, 34px); font-weight: 200; letter-spacing: -.03em; }
+  .iip-exits small { font-size: 13px; color: var(--ink2); line-height: 1.6; }
+  .iip-ed { position: absolute; inset: 0; z-index: 6; display: flex; align-items: flex-end; justify-content: center; background: rgba(8,7,7,.5); opacity: 0; transition: opacity .2s ease; }
+  .iip-ed.on { opacity: 1; }
+  .iip-ed-card { width: min(560px, calc(100% - 32px)); margin-bottom: max(24px, 5vh); padding: 20px 22px 22px; border-radius: 18px; background: #1F1B1E; border: 1px solid var(--line); box-shadow: 0 30px 90px rgba(0,0,0,.55); transform: translateY(28px); transition: transform .4s cubic-bezier(.32,.72,0,1); }
+  .iip-ed.on .iip-ed-card { transform: none; }
+  .iip-ed-h { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 14px; color: var(--ink2); }
+  .iip-ed-v { display: grid; grid-template-columns: 52px minmax(0, 1fr) 52px; gap: 12px; align-items: center; margin: 18px 0 16px; }
+  .iip-step { width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--line); background: none; color: var(--ink); font: 300 26px/1 inherit; cursor: pointer; }
+  .iip-step:hover { background: rgba(244,243,239,.07); } .iip-step:active { transform: scale(.94); }
+  .iip-ed-v label { display: flex; align-items: baseline; justify-content: center; gap: 8px; min-width: 0; }
+  .iip-ed-v input { width: 100%; min-width: 0; background: none; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; color: var(--ink); font: 200 clamp(34px, 7vw, 56px)/1.1 inherit; letter-spacing: -.035em; text-align: center; padding: 4px 0 8px; font-variant-numeric: tabular-nums; }
+  .iip-ed-v input:focus { outline: none; border-bottom-color: var(--lil); }
+  .iip-ed-v label span { font-size: 15px; color: var(--ink2); flex: none; }
+  .iip-range { -webkit-appearance: none; appearance: none; width: 100%; height: 28px; background: transparent; margin: 0; cursor: pointer; }
+  .iip-range::-webkit-slider-runnable-track { height: 2px; background: rgba(244,243,239,.18); border-radius: 2px; }
+  .iip-range::-moz-range-track { height: 2px; background: rgba(244,243,239,.18); border-radius: 2px; }
+  .iip-range::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; margin-top: -10px; border-radius: 50%; background: #ECE6EE; box-shadow: 0 2px 10px rgba(0,0,0,.45); }
+  .iip-range::-moz-range-thumb { width: 22px; height: 22px; border: 0; border-radius: 50%; background: #ECE6EE; }
+  .iip-ed-f { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; color: var(--ink2); }
+  .iip-ed-f b { color: var(--ink); font-weight: 500; }
+  .iip-lnk { background: none; border: 0; padding: 0; color: var(--lil-hi); font: 500 13px inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(220,203,223,.4); }
+  .iip-adj { position: absolute; top: 0; right: 0; bottom: 0; z-index: 4; width: min(420px, 100%); overflow: auto; padding: calc(16px + env(safe-area-inset-top, 0px)) 24px 32px; background: #191618; border-left: 1px solid var(--line); box-shadow: -30px 0 80px rgba(0,0,0,.45); transform: translateX(102%); transition: transform .5s cubic-bezier(.32,.72,0,1); }
+  .iip.adj-on .iip-adj { transform: none; }
+  .iip-adj header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .iip-adj h2 { margin: 0; font-size: 18px; font-weight: 500; }
+  .iip-adj h3 { margin: 24px 0 4px; font-size: 12px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--ink2); }
+  .iip-adj ul { list-style: none; margin: 0; padding: 0; }
+  .iip-adj li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .iip-adj li span { color: var(--ink2); }
+  .iip-ask { position: absolute; inset: 0; z-index: 7; display: grid; place-items: center; padding: 16px; background: rgba(8,7,7,.62); }
+  .iip-ask-c { width: min(480px, 100%); padding: 24px; border-radius: 16px; background: #1F1B1E; border: 1px solid var(--line); box-shadow: 0 30px 90px rgba(0,0,0,.55); }
+  .iip-ask-c b { font-size: 18px; font-weight: 500; } .iip-ask-c p { margin: 8px 0 18px; font-size: 14px; color: var(--ink2); line-height: 1.5; }
+  .iip-ask-c div { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  @media (max-width: 860px) {
+    .iip-read { grid-template-columns: 1fr; }
+    .iip-q { border-left: 0; border-top: 1px solid var(--line); padding: 16px 0; } .iip-q:first-child { border-top: 0; }
+    .iip-n { font-size: clamp(40px, 13vw, 64px); margin: 8px 0; }
+    .iip-row { grid-template-columns: minmax(0, 1fr) auto; row-gap: 8px; } .iip-row .iip-track { grid-column: 1 / -1; grid-row: 2; }
+    .iip-legend { margin-left: 0; }
+    .iip-cols, .iip-cols.even { grid-template-columns: 1fr; }
+    .iip-map { position: relative; top: 0; height: 240px; }
+    .iip-chb + .iip-chb { padding-left: 0; border-left: 0; }
+    .iip-ch-h > span { margin-left: 0; width: 100%; }
+    .iip-ex-n { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .iip-ed { align-items: flex-end; } .iip-ed-card { width: 100%; margin: 0; border-radius: 18px 18px 0 0; padding-bottom: calc(22px + env(safe-area-inset-bottom, 0px)); }
+  }
+  @media (max-width: 560px) {
+    .iip-brand span, .iip-acts .iip-btn[data-a="adjust"] { display: none; }
+    .iip-title { order: 3; width: 100%; flex-basis: 100%; }
+    .iip-acts { margin-left: auto; }
+    .iip-acts .iip-btn { height: 32px; padding: 0 11px; font-size: 12px; } .iip-dirty { display: none !important; }
+    .iip-dl { grid-template-columns: 1fr 1fr; column-gap: 16px; }
+    .iip-ln li { grid-template-columns: minmax(0, 1fr) 92px; } .iip-ln li > .iip-mini { display: none; }
+    .iip-rank li { grid-template-columns: minmax(0, 1fr) 70px; } .iip-rank li > .iip-mini { display: none; }
+    .iip-heat { grid-template-columns: 40px repeat(5, minmax(0, 1fr)); gap: 3px; margin-left: 20px; } .iip-cell { min-height: 34px; aspect-ratio: 1.2; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .iip, .iip-main, .iip-ch, .iip-adj, .iip-seg, .iip-mark, .iip-gap, .iip-ed, .iip-ed-card { transition: opacity .2s ease !important; }
+    .iip.ch-on .iip-main, .iip.adj-on .iip-main { transform: none; filter: none; }
+    .iip-ch-b.fresh > *, .iip-ch-b.fresh .iip-mini i, .iip-ch-b.fresh .iip-cell { animation: none !important; }
+  }
   .ps-actions .secondary-btn { width: auto; margin: 0; padding: 0 var(--sp-4); height: 38px; }
   .ps-variant { font-size: var(--fs-sm); color: var(--text-2); margin-bottom: var(--sp-2); }
   .ps-stage { display: flex; align-items: center; gap: var(--sp-2) var(--sp-3); flex-wrap: wrap; margin: var(--sp-1) 0 var(--sp-2); }
@@ -19588,6 +19812,504 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       } catch (err) { showError('duplicar', err); }
     }
 
+    // ---------- Modo Apresentar (Investment Intelligence à frente do cliente) ----------
+    // Ecrã inteiro escuro: painel vivo (investimento · receita · resultado + barra dos custos contra a receita) e
+    // capítulos que deslizam (Terreno, Custos e receitas, Venda ou arrendamento, E se…?). Tudo editável num cenário
+    // temporário: o estudo só muda com «Aplicar ao estudo»; «Guardar como variante» cria uma cópia.
+    // As contas são as da ficha (feasCalc, feasModalities, indCalc): os números nunca divergem.
+    const IIP_EUR = (n, dec) => { const v = Number(n) || 0, a = Math.abs(v); return a >= 1e6 ? [(v / 1e6).toLocaleString('pt-PT', { minimumFractionDigits: dec ?? 2, maximumFractionDigits: dec ?? 2 }), 'M€'] : [Math.round(v).toLocaleString('pt-PT'), '€']; };
+    const IIP_PCT = n => [(n * 100).toLocaleString('pt-PT', { minimumFractionDigits: 1, maximumFractionDigits: 1 }), '%'];
+    const iipFmt = (v, kind) => v == null || !Number.isFinite(v) ? '—' : (kind === 'pct' ? IIP_PCT(v) : IIP_EUR(v)).join(' ');
+    // valores editáveis: p.* (campos do terreno), f.* (viabilidade, com caminhos), typ.T2.price / typ.T2.rent
+    const IIP_HOUSE_IN = [
+      ['Terreno', [['p.asking_price', 'Preço do terreno', '€', 5000], ['p.land_area', 'Área do terreno', 'm²', 10], ['p.pdm_index', 'Índice de construção', '', 0.05, 2],
+        ['f.housing_area', 'Área de construção', 'm²', 10], ['f.sellable_pct', 'Área vendável', '%', 1], ['f.commerce_area', 'Área de comércio', 'm²', 10], ['f.below_area', 'Estacionamento em cave', 'm²', 10]]],
+      ['Construção', [['f.cost.housing', 'Habitação', '€/m²', 25], ['f.cost.common', 'Áreas comuns', '€/m²', 25], ['f.cost.commerce', 'Comércio', '€/m²', 25], ['f.cost.parking', 'Estacionamento', '€/m²', 25],
+        ['f.proj_pct', 'Projetos', '% da obra', 0.5, 1], ['f.lic_pct', 'Licenças', '% da obra', 0.5, 1], ['f.cont_pct', 'Contingência', '%', 0.5, 1], ['f.vat_pct', 'IVA', '%', 1]]],
+      ['Venda', [['f.sale_m2', 'Preço de venda', '€/m²', 50], ['f.commerce_sale_m2', 'Venda do comércio', '€/m²', 50], ['f.comm_pct', 'Comissão de venda', '%', 0.5, 1]]],
+      ['Arrendamento', [['f.occupancy', 'Ocupação', '%', 1], ['f.rent_opex_pct', 'Encargos do senhorio', '% da renda', 1]]]
+    ];
+    const IIP_IND_IN = [
+      ['Terreno', [['p.asking_price', 'Preço do terreno', '€', 5000], ['p.land_area', 'Área do terreno', 'm²', 100], ['f.ind.ced_pct', 'Cedências', '%', 1], ['f.ind.lots', 'Lotes', 'lotes', 1, 0]]],
+      ['Custos', [['f.ind.build_m2', 'Construção do pavilhão', '€/m²', 25], ['f.ind.road_eur_ml', 'Arruamentos', '€/ml', 25], ['f.ind.pip_cost', 'PIP', '€', 1000], ['f.ind.lot_proj', 'Projeto de loteamento', '€', 1000]]],
+      ['Venda e renda', [['f.ind.sale_pip', 'Terreno com PIP', '€/m²', 1], ['f.ind.sale_lot', 'Lote infraestruturado', '€/m²', 5], ['f.ind.sale_pav', 'Pavilhão', '€/m²', 25], ['f.ind.rent_m2', 'Renda do pavilhão', '€/m²/mês', 0.25, 2], ['f.comm_pct', 'Comissão de venda', '%', 0.5, 1]]]
+    ];
+    function iipEnsureFont() {
+      if (document.getElementById('iip-inter')) return;
+      const l = document.createElement('link'); l.id = 'iip-inter'; l.rel = 'stylesheet';
+      l.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&display=swap'; document.head.appendChild(l);
+    }
+    function openPlotPresent(p0, d = {}) {
+      iipEnsureFont();
+      const sc = JSON.parse(JSON.stringify(p0));
+      sc.feasibility = sc.feasibility || {};
+      const ind = isIndPlot(p0);
+      const snap = x => JSON.stringify([Number(x.asking_price) || 0, Number(x.land_area) || 0, Number(x.pdm_index) || 0, x.feasibility || {}]);
+      const snap0 = snap(sc);
+      const N = v => Number(v) || 0;
+      const rm = reduceMotion.matches;
+      const typeNames = plotTypes(p0).map(id => (d.types || []).find(t => t.id === id)?.name).filter(Boolean);
+      const root = document.createElement('div');
+      root.className = 'iip'; root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-label', 'Apresentação: ' + (p0.name || 'oportunidade'));
+      root.innerHTML = `
+        <div class="iip-grid" aria-hidden="true"></div>
+        <header class="iip-top">
+          <div class="iip-brand"><img src="assets/nova-logo-lilac-cropped.png" alt="NOVA"><span>Investment Intelligence</span></div>
+          <div class="iip-title"><b>${escapeHtml(p0.name || '')}</b><span>${escapeHtml([p0.parish, p0.municipality].filter(Boolean).join(' · ') || typeNames.join(' · '))}</span></div>
+          <div class="iip-acts">
+            <span class="iip-dirty" hidden><i></i>Cenário alterado</span>
+            <button type="button" class="iip-btn ghost" data-a="reset" hidden>Repor</button>
+            <button type="button" class="iip-btn ghost" data-a="variant" hidden>Guardar como variante</button>
+            <button type="button" class="iip-btn solid" data-a="apply" hidden>Aplicar ao estudo</button>
+            <button type="button" class="iip-btn ghost" data-a="adjust">Ajustar valores</button>
+            <button type="button" class="iip-icon" data-a="fs" aria-label="Ecrã inteiro" title="Ecrã inteiro"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 8V3h5M12 3h5v5M17 12v5h-5M8 17H3v-5"/></svg></button>
+            <button type="button" class="iip-icon" data-a="close" aria-label="Fechar a apresentação" title="Fechar (Esc)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg></button>
+          </div>
+        </header>
+        <main class="iip-main">
+          <section class="iip-read" aria-live="polite">
+            <div class="iip-q"><span class="iip-l" data-l="a"></span><div class="iip-n" data-n="a"></div><span class="iip-s" data-s="a"></span></div>
+            <div class="iip-q"><span class="iip-l" data-l="b"></span><div class="iip-n" data-n="b"></div><span class="iip-s" data-s="b"></span></div>
+            <div class="iip-q res"><span class="iip-l" data-l="c"></span><div class="iip-n" data-n="c"></div><span class="iip-s" data-s="c"></span></div>
+          </section>
+          <section class="iip-ledger" aria-label="Custos contra receita"></section>
+          <nav class="iip-chs" aria-label="Capítulos"></nav>
+        </main>
+        <section class="iip-ch" aria-hidden="true">
+          <header class="iip-ch-h"><button type="button" class="iip-back" data-a="back"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12 4l-6 6 6 6"/></svg>Painel</button><h2></h2><span></span></header>
+          <div class="iip-ch-b"></div>
+        </section>
+        <div class="iip-ed" hidden></div>
+        <aside class="iip-adj" aria-hidden="true"><header><h2>Ajustar valores</h2><button type="button" class="iip-icon" data-a="adj-close" aria-label="Fechar"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg></button></header><div class="iip-adj-b"></div></aside>
+        <div class="iip-ask" hidden></div>`;
+      document.body.appendChild(root);
+      const prevOverflow = document.body.style.overflow; document.body.style.overflow = 'hidden';
+      const $ = s => root.querySelector(s);
+      let chOpen = null, edKey = null, firstPaint = true;
+
+      // ---- valores (ler / escrever no cenário) ----
+      const calc = () => {
+        const f = feasInputs(sc);
+        if (ind) { const k = indCalc(sc, f); return { f, k, best: k.best || k.exits[0] || null }; }
+        return { f, c: feasCalc(sc, f), mod: feasModalities(sc, f) };
+      };
+      const typPrice = (t, w) => { const lo = N(t[w]) || N(t[w + '_max']), hi = N(t[w + '_max']) || lo; return (lo + hi) / 2; };
+      const getV = k => {
+        const [s0, ...r] = k.split('.');
+        if (s0 === 'p') return sc[r[0]] == null || sc[r[0]] === '' ? null : Number(sc[r[0]]);
+        if (s0 === 'typ') { const t = (calc().c?.typs || []).find(x => x.name === r[0]); return t ? typPrice(t, r[1]) || null : null; }
+        const v = r.reduce((o, x) => o?.[x], feasInputs(sc));
+        return v == null || v === '' ? null : Number(v);
+      };
+      const setV = (k, v) => {
+        const [s0, ...r] = k.split('.'), fe = sc.feasibility;
+        if (s0 === 'p') sc[r[0]] = v;
+        else if (s0 === 'typ') {
+          const eff = feasInputs(sc), list = JSON.parse(JSON.stringify(fe.typologies || eff.typologies || []));
+          let t = list.find(x => x.name === r[0]);
+          if (!t) { const a = (calc().c?.typs || []).find(x => x.name === r[0]); t = { name: r[0], units: null, area: a?.area ?? null, price: null, rent: null }; list.push(t); }
+          t[r[1]] = v; t[r[1] + '_max'] = v; fe.typologies = list;
+        } else if (r.length === 1) fe[r[0]] = v;
+        else fe[r[0]] = { ...(fe[r[0]] || {}), [r[1]]: v };
+      };
+      const descOf = k => [...IIP_HOUSE_IN, ...IIP_IND_IN].flatMap(g => g[1]).find(x => x[0] === k)
+        || (k.startsWith('typ.') ? [k, `${k.split('.')[1]} · ${k.endsWith('rent') ? 'renda por mês' : 'preço por fração'}`, '€', k.endsWith('rent') ? 25 : 5000] : [k, k, '', 1]);
+      const fmtIn = (k, v) => {
+        const [, , u, , dec] = descOf(k);
+        if (v == null || !Number.isFinite(v)) return 'definir';
+        if (u === '€') return IIP_EUR(v).join(' ');
+        return v.toLocaleString('pt-PT', { maximumFractionDigits: dec ?? (Math.abs(v) < 10 ? 2 : 0) }) + (u ? ' ' + u : '');
+      };
+      // número editável dentro do texto
+      const ev = k => { const v = getV(k); return `<button type="button" class="iip-v${v == null ? ' empty' : ''}" data-k="${escapeHtml(k)}">${escapeHtml(fmtIn(k, v))}</button>`; };
+
+      // ---- números do painel: sobem até ao valor ----
+      const tween = (el, to, kind) => {
+        if (to == null || !Number.isFinite(to)) { cancelAnimationFrame(el._raf); el._v = null; el.innerHTML = '—'; return; }
+        const paint = v => { const [a, u] = kind === 'pct' ? IIP_PCT(v) : IIP_EUR(v); el.innerHTML = `${a}<small>${u}</small>`; };
+        const from = el._v ?? 0; el._v = to;
+        if (rm || from === to) { paint(to); return; }
+        cancelAnimationFrame(el._raf);
+        const t0 = performance.now(), D = firstPaint ? 1400 : 650;
+        const step = now => { const k = Math.min(1, (now - t0) / D), e = 1 - Math.pow(1 - k, 4); paint(from + (to - from) * e); if (k < 1) el._raf = requestAnimationFrame(step); };
+        el._raf = requestAnimationFrame(step);
+      };
+      const goodCls = (v, goal) => v == null || !Number.isFinite(v) ? '' : v < 0 ? 'bad' : v >= goal ? 'good' : 'low';
+
+      // ---- painel ----
+      const SEG_C = ['#D9C9DC', '#A483AB', '#7E6185', '#5C4862', '#43364A'];
+      function paintPanel() {
+        const S = calc();
+        let A, B, C, la, lb, lc, sa, sb, sc_, cls = '', segs = [], rev = null, revLabel = '';
+        if (ind) {
+          const b = S.best;
+          la = 'Investimento'; lb = 'Receita líquida'; lc = b?.key === 'rent' ? 'Yield bruta' : 'ROI';
+          A = b?.cost; B = b?.net; C = b?.key === 'rent' ? b.yieldGross : b?.roi;
+          sa = b ? b.name : 'Faltam valores para calcular'; sb = b ? `${b.months} meses${b.key === 'rent' ? ` · ${fmtNum(b.years)} anos de rendas` : ''}` : '';
+          sc_ = b ? `TIR ${pct(b.irr)} ao ano · lucro ${iipFmt(b.profit)}` : '';
+          cls = goodCls(C, b?.key === 'rent' ? YIELD_GOAL : ROI_GOAL);
+          const k = S.k;
+          if (b) { segs = [['Terreno', k.acq], ['PIP', k.cPip], ['Loteamento e infraestruturas', b.key === 'pip' ? 0 : k.cLot + k.cInfra], ['Pavilhões', b.key === 'pav' || b.key === 'rent' ? k.cBuild : 0]].filter(s => s[1] > 0); rev = b.net; revLabel = b.key === 'rent' ? `Rendas líquidas em ${fmtNum(b.years)} anos` : 'Receita líquida'; }
+        } else {
+          const c = S.c, rentOnly = !c.hasSales && c.rentYear > 0;
+          la = 'Investimento total'; lb = rentOnly ? 'Renda anual' : 'Receita líquida'; lc = rentOnly ? 'Yield bruta' : 'ROI';
+          A = c.hasCosts ? c.costGlobal : null; B = rentOnly ? c.rentYear : c.hasSales ? c.salesNet : null; C = rentOnly ? c.yieldGross : c.hasSales && c.hasCosts ? c.roi : null;
+          sa = c.hasCosts ? `${fmtNum(Math.round(c.housing + c.commerce))} m² de construção` : 'Falta o custo de construção';
+          sb = rentOnly ? `${c.units || 0} frações · ocupação ${fmtNum(N(S.f.occupancy))}%` : c.hasSales ? `${c.units || 0} frações · ${iipFmt(c.avgPrice)} em média` : 'Falta o preço de venda';
+          sc_ = c.hasSales && c.hasCosts ? `Lucro ${iipFmt(c.profit)} · margem ${pct(c.margin)}${c.yieldGross ? ` · yield bruta ${pct(c.yieldGross)}` : ''}` : rentOnly ? `Yield líquida ${pct(c.yieldNet)}` : '';
+          cls = goodCls(C, rentOnly ? YIELD_GOAL : ROI_GOAL);
+          segs = [['Terreno', c.acquisition], ['Construção', c.construction], ['Projetos, licenças e fiscalização', c.indirect], ['Contingência', c.reserves], ['IVA', c.vat]].filter(s => s[1] > 0);
+          if (!rentOnly && c.hasSales) { rev = c.salesNet; revLabel = 'Receita líquida'; }
+        }
+        $('[data-l="a"]').textContent = la; $('[data-l="b"]').textContent = lb; $('[data-l="c"]').textContent = lc;
+        tween($('[data-n="a"]'), A, 'eur'); tween($('[data-n="b"]'), B, 'eur'); tween($('[data-n="c"]'), C, 'pct');
+        $('[data-s="a"]').textContent = sa; $('[data-s="b"]').textContent = sb; $('[data-s="c"]').textContent = sc_;
+        $('.iip-q.res').className = 'iip-q res ' + cls;
+        paintLedger(segs, rev, revLabel);
+        paintChapters(S);
+        const dirty = snap(sc) !== snap0;
+        root.querySelectorAll('.iip-dirty, [data-a="reset"], [data-a="variant"], [data-a="apply"]').forEach(x => { x.hidden = !dirty; });
+        firstPaint = false;
+      }
+      // barra dos custos (por parcelas) contra a barra da receita, na mesma escala
+      function paintLedger(segs, rev, revLabel) {
+        const L = $('.iip-ledger');
+        const cost = segs.reduce((t, s) => t + s[1], 0);
+        if (!cost) { L.innerHTML = '<p class="iip-empty">Preenche o preço do terreno, as áreas e os custos para ver a barra dos custos.</p>'; return; }
+        const max = Math.max(cost, rev || 0) || 1, w = v => (v / max * 100).toFixed(3) + '%';
+        if (!L.querySelector('.iip-bars') || L.dataset.n !== String(segs.length) + (rev != null)) {
+          L.dataset.n = String(segs.length) + (rev != null);
+          L.innerHTML = `<div class="iip-bars">
+              <div class="iip-row"><span class="iip-rl">Custos</span><div class="iip-track">${segs.map((s, i) => `<i class="iip-seg" style="width:0;background:${SEG_C[i % SEG_C.length]}"></i>`).join('')}</div><b class="iip-rv" data-v="cost"></b></div>
+              ${rev != null ? `<div class="iip-row rev"><span class="iip-rl">${escapeHtml(revLabel)}</span><div class="iip-track"><i class="iip-seg r" style="width:0"></i><span class="iip-gap"><em></em></span><span class="iip-mark"></span></div><b class="iip-rv" data-v="rev"></b></div>` : ''}
+            </div>
+            <ul class="iip-legend">${segs.map((s, i) => `<li><i style="background:${SEG_C[i % SEG_C.length]}"></i><span></span><b></b><small></small></li>`).join('')}</ul>`;
+        }
+        const set = () => {
+          L.querySelectorAll('.iip-row:not(.rev) .iip-seg').forEach((el, i) => { el.style.width = w(segs[i][1]); });
+          L.querySelector('[data-v="cost"]').textContent = iipFmt(cost);
+          L.querySelectorAll('.iip-legend li').forEach((li, i) => { li.children[1].textContent = segs[i][0]; li.children[2].textContent = iipFmt(segs[i][1]); li.children[3].textContent = pct(segs[i][1] / cost, 0); });
+          if (rev != null) {
+            const r = L.querySelector('.iip-row.rev'), gap = r.querySelector('.iip-gap'), lo = Math.min(cost, rev), hi = Math.max(cost, rev);
+            r.querySelector('.iip-seg.r').style.width = w(rev);
+            r.querySelector('.iip-mark').style.left = w(cost);
+            gap.style.left = w(lo); gap.style.width = w(hi - lo); gap.className = 'iip-gap' + (rev < cost ? ' loss' : '');
+            gap.querySelector('em').textContent = (rev >= cost ? 'Lucro ' : 'Prejuízo ') + iipFmt(Math.abs(rev - cost));
+            r.querySelector('[data-v="rev"]').textContent = iipFmt(rev);
+          }
+        };
+        if (firstPaint && !rm) requestAnimationFrame(() => requestAnimationFrame(set)); else set();
+      }
+
+      // ---- capítulos ----
+      const CH = ind ? [['land', 'Terreno'], ['exits', 'Saídas da cadeia de valor']] : [['land', 'Terreno'], ['money', 'Custos e receitas'], ['mode', 'Venda ou arrendamento'], ['whatif', 'E se…?']];
+      function sensGrid(f) {
+        const steps = [-0.2, -0.1, 0, 0.1, 0.2];
+        return steps.slice().reverse().map(sv => steps.map(bv => ({ sv, bv, c: feasCalc(sc, f, { sales: 1 + sv, build: 1 + bv }) })));
+      }
+      function breakEven(f, which) {
+        // quanto pode o preço de venda descer (ou a obra subir) até o lucro chegar a zero
+        const prof = x => feasCalc(sc, f, which === 'sales' ? { sales: 1 + x, build: 1 } : { sales: 1, build: 1 + x }).profit;
+        if (prof(0) <= 0) return 0;
+        let lo = 0, hi = which === 'sales' ? -0.95 : 3;
+        if (prof(hi) > 0) return null;
+        for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (prof(m) > 0) lo = m; else hi = m; }
+        return lo;
+      }
+      function chapterSummary(key, S) {
+        if (ind) {
+          const k = S.k;
+          if (key === 'land') return `${fmtNum(k.A)} m² · ${fmtNum(Math.round(k.abc))} m² de pavilhões · ${k.lots} ${k.lots === 1 ? 'lote' : 'lotes'}`;
+          return k.best ? `Melhor: ${k.best.short} · TIR ${pct(k.best.irr)}` : 'Faltam valores';
+        }
+        const c = S.c, m = S.mod;
+        if (key === 'land') return `${fmtNum(N(sc.land_area))} m² de terreno · ${fmtNum(Math.round(c.housing))} m² de construção · ${c.units || 0} frações`;
+        if (key === 'money') return c.hasCosts ? `Custo ${iipFmt(c.costGlobal)} · receita ${c.hasSales ? iipFmt(c.salesNet) : '—'}` : 'Faltam custos';
+        if (key === 'mode') { const s = m?.list.find(x => x.key === 'sale'), r = m?.list.find(x => x.key === 'rent'); return [s ? `Vender: TIR ${pct(s.irr)}` : null, c.yieldGross ? `Arrendar: yield ${pct(c.yieldGross)}` : r ? `Arrendar: TIR ${pct(r.irr)}` : null].filter(Boolean).join(' · ') || 'Faltam preços de venda ou rendas'; }
+        if (key === 'whatif') { if (!c.hasSales || !c.hasCosts) return 'Precisa de custos e preço de venda'; const be = breakEven(S.f, 'sales'); return be == null ? 'Resiste a quedas fortes do preço' : `O preço de venda pode descer ${pct(-be, 0)} antes do prejuízo`; }
+        return '';
+      }
+      function paintChapters(S) {
+        const nav = $('.iip-chs');
+        if (!nav.children.length) nav.innerHTML = CH.map(([k, t]) => `<button type="button" class="iip-chb" data-ch="${k}"><b>${t}</b><span></span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M8 4l6 6-6 6"/></svg></button>`).join('');
+        nav.querySelectorAll('[data-ch]').forEach(b => { b.querySelector('span').textContent = chapterSummary(b.dataset.ch, S); });
+        if (chOpen) paintChapter(chOpen, S, false);
+      }
+      const bar = (v, max, cls = '') => `<span class="iip-mini ${cls}"><i style="width:${max ? Math.max(0.5, Math.min(100, v / max * 100)).toFixed(2) : 0}%"></i></span>`;
+      function chLand(S) {
+        const f = S.f;
+        if (ind) {
+          const k = S.k;
+          return `<div class="iip-cols"><div class="iip-map" data-map></div><div>
+            <dl class="iip-dl">
+              <div><dt>Preço do terreno</dt><dd>${ev('p.asking_price')}</dd></div>
+              <div><dt>Área do terreno</dt><dd>${ev('p.land_area')}</dd></div>
+              <div><dt>Área de pavilhões possível</dt><dd><b>${fmtNum(Math.round(k.abc))} m²</b>${k.bind ? `<small>limitada pelo ${escapeHtml(k.bind.label.toLowerCase())}</small>` : ''}</dd></div>
+              <div><dt>Cedências</dt><dd>${ev('f.ind.ced_pct')}<small>${fmtNum(Math.round(k.ced))} m²</small></dd></div>
+              <div><dt>Lotes</dt><dd>${ev('f.ind.lots')}<small>${fmtNum(Math.round(k.lotAvg))} m² por lote</small></dd></div>
+              <div><dt>Terreno por m² de pavilhão</dt><dd><b>${iipFmt(k.ratios.landPerM2)}</b></dd></div>
+            </dl>
+            ${k.caps.length ? `<h3>O que limita a construção</h3><ul class="iip-caps">${k.caps.map(c => `<li class="${c === k.bind ? 'on' : ''}"><span>${escapeHtml(c.label)} <small>${escapeHtml(c.param)}</small></span><b>${fmtNum(Math.round(c.area))} m²</b></li>`).join('')}</ul>` : ''}
+          </div></div>`;
+        }
+        const c = S.c, cons = sc.constraints || {};
+        const flags = [['uopg', 'UOPG'], ['ren', 'REN'], ['ran', 'RAN'], ['aru', 'ARU'], ['apa', 'APA']].filter(([k2]) => cons[k2]);
+        const typs = (c.typs || []).filter(t => N(t.units) > 0), maxU = Math.max(1, ...typs.map(t => N(t.units)));
+        return `<div class="iip-cols"><div class="iip-map" data-map></div><div>
+          <dl class="iip-dl">
+            <div><dt>Preço do terreno</dt><dd>${ev('p.asking_price')}</dd></div>
+            <div><dt>Área do terreno</dt><dd>${ev('p.land_area')}</dd></div>
+            <div><dt>Índice de construção</dt><dd>${ev('p.pdm_index')}</dd></div>
+            <div><dt>Área de construção</dt><dd>${ev('f.housing_area')}</dd></div>
+            <div><dt>Área vendável</dt><dd>${ev('f.sellable_pct')}<small>${fmtNum(Math.round(c.sellable))} m²</small></dd></div>
+            <div><dt>Frações</dt><dd><b>${c.units || 0}</b><small>${c.units ? fmtNum(Math.round(c.sellable / c.units)) + ' m² em média' : ''}</small></dd></div>
+          </dl>
+          ${typs.length ? `<h3>Tipologias</h3><ul class="iip-typ">${typs.map(t => `<li><span>${escapeHtml(t.name)}</span>${bar(N(t.units), maxU)}<b>${N(t.units)}</b><small>${fmtNum(Math.round(N(t.area)))} m²</small></li>`).join('')}</ul>` : ''}
+          <h3>O terreno no negócio</h3>
+          <ul class="iip-kv">
+            <li><span>Por m² de construção</span><b>${iipFmt(c.ratios.abc)}</b></li>
+            <li><span>Por fração</span><b>${iipFmt(c.ratios.unit)}</b></li>
+            <li><span>Peso na receita</span><b>${pct(c.ratios.revenue, 0)}</b></li>
+          </ul>
+          ${sc.pdm_class || flags.length ? `<h3>Condicionantes</h3><p class="iip-p">${escapeHtml(sc.pdm_class || '')}</p>${flags.length ? `<div class="iip-flags">${flags.map(([, l]) => `<span>${l}</span>`).join('')}</div>` : ''}` : ''}
+        </div></div>`;
+      }
+      function chMoney(S) {
+        const c = S.c, f = S.f, tot = c.costGlobal || 1;
+        const LINE_K = { 'Habitação (área vendável)': 'housing', 'Comércio': 'commerce', 'Áreas comuns': 'common', 'Estacionamento (abaixo do solo)': 'parking', 'Áreas verdes': 'green', 'Infraestruturas': 'infra' };
+        const row = (label, how, v, sign = '') => `<li><div><span>${label}</span>${how ? `<small>${how}</small>` : ''}</div>${bar(Math.abs(v), tot)}<b>${sign}${iipFmt(v)}</b></li>`;
+        const costs = [
+          row('Terreno', `${ev('p.asking_price')} + IMT e selo`, c.acquisition),
+          ...c.lines.filter(l => l.area > 0).map(l => row(l.label.replace(' (área vendável)', '').replace(' (abaixo do solo)', ''), `${fmtNum(Math.round(l.area))} m² × ${ev('f.cost.' + LINE_K[l.label])}`, l.value)),
+          row('Projetos', `${ev('f.proj_pct')}`, c.projects), row('Licenças e taxas', `${ev('f.lic_pct')}`, c.licences + c.muni),
+          c.fisc ? row('Fiscalização', `${c.fiscVisits} visitas`, c.fisc) : '', row('Contingência', ev('f.cont_pct'), c.reserves), row('IVA não dedutível', ev('f.vat_pct'), c.vat)
+        ].join('');
+        const typs = (c.typs || []).filter(t => N(t.units) > 0);
+        const revs = [
+          ...(f.sale_mode === 'typology' && typs.length
+            ? typs.map(t => row(t.name, `${N(t.units)} × ${ev(`typ.${t.name}.price`)}`, N(t.units) * typPrice(t, 'price')))
+            : [row('Habitação', `${fmtNum(Math.round(c.sellable))} m² × ${ev('f.sale_m2')}`, c.housingSales)]),
+          c.commerce ? row('Comércio', `${fmtNum(Math.round(c.commerce))} m² × ${ev('f.commerce_sale_m2')}`, c.commerce * N(f.commerce_sale_m2)) : '',
+          row('Comissão de venda', ev('f.comm_pct'), c.commission, '−')
+        ].join('');
+        return `<div class="iip-cols even">
+          <div><h3>Custos</h3><ul class="iip-ln">${costs}</ul><div class="iip-tot"><span>Investimento total</span><b>${iipFmt(c.costGlobal)}</b></div></div>
+          <div><h3>Receitas</h3><ul class="iip-ln">${revs}</ul><div class="iip-tot"><span>Receita líquida</span><b>${c.hasSales ? iipFmt(c.salesNet) : '—'}</b></div>
+            ${c.hasSales && c.hasCosts ? `<div class="iip-res ${goodCls(c.roi, ROI_GOAL)}"><div><span>Lucro</span><b>${iipFmt(c.profit)}</b></div><div><span>ROI</span><b>${pct(c.roi)}</b></div><div><span>Margem</span><b>${pct(c.margin)}</b></div></div>` : ''}
+          </div></div>`;
+      }
+      function chMode(S) {
+        const c = S.c, m = S.mod, sale = m?.list.find(x => x.key === 'sale'), rent = m?.list.find(x => x.key === 'rent');
+        const typs = (c.typs || []).filter(t => N(t.units) > 0);
+        const maxIrr = Math.max(0.0001, ...(m?.list || []).map(x => Math.abs(x.irr || 0)));
+        return `<div class="iip-cols even">
+          <div class="iip-mode"><h3>Construir e vender</h3>
+            <div class="iip-big ${goodCls(c.roi, ROI_GOAL)}">${c.hasSales && c.hasCosts ? pct(c.roi) : '—'}<small>ROI</small></div>
+            <ul class="iip-kv"><li><span>Lucro</span><b>${c.hasSales ? iipFmt(c.profit) : '—'}</b></li><li><span>Margem</span><b>${pct(c.margin)}</b></li>
+              <li><span>TIR</span><b>${sale ? pct(sale.irr) : '—'}</b></li><li><span>Prazo</span><b>${sale ? sale.months + ' meses' : '—'}</b></li><li><span>Capital no pico</span><b>${sale ? iipFmt(sale.capital) : '—'}</b></li></ul></div>
+          <div class="iip-mode"><h3>Construir e arrendar</h3>
+            <div class="iip-big ${goodCls(c.yieldGross, YIELD_GOAL)}">${c.yieldGross ? pct(c.yieldGross) : '—'}<small>yield bruta</small></div>
+            <ul class="iip-kv"><li><span>Yield líquida</span><b>${pct(c.yieldNet)}</b></li><li><span>Renda anual</span><b>${c.rentYear ? iipFmt(c.rentYear) : '—'}</b></li>
+              <li><span>TIR</span><b>${rent ? pct(rent.irr) : '—'}</b></li><li><span>Ocupação</span><b>${ev('f.occupancy')}</b></li><li><span>Encargos</span><b>${ev('f.rent_opex_pct')}</b></li></ul>
+            ${typs.length ? `<h4>Renda por fração</h4><ul class="iip-kv">${typs.map(t => `<li><span>${escapeHtml(t.name)} <small>× ${N(t.units)}</small></span><b>${ev(`typ.${t.name}.rent`)}</b></li>`).join('')}</ul>` : ''}</div>
+        </div>
+        ${m?.list.length ? `<h3>Onde parar na cadeia de valor</h3><ul class="iip-rank">${m.list.slice().sort((a, b) => (b.irr ?? -9) - (a.irr ?? -9)).map(x => `<li class="${x === m.best ? 'best' : ''}"><div><span>${escapeHtml(x.name)}</span><small>${x.months} meses · capital ${iipFmt(x.capital)}</small></div>${bar(Math.max(0, x.irr || 0), maxIrr)}<b>${pct(x.irr)}<small>TIR</small></b></li>`).join('')}</ul>
+          ${m.why?.length ? `<ul class="iip-why">${m.why.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>` : ''}` : ''}`;
+      }
+      let whatMetric = 'roi', whatSel = null;
+      function chWhat(S) {
+        const c = S.c, f = S.f;
+        if (!c.hasSales || !c.hasCosts) return `<p class="iip-empty">Para ver o «e se…?», preenche os custos e o preço de venda (${ev('f.sale_m2')}).</p>`;
+        const G = sensGrid(f), val = x => whatMetric === 'roi' ? x.c.roi : x.c.profit;
+        const all = G.flat().map(val), lo = Math.min(...all), hi = Math.max(...all);
+        const color = v => {
+          if (whatMetric === 'roi') { if (v < 0) return `rgba(214,104,96,${0.25 + Math.min(1, -v / 0.3) * 0.55})`; const k = Math.min(1, v / (ROI_GOAL * 1.6)); return v >= ROI_GOAL ? `rgba(181,155,187,${0.3 + k * 0.6})` : `rgba(201,170,110,${0.18 + k * 0.5})`; }
+          if (v < 0) return `rgba(214,104,96,${0.25 + Math.min(1, -v / Math.max(1, -lo)) * 0.55})`;
+          return `rgba(181,155,187,${0.15 + (hi ? v / hi : 0) * 0.7})`;
+        };
+        const lab = x => (x > 0 ? '+' : x < 0 ? '−' : '') + Math.abs(x * 100) + '%';
+        const fmt = v => whatMetric === 'roi' ? pct(v) : IIP_EUR(v, 1).join(' ');
+        const beS = breakEven(f, 'sales'), beB = breakEven(f, 'build');
+        const sel = whatSel && G.flat().find(x => x.sv === whatSel[0] && x.bv === whatSel[1]);
+        return `<div class="iip-what">
+          <div class="iip-seg-ctl" role="tablist"><button type="button" data-wm="roi" class="${whatMetric === 'roi' ? 'on' : ''}">ROI</button><button type="button" data-wm="profit" class="${whatMetric === 'profit' ? 'on' : ''}">Lucro</button></div>
+          <div class="iip-heat" style="--n:5">
+            <span class="iip-hx">Custo da obra →</span><span class="iip-hy">Preço de venda →</span>
+            <span></span>${[-0.2, -0.1, 0, 0.1, 0.2].map(b => `<span class="iip-hh">${lab(b)}</span>`).join('')}
+            ${G.map(r => `<span class="iip-hh v">${lab(r[0].sv)}</span>${r.map(x => `<button type="button" class="iip-cell${x.sv === 0 && x.bv === 0 ? ' now' : ''}${sel === x ? ' sel' : ''}" data-sv="${x.sv}" data-bv="${x.bv}" style="background:${color(val(x))}">${fmt(val(x))}</button>`).join('')}`).join('')}
+          </div>
+          <p class="iip-whatsel">${sel ? `Venda ${lab(sel.sv)} e obra ${lab(sel.bv)}: ROI ${pct(sel.c.roi)}, lucro ${iipFmt(sel.c.profit)}, margem ${pct(sel.c.margin)}.` : 'Toca numa casa para ver o cenário. A casa marcada é o estudo de hoje.'}</p>
+          <ul class="iip-kv wide">
+            <li><span>O preço de venda pode descer</span><b>${beS == null ? 'mais de 95%' : pct(-beS, 0)}</b></li>
+            <li><span>O custo da obra pode subir</span><b>${beB == null ? 'mais de 300%' : pct(beB, 0)}</b></li>
+          </ul><p class="iip-note">antes de o lucro chegar a zero, mantendo o resto igual.</p>
+        </div>`;
+      }
+      function chExits(S) {
+        const k = S.k;
+        if (!k.exits.length) return '<p class="iip-empty">Faltam valores: preço do terreno, área e preços de venda ou renda.</p>';
+        const maxIrr = Math.max(0.0001, ...k.exits.map(x => Math.abs(x.irr || 0)));
+        const inK = { pip: 'f.ind.sale_pip', lot: 'f.ind.sale_lot', pav: 'f.ind.sale_pav', rent: 'f.ind.rent_m2' };
+        return `<ul class="iip-exits">${k.exits.map(x => `<li class="${x === k.best ? 'best' : ''}">
+            <div class="iip-ex-h"><b>${escapeHtml(x.name)}</b>${x === k.best ? '<span class="iip-tag">melhor relação TIR / capital</span>' : ''}</div>
+            <div class="iip-ex-n"><div><span>${x.key === 'rent' ? 'Yield bruta' : 'ROI'}</span><b class="${goodCls(x.key === 'rent' ? x.yieldGross : x.roi, x.key === 'rent' ? YIELD_GOAL : ROI_GOAL)}">${pct(x.key === 'rent' ? x.yieldGross : x.roi)}</b></div><div><span>TIR</span><b>${pct(x.irr)}</b></div><div><span>Lucro</span><b>${iipFmt(x.profit)}</b></div><div><span>Meses</span><b>${x.months}</b></div></div>
+            ${bar(Math.max(0, x.irr || 0), maxIrr)}
+            <small>Investimento ${iipFmt(x.cost)} · receita líquida ${iipFmt(x.net)} · ${x.key === 'rent' ? 'renda' : 'preço'} ${ev(inK[x.key])}${x.key === 'pav' || x.key === 'rent' ? ` · obra ${ev('f.ind.build_m2')}` : ''}</small>
+          </li>`).join('')}</ul>`;
+      }
+      function paintChapter(key, S, fresh) {
+        const ch = $('.iip-ch'), body = ch.querySelector('.iip-ch-b');
+        ch.querySelector('h2').textContent = CH.find(x => x[0] === key)[1];
+        ch.querySelector('.iip-ch-h > span').textContent = chapterSummary(key, S);
+        const map = body.querySelector('[data-map]');
+        const html = key === 'land' ? chLand(S) : key === 'money' ? chMoney(S) : key === 'mode' ? chMode(S) : key === 'whatif' ? chWhat(S) : chExits(S);
+        // o mapa não se desenha de novo a cada número mudado
+        if (map && key === 'land' && !fresh) { const keep = map; body.innerHTML = html; body.querySelector('[data-map]').replaceWith(keep); }
+        else { body.innerHTML = html; if (key === 'land') drawMap(body.querySelector('[data-map]')); }
+        if (fresh) { body.classList.remove('fresh'); void body.offsetWidth; body.classList.add('fresh'); setTimeout(() => body.classList.remove('fresh'), 1400); }
+        body.querySelectorAll('[data-wm]').forEach(b => b.addEventListener('click', () => { whatMetric = b.dataset.wm; paintChapter('whatif', calc(), false); }));
+        body.querySelectorAll('.iip-cell').forEach(b => b.addEventListener('click', () => { whatSel = [Number(b.dataset.sv), Number(b.dataset.bv)]; paintChapter('whatif', calc(), false); }));
+      }
+      function drawMap(el) {
+        if (!el) return;
+        if (sc.lat == null || !Number.isFinite(Number(sc.lat))) { el.innerHTML = `<div class="iip-nomap"><span>${escapeHtml([sc.address, sc.parish, sc.municipality].filter(Boolean).join(' · ') || 'Sem localização marcada')}</span></div>`; return; }
+        loadLeaflet().then(() => {
+          if (!el.isConnected) return;
+          const c = { lat: Number(sc.lat), lng: Number(sc.lng) };
+          const m = osmMap(el, { center: c, zoom: 16, interactive: true });
+          L.marker([c.lat, c.lng], { icon: mapPinIcon(), interactive: false, keyboard: false }).addTo(m);
+          el.insertAdjacentHTML('beforeend', `<div class="iip-maplab">${escapeHtml([sc.address, sc.municipality].filter(Boolean).join(' · '))}</div>`);
+        }).catch(() => { el.innerHTML = '<div class="iip-nomap"><span>O mapa não carregou.</span></div>'; });
+      }
+      function openChapter(key) {
+        chOpen = key; const ch = $('.iip-ch');
+        paintChapter(key, calc(), true);
+        ch.setAttribute('aria-hidden', 'false'); root.classList.add('ch-on'); ch.scrollTop = 0;
+        setTimeout(() => ch.querySelector('.iip-back').focus({ preventScroll: true }), 60);
+      }
+      function closeChapter() {
+        const key = chOpen; chOpen = null; root.classList.remove('ch-on'); $('.iip-ch').setAttribute('aria-hidden', 'true');
+        root.querySelector(`[data-ch="${key}"]`)?.focus({ preventScroll: true });
+      }
+
+      // ---- editor de um valor: número grande, régua e ± ----
+      function openEditor(k) {
+        edKey = k;
+        const [, label, u, step = 1, dec] = descOf(k), v0 = getV(k);
+        const ed = $('.iip-ed'), start = v0 ?? 0;
+        const max = Math.max(start * 2, step * 20), min = 0;
+        const show = v => v == null ? '' : (u === '€' ? Math.round(v) : Number(v.toFixed(dec ?? (step < 1 ? 2 : 0)))).toLocaleString('pt-PT', { useGrouping: u === '€' || v >= 10000, maximumFractionDigits: dec ?? 2 });
+        ed.innerHTML = `<div class="iip-ed-card" role="dialog" aria-label="${escapeHtml(label)}">
+            <div class="iip-ed-h"><span>${escapeHtml(label)}</span><button type="button" class="iip-btn solid" data-a="ed-done">Feito</button></div>
+            <div class="iip-ed-v"><button type="button" class="iip-step" data-d="-1" aria-label="Menos">−</button><label><input type="text" inputmode="decimal" value="${escapeHtml(show(v0))}" aria-label="${escapeHtml(label)}"><span>${escapeHtml(u)}</span></label><button type="button" class="iip-step" data-d="1" aria-label="Mais">+</button></div>
+            <input type="range" class="iip-range" min="${min}" max="${max}" step="${step}" value="${start}" aria-label="Régua">
+            <div class="iip-ed-f"><span>No estudo: <b>${escapeHtml(fmtIn(k, valueIn0(k)))}</b></span><button type="button" class="iip-lnk" data-a="ed-orig">Repor este valor</button></div>
+          </div>`;
+        ed.hidden = false; requestAnimationFrame(() => ed.classList.add('on'));
+        const inp = ed.querySelector('input[type=text]'), rg = ed.querySelector('.iip-range');
+        let raf = 0;
+        const apply = (v, from) => {
+          setV(k, v);
+          if (from !== 'text') inp.value = show(v);
+          if (from !== 'range') { if (v > Number(rg.max)) rg.max = String(v * 1.5); rg.value = String(v ?? 0); }
+          cancelAnimationFrame(raf); raf = requestAnimationFrame(paintPanel);
+        };
+        const parse = s => { const t = String(s).replace(/[\s€%]/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.'); return t === '' ? null : Number(t); };
+        inp.addEventListener('input', () => { const v = parse(inp.value); if (v == null || Number.isFinite(v)) apply(v, 'text'); });
+        inp.addEventListener('keydown', e => { if (e.key === 'Enter') closeEditor(); });
+        rg.addEventListener('input', () => apply(Number(rg.value), 'range'));
+        ed.querySelectorAll('.iip-step').forEach(b => b.addEventListener('click', () => { const cur = getV(k) ?? 0; apply(Math.max(0, Number((cur + Number(b.dataset.d) * step).toFixed(4))), 'step'); }));
+        ed.querySelector('[data-a="ed-orig"]').addEventListener('click', () => { apply(valueIn0(k), 'reset'); });
+        setTimeout(() => { inp.focus({ preventScroll: true }); inp.select(); }, 80);
+      }
+      // valor no estudo guardado (antes do cenário)
+      const orig = JSON.parse(JSON.stringify(p0)); orig.feasibility = orig.feasibility || {};
+      function valueIn0(k) {
+        const [s0, ...r] = k.split('.');
+        if (s0 === 'p') return orig[r[0]] == null || orig[r[0]] === '' ? null : Number(orig[r[0]]);
+        if (s0 === 'typ') { const t = (feasCalc(orig, feasInputs(orig)).typs || []).find(x => x.name === r[0]); return t ? typPrice(t, r[1]) || null : null; }
+        const v = r.reduce((o, x) => o?.[x], feasInputs(orig)); return v == null || v === '' ? null : Number(v);
+      }
+      function closeEditor() {
+        const ed = $('.iip-ed'); if (ed.hidden) return;
+        ed.classList.remove('on'); edKey = null;
+        setTimeout(() => { ed.hidden = true; ed.innerHTML = ''; }, rm ? 0 : 220);
+        paintPanel();
+      }
+      // ---- gaveta com todos os valores ----
+      function openAdjust() {
+        const groups = ind ? IIP_IND_IN : IIP_HOUSE_IN, c = ind ? null : calc().c;
+        const typs = c ? (c.typs || []).filter(t => N(t.units) > 0) : [];
+        const extra = !ind && typs.length ? [['Preços por fração', typs.map(t => [`typ.${t.name}.price`])], ['Rendas por fração', typs.map(t => [`typ.${t.name}.rent`])]] : [];
+        $('.iip-adj-b').innerHTML = [...groups, ...extra].map(([g, list]) => `<h3>${g}</h3><ul>${list.map(([k]) => `<li><span>${escapeHtml(descOf(k)[1])}</span>${ev(k)}</li>`).join('')}</ul>`).join('');
+        root.classList.add('adj-on'); $('.iip-adj').setAttribute('aria-hidden', 'false');
+      }
+      const closeAdjust = () => { root.classList.remove('adj-on'); $('.iip-adj').setAttribute('aria-hidden', 'true'); };
+
+      // ---- sair, aplicar, variante ----
+      async function applyToStudy() {
+        const S = calc();
+        const patch = { asking_price: sc.asking_price ?? null, land_area: sc.land_area ?? null, pdm_index: sc.pdm_index ?? null, feasibility: sc.feasibility, updated_at: new Date().toISOString() };
+        if (!ind && S.c.units) patch.fractions_est = S.c.units;
+        try { await dbUpdate('land_plots', p0.id, patch, mockPlots); Object.assign(p0, patch); showToast('Estudo atualizado com este cenário'); close(true); openPlotView(p0.id); }
+        catch (e) { showError('aplicar o cenário', e); }
+      }
+      function asVariant() { const copy = JSON.parse(JSON.stringify(sc)); close(true); duplicatePlot(copy); }
+      function askLeave() {
+        const a = $('.iip-ask');
+        a.innerHTML = `<div class="iip-ask-c" role="alertdialog" aria-label="Sair da apresentação"><b>Mudaste valores neste cenário.</b><p>O estudo guardado continua igual. O que fazemos com estes números?</p>
+          <div><button type="button" class="iip-btn solid" data-a="apply">Aplicar ao estudo</button><button type="button" class="iip-btn ghost" data-a="variant">Guardar como variante</button><button type="button" class="iip-btn ghost" data-a="discard">Sair sem guardar</button><button type="button" class="iip-lnk" data-a="stay">Continuar a apresentar</button></div></div>`;
+        a.hidden = false; a.querySelector('[data-a="stay"]').focus();
+      }
+      function close(force) {
+        if (!force && snap(sc) !== snap0) { askLeave(); return; }
+        document.removeEventListener('keydown', onKey, true);
+        if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+        document.body.style.overflow = prevOverflow;
+        root.classList.add('out'); setTimeout(() => root.remove(), rm ? 0 : 260);
+      }
+      function onKey(e) {
+        if (e.key !== 'Escape') return;
+        e.stopPropagation(); e.preventDefault();
+        if (!$('.iip-ask').hidden) { $('.iip-ask').hidden = true; return; }
+        if (edKey) return closeEditor();
+        if (root.classList.contains('adj-on')) return closeAdjust();
+        if (chOpen) return closeChapter();
+        close(false);
+      }
+      document.addEventListener('keydown', onKey, true);
+      root.addEventListener('click', e => {
+        const v = e.target.closest('.iip-v'); if (v) { e.preventDefault(); openEditor(v.dataset.k); return; }
+        const chb = e.target.closest('[data-ch]'); if (chb) { openChapter(chb.dataset.ch); return; }
+        const a = e.target.closest('[data-a]')?.dataset.a; if (!a) { if (e.target.classList.contains('iip-ed')) closeEditor(); return; }
+        if (a === 'close') close(false);
+        else if (a === 'back') closeChapter();
+        else if (a === 'adjust') openAdjust();
+        else if (a === 'adj-close') closeAdjust();
+        else if (a === 'ed-done') closeEditor();
+        else if (a === 'reset') { const keep = JSON.parse(JSON.stringify(p0)); Object.keys(sc).forEach(k => delete sc[k]); Object.assign(sc, keep, { feasibility: keep.feasibility || {} }); paintPanel(); if (root.classList.contains('adj-on')) openAdjust(); showToast('Cenário reposto: os números do estudo'); }
+        else if (a === 'apply') applyToStudy();
+        else if (a === 'variant') asVariant();
+        else if (a === 'discard') close(true);
+        else if (a === 'stay') $('.iip-ask').hidden = true;
+        else if (a === 'fs') { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); else root.requestFullscreen?.().catch(() => {}); }
+      });
+      // deslizar para a direita fecha o capítulo (segue o dedo)
+      (() => {
+        const ch = $('.iip-ch'); let x0 = null, y0 = 0, dx = 0, lock = null;
+        ch.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse' || e.target.closest('button, input, .iip-map')) return; x0 = e.clientX; y0 = e.clientY; dx = 0; lock = null; });
+        ch.addEventListener('pointermove', e => {
+          if (x0 == null) return; dx = e.clientX - x0; const dy = e.clientY - y0;
+          if (lock == null && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) lock = Math.abs(dx) > Math.abs(dy) && dx > 0 ? 'x' : 'y';
+          if (lock === 'x') { ch.style.transition = 'none'; ch.style.transform = `translateX(${Math.max(0, dx)}px)`; }
+        });
+        const end = () => { if (x0 == null) return; ch.style.transition = ''; ch.style.transform = ''; if (lock === 'x' && dx > 90) closeChapter(); x0 = null; };
+        ch.addEventListener('pointerup', end); ch.addEventListener('pointercancel', end);
+      })();
+      // a régua do «e se…» e as barras de cima respondem também quando a janela muda de tamanho
+      requestAnimationFrame(() => { root.classList.add('in'); paintPanel(); });
+    }
+
     // ---------- Página do terreno: tudo numa folha, grava sozinha ----------
     // Folha de viabilidade como o Excel (valor unitário × quantidade = valor global, por grupos) com o resumo ao lado;
     // por baixo os investidores e, fechado, os dados do terreno e as notas.
@@ -19791,6 +20513,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               <span class="ps-saved" id="ps-saved" aria-live="polite"></span></div>
           </div>
           <div class="ps-actions">
+            <button type="button" class="primary-btn" id="ps-present" title="Ecrã inteiro para mostrar ao cliente; os valores mudam ao vivo sem estragar o estudo"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.8v10.4a.6.6 0 0 0 .9.5l8.4-5.2a.6.6 0 0 0 0-1L4.9 2.3a.6.6 0 0 0-.9.5z"/></svg>Apresentar</button>
             <button type="button" class="secondary-btn" id="ps-print">Resumo para o investidor</button>
             <button type="button" class="nav-icon-btn" id="ps-more" aria-label="Mais ações"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
           </div>
@@ -20547,6 +21270,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         try { const n = await nextCst(); await dbUpdate('land_plots', p.id, { cst: n }, mockPlots); p.cst = n; showToast(`CST ${n} atribuído`); suppressNavPush = true; openPlotView(p.id); }
         catch (err) { showError('atribuir o CST', err); }
       });
+      document.getElementById('ps-present').addEventListener('click', () => openPlotPresent(p, d));
       document.getElementById('ps-print').addEventListener('click', () => {
         openQuickModal('Resumo para o investidor', `
           <label class="field-label" style="margin-top:0;">Língua</label>
