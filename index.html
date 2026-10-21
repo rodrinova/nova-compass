@@ -21588,7 +21588,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         extra: [],
         value: { intro: txt('value_intro'), lines: [], notes: notes('note_value') },
         pay: { intro: txt('pay_intro'), rows: [], notes: notes('note_pay'), terms: [] },
-        timeline: { on: false, start: dateKey(new Date()).slice(0, 7), rows: [], intro: txt('timeline_intro'), note: txt('timeline_note') },
+        timeline: { on: false, mode: 'table', start: dateKey(new Date()).slice(0, 7), rows: [], intro: txt('timeline_intro'), note: txt('timeline_note') },
         optionals: { intro: txt('optionals_intro'), rows: [], notes: notes('note_optional') },
         exclusions: { intro: txt('exclusions_intro'), rows: pick('exclusion').filter(x => x.default_on).map(x => ({ lib: x.id, t: libT(x, en), grp: x.grp || '' })), notes: notes('note_exclusion') },
         closing: { lib: q?.id || null, title: q ? libT(q, en) : '', body: q ? libB(q, en) : '', signer: cfg.signer || me?.id || null, role: cfg.signer_role || 'Architect | Managing Partner', place: cfg.place || 'Porto' }
@@ -22371,9 +22371,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <label class="field-label">Condições (Momento de faturação, Prazo e forma de pagamento…)</label>
           ${blocksUI('content.pay.terms', 'pay_terms')}`,
         timeline: () => `
-          <label class="pp-chk" style="margin-top:0;"><input type="checkbox" data-ppc="content.timeline.on"${c.timeline.on ? ' checked' : ''}> Incluir o timeline (Gantt por semanas)</label>
+          <label class="pp-chk" style="margin-top:0;"><input type="checkbox" data-ppc="content.timeline.on"${c.timeline.on ? ' checked' : ''}> Incluir os prazos (timeline)</label>
           ${c.timeline.on ? `
-          <div class="form-grid"><div><label class="field-label">Início previsto</label><input type="date" class="form-input" data-pp="content.timeline.start" value="${escapeHtml(String(c.timeline.start || '').length === 7 ? c.timeline.start + '-01' : (c.timeline.start || ''))}"></div></div>
+          <div class="form-grid"><div><label class="field-label">Mostrar como</label><select class="form-input" data-pp="content.timeline.mode"><option value="table"${(c.timeline.mode || 'gantt') === 'table' ? ' selected' : ''}>Tabela de prazos (só as fases da NOVA)</option><option value="gantt"${(c.timeline.mode || 'gantt') === 'gantt' ? ' selected' : ''}>Gráfico (cronograma com datas)</option></select></div><div><label class="field-label">Início previsto</label><input type="date" class="form-input" data-pp="content.timeline.start" value="${escapeHtml(String(c.timeline.start || '').length === 7 ? c.timeline.start + '-01' : (c.timeline.start || ''))}"></div></div>
           <div class="field-hint">Cada fase dura os dias úteis indicados e começa quando a anterior acaba (ou <b>em simultâneo</b> com ela). As fases da <b>Câmara / terceiros</b> ficam a cinzento e contam só fins de semana e feriados; as da NOVA saltam também o fecho de 23 a 31 de dezembro.</div>
           <div class="pp-th" style="grid-template-columns:1.5fr .5fr .8fr .9fr .75fr 1fr 52px"><span>Fase</span><span>Dias úteis</span><span></span><span></span><span></span><span>Datas</span><span></span></div>
           ${rowsUI('content.timeline.rows', ppTlNormalize(c.timeline.rows), [{ k: 't', ph: 'ex.: Estudo Prévio', w: '1.5fr' }, { k: 'days', ph: '20', n: true, w: '.5fr' }, { k: 'par', chk: true, ph: 'em simultâneo', w: '.8fr' }, { k: 'muted', chk: true, ph: 'Câmara / terceiros', w: '.9fr' }, { k: 'open', chk: true, ph: 'continua ▶', w: '.75fr' }, { k: '_d', ro: r => ppTlDates(r), w: '1fr' }], { empty: 'Sem fases no cronograma.' })}
@@ -23114,25 +23114,51 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         h2(L.timeline);
         p(md(c.timeline.intro?.t));
         const T = ppTimelineCalc(c), start = parseDateKey(T.start);
+        const DU = n => `${n} ${en ? (n === 1 ? 'working day' : 'working days') : (n === 1 ? 'dia útil' : 'dias úteis')}`;
+        if ((c.timeline.mode || 'gantt') === 'table') {
+          // Tabela de lead times: só as fases da NOVA (sem prazos das entidades)
+          const ours = T.rows.filter(x => x.ours);
+          unit(() => {
+            B.push(row(`<span>${e(en ? 'Phase' : 'Fase')}</span><span class="r">${e(en ? 'Lead time' : 'Prazo')}</span>`, 'th', '1fr auto'));
+            ours.forEach(x => B.push(row(`<span>${e(x.r.t)}</span><span class="r">${x.open ? (en ? 'during construction' : 'durante a obra') : DU(x.n)}</span>`, '', '1fr auto')));
+          });
+          note([en ? 'Lead times count from the award and from the Client’s approval of each phase; they do not include review periods by public authorities.' : 'Prazos contados a partir da adjudicação e da aprovação de cada fase pelo Cliente; não incluem os prazos de apreciação das entidades.', c.timeline.note?.t]);
+        } else {
         const di = k => Math.round((parseDateKey(k) - start) / 864e5);
+        const MO = en ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] : ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+        const dm = k => { const d = parseDateKey(k); return en ? `${d.getDate()} ${MO[d.getMonth()]}` : `${d.getDate()} ${MO[d.getMonth()]}`; };
         const lastIdx = Math.max(0, ...T.rows.map(x => di(x.e || x.s)));
         const weeks = Math.max(8, Math.ceil((lastIdx + 1) / 7) + (T.rows.some(x => x.open) ? 3 : 0)), totalD = weeks * 7;
-        const months = []; let lastM = null;
-        for (let wk = 1; wk <= weeks; wk++) { const dt = new Date(start.getTime() + (wk - 1) * 7 * 864e5); const m = dt.getMonth() + '-' + dt.getFullYear(); if (m !== lastM) { months.push({ wk, label: dt.toLocaleDateString(loc, { month: 'short' }).replace('.', '') + ' ' + String(dt.getFullYear()).slice(2) }); lastM = m; } }
-        const grid = `grid-template-columns: 26mm repeat(${weeks}, 1fr)`;
-        // 23 a 31 de dezembro: a NOVA está fechada; faixa cinzenta por trás das semanas
-        const xmas = T.xmas.map(b => [Math.max(0, di(b.start_date)), Math.min(totalD, di(b.end_date) + 1)]).filter(([x, y]) => y > x).map(([x, y]) => [x / totalD, (y - x) / totalD]);
-        const xmasHtml = xmas.map(([l, w]) => `<span class="xmas" style="left:calc(26mm + (100% - 26mm) * ${l.toFixed(5)});width:calc((100% - 26mm) * ${w.toFixed(5)})"><i>${en ? 'Dec 23–31' : '23–31 dez'}</i></span>`).join('');
-        const du = en ? 'w.d.' : 'd.ú.';
-        B.push(`<div class="b gantt${xmas.length ? ' has-xmas' : ''}">${xmasHtml}<div class="gh" style="${grid}"><span></span>${months.map((m, i) => `<span style="grid-column:${m.wk + 1} / ${(months[i + 1]?.wk || weeks + 1) + 1}">${e(m.label)}</span>`).join('')}</div>
+        const X = d => (Math.max(0, Math.min(totalD, d)) / totalD * 100).toFixed(3) + '%';
+        // meses: linhas e nomes (de 2 em 2 ou 3 em 3 quando o cronograma é longo)
+        const mons = []; { const d = new Date(start.getFullYear(), start.getMonth(), 1); while (true) { const k = dateKey(d), i = di(k); if (i >= totalD) break; mons.push({ i: Math.max(0, i), m: d.getMonth(), y: d.getFullYear(), first: !mons.length }); d.setMonth(d.getMonth() + 1); } }
+        const mStep = totalD / 30.4 > 22 ? 3 : totalD / 30.4 > 13 ? 2 : 1;
+        // nome do mês só onde cabe (pelo menos 10 dias à vista); o ano no primeiro nome e em janeiro
+        let shownYear = false;
+        const head = mons.map((m, j) => {
+          const w = (mons[j + 1]?.i ?? totalD) - m.i;
+          if (w < (j ? 10 : 24) || (j % mStep && j)) return '';
+          const yr = !shownYear || m.m === 0; shownYear = true;
+          return `<span style="left:${X(m.i)}"><b>${MO[m.m]}</b>${yr ? ` ${String(m.y).slice(2)}` : ''}</span>`;
+        }).join('');
+        const ticks = Array.from({ length: weeks + 1 }, (_, w) => `<i style="left:${X(w * 7)}"></i>`).join('');
+        const grid = mons.filter(m => m.i > 0).map(m => `<span class="gm" style="left:${X(m.i)}"></span>`).join('');
+        const xm = T.xmas.map(b => [di(b.start_date), di(b.end_date) + 1]).filter(([x, y]) => y > 0 && x < totalD)
+          .map(([x, y]) => `<span class="gx" style="left:${X(x)};width:calc(${X(y)} - ${X(x)})"><i>${en ? 'closed' : 'fecho'}</i></span>`).join('');
+        const endM = T.end ? `<span class="gend2" style="left:${X(di(T.end) + 1)}"></span>` : '';
+        B.push(`<div class="b g2">
+          <div class="g2h"><span class="g2c"></span><span class="g2t">${head}<span class="g2k">${ticks}</span></span></div>
+          <div class="g2b"><div class="g2o">${grid}${xm}${endM}</div>
           ${T.rows.map(x => {
-            const a0 = di(x.s), a1 = x.open ? totalD - 1 : di(x.e), l = a0 / totalD * 100, w = (a1 - a0 + 1) / totalD * 100;
-            const wS = Math.floor(a0 / 7) + 1, wE = Math.floor(a1 / 7) + 1;
-            const lab = x.open ? `W${wS} <i>▶</i>` : `W${wS}${wE !== wS ? '–' + wE : ''} · ${x.n} ${du}`;
-            return `<div class="gr${x.ours ? '' : ' muted'}" style="${grid}"><span class="gl">${e(x.r.t)}</span><span class="tr"><span class="bar${w < 16 ? ' out' : ''}" style="left:${l.toFixed(3)}%;width:${w.toFixed(3)}%"><b>${lab}</b></span></span></div>`;
-          }).join('')}</div>`);
-        if (T.end) B.push(`<div class="b gend">${en ? 'Estimated completion' : 'Conclusão prevista'}: <b>${e(parseDateKey(T.end).toLocaleDateString(loc, { day: 'numeric', month: 'long', year: 'numeric' }))}</b> · ${en ? 'working days, excluding public holidays; NOVA is closed from 23 to 31 December' : 'dias úteis, sem feriados; a NOVA fecha de 23 a 31 de dezembro'}</div>`);
+            const a0 = di(x.s), a1 = x.open ? totalD : di(x.e) + 1;
+            const meta = x.open ? `${en ? 'from' : 'a partir de'} ${dm(x.s)}` : `${DU(x.n)} · ${dm(x.s)} → ${dm(x.e)}`;
+            return `<div class="g2r${x.ours ? '' : ' cam'}${x.open ? ' open' : ''}"><span class="g2c"><b>${e(x.r.t)}</b><small>${meta}</small></span><span class="g2t"><span class="g2bar" style="left:${X(a0)};width:calc(${X(a1)} - ${X(a0)})"></span></span></div>`;
+          }).join('')}</div>
+          <div class="g2l"><span><i class="sw nova"></i>NOVA</span><span><i class="sw cam"></i>${en ? 'Municipality (legal deadline)' : 'Câmara (prazo legal)'}</span><span><i class="sw x"></i>${en ? '23–31 Dec · NOVA closed' : '23–31 dez · NOVA fechada'}</span>${T.end ? `<span class="end"><i class="sw e"></i>${en ? 'Estimated completion' : 'Conclusão prevista'} <b>${e(dm(T.end))} ${parseDateKey(T.end).getFullYear()}</b></span>` : ''}</div>
+        </div>`);
+        p(`<span class="g2n">${en ? 'Durations in working days, excluding weekends and public holidays.' : 'Durações em dias úteis, sem fins de semana nem feriados.'}</span>`);
         note([c.timeline.note?.t]);
+        }
       }
       // Opcionais
       if (c.optionals.rows.length) {
@@ -23243,6 +23269,38 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           .gantt .tr .bar.out b { position: absolute; left: calc(100% + 3pt); color: var(--ink2); font-weight: 500; }
           .gantt .muted .tr .bar { background: repeating-linear-gradient(135deg, #E6E2E5 0 2.5pt, #F2EFF1 2.5pt 5pt); color: #6F676E; }
           .gend { font-size: 7pt; color: var(--mute); margin: 0 0 4pt; } .gend b { color: var(--ink2); font-weight: 600; }
+          /* Cronograma (Gantt): nomes e datas à esquerda, barras limpas à direita */
+          .g2 { --lw: 44mm; margin: 8pt 0 2pt; font-size: 7.2pt; }
+          .g2h, .g2r { display: grid; grid-template-columns: var(--lw) 1fr; }
+          .g2t { position: relative; }
+          .g2h { height: 16pt; border-bottom: .7pt solid var(--ink); }
+          .g2h .g2t > span:not(.g2k) { position: absolute; bottom: 4.5pt; padding-left: 2.5pt; font-size: 6.4pt; color: var(--mute); white-space: nowrap; letter-spacing: .02em; }
+          .g2h .g2t > span b { color: var(--ink2); font-weight: 600; text-transform: uppercase; letter-spacing: .08em; }
+          .g2k i { position: absolute; bottom: 0; width: 0; height: 2.6pt; border-left: .45pt solid #CBC3C9; }
+          .g2b { position: relative; padding-bottom: 9pt; }
+          .g2o { position: absolute; top: 0; bottom: 0; left: var(--lw); right: 0; pointer-events: none; }
+          .gm { position: absolute; top: 0; bottom: 9pt; border-left: .45pt solid #ECE7EA; }
+          .gx { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(90deg, rgba(28,24,27,.055) 0 100%); }
+          .gx i { position: absolute; bottom: 1pt; left: 50%; transform: translateX(-50%); font-style: normal; font-size: 5.6pt; color: var(--mute); white-space: nowrap; }
+          .gend2 { position: absolute; top: 0; bottom: 9pt; border-left: .8pt solid var(--plum); }
+          .gend2::before { content: ''; position: absolute; top: -3pt; left: -3pt; width: 5pt; height: 5pt; background: var(--plum); transform: rotate(45deg); }
+          .g2r { position: relative; z-index: 1; min-height: 19pt; align-items: center; border-bottom: .45pt solid var(--line); }
+          .g2c { padding: 3.5pt 8pt 3.5pt 0; }
+          .g2c b { display: block; font-size: 7.6pt; font-weight: 600; color: var(--ink); line-height: 1.25; }
+          .g2c small { display: block; margin-top: 1pt; font-size: 6.3pt; color: var(--mute); font-variant-numeric: tabular-nums; white-space: nowrap; }
+          .g2r .g2t { height: 19pt; }
+          .g2bar { position: absolute; top: 50%; height: 6.5pt; margin-top: -3.25pt; min-width: 2pt; border-radius: 3.25pt; background: var(--plum); }
+          .g2r.cam .g2c b { color: var(--ink2); font-weight: 500; }
+          .g2r.cam .g2bar { background: repeating-linear-gradient(135deg, #C9C0C7 0 1.2pt, #F1EDF0 1.2pt 3pt); box-shadow: inset 0 0 0 .6pt #B5ABB3; }
+          .g2r.open .g2bar { background: linear-gradient(90deg, var(--plum) 0%, rgba(110,63,115,.15) 100%); border-radius: 3.25pt 0 0 3.25pt; }
+          .g2l { display: flex; flex-wrap: wrap; gap: 4pt 12pt; margin: 6pt 0 0; font-size: 6.6pt; color: var(--mute); }
+          .g2l span { display: inline-flex; align-items: center; gap: 4pt; } .g2l .end { margin-left: auto; } .g2l b { color: var(--ink); font-weight: 600; }
+          .g2l .sw { display: inline-block; width: 12pt; height: 5.5pt; border-radius: 2.75pt; }
+          .g2l .sw.nova { background: var(--plum); }
+          .g2l .sw.cam { background: repeating-linear-gradient(135deg, #C9C0C7 0 1.2pt, #F1EDF0 1.2pt 3pt); box-shadow: inset 0 0 0 .6pt #B5ABB3; }
+          .g2l .sw.x { background: rgba(28,24,27,.09); border-radius: 0; width: 8pt; height: 8pt; }
+          .g2l .sw.e { width: 5pt; height: 5pt; border-radius: 0; background: var(--plum); transform: rotate(45deg); }
+          .g2n { font-size: 6.6pt; color: var(--mute); }
           .gantt .xmas { position: absolute; top: 0; bottom: 0; z-index: 0; background: #E4E1E3; pointer-events: none; }
           .gantt .xmas i { position: absolute; left: 0; right: 0; bottom: 0; font-style: normal; font-size: 5.6pt; line-height: 1; color: #8A8189; text-align: center; white-space: nowrap; }
           .gantt .gh, .gantt .gr { display: grid; align-items: center; }
