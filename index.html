@@ -22974,7 +22974,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       en: 'Each invoice is issued at the milestone shown in the table and is payable upon issue, by bank transfer to the IBAN stated on it. Work starts upon payment of the award invoice. Late payment entitles NOVA Associates to suspend the services until payment is made and to charge late-payment interest at the statutory rate for commercial transactions.'
     };
     const PP_TL_NOTE = { pt: 'Prazos indicativos, em dias úteis. Contam a partir da data em que se verifiquem, cumulativamente, a adjudicação, o pagamento da fatura de adjudicação e a receção dos elementos de base necessários, e suspendem-se enquanto se aguardarem informação, decisões ou validações do Cliente. Os prazos de apreciação e decisão da Câmara Municipal e de outras entidades, quando indicados, são os prazos legais e são alheios à NOVA Associates. Alterações ao programa, ao âmbito ou aos parâmetros do projeto podem alterar estes prazos.', en: 'Indicative lead times, in working days. They run from the date on which the award, the payment of the award invoice and the receipt of the necessary base information have all taken place, and are suspended while information, decisions or approvals from the Client are pending. Review and decision periods of the Municipality and other authorities, where shown, are the statutory periods and are beyond the control of NOVA Associates. Changes to the brief, scope or project parameters may change these lead times.' };
-    const PP_TYPE_EN = { 'Habitação Coletiva': 'Multi-family Housing', 'Habitação Unifamiliar': 'Single-family House', 'Reabilitação': 'Refurbishment', 'Indústria / Logística': 'Industrial / Logistics', 'Comércio': 'Retail', 'Serviços': 'Offices', 'Turismo': 'Hospitality', 'Equipamento': 'Public Facility' };
+    // tipos de projeto em inglês (sem maiúsculas: entram a meio da frase)
+    const PP_TYPE_EN = { 'habitação coletiva': 'multifamily housing', 'habitação multifamiliar': 'multifamily housing', 'habitação plurifamiliar': 'multifamily housing',
+      'habitação unifamiliar': 'single-family house', 'moradia': 'single-family house', 'moradia unifamiliar': 'single-family house', 'reabilitação': 'refurbishment',
+      'indústria / logística': 'industrial / logistics', 'indústria': 'industrial', 'logística': 'logistics', 'comércio': 'retail', 'serviços': 'offices', 'escritórios': 'offices',
+      'turismo': 'hospitality', 'hotel': 'hotel', 'equipamento': 'public facility', 'misto': 'mixed-use', 'uso misto': 'mixed-use', 'loteamento': 'subdivision', 'outro': 'other' };
+    const ppTypeEn = tn => PP_TYPE_EN[String(tn || '').trim().toLowerCase()] || tn;
     const PP_CAM_ROW = { pip_simples: ['Câmara · apreciação do PIP', 'Municipality · PIP review'], pip_qualificado: ['Câmara · apreciação do PIP qualificado', 'Municipality · qualified PIP review'],
       lic_arquitetura: ['Câmara · apreciação da arquitetura', 'Municipality · architecture review'], deliberacao: ['Câmara · deliberação final', 'Municipality · final decision'] };
     function ppTlNormalize(rows) {
@@ -23069,10 +23074,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       h2(L.scope, true);
       // a tipologia (tipo de projeto) entra no texto do Âmbito, se ainda lá não estiver
       let scopeIntro = c.scope.intro || '';
-      { const tn = S?.typeById?.[pp.project_type_id]?.name, tl = tn && (en ? (PP_TYPE_EN[tn] || tn) : tn).toLowerCase();
+      { const tn = S?.typeById?.[pp.project_type_id]?.name, tl = tn && (en ? ppTypeEn(tn) : tn).toLowerCase();
         if (tl && scopeIntro && !scopeIntro.toLowerCase().includes(tl)) {
           if (!en && / para o (imóvel|terreno|edifício|prédio)/i.test(scopeIntro)) scopeIntro = scopeIntro.replace(/ para o (imóvel|terreno|edifício|prédio)/i, ` de **${tl}** para o $1`);
-          else if (en && / for the (property|site|building|plot)/i.test(scopeIntro)) scopeIntro = scopeIntro.replace(/ for the (property|site|building|plot)/i, ` (**${tl}**) for the $1`);
+          else if (en && / for the (property|site|building|plot)/i.test(scopeIntro)) scopeIntro = scopeIntro.replace(/ for the (property|site|building|plot)/i, ` for the **${tl}** $1`);
           else scopeIntro = scopeIntro.trim() + (en ? ` This is a **${tl}** project.` : ` Trata-se de um projeto de **${tl}**.`);
         } }
       p(md(scopeIntro));
@@ -23081,7 +23086,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
 
       { const above = Number(pp.area) || 0, below = Number(c.scope.below) || 0, tot = above + below;
         if (tot) {
-          const auto = { v: nf(tot) + ' m²', sub: below ? (en ? `${nf(above)} m² above + ${nf(below)} m² below ground` : `${nf(above)} m² acima + ${nf(below)} m² abaixo do solo`) : '' };
+          const auto = { v: nf(tot) + (en ? ' sqm' : ' m²'), sub: below ? (en ? `${nf(above)} sqm above + ${nf(below)} sqm below ground` : `${nf(above)} m² acima + ${nf(below)} m² abaixo do solo`) : '' };
           const i = facts.findIndex(f => /total de constru|total construction/i.test(f.k || '') || f.pt === 'Área Total de Construção');
           if (i >= 0) { if (!String(facts[i].v ?? '').trim()) Object.assign(facts[i], auto); }
           else { const j = facts.findIndex(f => /terreno|plot area/i.test(f.k || '')); facts.splice(j >= 0 ? j + 1 : 0, 0, { k: en ? 'Total Construction Area' : 'Área Total de Construção', ...auto }); }
@@ -23090,8 +23095,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       if (factsOn.length) {
         B.push(`<div class="b gap"></div>`);
         // milhares sempre com espaço (2 500 m²), mesmo nos valores escritos à mão
-        const thou = t => String(t ?? '').replace(/(^|[^\d,.])(\d{4,})((?:,\d+)?)(?=\s*(?:m²|m2|m\b|€|$))/g, (m, a, d, dec) => a + grp(Number(d), 0) + dec);
-        B.push(`<div class="b facts">${factsOn.map(f => `<div class="fct${/\d/.test(String(f.v)) ? '' : ' txt'}"><span>${e(f.k)}</span><b>${md(thou(f.v), { para: false })}</b><small>${f.sub ? e(f.sub) : ''}</small></div>`).join('')}</div>`);
+        const thou = t => String(t ?? '').replace(/(^|[^\d,.])(\d{4,})((?:,\d+)?)(?=\s*(?:m²|m2|sqm|m\b|€|$))/g, (m, a, d, dec) => a + grp(Number(d), 0) + dec);
+        // áreas escritas só com o número ganham a unidade; em inglês m² passa a sqm
+        const unitV = f => { let v = thou(f.v); if (/área|area/i.test(f.k || '') && /^[\d\s\u00a0.,]+$/.test(v.trim())) v = v.trim() + (en ? ' sqm' : ' m²'); return en ? v.replace(/\s*m²|\s*m2\b/g, ' sqm') : v; };
+        B.push(`<div class="b facts">${factsOn.map(f => `<div class="fct${/\d/.test(String(f.v)) ? '' : ' txt'}"><span>${e(f.k)}</span><b>${md(unitV(f), { para: false })}</b><small>${f.sub ? e(f.sub) : ''}</small></div>`).join('')}</div>`);
       }
       if ((c.scope.blocks || []).length) { B.push(`<div class="b gap"></div>`); hb(c.scope.blocks); }
       if (c.scope.groups.length) {
@@ -23387,7 +23394,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <div class="ref"><b>CST ${e(String(pp.number || ''))}</b> · V${e(String(pp.version || 1))}<br>${e(dShort)}</div>
         </div>
         <template id="tpl"><div class="page"><div class="rh"><img src="${e(logoP)}" alt="NOVA"><span>${e([pp.number ? 'CST ' + pp.number + ' V' + (pp.version || 1) : '', client].filter(Boolean).join('  ·  '))}</span></div><div class="content"></div>${foot}<span class="pno"></span></div></template>
-        <div id="flow" class="content">${ppTokens(B.join(''), { secs, rate: ppRate(S.cfg), days: pp.valid_days || 30, until: addDaysKey(ppDocDate(pp), Number(pp.valid_days) || 30), local: [c.cover.place, c.cover.region].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).join(', ') })}</div>
+        <div id="flow" class="content">${ppTokens(en ? B.join('').replace(/(\d)\s*m²/g, '$1 sqm').replace(/\/\s*m²/g, '/sqm').replace(/\bm²/g, 'sqm') : B.join(''), { secs, rate: ppRate(S.cfg), days: pp.valid_days || 30, until: addDaysKey(ppDocDate(pp), Number(pp.valid_days) || 30), local: [c.cover.place, c.cover.region].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).join(', ') })}</div>
         <script>
           // Paginação por capítulos: uma secção só muda de página se não couber inteira na que está;
           // se for maior do que uma página, parte-se entre unidades (tabela, grupo, título + texto), nunca a meio delas.
