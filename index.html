@@ -22216,6 +22216,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const area = (path, val, rows = 3, ph = '') => `<textarea class="form-input" rows="${rows}" data-pp="${path}" placeholder="${escapeHtml(ph)}">${escapeHtml(val ?? '')}</textarea>`;
       const libOf = kind => S.lib.filter(x => x.kind === kind);
       // Lista de linhas editáveis (grelha): colunas {k, ph, n, w, sel, ro}
+      const ppTlDates = r => { const x = ppTimelineCalc(c).rows.find(y => y.src === r); if (!x) return ''; const f = k => parseDateKey(k).toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' }).replace('.', ''); return x.open ? `${f(x.s)} ▶` : `${f(x.s)} → ${f(x.e)}`; };
       const rowsUI = (path, rows, cols, { empty = '' } = {}) => rows.length ? `<div class="pp-rows" data-rows="${path}">${rows.map((r, i) => `
           <div class="pp-row" style="grid-template-columns:${cols.map(x => x.w || '1fr').join(' ')} 52px">
             ${cols.map(x => x.ro ? `<span class="pp-ro num" data-ro="${path}.${i}.${x.k}">${x.ro(r)}</span>`
@@ -22372,10 +22373,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         timeline: () => `
           <label class="pp-chk" style="margin-top:0;"><input type="checkbox" data-ppc="content.timeline.on"${c.timeline.on ? ' checked' : ''}> Incluir o timeline (Gantt por semanas)</label>
           ${c.timeline.on ? `
-          <div class="form-grid"><div><label class="field-label">Mês de início</label><input type="month" class="form-input" data-pp="content.timeline.start" value="${escapeHtml(c.timeline.start || '')}"></div></div>
-          <div class="pp-th" style="grid-template-columns:1.6fr .55fr .55fr .9fr .9fr 52px"><span>Fase</span><span>Sem. início</span><span>Sem. fim</span><span></span><span></span><span></span></div>
-          ${rowsUI('content.timeline.rows', c.timeline.rows, [{ k: 't', ph: 'ex.: Estudo Prévio', w: '1.6fr' }, { k: 'from', ph: '1', n: true, w: '.55fr' }, { k: 'to', ph: '4', n: true, w: '.55fr' }, { k: 'open', chk: true, ph: 'continua ▶', w: '.9fr' }, { k: 'muted', chk: true, ph: 'por terceiros', w: '.9fr' }], { empty: 'Sem fases no timeline.' })}
-          <div class="pp-btnrow"><button type="button" class="text-btn" data-act="add" data-path="content.timeline.rows" data-tpl='{"t":"","from":null,"to":null,"open":false,"muted":false}'>+ Fase</button><button type="button" class="text-btn" data-act="tl-from-pay">Gerar a partir do pagamento</button></div>
+          <div class="form-grid"><div><label class="field-label">Início previsto</label><input type="date" class="form-input" data-pp="content.timeline.start" value="${escapeHtml(String(c.timeline.start || '').length === 7 ? c.timeline.start + '-01' : (c.timeline.start || ''))}"></div></div>
+          <div class="field-hint">Cada fase dura os dias úteis indicados e começa quando a anterior acaba (ou <b>em simultâneo</b> com ela). As fases da <b>Câmara / terceiros</b> ficam a cinzento e contam só fins de semana e feriados; as da NOVA saltam também o fecho de 23 a 31 de dezembro.</div>
+          <div class="pp-th" style="grid-template-columns:1.5fr .5fr .8fr .9fr .75fr 1fr 52px"><span>Fase</span><span>Dias úteis</span><span></span><span></span><span></span><span>Datas</span><span></span></div>
+          ${rowsUI('content.timeline.rows', ppTlNormalize(c.timeline.rows), [{ k: 't', ph: 'ex.: Estudo Prévio', w: '1.5fr' }, { k: 'days', ph: '20', n: true, w: '.5fr' }, { k: 'par', chk: true, ph: 'em simultâneo', w: '.8fr' }, { k: 'muted', chk: true, ph: 'Câmara / terceiros', w: '.9fr' }, { k: 'open', chk: true, ph: 'continua ▶', w: '.75fr' }, { k: '_d', ro: r => ppTlDates(r), w: '1fr' }], { empty: 'Sem fases no cronograma.' })}
+          <div class="pp-btnrow"><button type="button" class="text-btn" data-act="add" data-path="content.timeline.rows" data-tpl='{"t":"","days":null,"par":false,"muted":false,"open":false}'>+ Fase</button><button type="button" class="text-btn" data-act="tl-from-pay">Gerar a partir do pagamento</button>
+            ${Object.keys(PP_CAM_ROW).map(k => `<button type="button" class="text-btn" data-act="tl-cam" data-k="${k}">+ ${escapeHtml(PP_CAM_ROW[k][0])}</button>`).join('')}</div>
           <label class="field-label">Texto</label>${area('content.timeline.intro.t', c.timeline.intro?.t, 2)}
           <label class="field-label">Nota</label>${area('content.timeline.note.t', c.timeline.note?.t, 3)}` : ''}`,
         optionals: () => `
@@ -22510,7 +22513,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           setPathObj(pp, el.dataset.pp, v);
           // a linha passa a ser própria (já não é o texto da biblioteca)
           touch();
-          if (/^content\.(value\.lines|pay\.rows)|^specialties|^area$|^fractions$|^est_hours$|^cost_per_hour$/.test(el.dataset.pp)) liveRows();
+          if (/^content\.(value\.lines|pay\.rows|timeline)|^specialties|^area$|^fractions$|^est_hours$|^cost_per_hour$/.test(el.dataset.pp)) liveRows();
         }
       });
       main.addEventListener('change', async e => {
@@ -22519,7 +22522,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           c.rehab = el.checked; ppRehab(c, el.checked, en, S.typeById[pp.project_type_id]?.name);
           touch(); ['coverMore', 'scopeText', 'value', 'pay'].forEach(redraw); liveRows(); return;
         }
-        if (el.dataset.ppc) { setPathObj(pp, el.dataset.ppc, el.checked); touch(el.dataset.ppc === 'content.timeline.on' ? 'timeline' : null); return; }
+        if (el.dataset.ppc) { setPathObj(pp, el.dataset.ppc, el.checked); touch(el.dataset.ppc === 'content.timeline.on' ? 'timeline' : null); if (/^content\.timeline\.rows/.test(el.dataset.ppc)) liveRows(); return; }
         if (el.tagName === 'SELECT' && el.dataset.pp) {
           setPathObj(pp, el.dataset.pp, el.value || null);
           if (el.dataset.pp === 'project_type_id') {
@@ -22584,7 +22587,21 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             touch('value'); redraw('pay'); focusLast(b.closest('[data-sec]'), 'content.value.lines');
           } else if (act === 'pay-model') { await ppPayFromModel(); touch('pay'); }
           else if (act === 'tl-from-pay') {
-            let w = 1; c.timeline.rows = c.pay.rows.filter(r => !/adjudica|commission/i.test(r.t)).map(r => { const row = { t: r.t, from: w, to: w + 3, open: false, muted: false }; w += 4; return row; });
+            const cam = await loadCamaraCfg().catch(() => CAMARA_DEFAULT);
+            const camRow = k => ({ t: PP_CAM_ROW[k][en ? 1 : 0], days: cam.rules[k]?.days ?? CAMARA_DEFAULT.rules[k].days, par: false, muted: true, open: false, cam: k });
+            const rows = [];
+            c.pay.rows.filter(r => r.t && !/adjudica|commission|award/i.test(r.t)).forEach(r => {
+              const t = r.t, open = /assist[eê]ncia|site assistance|technical assistance/i.test(t);
+              rows.push({ t, days: open ? null : 20, par: false, muted: false, open });
+              if (/\bPIP\b|informa[cç][aã]o pr[eé]via|prior information/i.test(t)) rows.push(camRow(/qualificad|qualified/i.test(t) ? 'pip_qualificado' : 'pip_simples'));
+              else if (/especialidad|engineer/i.test(t)) rows.push(camRow('deliberacao'));
+              else if (/licenciamento|arquitetura|licens|architect/i.test(t) && !/execu[cç][aã]o|construction/i.test(t)) rows.push(camRow('lic_arquitetura'));
+            });
+            c.timeline.rows = rows;
+            touch('timeline');
+          } else if (act === 'tl-cam') {
+            const cam = await loadCamaraCfg().catch(() => CAMARA_DEFAULT), k = b.dataset.k;
+            c.timeline.rows.push({ t: PP_CAM_ROW[k][en ? 1 : 0], days: cam.rules[k]?.days ?? CAMARA_DEFAULT.rules[k].days, par: false, muted: true, open: false, cam: k });
             touch('timeline');
           } else if (act === 'lib-services') openLibServices();
           return;
@@ -22629,6 +22646,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         ppDiscPh();
         c.pay.rows.forEach((x, i) => { const el = view.querySelector(`[data-ro="content.pay.rows.${i}._v"]`); if (el) el.textContent = fmtEUR(T2.base * (Number(x.pct) || 0) / 100); });
         (pp.specialties || []).forEach((s, i) => { const el = view.querySelector(`[data-ro="specialties.${i}._t"]`); if (el) el.textContent = fmtEUR(s.mode === 'm2' ? (Number(s.value) || 0) * (Number(pp.area) || 0) : Number(s.value) || 0); });
+        (c.timeline?.rows || []).forEach((r, i) => { const el = view.querySelector(`[data-ro="content.timeline.rows.${i}._d"]`); if (el) el.textContent = ppTlDates(r); });
         const tot = document.getElementById('pp-total'); if (tot) tot.textContent = fmtEUR(T2.total);
         const ps = document.getElementById('pp-pct-sum'); if (ps) { ps.textContent = fmtNum(T2.pctSum) + '%'; ps.classList.toggle('warn-text', Math.abs(T2.pctSum - 100) > 0.01 && c.pay.rows.length > 0); }
       };
@@ -22940,6 +22958,42 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       });
     }
 
+    // ---------- Cronograma da proposta ----------
+    // Cada fase dura N dias úteis (seg–sex, sem feriados nacionais) e começa quando a anterior acaba; «em simultâneo»
+    // começa com a anterior. As fases da NOVA saltam o fecho de 23 a 31 de dezembro; as da Câmara / terceiros (cinzento)
+    // contam só fins de semana e feriados, como a lei. Linhas antigas (semana de início e fim) passam a dias úteis.
+    const PP_CAM_ROW = { pip_simples: ['Câmara · apreciação do PIP', 'Municipality · PIP review'], pip_qualificado: ['Câmara · apreciação do PIP qualificado', 'Municipality · qualified PIP review'],
+      lic_arquitetura: ['Câmara · apreciação da arquitetura', 'Municipality · architecture review'], deliberacao: ['Câmara · deliberação final', 'Municipality · final decision'] };
+    function ppTlNormalize(rows) {
+      let prevT = null;
+      (rows || []).forEach(r => {
+        if (r.days == null && r.from != null && r.from !== '') {
+          const f = Math.max(1, Number(r.from) || 1), t = Math.max(f, Number(r.to) || f);
+          r.days = (t - f + 1) * 5; r.par = prevT != null && f <= prevT; prevT = t;
+        }
+      });
+      return rows;
+    }
+    function ppTimelineCalc(c) {
+      const raw = String(c.timeline?.start || dateKey(new Date()));
+      const start = raw.length === 7 ? raw + '-01' : raw.slice(0, 10);
+      const y0 = Number(start.slice(0, 4));
+      const xmas = [0, 1, 2, 3, 4, 5].map(k => ({ start_date: `${y0 + k}-12-23`, end_date: `${y0 + k}-12-31` }));
+      const inX = k => xmas.some(b => k >= b.start_date && k <= b.end_date);
+      const firstDay = (k, ours) => { let d = k, g = 0; while ((!isWorkday(d) || (ours && inX(d))) && g++ < 400) d = addDaysKey(d, 1); return d; };
+      const rows = ppTlNormalize((c.timeline?.rows || []).map(r => ({ ...r }))), src = c.timeline?.rows || [];
+      const out = []; let lastEnd = null, prevStart = null;
+      rows.forEach((r, i) => {
+        if (!r.t) return;
+        const ours = !r.muted, n = Math.max(1, Math.round(Number(r.days) || 0) || 1);
+        const s0 = r.par && prevStart ? prevStart : lastEnd ? addDaysKey(lastEnd, 1) : start;
+        const s = firstDay(s0, ours);
+        const e = r.open ? null : addWorkdays(addDaysKey(s, -1), n, ours ? xmas : []);
+        out.push({ r, src: src[i], i, s, e, n, open: !!r.open, ours });
+        prevStart = s; if (e && (!lastEnd || e > lastEnd)) lastEnd = e;
+      });
+      return { start, rows: out, end: lastEnd, xmas };
+    }
     // ---------- Documento da proposta no modelo NOVA (capa roxa, páginas creme, secções numeradas), PT ou EN ----------
     // Abre numa janela para imprimir / guardar em PDF. As páginas montam-se sozinhas: cada bloco passa para a
     // página seguinte quando não cabe (os títulos vão sempre com o bloco a seguir).
@@ -23055,18 +23109,29 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         });
         if ((c.pay.terms || []).length) { B.push(`<div class="b gap"></div>`); hb(c.pay.terms); }
       }
-      // Timeline (Gantt por semanas)
-      if (c.timeline.on && c.timeline.rows.length) {
+      // Timeline (Gantt por semanas, a partir dos dias úteis de cada fase)
+      if (c.timeline.on && c.timeline.rows.some(r => r.t)) {
         h2(L.timeline);
         p(md(c.timeline.intro?.t));
-        const rows = c.timeline.rows.filter(r => r.t);
-        const weeks = Math.max(8, ...rows.map(r => (Number(r.to) || Number(r.from) || 1) + (r.open ? 3 : 0)));
-        const start = c.timeline.start ? new Date(c.timeline.start + '-01T00:00:00') : new Date();
+        const T = ppTimelineCalc(c), start = parseDateKey(T.start);
+        const di = k => Math.round((parseDateKey(k) - start) / 864e5);
+        const lastIdx = Math.max(0, ...T.rows.map(x => di(x.e || x.s)));
+        const weeks = Math.max(8, Math.ceil((lastIdx + 1) / 7) + (T.rows.some(x => x.open) ? 3 : 0)), totalD = weeks * 7;
         const months = []; let lastM = null;
         for (let wk = 1; wk <= weeks; wk++) { const dt = new Date(start.getTime() + (wk - 1) * 7 * 864e5); const m = dt.getMonth() + '-' + dt.getFullYear(); if (m !== lastM) { months.push({ wk, label: dt.toLocaleDateString(loc, { month: 'short' }).replace('.', '') + ' ' + String(dt.getFullYear()).slice(2) }); lastM = m; } }
         const grid = `grid-template-columns: 26mm repeat(${weeks}, 1fr)`;
-        B.push(`<div class="b gantt"><div class="gh" style="${grid}"><span></span>${months.map((m, i) => `<span style="grid-column:${m.wk + 1} / ${(months[i + 1]?.wk || weeks + 1) + 1}">${e(m.label)}</span>`).join('')}</div>
-          ${rows.map(r => { const f = Math.max(1, Number(r.from) || 1), t = r.open ? weeks : Math.max(f, Number(r.to) || f); return `<div class="gr${r.muted ? ' muted' : ''}" style="${grid}"><span class="gl">${e(r.t)}</span><span class="bar" style="grid-column:${f + 1} / ${t + 2}">W${f}${r.open ? ' -' : t !== f ? ' - ' + t : ''}${r.open ? ' <i>▶</i>' : ''}</span></div>`; }).join('')}</div>`);
+        // 23 a 31 de dezembro: a NOVA está fechada; faixa cinzenta por trás das semanas
+        const xmas = T.xmas.map(b => [Math.max(0, di(b.start_date)), Math.min(totalD, di(b.end_date) + 1)]).filter(([x, y]) => y > x).map(([x, y]) => [x / totalD, (y - x) / totalD]);
+        const xmasHtml = xmas.map(([l, w]) => `<span class="xmas" style="left:calc(26mm + (100% - 26mm) * ${l.toFixed(5)});width:calc((100% - 26mm) * ${w.toFixed(5)})"><i>${en ? 'Dec 23–31' : '23–31 dez'}</i></span>`).join('');
+        const du = en ? 'w.d.' : 'd.ú.';
+        B.push(`<div class="b gantt${xmas.length ? ' has-xmas' : ''}">${xmasHtml}<div class="gh" style="${grid}"><span></span>${months.map((m, i) => `<span style="grid-column:${m.wk + 1} / ${(months[i + 1]?.wk || weeks + 1) + 1}">${e(m.label)}</span>`).join('')}</div>
+          ${T.rows.map(x => {
+            const a0 = di(x.s), a1 = x.open ? totalD - 1 : di(x.e), l = a0 / totalD * 100, w = (a1 - a0 + 1) / totalD * 100;
+            const wS = Math.floor(a0 / 7) + 1, wE = Math.floor(a1 / 7) + 1;
+            const lab = x.open ? `W${wS} <i>▶</i>` : `W${wS}${wE !== wS ? '–' + wE : ''} · ${x.n} ${du}`;
+            return `<div class="gr${x.ours ? '' : ' muted'}" style="${grid}"><span class="gl">${e(x.r.t)}</span><span class="tr"><span class="bar${w < 16 ? ' out' : ''}" style="left:${l.toFixed(3)}%;width:${w.toFixed(3)}%"><b>${lab}</b></span></span></div>`;
+          }).join('')}</div>`);
+        if (T.end) B.push(`<div class="b gend">${en ? 'Estimated completion' : 'Conclusão prevista'}: <b>${e(parseDateKey(T.end).toLocaleDateString(loc, { day: 'numeric', month: 'long', year: 'numeric' }))}</b> · ${en ? 'working days, excluding public holidays; NOVA is closed from 23 to 31 December' : 'dias úteis, sem feriados; a NOVA fecha de 23 a 31 de dezembro'}</div>`);
         note([c.timeline.note?.t]);
       }
       // Opcionais
@@ -23169,7 +23234,17 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           .note { color: var(--mute); font-size: 7.3pt; line-height: 1.55; margin: 7pt 0 0; }
           .note + .b.txt, .note + .bh { margin-top: 6pt; }
           /* Timeline */
-          .gantt { font-size: 6.6pt; margin: 6pt 0; }
+          .gantt { font-size: 6.6pt; margin: 6pt 0; position: relative; }
+          .gantt.has-xmas { padding-bottom: 9pt; }
+          .gantt .gh, .gantt .gr { position: relative; z-index: 1; }
+          .gantt .tr { grid-column: 2 / -1; position: relative; align-self: stretch; }
+          .gantt .tr .bar { position: absolute; top: 3pt; bottom: 3pt; padding: 0 4pt; display: flex; align-items: center; overflow: visible; }
+          .gantt .tr .bar b { font-weight: 600; white-space: nowrap; }
+          .gantt .tr .bar.out b { position: absolute; left: calc(100% + 3pt); color: var(--ink2); font-weight: 500; }
+          .gantt .muted .tr .bar { background: repeating-linear-gradient(135deg, #E6E2E5 0 2.5pt, #F2EFF1 2.5pt 5pt); color: #6F676E; }
+          .gend { font-size: 7pt; color: var(--mute); margin: 0 0 4pt; } .gend b { color: var(--ink2); font-weight: 600; }
+          .gantt .xmas { position: absolute; top: 0; bottom: 0; z-index: 0; background: #E4E1E3; pointer-events: none; }
+          .gantt .xmas i { position: absolute; left: 0; right: 0; bottom: 0; font-style: normal; font-size: 5.6pt; line-height: 1; color: #8A8189; text-align: center; white-space: nowrap; }
           .gantt .gh, .gantt .gr { display: grid; align-items: center; }
           .gantt .gh { border-bottom: .8pt solid var(--line2); font-weight: 600; font-size: 6.6pt; letter-spacing: .06em; text-transform: uppercase; color: var(--mute); padding-bottom: 3pt; }
           .gantt .gh span { border-left: .5pt dashed var(--line); padding-left: 3pt; white-space: nowrap; }
