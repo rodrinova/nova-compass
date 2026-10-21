@@ -21588,7 +21588,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         extra: [],
         value: { intro: txt('value_intro'), lines: [], notes: notes('note_value') },
         pay: { intro: txt('pay_intro'), rows: [], notes: notes('note_pay'), terms: [] },
-        timeline: { on: false, start: dateKey(new Date()).slice(0, 7), rows: [], intro: txt('timeline_intro'), note: txt('timeline_note') },
+        timeline: { on: false, mode: 'table', start: dateKey(new Date()).slice(0, 7), rows: [], intro: txt('timeline_intro'), note: txt('timeline_note') },
         optionals: { intro: txt('optionals_intro'), rows: [], notes: notes('note_optional') },
         exclusions: { intro: txt('exclusions_intro'), rows: pick('exclusion').filter(x => x.default_on).map(x => ({ lib: x.id, t: libT(x, en), grp: x.grp || '' })), notes: notes('note_exclusion') },
         closing: { lib: q?.id || null, title: q ? libT(q, en) : '', body: q ? libB(q, en) : '', signer: cfg.signer || me?.id || null, role: cfg.signer_role || 'Architect | Managing Partner', place: cfg.place || 'Porto' }
@@ -22371,9 +22371,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <label class="field-label">Condições (Momento de faturação, Prazo e forma de pagamento…)</label>
           ${blocksUI('content.pay.terms', 'pay_terms')}`,
         timeline: () => `
-          <label class="pp-chk" style="margin-top:0;"><input type="checkbox" data-ppc="content.timeline.on"${c.timeline.on ? ' checked' : ''}> Incluir o timeline (Gantt por semanas)</label>
+          <label class="pp-chk" style="margin-top:0;"><input type="checkbox" data-ppc="content.timeline.on"${c.timeline.on ? ' checked' : ''}> Incluir os prazos (timeline)</label>
           ${c.timeline.on ? `
-          <div class="form-grid"><div><label class="field-label">Início previsto</label><input type="date" class="form-input" data-pp="content.timeline.start" value="${escapeHtml(String(c.timeline.start || '').length === 7 ? c.timeline.start + '-01' : (c.timeline.start || ''))}"></div></div>
+          <div class="form-grid"><div><label class="field-label">Mostrar como</label><select class="form-input" data-pp="content.timeline.mode"><option value="table"${(c.timeline.mode || 'gantt') === 'table' ? ' selected' : ''}>Tabela de prazos (só as fases da NOVA)</option><option value="gantt"${(c.timeline.mode || 'gantt') === 'gantt' ? ' selected' : ''}>Gráfico (cronograma com datas)</option></select></div><div><label class="field-label">Início previsto</label><input type="date" class="form-input" data-pp="content.timeline.start" value="${escapeHtml(String(c.timeline.start || '').length === 7 ? c.timeline.start + '-01' : (c.timeline.start || ''))}"></div></div>
           <div class="field-hint">Cada fase dura os dias úteis indicados e começa quando a anterior acaba (ou <b>em simultâneo</b> com ela). As fases da <b>Câmara / terceiros</b> ficam a cinzento e contam só fins de semana e feriados; as da NOVA saltam também o fecho de 23 a 31 de dezembro.</div>
           <div class="pp-th" style="grid-template-columns:1.5fr .5fr .8fr .9fr .75fr 1fr 52px"><span>Fase</span><span>Dias úteis</span><span></span><span></span><span></span><span>Datas</span><span></span></div>
           ${rowsUI('content.timeline.rows', ppTlNormalize(c.timeline.rows), [{ k: 't', ph: 'ex.: Estudo Prévio', w: '1.5fr' }, { k: 'days', ph: '20', n: true, w: '.5fr' }, { k: 'par', chk: true, ph: 'em simultâneo', w: '.8fr' }, { k: 'muted', chk: true, ph: 'Câmara / terceiros', w: '.9fr' }, { k: 'open', chk: true, ph: 'continua ▶', w: '.75fr' }, { k: '_d', ro: r => ppTlDates(r), w: '1fr' }], { empty: 'Sem fases no cronograma.' })}
@@ -23114,6 +23114,16 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         h2(L.timeline);
         p(md(c.timeline.intro?.t));
         const T = ppTimelineCalc(c), start = parseDateKey(T.start);
+        const DU = n => `${n} ${en ? (n === 1 ? 'working day' : 'working days') : (n === 1 ? 'dia útil' : 'dias úteis')}`;
+        if ((c.timeline.mode || 'gantt') === 'table') {
+          // Tabela de lead times: só as fases da NOVA (sem prazos das entidades)
+          const ours = T.rows.filter(x => x.ours);
+          unit(() => {
+            B.push(row(`<span>${e(en ? 'Phase' : 'Fase')}</span><span class="r">${e(en ? 'Lead time' : 'Prazo')}</span>`, 'th', '1fr auto'));
+            ours.forEach(x => B.push(row(`<span>${e(x.r.t)}</span><span class="r">${x.open ? (en ? 'during construction' : 'durante a obra') : DU(x.n)}</span>`, '', '1fr auto')));
+          });
+          note([en ? 'Lead times count from the award and from the Client’s approval of each phase; they do not include review periods by public authorities.' : 'Prazos contados a partir da adjudicação e da aprovação de cada fase pelo Cliente; não incluem os prazos de apreciação das entidades.', c.timeline.note?.t]);
+        } else {
         const di = k => Math.round((parseDateKey(k) - start) / 864e5);
         const MO = en ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] : ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
         const dm = k => { const d = parseDateKey(k); return en ? `${d.getDate()} ${MO[d.getMonth()]}` : `${d.getDate()} ${MO[d.getMonth()]}`; };
@@ -23135,20 +23145,20 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const grid = mons.filter(m => m.i > 0).map(m => `<span class="gm" style="left:${X(m.i)}"></span>`).join('');
         const xm = T.xmas.map(b => [di(b.start_date), di(b.end_date) + 1]).filter(([x, y]) => y > 0 && x < totalD)
           .map(([x, y]) => `<span class="gx" style="left:${X(x)};width:calc(${X(y)} - ${X(x)})"><i>${en ? 'closed' : 'fecho'}</i></span>`).join('');
-        const du = en ? 'w.d.' : 'd.ú.';
         const endM = T.end ? `<span class="gend2" style="left:${X(di(T.end) + 1)}"></span>` : '';
         B.push(`<div class="b g2">
           <div class="g2h"><span class="g2c"></span><span class="g2t">${head}<span class="g2k">${ticks}</span></span></div>
           <div class="g2b"><div class="g2o">${grid}${xm}${endM}</div>
           ${T.rows.map(x => {
             const a0 = di(x.s), a1 = x.open ? totalD : di(x.e) + 1;
-            const meta = x.open ? `${en ? 'from' : 'a partir de'} ${dm(x.s)}` : `${x.n} ${du} · ${dm(x.s)} → ${dm(x.e)}`;
+            const meta = x.open ? `${en ? 'from' : 'a partir de'} ${dm(x.s)}` : `${DU(x.n)} · ${dm(x.s)} → ${dm(x.e)}`;
             return `<div class="g2r${x.ours ? '' : ' cam'}${x.open ? ' open' : ''}"><span class="g2c"><b>${e(x.r.t)}</b><small>${meta}</small></span><span class="g2t"><span class="g2bar" style="left:${X(a0)};width:calc(${X(a1)} - ${X(a0)})"></span></span></div>`;
           }).join('')}</div>
           <div class="g2l"><span><i class="sw nova"></i>NOVA</span><span><i class="sw cam"></i>${en ? 'Municipality (legal deadline)' : 'Câmara (prazo legal)'}</span><span><i class="sw x"></i>${en ? '23–31 Dec · NOVA closed' : '23–31 dez · NOVA fechada'}</span>${T.end ? `<span class="end"><i class="sw e"></i>${en ? 'Estimated completion' : 'Conclusão prevista'} <b>${e(dm(T.end))} ${parseDateKey(T.end).getFullYear()}</b></span>` : ''}</div>
         </div>`);
         p(`<span class="g2n">${en ? 'Durations in working days, excluding weekends and public holidays.' : 'Durações em dias úteis, sem fins de semana nem feriados.'}</span>`);
         note([c.timeline.note?.t]);
+        }
       }
       // Opcionais
       if (c.optionals.rows.length) {
