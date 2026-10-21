@@ -806,6 +806,14 @@
   .pp-sec-n { width: 22px; height: 22px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: 12px; display: inline-flex; align-items: center; justify-content: center; flex: none; }
   .pp-sec-body { padding: 0 var(--sp-4) var(--sp-4); }
   .pp-rows { display: flex; flex-direction: column; gap: 6px; margin: 6px 0; }
+  .pp-main { container: ppmain / inline-size; }
+  /* tabelas com muitas colunas (valor, outros serviços, timeline) num editor estreito: a 1.ª coluna e a 2.ª numa linha, o resto por baixo */
+  @container ppmain (max-width: 900px) {
+    .pp-row:has(> :nth-child(7)) { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+    .pp-row:has(> :nth-child(7)) > :nth-child(2) { grid-column: span 3; }
+    .pp-row:has(> :nth-child(7)) > .pp-row-btns { grid-column: -2 / -1; }
+    .pp-th:has(> :nth-child(7)) { display: none; }
+  }
   .pp-row, .pp-th { display: grid; gap: 6px; align-items: start; }
   .pp-th { font-size: var(--fs-xs); color: var(--text-2); margin-top: var(--sp-2); padding: 0 2px; }
   .pp-row .form-input { margin: 0; min-width: 0; }
@@ -843,6 +851,7 @@
     .pp-row { grid-template-columns: 1fr 1fr !important; }
     .pp-row > :first-child { grid-column: 1 / -1; }
     .pp-row-btns { grid-column: 1 / -1; }
+    .pp-row:not(:has(> :nth-child(5))) > * { grid-column: 1 / -1; }
   }
   .ata-files { display: grid; gap: 8px; }
   .ata-files:empty { display: none; }
@@ -2595,6 +2604,15 @@
   .vt-v .vt-val .vt-in .form-input { max-width: 110px; }
   .vt-gh .vt-vatpct { display: inline-flex; width: 92px; font-weight: var(--fw-regular); }
   .vt-gh .vt-vatpct .form-input { height: 30px; }
+  @container (max-width: 720px) {
+    /* folha média (iPad, portátil com o painel ao lado): a rubrica ocupa a linha toda; unitário × quantidade = valor por baixo */
+    .vt-row:not(.vt-v) { grid-template-columns: minmax(0, 1.2fr) 14px minmax(0, 0.9fr) minmax(0, 1fr); row-gap: 4px; }
+    .vt-row:not(.vt-v) > .vt-l { grid-column: 1 / -1; }
+    .vt-row:not(.vt-v) > .vt-l:only-child { grid-column: 1 / -1; }
+    .vt-head:not(.vt-v) > span:first-child { display: none; }
+    .vt-row:not(.vt-v) > .vt-u:empty + .vt-x:empty + .vt-q:empty + .vt-t:empty { display: none; }
+    .vt-range .form-input { min-width: 64px; }
+  }
   @container (max-width: 560px) {
     /* folha estreita (telemóvel): rubrica e unitário × quantidade por cima, Valor | IVA | Total por baixo */
     .vt-row.vt-v { grid-template-columns: repeat(3, minmax(0, 1fr)); display: grid; gap: 4px var(--sp-2); }
@@ -15233,7 +15251,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     // Uma caixa de pesquisa: filtra por cliente, empresa ou NIF e escolhe "cliente + entidade".
     function clientPickerHtml(id) {
       return `<div class="client-picker" id="${id}">
-        <input type="text" class="form-input" autocomplete="off" placeholder="Escreve o nome do cliente, empresa ou NIF…" role="combobox" aria-expanded="false">
+        <input type="text" class="form-input" autocomplete="off" placeholder="Nome, empresa ou NIF…" role="combobox" aria-expanded="false">
         <button type="button" class="cp-clear" aria-label="Limpar" hidden>×</button>
         <div class="cp-list" role="listbox" hidden></div>
       </div>`;
@@ -15332,7 +15350,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const sync = () => {
         const o = sel.selectedOptions[0];
         input.value = o && o.value !== '' ? o.textContent.trim() : '';
-        input.placeholder = (blank()?.textContent.trim() || 'Escreve para procurar') + ' — escreve para procurar';
+        // curto para caber no telemóvel: a opção em branco (ex.: «Sem oportunidade (CST novo)») ou «Escreve para procurar»
+        input.placeholder = blank()?.textContent.trim() || 'Escreve para procurar';
         input.disabled = sel.disabled; clear.hidden = !SS_VALUE.get.call(sel) || sel.disabled;
       };
       let shown = [], active = 0;
@@ -22476,11 +22495,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <div class="op-sum" id="pp-resale-sum"></div>
           ${(c.resale.lines || []).length ? `<label class="field-label">Nota por baixo da tabela</label>${area('content.resale.note', c.resale.note, 2, PP_RESALE_NOTE[en ? 'en' : 'pt'])}<div class="field-hint">Em branco, fica a nota acima.</div>` : ''}`,
         value: () => `
-          <div class="pp-th" style="grid-template-columns:.8fr 2fr .55fr .75fr .75fr .9fr .8fr 52px"><span>Grupo</span><span>Descrição</span><span>Unid.</span><span>Valor unit.</span><span>ou Valor</span><span>Tipo</span><span>Total</span><span></span></div>
+          <div class="pp-th" style="grid-template-columns:minmax(108px, 1fr) 1.9fr minmax(56px, .6fr) minmax(82px, .8fr) minmax(66px, .8fr) minmax(124px, 1.1fr) minmax(88px, .9fr) 52px"><span>Grupo</span><span>Descrição</span><span>Unid.</span><span>Valor unit.</span><span>ou Valor</span><span>Tipo</span><span>Total</span><span></span></div>
           ${rowsUI('content.value.lines', c.value.lines, [
-            { k: 'g', ph: 'ex.: Arquitetura', w: '1.1fr' }, { k: 't', ph: 'ex.: Projeto por fração', w: '1.7fr' }, { k: 'q', ph: 'qtd', n: true, w: '.5fr' }, { k: 'u', ph: '€/unid.', n: true, w: '.75fr' },
-            { k: 'v', ph: '€', n: true, w: '.75fr' }, { k: 'kind', sel: v => PP_KINDS.map(([k, l]) => `<option value="${k}"${(v || 'fee') === k ? ' selected' : ''}>${l}</option>`).join(''), w: 'minmax(124px, 1.2fr)' },
-            { k: '_a', ro: l => escapeHtml(fmtEUR(ppLineAmount(l, c.value.lines))), w: '.8fr' }], { empty: 'Ainda sem linhas de valor.' })}
+            { k: 'g', ph: 'ex.: Arquitetura', w: 'minmax(108px, 1fr)' }, { k: 't', ph: 'ex.: Projeto por fração', w: '1.9fr' }, { k: 'q', ph: 'qtd', n: true, w: 'minmax(56px, .6fr)' }, { k: 'u', ph: '€/unid.', n: true, w: 'minmax(82px, .8fr)' },
+            { k: 'v', ph: '€', n: true, w: 'minmax(66px, .8fr)' }, { k: 'kind', sel: v => PP_KINDS.map(([k, l]) => `<option value="${k}"${(v || 'fee') === k ? ' selected' : ''}>${l}</option>`).join(''), w: 'minmax(124px, 1.1fr)' },
+            { k: '_a', ro: l => escapeHtml(fmtEUR(ppLineAmount(l, c.value.lines))), w: 'minmax(88px, .9fr)' }], { empty: 'Ainda sem linhas de valor.' })}
           <div class="pp-btnrow">
             <button type="button" class="text-btn" data-act="add" data-path="content.value.lines" data-tpl='{"g":"","t":"","q":null,"u":null,"v":null,"kind":"fee"}'>+ Linha</button>
             ${Number(pp.fractions) ? `<button type="button" class="text-btn" data-act="add-unit" data-unit="fr">+ Por fração (${escapeHtml(fmtNum(pp.fractions))})</button>` : ''}
