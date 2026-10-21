@@ -22140,7 +22140,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           const aboveA = aboveV ? Math.round(aboveV * 100) / 100 : c?.build ? Math.round(c.build * 100) / 100 : null;
           const belowA = c?.feas && Number(c.feas.below) ? Math.round(Number(c.feas.below) * 100) / 100 : null;
           const facts = plot ? [
-            Number(plot.land_area) ? { k: en ? 'Plot Area' : 'Área do Terreno', v: fmtNum(plot.land_area) + ' m²', pt: 'Área do Terreno', en: 'Plot Area' } : null,
+            Number(plot.land_area) ? { k: en ? 'Plot Area' : 'Área do Terreno', v: Number(plot.land_area).toLocaleString('pt-PT', { maximumFractionDigits: 2, useGrouping: 'always' }).replace(/\./g, '\u00a0').replace(/\u202f/g, '\u00a0') + ' m²', pt: 'Área do Terreno', en: 'Plot Area' } : null,
             { k: en ? 'Total Construction Area' : 'Área Total de Construção', v: '', pt: 'Área Total de Construção', en: 'Total Construction Area' },
             Number(fr) ? { k: en ? 'Number of Apartments' : 'Nº de Frações', v: String(fr), pt: 'Nº de Frações', en: 'Number of Apartments' } : null
           ].filter(Boolean) : [];
@@ -23074,7 +23074,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const factsOn = facts.filter(f => String(f.v ?? '').trim());
       if (factsOn.length) {
         B.push(`<div class="b gap"></div>`);
-        B.push(`<div class="b facts">${factsOn.map(f => `<div class="fct"><span>${e(f.k)}</span><b>${md(f.v, { para: false })}</b>${f.sub ? `<small>${e(f.sub)}</small>` : ''}</div>`).join('')}</div>`);
+        // milhares sempre com espaço (2 500 m²), mesmo nos valores escritos à mão
+        const thou = t => String(t ?? '').replace(/(^|[^\d,.])(\d{4,})((?:,\d+)?)(?=\s*(?:m²|m2|m\b|€|$))/g, (m, a, d, dec) => a + grp(Number(d), 0) + dec);
+        B.push(`<div class="b facts">${factsOn.map(f => `<div class="fct"><span>${e(f.k)}</span><b>${md(thou(f.v), { para: false })}</b>${f.sub ? `<small>${e(f.sub)}</small>` : ''}</div>`).join('')}</div>`);
       }
       if ((c.scope.blocks || []).length) { B.push(`<div class="b gap"></div>`); hb(c.scope.blocks); }
       if (c.scope.groups.length) {
