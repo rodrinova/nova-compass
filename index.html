@@ -22969,6 +22969,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     // Cada fase dura N dias úteis (seg–sex, sem feriados nacionais) e começa quando a anterior acaba; «em simultâneo»
     // começa com a anterior. As fases da NOVA saltam o fecho de 23 a 31 de dezembro; as da Câmara / terceiros (cinzento)
     // contam só fins de semana e feriados, como a lei. Linhas antigas (semana de início e fim) passam a dias úteis.
+    const PP_PAY_NOTE = {
+      pt: 'Cada fatura é emitida no marco indicado na tabela e paga a pronto, na data de emissão, por transferência bancária para o IBAN nela indicado. O início dos trabalhos fica condicionado ao pagamento da fatura de adjudicação. A falta de pagamento no prazo confere à NOVA Associates o direito de suspender os serviços até à sua regularização e de cobrar juros de mora à taxa legal aplicável às transações comerciais.',
+      en: 'Each invoice is issued at the milestone shown in the table and is payable upon issue, by bank transfer to the IBAN stated on it. Work starts upon payment of the award invoice. Late payment entitles NOVA Associates to suspend the services until payment is made and to charge late-payment interest at the statutory rate for commercial transactions.'
+    };
     const PP_TL_NOTE = { pt: 'Prazos indicativos, em dias úteis. Contam a partir da data em que se verifiquem, cumulativamente, a adjudicação, o pagamento da fatura de adjudicação e a receção dos elementos de base necessários, e suspendem-se enquanto se aguardarem informação, decisões ou validações do Cliente. Os prazos de apreciação e decisão da Câmara Municipal e de outras entidades, quando indicados, são os prazos legais e são alheios à NOVA Associates. Alterações ao programa, ao âmbito ou aos parâmetros do projeto podem alterar estes prazos.', en: 'Indicative lead times, in working days. They run from the date on which the award, the payment of the award invoice and the receipt of the necessary base information have all taken place, and are suspended while information, decisions or approvals from the Client are pending. Review and decision periods of the Municipality and other authorities, where shown, are the statutory periods and are beyond the control of NOVA Associates. Changes to the brief, scope or project parameters may change these lead times.' };
     const PP_TYPE_EN = { 'Habitação Coletiva': 'Multi-family Housing', 'Habitação Unifamiliar': 'Single-family House', 'Reabilitação': 'Refurbishment', 'Indústria / Logística': 'Industrial / Logistics', 'Comércio': 'Retail', 'Serviços': 'Offices', 'Turismo': 'Hospitality', 'Equipamento': 'Public Facility' };
     const PP_CAM_ROW = { pip_simples: ['Câmara · apreciação do PIP', 'Municipality · PIP review'], pip_qualificado: ['Câmara · apreciação do PIP qualificado', 'Municipality · qualified PIP review'],
@@ -23136,9 +23140,16 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         c.pay.rows.forEach(x => B.push(row(`<span>${e(x.t)}</span><span class="r">${e(nf(x.pct))}%</span><span class="r">${e(eur(T.base * (Number(x.pct) || 0) / 100))}</span>`, '', cols)));
         c.value.lines.filter(l => l.kind === 'month').forEach(l => B.push(row(`<span>${e(l.t)}</span><span class="r">${e(eur(l.u))} ${e(L.monthly)}</span><span class="r">${e(eur(ppLineAmount(l)))}</span>`, '', cols)));
         B.push(row(`<span>${e(L.total)}</span><span class="r">${T.monthly ? '' : e(nf(T.pctSum)) + '%'}</span><span class="r">${e(eur(T.total))}</span>`, 'tot', cols));
-        note(c.pay.notes);
+        // Notas e condições de pagamento condensadas numa só nota por baixo da tabela. As condições de
+        // sempre (fatura no marco, pagamento a pronto, suspensão e juros) viram um texto curto; condições
+        // próprias (ex.: outro prazo) entram tal como foram escritas.
+        const tx = x => typeof x === 'string' ? x : (x?.t || '');
+        const stdTerm = x => /momento de fatura|invoicing/i.test(x.t || '') || (/prazo e forma de pagamento|payment terms|terms and method/i.test(x.t || '') && /a pronto|upon issue|on issue/i.test(x.b || ''));
+        const stdNote = n => /liquida[cç][aã]o das faturas|pronto pagamento|settled upon issue|immediate payment/i.test(tx(n));
+        const terms = c.pay.terms || [], pnotes = c.pay.notes || [];
+        const std = terms.some(stdTerm) || pnotes.some(stdNote);
+        note([std ? PP_PAY_NOTE[en ? 'en' : 'pt'] : null, ...pnotes.filter(n => !stdNote(n)), ...terms.filter(x => !stdTerm(x)).map(x => x.b)]);
         });
-        if ((c.pay.terms || []).length) { B.push(`<div class="b gap"></div>`); hb(c.pay.terms); }
       }
       // Timeline (Gantt por semanas, a partir dos dias úteis de cada fase)
       if (c.timeline.on && c.timeline.rows.some(r => r.t)) {
