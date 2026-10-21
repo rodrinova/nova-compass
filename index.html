@@ -23426,17 +23426,25 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               if (u.length || hold.length) out.push(u.concat(hold));
               return out;
             }
+            // Só se salta para uma página nova se lá couber inteiro; se nem assim couber, parte-se a partir de onde se está (sem buracos)
+            function fresh(list) { var prev = box; newPage(); put(list); if (fits()) return true; take(list); pages.pop().remove(); box = prev; return false; }
             newPage();
             secs.forEach(function (sec) {
               if (sec[0].getAttribute('data-break') === 'before' && used()) newPage();
               put(sec); if (fits()) return;
               take(sec);
-              if (used()) { newPage(); put(sec); if (fits()) return; take(sec); }
+              if (used() && fresh(sec)) return;
               units(sec).forEach(function (un) {
                 put(un); if (fits()) return;
                 take(un);
-                if (used()) { newPage(); put(un); if (fits()) return; take(un); }
-                un.forEach(function (b) { box.appendChild(b); if (!fits() && used() > 1) { box.removeChild(b); newPage(); box.appendChild(b); } });
+                if (used() && fresh(un)) return;
+                un.forEach(function (b) {
+                  box.appendChild(b); if (fits() || used() < 2) return;
+                  // o que não cabe passa para a página seguinte, levando consigo os títulos que o antecedem
+                  var mv = [b]; box.removeChild(b);
+                  while (used() > 1 && box.lastElementChild && box.lastElementChild.getAttribute('data-keep') === 'next') mv.unshift(box.removeChild(box.lastElementChild));
+                  newPage(); put(mv);
+                });
               });
             });
             if (!used()) pages.pop().remove();
