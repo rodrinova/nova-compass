@@ -4628,6 +4628,11 @@
   .ab-legend i { width: 12px; height: 12px; border-radius: 3px; }
   .ab-legend i.off { background: repeating-linear-gradient(135deg, var(--surface-2) 0 3px, var(--surface-3) 3px 6px); }
   .ab-legend i.clash { background: var(--danger); border-radius: 50%; width: 7px; height: 7px; }
+  /* fecho da empresa: férias de todos, às riscas para se distinguir das férias marcadas por cada um */
+  .ab-grid td.k-vacation.closure, .ab-legend i.k-vacation.closure { background: repeating-linear-gradient(135deg, #2E9E6A 0 4px, color-mix(in srgb, #2E9E6A 55%, var(--surface)) 4px 8px); }
+  .ab-grid th.closure { color: #2E9E6A; }
+  .ab-holidays { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-4); margin-top: var(--sp-2); font-size: var(--fs-sm); color: var(--text-2); }
+  .ab-holidays b { color: var(--text); font-weight: var(--fw-semibold); margin-right: 4px; }
   .ab-list { display: flex; flex-direction: column; }
   .ab-row { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2-5) 0; border-top: 1px solid var(--border); cursor: pointer; }
   .ab-row:first-child { border-top: 0; }
@@ -10149,20 +10154,41 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     // a partir da data de adjudicação. Um prazo fixado substitui o cálculo. Durante as
     // pausas do projeto o prazo não corre, exceto nas fases que continuam durante as
     // pausas (ex.: Licenciamento, PIP). Adjudicação e Assistência Técnica ficam fora.
-    const holidayCache = {};
-    function ptHolidays(y) {
-      if (holidayCache[y]) return holidayCache[y];
+    const holidayCache = {}, holidayNameCache = {}, teamHolidayCache = {};
+    function easterKey(y) {
       const a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4;
       const f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
       const i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
-      const easter = dateKey(new Date(y, Math.floor((h + l - 7 * m + 114) / 31) - 1, ((h + l - 7 * m + 114) % 31) + 1));
-      holidayCache[y] = new Set([`${y}-01-01`, addDaysKey(easter, -2), easter, `${y}-04-25`, `${y}-05-01`,
-        addDaysKey(easter, 60), `${y}-06-10`, `${y}-08-15`, `${y}-10-05`, `${y}-11-01`, `${y}-12-01`, `${y}-12-08`, `${y}-12-25`]);
-      return holidayCache[y];
+      return dateKey(new Date(y, Math.floor((h + l - 7 * m + 114) / 31) - 1, ((h + l - 7 * m + 114) % 31) + 1));
+    }
+    // Feriados nacionais com o nome (Map dia → nome)
+    function ptHolidayNames(y) {
+      if (holidayNameCache[y]) return holidayNameCache[y];
+      const easter = easterKey(y);
+      return (holidayNameCache[y] = new Map([[`${y}-01-01`, 'Ano Novo'], [addDaysKey(easter, -2), 'Sexta-feira Santa'], [easter, 'Páscoa'], [`${y}-04-25`, 'Dia da Liberdade'],
+        [`${y}-05-01`, 'Dia do Trabalhador'], [addDaysKey(easter, 60), 'Corpo de Deus'], [`${y}-06-10`, 'Dia de Portugal'], [`${y}-08-15`, 'Assunção de Nossa Senhora'],
+        [`${y}-10-05`, 'Implantação da República'], [`${y}-11-01`, 'Todos os Santos'], [`${y}-12-01`, 'Restauração da Independência'], [`${y}-12-08`, 'Imaculada Conceição'], [`${y}-12-25`, 'Natal']]));
+    }
+    function ptHolidays(y) { return holidayCache[y] || (holidayCache[y] = new Set(ptHolidayNames(y).keys())); }
+    // Folgas da NOVA além dos nacionais: Carnaval (terça-feira) e São João (feriado municipal do Porto).
+    // Não entram nos prazos legais nem nos cronogramas (isWorkday); contam para as férias, as horas e as presenças (isTeamDay).
+    function teamHolidayNames(y) {
+      return teamHolidayCache[y] || (teamHolidayCache[y] = new Map([[addDaysKey(easterKey(y), -47), 'Carnaval'], [`${y}-06-24`, 'São João']]));
     }
     function isWorkday(key) {
       const d = parseDateKey(key), w = d.getDay();
       return w !== 0 && w !== 6 && !ptHolidays(d.getFullYear()).has(key);
+    }
+    // Dias de fecho da empresa (férias obrigatórias, Ausências): descontam nas férias de todos. Cache carregada com as ausências.
+    let teamClosures = [];
+    const closureOn = (key, list = teamClosures) => (list || []).find(c => c.start <= key && c.end >= key) || null;
+    // Dia que conta como férias (dia útil sem as folgas da NOVA) e dia de trabalho da equipa (também sem os dias de fecho)
+    const isLeaveDay = key => isWorkday(key) && !teamHolidayNames(Number(key.slice(0, 4))).has(key);
+    const isTeamDay = key => isLeaveDay(key) && !closureOn(key);
+    // Nome do dia de folga (feriado, folga da NOVA ou fecho), para os mapas
+    function dayOffName(key, closures = teamClosures) {
+      const y = Number(key.slice(0, 4));
+      return ptHolidayNames(y).get(key) || teamHolidayNames(y).get(key) || closureOn(key, closures)?.label || '';
     }
     function addWorkdays(fromKey, n, breaks = []) {
       let key = fromKey, count = 0, guard = 0;
@@ -12016,7 +12042,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const abs = await loadAbsences(from, to).catch(() => []);
       abs.forEach(a => {
         for (let d = a.start_date < from ? from : a.start_date; d <= (a.end_date > to ? to : a.end_date); d = addDaysKey(d, 1)) {
-          if (!isWorkday(d) || rows.some(x => x.member_id === a.member_id && x.day === d && (x.check_in || x.kind !== 'office'))) continue;
+          if (!isTeamDay(d) || rows.some(x => x.member_id === a.member_id && x.day === d && (x.check_in || x.kind !== 'office'))) continue;
           rows = rows.filter(x => !(x.member_id === a.member_id && x.day === d));
           rows.push({ id: 'abs:' + a.id + ':' + d, member_id: a.member_id, day: d, kind: 'off', note: absLabel(a), absence: true, edited: false });
         }
@@ -12047,7 +12073,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     // Um dia de uma pessoa: { state: on|late|out|off|missing|open|future, late, early }
     function attDay(row, day, cfg, memberId, now = new Date()) {
       const today = dateKey(now);
-      if (day < cfg.from || !isWorkday(day)) return { state: 'none', late: 0, early: 0 };
+      if (day < cfg.from || !isTeamDay(day)) return { state: 'none', late: 0, early: 0 };
       if (row?.kind === 'off') return { state: 'off', late: 0, early: 0 };
       if (row?.kind === 'out') return { state: 'out', late: 0, early: 0 };
       const s = attSched(cfg, memberId), tol = Number(cfg.tolerance) || 0;
@@ -12102,7 +12128,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         // "sem registo" só conta a partir do primeiro registo de cada pessoa (quem entra depois não é penalizado)
         const first = rows.filter(r => r.member_id === m.id).map(r => r.day).sort()[0] || null;
         for (let d = from; d <= to; d = addDaysKey(d, 1)) {
-          if (!isWorkday(d)) continue;
+          if (!isTeamDay(d)) continue;
           const row = rows.find(r => r.member_id === m.id && r.day === d);
           const x = attDay(row, d, cfg, m.id, now);
           if (x.state === 'missing' && (!first || d < first)) x.state = 'none';
@@ -12150,7 +12176,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const row = rows.find(r => r.member_id === me && r.day === today);
         const s = attSched(cfg, me);
         const st = attDay(row, today, cfg, me);
-        const workday = isWorkday(today) && today >= cfg.from;
+        const workday = isTeamDay(today) && today >= cfg.from;
         const now = new Date();
         // Estado de hoje
         let main = '';
@@ -12193,7 +12219,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const dinnerMin = Number(cfg.dinner_minutes) || 30;
         const dinner = month[0] && month[0].jar > 0 ? month[0] : null;
         const monthName = new Date(`${monthStart}T12:00:00`).toLocaleDateString('pt-PT', { month: 'long' });
-        const lastWorkday = (() => { let d = monthEnd; while (!isWorkday(d)) d = addDaysKey(d, -1); return d; })();
+        const lastWorkday = (() => { let d = monthEnd; while (!isTeamDay(d)) d = addDaysKey(d, -1); return d; })();
         const best = [...board].filter(b => b.counted).sort((a, b) => (b.onTime / b.counted) - (a.onTime / a.counted) || a.jar - b.jar)[0];
         const dot = x => `<i class="pd pd-${x.state}" title="${escapeHtml(fmtDayMonth(x.day))}: ${x.state === 'on' ? 'a horas' : x.state === 'agreed' ? `chegada combinada às ${x.agreed} (a horas)` : x.state === 'planned' ? `vai chegar às ${x.agreed} (combinado)` : x.state === 'late' ? [x.late && `${x.late} min de atraso`, x.early && `saiu ${x.early} min antes`].filter(Boolean).join(', ') : x.state === 'out' ? 'fora (conta como a horas)' : x.state === 'off' ? 'folga' : x.state === 'missing' ? 'sem registo' : x.state === 'waiting' ? 'ainda não chegou' : '—'}"></i>`;
         box.hidden = false;
@@ -12331,7 +12357,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     function openLateAgree(me, cfg, day, rows) {
       const s = attSched(cfg, me), now = new Date(), today = dateKey(now);
       const days = [];
-      for (let d = today; days.length < 10; d = addDaysKey(d, 1)) if (isWorkday(d) && d >= cfg.from && now < atTime(d, s.start)) days.push(d);
+      for (let d = today; days.length < 10; d = addDaysKey(d, 1)) if (isTeamDay(d) && d >= cfg.from && now < atTime(d, s.start)) days.push(d);
       if (!days.length) return;
       const mine = d => rows.find(r => r.member_id === me && r.day === d);
       let sel = days.includes(day) ? day : (days.find(d => d > today) || days[0]);
@@ -16321,7 +16347,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const m = (t.members || {})[memberId] || {};
       const from = m.from || t.from || null, weekly = Number(m.weekly ?? t.weekly) || 0;
       if (!weekly) return null;
-      const days = [0, 1, 2, 3, 4].map(i => addDaysKey(mondayKey, i)).filter(k => isWorkday(k) && (!from || k >= from));
+      const days = [0, 1, 2, 3, 4].map(i => addDaysKey(mondayKey, i)).filter(k => isTeamDay(k) && (!from || k >= from));
       return { weekly, from, days, expected: Math.round(days.length * weekly / 5 * 10) / 10 };
     }
 
@@ -17393,8 +17419,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { id: 'ausencias', cat: 'horas', ctx: ['absences', 'home'],
         q: 'marco férias, uma falta ou formação',
         a: 'Em Ausências, toca em «+ Marcar ausência», escolhe o tipo e as datas. Fica logo marcada, a equipa vê na Hoje e vai para o teu Outlook como "Fora do escritório".',
-        steps: ['Abre [[Ausências]] e toca em [[+ Marcar ausência]] (ou toca num dia vazio do mapa).', 'Escolhe **Férias**, **Doença / consulta**, **Falta justificada** (casamento, falecimento, exames…) ou **Formação / outra**, e as datas.', 'A app conta os **dias úteis** (sem fins de semana nem feriados) e avisa se outra pessoa está fora, se tens marcos nesses dias ou se passas do saldo.', 'Cada pessoa tem o **saldo de férias**: 22 dias úteis por ano (no ano de entrada, 2 por mês completo, até 20) e os dias transitados, que se gozam até 30 de abril. Em **Ajustar** pões a data de admissão e corriges os transitados.', 'A lei pede o **mapa de férias até 15 de abril** e pelo menos **10 dias úteis seguidos**: a app avisa. Em [[Mapa de férias (PDF)]] imprimes o mapa para afixar.'],
-        kw: 'ferias ausencia ausencias falta faltas folga doenca baixa consulta formacao casamento falecimento luto mapa de ferias saldo dias transitados outlook fora do escritorio',
+        steps: ['Abre [[Ausências]] e toca em [[+ Marcar ausência]] (ou toca num dia vazio do mapa).', 'Escolhe **Férias**, **Doença / consulta**, **Falta justificada** (casamento, falecimento, exames…) ou **Formação / outra**, e as datas.', 'A app conta os **dias úteis** (sem fins de semana, feriados, terça-feira de Carnaval nem São João) e avisa se outra pessoa está fora, se tens marcos nesses dias ou se passas do saldo. No mapa, cada feriado aparece com o nome por baixo do mês.', 'Em **Fecho da empresa** os partners marcam os dias em que a NOVA fecha (ex.: entre o Natal e o Ano Novo). São **férias obrigatórias**: aparecem às riscas no mapa de todos e descontam no saldo de cada pessoa.', 'Cada pessoa tem o **saldo de férias**: 22 dias úteis por ano (no ano de entrada, 2 por mês completo, até 20) e os dias transitados, que se gozam até 30 de abril. Em **Ajustar** pões a data de admissão e corriges os transitados.', 'A lei pede o **mapa de férias até 15 de abril** e pelo menos **10 dias úteis seguidos**: a app avisa. Em [[Mapa de férias (PDF)]] imprimes o mapa para afixar.'],
+        kw: 'ferias ausencia ausencias falta faltas folga doenca baixa consulta formacao casamento falecimento luto mapa de ferias saldo dias transitados outlook fora do escritorio feriados feriado carnaval sao joao fecho empresa ferias obrigatorias natal',
         tour: [{ go: 'nav:absences', sel: '#ab-new', text: 'Marca aqui férias, faltas ou formação.' }, { sel: '.ab-map', text: 'O mapa do mês: quem está fora e quando.' }] },
       { id: 'melhorias', cat: 'horas', ctx: ['tickets', 'home'],
         q: 'sugiro uma melhoria ou reporto um erro na app',
@@ -17487,8 +17513,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { id: 'proposta', cat: 'opps', ctx: ['pipeline', 'opps', 'plot', 'proposal', 'settings:proposals'], first: 2,
         q: 'faço uma proposta de honorários',
         a: 'Clientes → Pipeline → + Nova proposta: escolhe o tipo (Estudo Preliminar, PIP, Estudo de Viabilidade ou Projeto Completo), a tipologia e a língua. O modelo do tipo já traz serviços, valores, pagamento, textos, opcionais e exclusões.',
-        steps: ['Abre [[Pipeline]] → [[+ Nova proposta]]. Escolhe **que proposta é** (o modelo pré-configura tudo), a **tipologia** e a **língua**. Se vier de uma oportunidade do Intelligence, escolhe-a: usa o **mesmo CST** e traz o local, a área e o cliente.', 'No editor ficam à vista só quatro partes: **Cliente e local**, **Serviços**, **Valor** e **Pagamento**. Ajusta o que for preciso — os valores do modelo são um ponto de partida.', 'A língua muda-se a qualquer momento no **PT | EN** do topo: os textos da biblioteca e do modelo passam para a outra língua.', 'O resto está em **Mais opções**: capa e manifesto, textos do âmbito (Base de trabalho, Pressupostos, Prazo…), secções próprias (ex.: Aperfeiçoamento), custo e margem, timeline, opcionais, exclusões e assinatura.', 'Nos textos, {h} é a taxa horária dos opcionais, {local} o local e concelho, {validade}/{ate} a validade, e {Opcionais} (ou outro título) o número dessa secção no documento.', 'Toca em [[Criar proposta]] (recebe o CST). A partir daí grava sozinha. Para que as próximas deste tipo comecem assim, toca em **Guardar como modelo**.', 'Para enviar: [[Enviar por email]]. A app gera o PDF e descarrega o email com o PDF e a tua assinatura: abre o ficheiro e o Outlook mostra a mensagem pronta (fica também nos Rascunhos). Carregas em **Enviar** e a proposta fica marcada como enviada a essa hora, com follow-up a 7 dias.'],
-        kw: 'proposta honorarios orcamento preco valor fee nota de honorarios cst pdf modelo nova capa ambito exclusoes opcionais timeline pagamento biblioteca ingles email outlook enviar anexo pip viabilidade estudo preliminar projeto completo tipo lingua aperfeicoamento taxa horaria guardar como modelo',
+        steps: ['Abre [[Pipeline]] → [[+ Nova proposta]]. Escolhe **que proposta é** (o modelo pré-configura tudo), a **tipologia** e a **língua**. Se vier de uma oportunidade do Intelligence, escolhe-a: usa o **mesmo CST** e traz o local, a área e o cliente.', 'No editor ficam à vista as partes principais: **Cliente e local**, **Serviços**, **Valor**, **Outros serviços** e **Pagamento**. Em **Outros serviços** pões os serviços de parceiros que a NOVA revende (topografia, carpintaria, serralharia, materiais…): escreves o fornecedor, o custo e a margem, e o cliente vê só o preço, num capítulo próprio do PDF, à parte dos honorários. Ajusta o que for preciso — os valores do modelo são um ponto de partida.', 'A língua muda-se a qualquer momento no **PT | EN** do topo: os textos da biblioteca e do modelo passam para a outra língua.', 'O resto está em **Mais opções**: capa e manifesto, textos do âmbito (Base de trabalho, Pressupostos, Prazo…), secções próprias (ex.: Aperfeiçoamento), custo e margem, timeline, opcionais, exclusões e assinatura.', 'Nos textos, {h} é a taxa horária dos opcionais, {local} o local e concelho, {validade}/{ate} a validade, e {Opcionais} (ou outro título) o número dessa secção no documento.', 'Toca em [[Criar proposta]] (recebe o CST). A partir daí grava sozinha. Para que as próximas deste tipo comecem assim, toca em **Guardar como modelo**.', 'Para enviar: [[Enviar por email]]. A app gera o PDF e descarrega o email com o PDF e a tua assinatura: abre o ficheiro e o Outlook mostra a mensagem pronta (fica também nos Rascunhos). Carregas em **Enviar** e a proposta fica marcada como enviada a essa hora, com follow-up a 7 dias.'],
+        kw: 'proposta honorarios orcamento preco valor fee revenda outros servicos topografia carpintaria serralharia materiais parceiros fornecedor margem nota de honorarios cst pdf modelo nova capa ambito exclusoes opcionais timeline pagamento biblioteca ingles email outlook enviar anexo pip viabilidade estudo preliminar projeto completo tipo lingua aperfeicoamento taxa horaria guardar como modelo',
         tour: [{ go: 'nav:pipeline', sel: '#pipe-new', text: 'Começa aqui uma proposta nova.' }] },
       { id: 'pip-ciclos', cat: 'clients', ctx: ['pipeline', 'proposal'],
         q: 'escolho se o PIP inclui só um ciclo de aperfeiçoamento ou todas as respostas até à decisão',
@@ -18107,11 +18133,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const ded = typeof row.ded === 'object' && row.ded ? rate * row.ded.k * (row.ded.x - R) : Number(row.ded) || 0;
       return Math.max(0, Math.round((R * rate - ded - (rate > 0 ? table.dep * (dependents || 0) : 0)) * 100) / 100);
     }
-    // Dias e horas úteis de um ano: dias de semana, sem feriados nacionais nem o municipal, menos as férias
+    // Dias e horas úteis de um ano: dias de semana, sem feriados nacionais, Carnaval nem o municipal, menos as férias
     function workYear(year, cal, hoursWeek) {
       let days = 0;
       const muni = cal.municipal_holiday ? `${year}-${cal.municipal_holiday}` : null;
-      for (let k = `${year}-01-01`; k <= `${year}-12-31`; k = addDaysKey(k, 1)) if (isWorkday(k) && k !== muni) days++;
+      for (let k = `${year}-01-01`; k <= `${year}-12-31`; k = addDaysKey(k, 1)) if (isLeaveDay(k) && k !== muni) days++;
       const worked = Math.max(0, days - (Number(cal.vacation_days) || 0));
       return { workdays: days, worked, hours: worked * (Number(hoursWeek) || 0) / 5 };
     }
@@ -21672,6 +21698,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         scope: { intro: '', facts: preset.facts || [], blocks: [], lead: txt('scope_lead'), groups: [], after: [], notes: notes('note_scope') },
         extra: [],
         value: { intro: txt('value_intro'), lines: [], notes: notes('note_value') },
+        resale: { lines: [], note: '' },
         pay: { intro: txt('pay_intro'), rows: [], notes: notes('note_pay'), terms: [] },
         timeline: { on: false, mode: 'table', start: dateKey(new Date()).slice(0, 7), rows: [], intro: txt('timeline_intro'), note: txt('timeline_note') },
         optionals: { intro: txt('optionals_intro'), rows: [], notes: notes('note_optional') },
@@ -21955,6 +21982,18 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         delete c._rh;
       }
     }
+    // Outros serviços: serviços de parceiros que a NOVA revende (topografia, carpintaria, serralharia, materiais…).
+    // O cliente vê só o preço (custo × (1 + margem)); fornecedor, custo e margem ficam para a NOVA. Não entram nos honorários.
+    const ppResalePrice = l => ppR2((Number(l.cost) || 0) * (1 + (Number(l.margin) || 0) / 100));
+    function ppResaleTotals(c) {
+      const lines = (c?.resale?.lines || []).filter(l => (l.t || '').trim() || Number(l.cost));
+      const cost = ppR2(lines.reduce((t, l) => t + (Number(l.cost) || 0), 0)), price = ppR2(lines.reduce((t, l) => t + ppResalePrice(l), 0));
+      return { lines, cost, price, margin: ppR2(price - cost) };
+    }
+    const PP_RESALE_NOTE = {
+      pt: 'Serviços prestados por entidades parceiras e coordenados pela NOVA. Valores sem IVA, faturados à parte dos honorários de projeto.',
+      en: 'Services provided by partner companies and coordinated by NOVA. Amounts exclude VAT and are invoiced separately from the design fees.'
+    };
     function ppTotals(c) {
       const lines = c?.value?.lines || [];
       const total = ppR2(lines.reduce((t, l) => t + ppLineAmount(l, lines), 0));
@@ -22428,6 +22467,14 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           ${rowsUI('specialties', pp.specialties || [], [{ k: 'name', ph: 'Especialidade', w: '1.4fr' }, { k: 'mode', sel: v => `<option value="m2"${v === 'm2' ? ' selected' : ''}>€/m²</option><option value="fixed"${v !== 'm2' ? ' selected' : ''}>valor fixo</option>`, w: '.8fr' }, { k: 'value', ph: '0', n: true, w: '.7fr' }, { k: '_t', ro: s => escapeHtml(fmtEUR((s.mode === 'm2' ? (Number(s.value) || 0) * (Number(pp.area) || 0) : Number(s.value) || 0))), w: '.8fr' }], { empty: 'Sem especialidades subcontratadas.' })}
           <button type="button" class="text-btn" data-act="add" data-path="specialties" data-tpl='{"name":"","mode":"fixed","value":null}'>+ Linha</button>
           <div class="op-sum" id="pp-cost-sum"></div>`,
+        resale: () => `
+          <div class="field-hint" style="margin-top:0;">Serviços de parceiros que a NOVA revende (topografia, carpintaria, serralharia, materiais…). Na proposta aparecem num capítulo próprio, só com o preço; o fornecedor, o custo e a margem ficam para a NOVA.</div>
+          ${(c.resale.lines || []).length ? `<div class="pp-th" style="grid-template-columns:1.2fr 1.5fr .9fr .7fr .55fr .8fr 52px"><span>Serviço</span><span>Descrição</span><span>Fornecedor</span><span>Custo</span><span>Margem %</span><span>Preço</span><span></span></div>` : ''}
+          ${rowsUI('content.resale.lines', c.resale.lines || [], [{ k: 't', ph: 'ex.: Levantamento topográfico', w: '1.2fr' }, { k: 'b', ph: 'Descritivo (opcional)', w: '1.5fr', area: true }, { k: 'sup', ph: 'Nome', w: '.9fr' },
+            { k: 'cost', ph: '€', n: true, w: '.7fr' }, { k: 'margin', ph: '%', n: true, w: '.55fr' }, { k: '_p', ro: l => escapeHtml(fmtEUR(ppResalePrice(l))), w: '.8fr' }], { empty: 'Sem outros serviços nesta proposta.' })}
+          <div class="pp-btnrow"><button type="button" class="text-btn" data-act="add" data-path="content.resale.lines" data-tpl='{"t":"","b":"","sup":"","cost":null,"margin":15}'>+ Serviço</button></div>
+          <div class="op-sum" id="pp-resale-sum"></div>
+          ${(c.resale.lines || []).length ? `<label class="field-label">Nota por baixo da tabela</label>${area('content.resale.note', c.resale.note, 2, PP_RESALE_NOTE[en ? 'en' : 'pt'])}<div class="field-hint">Em branco, fica a nota acima.</div>` : ''}`,
         value: () => `
           <div class="pp-th" style="grid-template-columns:.8fr 2fr .55fr .75fr .75fr .9fr .8fr 52px"><span>Grupo</span><span>Descrição</span><span>Unid.</span><span>Valor unit.</span><span>ou Valor</span><span>Tipo</span><span>Total</span><span></span></div>
           ${rowsUI('content.value.lines', c.value.lines, [
@@ -22497,7 +22544,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             <div><label class="field-label">Validade (dias)</label>${inp('valid_days', pp.valid_days, { n: true })}</div>
           </div>`
       };
-      const order = [['cover', 'Cliente e local'], ['scope', 'Serviços'], ['value', 'Valor'], ['pay', 'Pagamento']];
+      const order = [['cover', 'Cliente e local'], ['scope', 'Serviços'], ['value', 'Valor'], ['resale', 'Outros serviços' + (c.resale?.lines?.length ? ` (${c.resale.lines.length})` : '')], ['pay', 'Pagamento']];
       const more = [['coverMore', 'Capa e apresentação'], ['scopeText', 'Textos do âmbito'], ['extra', 'Secções próprias' + (c.extra?.length ? ` (${c.extra.length})` : '')], ['cost', 'Custo e margem (só para a NOVA)'], ['moneyText', 'Textos do valor e do pagamento'], ['timeline', 'Timeline'], ['optionals', 'Opcionais' + (c.optionals.rows.length ? ` (${c.optionals.rows.length})` : '')], ['exclusions', 'Exclusões' + (c.exclusions.rows.length ? ` (${c.exclusions.rows.length})` : '')], ['closing', 'Fecho e assinatura']];
       const today = dateKey(new Date());
       const exp = ppExpiry(pp), left = exp ? diffDays(today, exp) : null;
@@ -22605,7 +22652,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           setPathObj(pp, el.dataset.pp, v);
           // a linha passa a ser própria (já não é o texto da biblioteca)
           touch();
-          if (/^content\.(value\.lines|pay\.rows|timeline)|^specialties|^area$|^fractions$|^est_hours$|^cost_per_hour$/.test(el.dataset.pp)) liveRows();
+          if (/^content\.(value\.lines|resale\.lines|pay\.rows|timeline)|^specialties|^area$|^fractions$|^est_hours$|^cost_per_hour$/.test(el.dataset.pp)) liveRows();
         }
       });
       main.addEventListener('change', async e => {
@@ -22737,6 +22784,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         c.value.lines.forEach((l, i) => { const el = view.querySelector(`[data-ro="content.value.lines.${i}._a"]`); if (el) el.textContent = fmtEUR(ppLineAmount(l, c.value.lines)); });
         ppDiscPh();
         c.pay.rows.forEach((x, i) => { const el = view.querySelector(`[data-ro="content.pay.rows.${i}._v"]`); if (el) el.textContent = fmtEUR(T2.base * (Number(x.pct) || 0) / 100); });
+        (c.resale?.lines || []).forEach((l, i) => { const el = view.querySelector(`[data-ro="content.resale.lines.${i}._p"]`); if (el) el.textContent = fmtEUR(ppResalePrice(l)); });
         (pp.specialties || []).forEach((s, i) => { const el = view.querySelector(`[data-ro="specialties.${i}._t"]`); if (el) el.textContent = fmtEUR(s.mode === 'm2' ? (Number(s.value) || 0) * (Number(pp.area) || 0) : Number(s.value) || 0); });
         (c.timeline?.rows || []).forEach((r, i) => { const el = view.querySelector(`[data-ro="content.timeline.rows.${i}._d"]`); if (el) el.textContent = ppTlDates(r); });
         const tot = document.getElementById('pp-total'); if (tot) tot.textContent = fmtEUR(T2.total);
@@ -22765,15 +22813,19 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         if (cs) cs.innerHTML = `
           <div><span>Equipa${Number(pp.est_hours) ? ` (${escapeHtml(fmtNum(pp.est_hours))} h × ${missingCph ? '?' : escapeHtml(fmtEUR(pp.cost_per_hour))})` : ''}</span><b>${missingCph ? '<span class="warn-text">falta o custo/hora</span>' : escapeHtml(fmtEUR(cc.team))}</b></div>
           <div><span>Especialidades e outros</span><b>${escapeHtml(fmtEUR(cc.spec))}</b></div>
-          <div class="op-sum-total"><span>Custo previsto</span><b>${escapeHtml(fmtEUR(cc.cost))}</b></div>`;
+          <div class="op-sum-total"><span>Custo previsto</span><b>${escapeHtml(fmtEUR(cc.cost))}</b></div>
+          ${ppResaleTotals(c).lines.length ? `<div><span>Outros serviços (à parte)</span><b>margem ${escapeHtml(fmtEUR(ppResaleTotals(c).margin))}</b></div>` : ''}`;
         const low = cc.perHour != null && Number(pp.target_rate) && cc.perHour < Number(pp.target_rate);
         document.getElementById('pp-side-total').textContent = fmtEUR(T2.total);
-        document.getElementById('pp-fee-sum').innerHTML = T2.total ? `
+        // outros serviços: preço ao cliente, custo e margem (a margem é só para a NOVA)
+        const RS = ppResaleTotals(c), rsBox = document.getElementById('pp-resale-sum');
+        if (rsBox) rsBox.innerHTML = RS.lines.length ? `<div><span>Custo dos fornecedores</span><b>${escapeHtml(fmtEUR(RS.cost))}</b></div><div><span>Margem da NOVA</span><b class="${RS.margin < 0 ? 'late' : ''}">${escapeHtml(fmtEUR(RS.margin))}${RS.cost ? ` <small>${Math.round(RS.margin / RS.cost * 100)}%</small>` : ''}</b></div><div class="op-sum-total"><span>Preço ao cliente (sem IVA)</span><b>${escapeHtml(fmtEUR(RS.price))}</b></div>` : '';
+        document.getElementById('pp-fee-sum').innerHTML = (RS.price ? `<div><span>Outros serviços</span><b>${escapeHtml(fmtEUR(RS.price))}</b></div><div class="op-sum-total"><span>Total da proposta</span><b>${escapeHtml(fmtEUR(T2.total + RS.price))}</b></div>` : '') + (T2.total ? `
           ${T2.monthly ? `<div><span>dos quais avenças</span><b>${escapeHtml(fmtEUR(T2.monthly))}</b></div>` : ''}
           <div><span>Equivale a</span><b>${escapeHtml([Number(pp.area) ? fmtEUR(T2.total / Number(pp.area)) + '/m²' : null, Number(pp.fractions) ? fmtEUR(T2.total / Number(pp.fractions)) + '/fração' : null].filter(Boolean).join(' · ') || '—')}</b></div>
           ${Number(pp.est_hours) ? `<div><span>Valor por hora</span><b class="${low ? 'warn-text' : ''}">${cc.perHour != null ? escapeHtml(fmtEUR(cc.perHour)) + '/h' : '—'}</b></div>
           <div><span>Margem prevista</span><b class="${cc.margin < 0 ? 'late' : ''}">${missingCph ? '<span class="muted">falta o custo/hora</span>' : escapeHtml(fmtEUR(cc.margin)) + (cc.marginPct != null ? ` <small>${Math.round(cc.marginPct)}%</small>` : '')}</b></div>` : ''}`
-          : '<div class="field-hint" style="margin:0;">Acrescenta linhas em «Valor» para ver o total.</div>';
+          : '<div class="field-hint" style="margin:0;">Acrescenta linhas em «Valor» para ver o total.</div>');
       };
       const lockAll = root => root.querySelectorAll('input, select, textarea, button[data-act]').forEach(el => { el.disabled = true; });
       if (locked) lockAll(view.querySelector('.pp-main'));
@@ -23118,8 +23170,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const eurNeg = n => n < 0 ? `€\u00a0(${grp(-n, 2)})` : eur(n);
       const nf = n => { const v = Number(n) || 0; return Number.isInteger(v) ? grp(v, 0) : grp(v, 2).replace(/,?0+$/, ''); };
       const L = en
-        ? { scope: 'Scope', value: 'Value', pay: 'Payment Phasing', timeline: 'Timeline', opt: 'Optional Services', excl: 'Exclusions', desc: 'Description', val: 'Value', units: 'Units', unit: 'Value p/ Unit', tot: 'Total Value', total: 'Total', monthly: 'monthly fee', client: 'Client', valid: n => `This proposal is valid for ${n} days.`, manifesto: 'A NOVA home. Manifesto.' }
-        : { scope: 'Âmbito', value: 'Valor', pay: 'Condições de Pagamento', timeline: 'Timeline', opt: 'Opcionais de Projeto', excl: 'Exclusões de Projeto', desc: 'Descrição', val: 'Valor', units: 'Unid.', unit: 'Valor unit.', tot: 'Valor total', total: 'Total', monthly: 'mensal', client: 'Cliente', valid: n => `Esta proposta é válida por ${n} dias.`, manifesto: 'Uma casa NOVA. Manifesto.' };
+        ? { scope: 'Scope', value: 'Value', resale: 'Other Services', pay: 'Payment Phasing', timeline: 'Timeline', opt: 'Optional Services', excl: 'Exclusions', desc: 'Description', val: 'Value', units: 'Units', unit: 'Value p/ Unit', tot: 'Total Value', total: 'Total', monthly: 'monthly fee', client: 'Client', valid: n => `This proposal is valid for ${n} days.`, manifesto: 'A NOVA home. Manifesto.' }
+        : { scope: 'Âmbito', value: 'Valor', resale: 'Outros Serviços', pay: 'Condições de Pagamento', timeline: 'Timeline', opt: 'Opcionais de Projeto', excl: 'Exclusões de Projeto', desc: 'Descrição', val: 'Valor', units: 'Unid.', unit: 'Valor unit.', tot: 'Valor total', total: 'Total', monthly: 'mensal', client: 'Cliente', valid: n => `Esta proposta é válida por ${n} dias.`, manifesto: 'Uma casa NOVA. Manifesto.' };
       const T = ppTotals(c);
       const client = ppClientName(pp, S.d) || pp.title || '';
       const docDate = parseDateKey(ppDocDate(pp));
@@ -23228,6 +23280,18 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         }
         note(c.value.notes);
       }); else note(c.value.notes);
+      // Outros serviços (parceiros): só a descrição e o preço; subtotal à parte dos honorários
+      const RS = ppResaleTotals(c);
+      if (RS.lines.length) {
+        h2(L.resale);
+        unit(() => {
+          const cols = '1fr auto';
+          B.push(row(`<span>${e(L.desc)}</span><span class="r">${e(L.val)}</span>`, 'th', cols));
+          RS.lines.forEach(l => B.push(row(`<span>${e(l.t)}${(l.b || '').trim() ? `<br><span class="muted">${md(l.b, { para: false })}</span>` : ''}</span><span class="r">${e(eur(ppResalePrice(l)))}</span>`, '', cols)));
+          B.push(row(`<span>${e(L.total)}</span><span class="r">${e(eur(RS.price))}</span>`, 'tot', cols));
+          note([(c.resale.note || '').trim() || PP_RESALE_NOTE[en ? 'en' : 'pt']]);
+        });
+      }
       // Pagamento
       if (c.pay.rows.length || T.monthly) {
         h2(L.pay);
@@ -24104,7 +24168,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         { id: 'abs-3', member_id: 'mock-member-1', kind: 'vacation', start_date: `${t.slice(0, 4)}-08-03`, end_date: `${t.slice(0, 4)}-08-14`, note: null, created_by: 'mock-member-1', created_at: new Date(Date.now() - 864e5 * 90).toISOString() }
       ];
     })();
-    let mockAbsCfg = { carry: {}, admission: {} };
+    let mockAbsCfg = { carry: {}, admission: {}, closures: [] };
     async function loadAbsences(from, to) {
       if (devMode) return mockAbsences.filter(a => a.end_date >= from && a.start_date <= to);
       const r = await supabase.from('absences').select('*').lte('start_date', to).gte('end_date', from).order('start_date');
@@ -24113,21 +24177,29 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     }
     // Datas de admissão e dias transitados postos à mão (app_settings 'absences')
     async function loadAbsCfg() {
-      if (devMode) return { carry: {}, ...mockAbsCfg };
+      if (devMode) { teamClosures = mockAbsCfg.closures || []; return { carry: {}, ...mockAbsCfg }; }
       const [s, m] = await Promise.all([
         supabase.from('app_settings').select('value').eq('key', 'absences').maybeSingle(),
         supabase.from('team_members').select('id, admission_date').eq('active', true)
       ]);
       const v = s.data?.value || {};
-      return { carry: v.carry || {}, admission: Object.fromEntries((m.data || []).map(x => [x.id, x.admission_date])) };
+      teamClosures = Array.isArray(v.closures) ? v.closures : [];
+      return { carry: v.carry || {}, closures: teamClosures, admission: Object.fromEntries((m.data || []).map(x => [x.id, x.admission_date])) };
+    }
+    // Grava uma parte das definições das ausências sem apagar o resto (transitados, dias de fecho)
+    async function saveAbsSettings(patch) {
+      if (devMode) { Object.assign(mockAbsCfg, patch); if (patch.closures) teamClosures = patch.closures; return; }
+      const cur = await supabase.from('app_settings').select('value').eq('key', 'absences').maybeSingle();
+      if (cur.error) throw cur.error;
+      const r = await supabase.from('app_settings').upsert({ key: 'absences', value: { ...(cur.data?.value || {}), ...patch }, updated_at: new Date().toISOString() });
+      if (r.error) throw r.error;
+      if (patch.closures) teamClosures = patch.closures;
     }
     async function saveAbsCarry(memberId, year, days) {
       const cfg = await loadAbsCfg();
       const carry = { ...cfg.carry, [memberId]: { ...(cfg.carry[memberId] || {}), [year]: days } };
       if (days == null) delete carry[memberId][year];
-      if (devMode) { mockAbsCfg.carry = carry; return; }
-      const r = await supabase.from('app_settings').upsert({ key: 'absences', value: { carry }, updated_at: new Date().toISOString() });
-      if (r.error) throw r.error;
+      await saveAbsSettings({ carry });
     }
     async function saveAdmission(memberId, date) {
       if (devMode) { mockAbsCfg.admission = { ...mockAbsCfg.admission, [memberId]: date }; return; }
@@ -24135,10 +24207,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       if (r.error) throw r.error;
     }
     const absLabel = a => a.kind === 'vacation' ? 'Férias' : (ABS_SUB[a.kind]?.find(s => s[0] === a.subkind)?.[1] || ABS_KIND[a.kind]?.[0] || 'Ausência');
-    // Dias úteis (seg–sex, sem feriados) entre duas datas, inclusive; opcionalmente cortado a um intervalo
+    // Dias úteis (seg–sex, sem feriados nem as folgas da NOVA) entre duas datas, inclusive; opcionalmente cortado a um intervalo
     function absWorkdays(s, e, from = s, to = e) {
       let n = 0;
-      for (let d = s < from ? from : s; d <= (e > to ? to : e); d = addDaysKey(d, 1)) if (isWorkday(d)) n++;
+      for (let d = s < from ? from : s; d <= (e > to ? to : e); d = addDaysKey(d, 1)) if (isLeaveDay(d)) n++;
       return n;
     }
     const absOn = (list, memberId, day) => list.find(a => a.member_id === memberId && a.start_date <= day && a.end_date >= day);
@@ -24155,8 +24227,14 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     // Saldo de férias de uma pessoa num ano: { ent, carry, carryLeft, carryExpired, booked, taken, left, from6m }
     function absBalance(memberId, year, list, cfg, today = dateKey(new Date())) {
       const adm = cfg.admission?.[memberId] || null;
-      const vac = list.filter(a => a.member_id === memberId && a.kind === 'vacation');
-      const used = (y, from, to) => vac.reduce((t, a) => t + absWorkdays(a.start_date, a.end_date, from || `${y}-01-01`, to || `${y}-12-31`), 0);
+      const vac = list.filter(a => a.member_id === memberId && a.kind === 'vacation'), cl = cfg.closures || [];
+      const used = (y, from, to) => {
+        let n = 0;
+        for (let d = from || `${y}-01-01`, end = to || `${y}-12-31`; d <= end; d = addDaysKey(d, 1)) {
+          if (isLeaveDay(d) && (vac.some(a => a.start_date <= d && a.end_date >= d) || (closureOn(d, cl) && (!adm || d >= adm)))) n++;
+        }
+        return n;
+      };
       const carryOf = y => {
         const manual = cfg.carry?.[memberId]?.[y];
         if (manual != null) return Number(manual) || 0;
@@ -24176,12 +24254,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       return { ent, carry, carryUsed, carryLeft, carryLost: carryExpired ? carry - carryUsed : 0, booked, taken, left, from6m };
     }
     // Maior período de dias úteis seguidos de férias no ano (fins de semana e feriados não cortam)
-    function absLongestRun(memberId, year, list) {
+    function absLongestRun(memberId, year, list, cfg = {}) {
       const vac = list.filter(a => a.member_id === memberId && a.kind === 'vacation');
       let best = 0, run = 0;
       for (let d = `${year}-01-01`; d <= `${year}-12-31`; d = addDaysKey(d, 1)) {
-        if (!isWorkday(d)) continue;
-        if (vac.some(a => a.start_date <= d && a.end_date >= d)) { run++; best = Math.max(best, run); } else run = 0;
+        if (!isLeaveDay(d)) continue;
+        if (vac.some(a => a.start_date <= d && a.end_date >= d) || closureOn(d, cfg.closures)) { run++; best = Math.max(best, run); } else run = 0;
       }
       return best;
     }
@@ -24196,7 +24274,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           out.push({ member: m.id, kind: 'map', title: `${who}: faltam marcar ${b.left} ${b.left === 1 ? 'dia' : 'dias'} de férias`, sub: `O mapa de férias tem de estar feito até 15 de abril.` });
         if (year === y && b.carryLeft > 0 && today >= `${y}-02-01` && today <= `${y}-04-30`)
           out.push({ member: m.id, kind: 'carry', title: `${who}: ${b.carryLeft} ${b.carryLeft === 1 ? 'dia transitado caduca' : 'dias transitados caducam'} a 30 de abril`, sub: `Dias de ${y - 1} por gozar. Marca-os antes de 30/4.` });
-        const run = absLongestRun(m.id, year, list);
+        const run = absLongestRun(m.id, year, list, cfg);
         const yb = absBalance(m.id, year, list, cfg, today);
         if (run < 10 && yb.ent >= 10 && (yb.booked >= 10 || today >= `${year}-04-15`))
           out.push({ member: m.id, kind: 'run', title: `${who}: ainda sem 10 dias úteis de férias seguidos em ${year}`, sub: run ? `O período mais longo marcado tem ${run} ${run === 1 ? 'dia útil' : 'dias úteis'}.` : 'Nenhum período marcado.' });
@@ -24215,7 +24293,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const name = id => attFirst(members.find(m => m.id === id)?.name || '');
       const out = [];
       list.filter(a => a.member_id !== me && a.start_date <= today && a.end_date >= today && name(a.member_id)).forEach(a => {
-        let back = addDaysKey(a.end_date, 1); while (!isWorkday(back)) back = addDaysKey(back, 1);
+        let back = addDaysKey(a.end_date, 1); while (!isTeamDay(back)) back = addDaysKey(back, 1);
         out.push({ kind: 'absence', title: `${name(a.member_id)} está fora hoje · ${absLabel(a)}`, sub: `Volta ${diffDays(today, back) === 1 ? 'amanhã' : 'a ' + fmtDayMonth(back)}${a.note && a.kind !== 'sick' ? ' · ' + a.note : ''}`, when: 'Ver' });
       });
       const recent = new Date(Date.now() - 3 * 864e5).toISOString();
@@ -24249,6 +24327,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const days = []; for (let d = `${absMonth}-01`; d.slice(0, 7) === absMonth; d = addDaysKey(d, 1)) days.push(d);
         const monthName = parseDateKey(`${absMonth}-01`).toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' });
         const outCount = d => members.filter(m => absOn(list, m.id, d)).length;
+        const cl = cfg.closures || [], canClose = isPartnerMember(meM);
+        // dias de folga do mês com nome (feriados, Carnaval, São João, fecho da empresa)
+        const offNamed = days.filter(d => parseDateKey(d).getDay() % 6 !== 0 && dayOffName(d, cl));
+        const offList = offNamed.reduce((acc, d) => { const n = dayOffName(d, cl), last = acc[acc.length - 1]; if (last && last.n === n && addDaysKey(last.e, 1) <= d && closureOn(d, cl)) last.e = d; else acc.push({ n, s: d, e: d }); return acc; }, []);
+        const yearClosures = cl.filter(c => c.end >= `${absYear}-01-01` && c.start <= `${absYear}-12-31`).sort((a, b) => a.start.localeCompare(b.start));
         const yearList = list.filter(a => a.end_date >= `${absYear}-01-01` && a.start_date <= `${absYear}-12-31`).sort((a, b) => a.start_date.localeCompare(b.start_date));
         const nm = id => members.find(m => m.id === id)?.name || '—';
         box.innerHTML = `
@@ -24257,7 +24340,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             <div class="ab-actions"><button type="button" class="secondary-btn" id="ab-print">Mapa de férias (PDF)</button><button type="button" class="primary-btn" id="ab-new">+ Marcar ausência</button></div>
           </div>
           <div class="ab-people">${members.map(m => {
-            const b = absBalance(m.id, absYear, list, cfg, today), run = absLongestRun(m.id, absYear, list), adm = cfg.admission?.[m.id];
+            const b = absBalance(m.id, absYear, list, cfg, today), run = absLongestRun(m.id, absYear, list, cfg), adm = cfg.admission?.[m.id];
             return `<div class="gantt-wrap ab-person${m.id === me ? ' me' : ''}" data-ab-member="${escapeHtml(m.id)}">
               <div class="ab-p-head"><span class="ab-dot" style="background:${escapeHtml(memberColor(m.id))}"></span><b>${escapeHtml(m.name)}</b><button type="button" class="text-btn" data-ab-adjust="${escapeHtml(m.id)}">Ajustar</button></div>
               <div class="ab-left"><b data-count="${b.left}">${b.left}</b><span>${b.left === 1 ? 'dia por marcar' : 'dias por marcar'}</span></div>
@@ -24273,9 +24356,19 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           ${rules.length ? `<div class="gantt-wrap ab-rules"><div class="card-head"><h2>Regras da lei</h2><span>Código do Trabalho</span></div>${rules.map(r => `<div class="ab-rule k-${r.kind}"><b>${escapeHtml(r.title)}</b><span>${escapeHtml(r.sub)}</span></div>`).join('')}</div>` : ''}
           <div class="gantt-wrap ab-map">
             <div class="card-head ab-map-head"><button type="button" class="ab-nav" data-ab-m="-1" aria-label="Mês anterior">‹</button><h2>${escapeHtml(monthName.charAt(0).toUpperCase() + monthName.slice(1))}</h2><button type="button" class="ab-nav" data-ab-m="1" aria-label="Mês seguinte">›</button></div>
-            <div class="table-scroll"><table class="ab-grid"><thead><tr><th></th>${days.map(d => { const w = parseDateKey(d).getDay(), c = outCount(d); return `<th class="${isWorkday(d) ? '' : 'off'}${d === today ? ' today' : ''}${c >= 2 && isWorkday(d) ? ' clash' : ''}" title="${c >= 2 ? c + ' pessoas fora' : ''}"><i>${'DSTQQSS'[w]}</i>${Number(d.slice(8))}</th>`; }).join('')}</tr></thead>
-              <tbody>${members.map(m => `<tr><th>${escapeHtml(attFirst(m.name))}</th>${days.map(d => { const a = absOn(list, m.id, d); return `<td class="${isWorkday(d) ? '' : 'off'}${d === today ? ' today' : ''}${a ? ' k-' + a.kind : ''}" data-ab-cell="${escapeHtml(m.id)}|${d}"${a ? ` data-ab-id="${escapeHtml(a.id)}" title="${escapeHtml(absLabel(a))}"` : ''}></td>`; }).join('')}</tr>`).join('')}</tbody></table></div>
-            <div class="ab-legend">${Object.entries(ABS_KIND).map(([k, [l]]) => `<span><i class="k-${k}"></i>${escapeHtml(l)}</span>`).join('')}<span><i class="off"></i>Fim de semana / feriado</span><span><i class="clash"></i>2 ou mais pessoas fora</span></div>
+            <div class="table-scroll"><table class="ab-grid"><thead><tr><th></th>${days.map(d => { const w = parseDateKey(d).getDay(), c = outCount(d), off = !isLeaveDay(d), clo = !off && closureOn(d, cl); return `<th class="${off ? 'off' : ''}${clo ? ' closure' : ''}${d === today ? ' today' : ''}${c >= 2 && !off && !clo ? ' clash' : ''}" title="${escapeHtml(dayOffName(d, cl) || (c >= 2 ? c + ' pessoas fora' : ''))}"><i>${'DSTQQSS'[w]}</i>${Number(d.slice(8))}</th>`; }).join('')}</tr></thead>
+              <tbody>${members.map(m => `<tr><th>${escapeHtml(attFirst(m.name))}</th>${days.map(d => { const a = absOn(list, m.id, d), off = !isLeaveDay(d), clo = !a && !off && closureOn(d, cl) && (!cfg.admission?.[m.id] || d >= cfg.admission[m.id]) ? closureOn(d, cl) : null; return `<td class="${off ? 'off' : ''}${d === today ? ' today' : ''}${a ? ' k-' + a.kind : clo ? ' k-vacation closure' : ''}" data-ab-cell="${escapeHtml(m.id)}|${d}"${a ? ` data-ab-id="${escapeHtml(a.id)}" title="${escapeHtml(absLabel(a))}"` : clo ? ` title="${escapeHtml(clo.label)} (fecho da empresa)"` : off && dayOffName(d, cl) ? ` title="${escapeHtml(dayOffName(d, cl))}"` : ''}></td>`; }).join('')}</tr>`).join('')}</tbody></table></div>
+            <div class="ab-legend">${Object.entries(ABS_KIND).map(([k, [l]]) => `<span><i class="k-${k}"></i>${escapeHtml(l)}</span>`).join('')}<span><i class="off"></i>Fim de semana / feriado</span><span><i class="k-vacation closure"></i>Fecho da empresa</span><span><i class="clash"></i>2 ou mais pessoas fora</span></div>
+            ${offList.length ? `<div class="ab-holidays">${offList.map(x => `<span><b>${escapeHtml(x.s === x.e ? fmtDayMonth(x.s) : `${fmtDayMonth(x.s)} → ${fmtDayMonth(x.e)}`)}</b> ${escapeHtml(x.n)}</span>`).join('')}</div>` : ''}
+          </div>
+          <div class="gantt-wrap ab-closures">
+            <div class="card-head"><h2>Fecho da empresa</h2>${canClose ? '<button type="button" class="text-btn" id="ab-close-add">+ Marcar fecho</button>' : '<span class="muted">marcado pelos partners</span>'}</div>
+            ${yearClosures.length ? `<div class="ab-list">${yearClosures.map(c => `<div class="ab-row${c.end < today ? ' past' : ''}"${canClose ? ` data-closure="${escapeHtml(c.id)}" role="button" tabindex="0"` : ''}>
+              <span class="ab-ico" aria-hidden="true">🔒</span>
+              <span class="ab-main"><b>${escapeHtml(c.label)}</b><small>${c.start === c.end ? escapeHtml(fmtDayMonth(c.start)) : `${escapeHtml(fmtDayMonth(c.start))} → ${escapeHtml(fmtDayMonth(c.end))}`} · férias obrigatórias para todos</small></span>
+              <span class="ab-n">${absWorkdays(c.start, c.end)} ${absWorkdays(c.start, c.end) === 1 ? 'dia útil' : 'dias úteis'}</span></div>`).join('')}</div>`
+              : `<div class="gantt-empty">Sem dias de fecho em ${absYear}. ${canClose ? 'Marca aqui os dias em que a NOVA fecha (ex.: entre o Natal e o Ano Novo): entram no mapa de todos e descontam nas férias de cada um.' : ''}</div>`}
+            <div class="field-hint">Além dos feriados nacionais, a NOVA não trabalha na terça-feira de Carnaval nem no São João (24 de junho): não descontam nas férias.</div>
           </div>
           <div class="gantt-wrap"><div class="card-head"><h2>Ausências de ${absYear}</h2><span>${yearList.length}</span></div>
             ${yearList.length ? `<div class="ab-list">${yearList.map(a => `<div class="ab-row${a.end_date < today ? ' past' : ''}" data-ab-id="${escapeHtml(a.id)}" role="button" tabindex="0">
@@ -24291,6 +24384,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         document.getElementById('ab-print').addEventListener('click', () => printVacationMap(absYear, list, members, cfg));
         box.querySelectorAll('[data-ab-adjust]').forEach(b => b.addEventListener('click', () => openAbsAdjust(b.dataset.abAdjust, members, cfg, list)));
         box.querySelectorAll('.ab-row[data-ab-id]').forEach(r => r.addEventListener('click', () => openAbsenceModal({ id: r.dataset.abId })));
+        document.getElementById('ab-close-add')?.addEventListener('click', () => openClosureModal(cfg));
+        box.querySelectorAll('[data-closure]').forEach(r => r.addEventListener('click', () => openClosureModal(cfg, cl.find(c => c.id === r.dataset.closure))));
         box.querySelectorAll('[data-ab-cell]').forEach(c => c.addEventListener('click', () => {
           if (c.dataset.abId) return openAbsenceModal({ id: c.dataset.abId });
           const [mid, d] = c.dataset.abCell.split('|');
@@ -24299,6 +24394,38 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       } catch (err) {
         box.innerHTML = `<div class="error-box">Não foi possível carregar as ausências: ${escapeHtml(err.message)}</div>`;
       }
+    }
+    // Dias de fecho da empresa (férias obrigatórias): descontam nas férias de todos
+    function openClosureModal(cfg, ex = null) {
+      const y = absYear, dflt = `${y}-12-24`;
+      openQuickModal(ex ? 'Alterar o fecho' : 'Marcar fecho da empresa', `
+        <label class="field-label" for="cz-label" style="margin-top:0">Nome</label>
+        <input type="text" id="cz-label" class="form-input" maxlength="60" placeholder="ex.: Fecho de Natal" value="${escapeHtml(ex?.label || '')}">
+        <div class="form-grid"><div><label class="field-label" for="cz-s">De</label><input type="date" id="cz-s" class="form-input" value="${escapeHtml(ex?.start || dflt)}"></div>
+          <div><label class="field-label" for="cz-e">Até</label><input type="date" id="cz-e" class="form-input" value="${escapeHtml(ex?.end || `${y}-12-31`)}"></div></div>
+        <div class="field-hint" id="cz-hint"></div>
+        <button type="button" class="primary-btn" id="cz-save">Guardar</button>
+        ${ex ? '<button type="button" class="secondary-btn danger-btn" id="cz-del">Apagar o fecho</button>' : ''}
+        <div id="cz-msg" class="form-msg"></div>`);
+      const S = document.getElementById('cz-s'), E = document.getElementById('cz-e'), H = document.getElementById('cz-hint');
+      const hint = () => { const n = S.value && E.value && E.value >= S.value ? absWorkdays(S.value, E.value) : 0; H.textContent = n ? `Desconta ${n} ${n === 1 ? 'dia útil' : 'dias úteis'} de férias a cada pessoa (feriados, Carnaval e São João não contam).` : ''; };
+      S.addEventListener('change', () => { if (!E.value || E.value < S.value) E.value = S.value; hint(); }); E.addEventListener('change', hint); hint();
+      const others = (cfg.closures || []).filter(c => c.id !== ex?.id);
+      document.getElementById('cz-save').addEventListener('click', async () => {
+        const label = document.getElementById('cz-label').value.trim() || 'Fecho da empresa', start = S.value, end = E.value;
+        if (!start || !end || end < start) return formError('cz-msg', 'Escolhe as datas (o fim não pode ser antes do início).');
+        if (!absWorkdays(start, end)) return formError('cz-msg', 'Nesse período não há dias úteis.');
+        const list = [...others, { id: ex?.id || ('cz-' + Date.now().toString(36)), label, start, end }].sort((a, b) => a.start.localeCompare(b.start));
+        try { await saveAbsSettings({ closures: list }); closeQuickModal(); showToast('Fecho guardado'); renderAbsences(); }
+        catch (err) { formError('cz-msg', 'Não foi possível guardar: ' + err.message); }
+      });
+      document.getElementById('cz-del')?.addEventListener('click', async () => {
+        const before = cfg.closures || [];
+        try {
+          await saveAbsSettings({ closures: others }); closeQuickModal(); renderAbsences();
+          showToast('Fecho apagado', { undo: async () => { await saveAbsSettings({ closures: before }); renderAbsences(); } });
+        } catch (err) { formError('cz-msg', 'Não foi possível apagar: ' + err.message); }
+      });
     }
     // Data de admissão e dias transitados (à mão) de uma pessoa
     function openAbsAdjust(memberId, members, cfg, list) {
@@ -24418,7 +24545,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       if (!w) { showToast('O browser bloqueou a janela. Permite pop-ups para imprimir o mapa.', { type: 'error' }); return; }
       const months = Array.from({ length: 12 }, (_, i) => `${year}-${String(i + 1).padStart(2, '0')}`);
       const mName = k => parseDateKey(k + '-01').toLocaleDateString('pt-PT', { month: 'short' }).replace('.', '');
-      const vac = list.filter(a => a.kind === 'vacation' && a.end_date >= `${year}-01-01` && a.start_date <= `${year}-12-31`);
+      const cl = (cfg.closures || []).filter(c => c.end >= `${year}-01-01` && c.start <= `${year}-12-31`);
+      const vac = [...list.filter(a => a.kind === 'vacation' && a.end_date >= `${year}-01-01` && a.start_date <= `${year}-12-31`),
+        ...members.flatMap(m => cl.map(c => ({ member_id: m.id, start_date: c.start, end_date: c.end })))].sort((a, b) => a.start_date.localeCompare(b.start_date));
+      const offs = [...teamHolidayNames(year)].map(([k, n]) => `${n} (${fmtDayMonth(k)})`).join(' e ');
       const cell = (mid, mk) => vac.filter(a => a.member_id === mid && a.start_date.slice(0, 7) <= mk && a.end_date.slice(0, 7) >= mk)
         .map(a => { const s = a.start_date < mk + '-01' ? mk + '-01' : a.start_date; const e = a.end_date.slice(0, 7) > mk ? addDaysKey(addMonthsKey(mk + '-01', 1), -1) : a.end_date; return `${Number(s.slice(8))}–${Number(e.slice(8))}`; }).join('<br>');
       w.document.write(`<!doctype html><html lang="pt"><head><meta charset="utf-8"><title>Mapa de férias ${year} — NOVA Associates</title>
@@ -24430,7 +24560,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         <table><thead><tr><th>Pessoa</th>${months.map(k => `<th>${escapeHtml(mName(k))}</th>`).join('')}<th>Dias úteis</th></tr></thead><tbody>
         ${members.map(m => `<tr><td>${escapeHtml(m.name)}</td>${months.map(k => `<td>${cell(m.id, k)}</td>`).join('')}<td class="tot">${absBalance(m.id, year, list, cfg).booked}</td></tr>`).join('')}
         </tbody></table>
-        <div class="foot">Mapa de férias elaborado até 15 de abril e afixado entre 15 de abril e 31 de outubro (art. 241.º do Código do Trabalho). Dias indicados por mês (ex.: 3–14 = de 3 a 14). Total em dias úteis.</div>
+        <div class="foot">Mapa de férias elaborado até 15 de abril e afixado entre 15 de abril e 31 de outubro (art. 241.º do Código do Trabalho). Dias indicados por mês (ex.: 3–14 = de 3 a 14). Total em dias úteis.${cl.length ? ` Fecho da empresa (férias de todos): ${escapeHtml(cl.map(c => `${c.label}, ${fmtDayMonth(c.start)}${c.end !== c.start ? ' a ' + fmtDayMonth(c.end) : ''}`).join('; '))}.` : ''} ${escapeHtml(offs)} não contam como férias.</div>
         <div class="sig"><span>A gerência</span><span>Data</span></div>
         <script>window.onload=()=>setTimeout(()=>window.print(),200)<\/script></body></html>`);
       w.document.close(); kDocBack(w);
@@ -24508,7 +24638,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           await dbUpdate('daybreak_tasks', t.id, { done: true, done_at: t.done_at }, mockDbTasks).catch(() => {});
         }
       }
-      if (!isWorkday(today)) return tasks;
+      if (!isTeamDay(today)) return tasks;
       const pend = tasks.filter(t => t.day < today && !t.done && !t.carried && !t.meeting_key && !absentIds.includes(t.member_id));
       for (const t of pend) {
         const copy = { member_id: t.member_id, day: today, title: t.title, priority: t.priority, done: false, carried: false, carried_from: t.id, carry_count: (t.carry_count || 0) + 1,
@@ -24576,7 +24706,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     // Dias úteis para trás (para pôr em dia o que ficou feito e não se marcou)
     function dbkPastDays(today, n = 5) {
       const out = []; let d = addDaysKey(today, -1);
-      while (out.length < n) { if (isWorkday(d)) out.unshift(d); d = addDaysKey(d, -1); }
+      while (out.length < n) { if (isTeamDay(d)) out.unshift(d); d = addDaysKey(d, -1); }
       return out;
     }
     // Dia anterior com plano ou fecho de uma pessoa (o "ontem" da reunião)
@@ -24619,7 +24749,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const mine = tasks.filter(t => t.member_id === me && t.day === today).sort((a, b) => (!!b.meeting_time - !!a.meeting_time) || String(a.meeting_time || '').localeCompare(String(b.meeting_time || '')) || (b.priority - a.priority) || (a.sort_order - b.sort_order));
         const prev = dbkPrevDay(me, today, tasks, days);
         const prevClosed = prev && days.some(d => d.member_id === me && d.day === prev && d.closed_at);
-        const workday = isWorkday(today);
+        const workday = isTeamDay(today);
         const isAway = away.some(a => a.member_id === me);
         const team = members.filter(m => m.id !== me).map(m => {
           const a = away.find(x => x.member_id === m.id);
@@ -24634,7 +24764,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             ${join ? `<a class="secondary-btn dbk-join" href="${escapeHtml(join)}" target="_blank" rel="noopener">Entrar no Teams</a>` : `<button type="button" class="text-btn" id="dbk-link">Pôr o link Teams</button>`}
             <button type="button" class="primary-btn dbk-go" id="dbk-start" data-haptic>▶ Começar o Daybreak</button>
           </div>
-          ${away.length ? `<div class="dbk-away">${away.map(a => { let back = addDaysKey(a.end_date, 1); while (!isWorkday(back)) back = addDaysKey(back, 1); return `<span><b>${escapeHtml(attFirst(a.member.name))}</b> fora · ${escapeHtml(absLabel(a))} · volta ${escapeHtml(fmtDayMonth(back))}</span>`; }).join('')}</div>` : ''}
+          ${away.length ? `<div class="dbk-away">${away.map(a => { let back = addDaysKey(a.end_date, 1); while (!isTeamDay(back)) back = addDaysKey(back, 1); return `<span><b>${escapeHtml(attFirst(a.member.name))}</b> fora · ${escapeHtml(absLabel(a))} · volta ${escapeHtml(fmtDayMonth(back))}</span>`; }).join('')}</div>` : ''}
           ${prev && !prevClosed && !isAway ? `<div class="dbk-note">Ainda não fizeste o fecho de <b>${escapeHtml(dbkWeekday(prev).toLowerCase())}</b>. <button type="button" class="text-btn" id="dbk-close-prev">Fazer o fecho</button></div>` : ''}
           <div class="dbk-mine">
             <div class="dbk-sub"><b>O meu plano de hoje</b><span>${mine.length ? `${mine.filter(t => t.done).length}/${mine.length} feitas` : ''}</span></div>
@@ -24683,7 +24813,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     // Dias que se podem planear: hoje (ou o próximo dia útil) e os dias úteis das 2 semanas seguintes
     function dbkPlanDays(today) {
       const out = []; let d = today;
-      while (out.length < 11) { if (isWorkday(d)) out.push(d); d = addDaysKey(d, 1); }
+      while (out.length < 11) { if (isTeamDay(d)) out.push(d); d = addDaysKey(d, 1); }
       return out;
     }
     const dbkDayName = (day, today) => day === today ? 'hoje' : day === addDaysKey(today, 1) ? 'amanhã' : dbkWeekday(day).toLowerCase();
@@ -24987,7 +25117,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       s.i = Math.max(0, Math.min(n - 1, i));
       const stage = document.querySelector('#dbk .dbk-stage');
       const today = s.today;
-      const backOf = a => { let b = addDaysKey(a.end_date, 1); while (!isWorkday(b)) b = addDaysKey(b, 1); return b; };
+      const backOf = a => { let b = addDaysKey(a.end_date, 1); while (!isTeamDay(b)) b = addDaysKey(b, 1); return b; };
       let html = '';
       if (s.i === 0) {
         const join = /^https:\/\//.test(s.cfg.join_url || '') ? s.cfg.join_url : null;
