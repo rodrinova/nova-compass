@@ -22969,6 +22969,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     // Cada fase dura N dias úteis (seg–sex, sem feriados nacionais) e começa quando a anterior acaba; «em simultâneo»
     // começa com a anterior. As fases da NOVA saltam o fecho de 23 a 31 de dezembro; as da Câmara / terceiros (cinzento)
     // contam só fins de semana e feriados, como a lei. Linhas antigas (semana de início e fim) passam a dias úteis.
+    const PP_PAY_NOTE = {
+      pt: 'Cada fatura é emitida no marco indicado na tabela e paga a pronto, na data de emissão, por transferência bancária para o IBAN nela indicado. O início dos trabalhos fica condicionado ao pagamento da fatura de adjudicação. A falta de pagamento no prazo confere à NOVA Associates o direito de suspender os serviços até à sua regularização e de cobrar juros de mora à taxa legal aplicável às transações comerciais.',
+      en: 'Each invoice is issued at the milestone shown in the table and is payable upon issue, by bank transfer to the IBAN stated on it. Work starts upon payment of the award invoice. Late payment entitles NOVA Associates to suspend the services until payment is made and to charge late-payment interest at the statutory rate for commercial transactions.'
+    };
+    const PP_TL_NOTE = { pt: 'Prazos indicativos, em dias úteis. Contam a partir da data em que se verifiquem, cumulativamente, a adjudicação, o pagamento da fatura de adjudicação e a receção dos elementos de base necessários, e suspendem-se enquanto se aguardarem informação, decisões ou validações do Cliente. Os prazos de apreciação e decisão da Câmara Municipal e de outras entidades, quando indicados, são os prazos legais e são alheios à NOVA Associates. Alterações ao programa, ao âmbito ou aos parâmetros do projeto podem alterar estes prazos.', en: 'Indicative lead times, in working days. They run from the date on which the award, the payment of the award invoice and the receipt of the necessary base information have all taken place, and are suspended while information, decisions or approvals from the Client are pending. Review and decision periods of the Municipality and other authorities, where shown, are the statutory periods and are beyond the control of NOVA Associates. Changes to the brief, scope or project parameters may change these lead times.' };
+    const PP_TYPE_EN = { 'Habitação Coletiva': 'Multi-family Housing', 'Habitação Unifamiliar': 'Single-family House', 'Reabilitação': 'Refurbishment', 'Indústria / Logística': 'Industrial / Logistics', 'Comércio': 'Retail', 'Serviços': 'Offices', 'Turismo': 'Hospitality', 'Equipamento': 'Public Facility' };
     const PP_CAM_ROW = { pip_simples: ['Câmara · apreciação do PIP', 'Municipality · PIP review'], pip_qualificado: ['Câmara · apreciação do PIP qualificado', 'Municipality · qualified PIP review'],
       lic_arquitetura: ['Câmara · apreciação da arquitetura', 'Municipality · architecture review'], deliberacao: ['Câmara · deliberação final', 'Municipality · final decision'] };
     function ppTlNormalize(rows) {
@@ -23064,6 +23070,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       p(md(c.scope.intro));
       // Área Total de Construção = acima + abaixo do solo (sempre que se conhece), com o detalhe por baixo
       const facts = (c.scope.facts || []).map(f => ({ ...f }));
+      // Tipologia (tipo de projeto) em primeiro, se ainda não estiver no quadro
+      { const tn = S?.typeById?.[pp.project_type_id]?.name;
+        if (tn && !facts.some(f => /tipolog|^type\b|project type/i.test(f.k || ''))) facts.unshift({ k: en ? 'Project Type' : 'Tipologia', v: en ? (PP_TYPE_EN[tn] || tn) : tn }); }
       { const above = Number(pp.area) || 0, below = Number(c.scope.below) || 0, tot = above + below;
         if (tot) {
           const auto = { v: nf(tot) + ' m²', sub: below ? (en ? `${nf(above)} m² above + ${nf(below)} m² below ground` : `${nf(above)} m² acima + ${nf(below)} m² abaixo do solo`) : '' };
@@ -23076,7 +23085,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         B.push(`<div class="b gap"></div>`);
         // milhares sempre com espaço (2 500 m²), mesmo nos valores escritos à mão
         const thou = t => String(t ?? '').replace(/(^|[^\d,.])(\d{4,})((?:,\d+)?)(?=\s*(?:m²|m2|m\b|€|$))/g, (m, a, d, dec) => a + grp(Number(d), 0) + dec);
-        B.push(`<div class="b facts">${factsOn.map(f => `<div class="fct"><span>${e(f.k)}</span><b>${md(thou(f.v), { para: false })}</b>${f.sub ? `<small>${e(f.sub)}</small>` : ''}</div>`).join('')}</div>`);
+        B.push(`<div class="b facts">${factsOn.map(f => `<div class="fct${/\d/.test(String(f.v)) ? '' : ' txt'}"><span>${e(f.k)}</span><b>${md(thou(f.v), { para: false })}</b>${f.sub ? `<small>${e(f.sub)}</small>` : ''}</div>`).join('')}</div>`);
       }
       if ((c.scope.blocks || []).length) { B.push(`<div class="b gap"></div>`); hb(c.scope.blocks); }
       if (c.scope.groups.length) {
@@ -23090,7 +23099,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       // «Prazo de Execução» vai para junto dos prazos (timeline ou tabela) quando eles aparecem
       const tlOn = c.timeline?.on && (c.timeline.rows || []).some(r => r.t);
       const isPrazo = x => /prazo de execu|execution (period|time)|lead time/i.test(x.t || '');
-      const prazoBlocks = tlOn ? (c.scope.after || []).filter(isPrazo) : [];
+      const prazoBlocks = tlOn ? (c.scope.after || []).filter(isPrazo) : [];   // não se imprime: a nota dos prazos já diz tudo
       const afterRest = (c.scope.after || []).filter(x => !prazoBlocks.includes(x));
       if (afterRest.length) { B.push(`<div class="b gap"></div>`); hb(afterRest); }
       note(c.scope.notes);
@@ -23131,15 +23140,25 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         c.pay.rows.forEach(x => B.push(row(`<span>${e(x.t)}</span><span class="r">${e(nf(x.pct))}%</span><span class="r">${e(eur(T.base * (Number(x.pct) || 0) / 100))}</span>`, '', cols)));
         c.value.lines.filter(l => l.kind === 'month').forEach(l => B.push(row(`<span>${e(l.t)}</span><span class="r">${e(eur(l.u))} ${e(L.monthly)}</span><span class="r">${e(eur(ppLineAmount(l)))}</span>`, '', cols)));
         B.push(row(`<span>${e(L.total)}</span><span class="r">${T.monthly ? '' : e(nf(T.pctSum)) + '%'}</span><span class="r">${e(eur(T.total))}</span>`, 'tot', cols));
-        note(c.pay.notes);
+        // Notas e condições de pagamento condensadas numa só nota por baixo da tabela. As condições de
+        // sempre (fatura no marco, pagamento a pronto, suspensão e juros) viram um texto curto; condições
+        // próprias (ex.: outro prazo) entram tal como foram escritas.
+        const tx = x => typeof x === 'string' ? x : (x?.t || '');
+        const stdTerm = x => /momento de fatura|invoicing/i.test(x.t || '') || (/prazo e forma de pagamento|payment terms|terms and method/i.test(x.t || '') && /a pronto|upon issue|on issue/i.test(x.b || ''));
+        const stdNote = n => /liquida[cç][aã]o das faturas|pronto pagamento|settled upon issue|immediate payment/i.test(tx(n));
+        const terms = c.pay.terms || [], pnotes = c.pay.notes || [];
+        const std = terms.some(stdTerm) || pnotes.some(stdNote);
+        note([std ? PP_PAY_NOTE[en ? 'en' : 'pt'] : null, ...pnotes.filter(n => !stdNote(n)), ...terms.filter(x => !stdTerm(x)).map(x => x.b)]);
         });
-        if ((c.pay.terms || []).length) { B.push(`<div class="b gap"></div>`); hb(c.pay.terms); }
       }
       // Timeline (Gantt por semanas, a partir dos dias úteis de cada fase)
       if (c.timeline.on && c.timeline.rows.some(r => r.t)) {
         h2(L.timeline);
         p(md(c.timeline.intro?.t));
         const T = ppTimelineCalc(c), start = parseDateKey(T.start);
+        // uma só nota por baixo dos prazos (a antiga, de omissão, passa à nova, que junta o «Prazo de Execução»)
+        const oldNote = /^(Este cronograma é indicativo|This timeline is indicative)/i.test(String(c.timeline.note?.t || '').trim());
+        const tlNote = !String(c.timeline.note?.t || '').trim() || oldNote ? (en ? PP_TL_NOTE.en : PP_TL_NOTE.pt) : c.timeline.note.t;
         const DU = (n, m) => m ? `${n} ${en ? 'to' : 'a'} ${m} ${en ? 'working days' : 'dias úteis'}` : `${n} ${en ? (n === 1 ? 'working day' : 'working days') : (n === 1 ? 'dia útil' : 'dias úteis')}`;
         if ((c.timeline.mode || 'gantt') === 'table') {
           // Tabela de lead times: só as fases da NOVA (sem prazos das entidades)
@@ -23148,8 +23167,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             B.push(row(`<span>${e(en ? 'Phase' : 'Fase')}</span><span class="r">${e(en ? 'Lead time' : 'Prazo')}</span>`, 'th', '1fr auto'));
             ours.forEach(x => B.push(row(`<span>${e(x.r.t)}</span><span class="r">${x.open ? (en ? 'during construction' : 'durante a obra') : DU(x.n, x.nMax)}</span>`, '', '1fr auto')));
           });
-          if (prazoBlocks.length) { B.push(`<div class="b gap"></div>`); hb(prazoBlocks); }
-          note([prazoBlocks.length ? null : (en ? 'Lead times count from the award and from the Client’s approval of each phase; they do not include review periods by public authorities.' : 'Prazos contados a partir da adjudicação e da aprovação de cada fase pelo Cliente; não incluem os prazos de apreciação das entidades.'), c.timeline.note?.t]);
+          note([tlNote]);
         } else {
         const di = k => Math.round((parseDateKey(k) - start) / 864e5);
         const MO = en ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] : ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -23183,9 +23201,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           }).join('')}</div>
           <div class="g2l"><span><i class="sw nova"></i>NOVA</span><span><i class="sw cam"></i>${en ? 'Municipality (legal deadline)' : 'Câmara (prazo legal)'}</span>${T.rows.some(x => x.nMax) ? `<span><i class="sw rng"></i>${en ? 'range (min.–max.)' : 'intervalo (mín.–máx.)'}</span>` : ''}<span><i class="sw x"></i>${en ? '23–31 Dec · NOVA closed' : '23–31 dez · NOVA fechada'}</span>${T.end ? `<span class="end"><i class="sw e"></i>${en ? 'Estimated completion' : 'Conclusão prevista'} <b>${e(dm(T.end))} ${parseDateKey(T.end).getFullYear()}</b></span>` : ''}</div>
         </div>`);
-        if (prazoBlocks.length) { B.push(`<div class="b gap"></div>`); hb(prazoBlocks); }
-        p(`<span class="g2n">${en ? 'Durations in working days, excluding weekends and public holidays.' : 'Durações em dias úteis, sem fins de semana nem feriados.'}</span>`);
-        note([c.timeline.note?.t]);
+
+        note([tlNote]);
         }
       }
       // Opcionais
@@ -23271,10 +23288,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           .gap { height: 9pt; } .gap2 { height: 0; }
           /* Dados do imóvel em destaque */
           .fct small { display: block; margin-top: 2pt; font-size: 6.8pt; color: var(--mute); }
-          .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(36mm, 1fr)); gap: 5pt; margin: 4pt 0 2pt; }
+          .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(29mm, 1fr)); gap: 5pt; margin: 4pt 0 2pt; }
           .fct { background: var(--tint); border-radius: 4pt; padding: 9pt 11pt 10pt; }
           .fct span { display: block; font-size: 6.4pt; letter-spacing: .08em; text-transform: uppercase; color: var(--mute); margin-bottom: 3pt; }
-          .fct b { font-size: 14pt; font-weight: 600; letter-spacing: -.015em; font-variant-numeric: tabular-nums; } .fct b p { margin: 0; }
+          .fct b { display: block; font-size: 14pt; font-weight: 600; line-height: 1.2; letter-spacing: -.015em; font-variant-numeric: tabular-nums; } .fct b p { margin: 0; } .fct.txt b { font-size: 10.5pt; letter-spacing: -.005em; }
           /* Tabelas */
           .tr { display: grid; gap: 10pt; padding: 5.6pt 0; border-bottom: .5pt solid var(--line); align-items: baseline; font-variant-numeric: tabular-nums; color: var(--ink2); }
           .tr.th { font-size: 6.5pt; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--mute); border-bottom: .8pt solid var(--line2); padding: 6pt 0 4pt; }
