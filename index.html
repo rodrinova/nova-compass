@@ -23067,12 +23067,18 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       }
       // Âmbito
       h2(L.scope, true);
-      p(md(c.scope.intro));
+      // a tipologia (tipo de projeto) entra no texto do Âmbito, se ainda lá não estiver
+      let scopeIntro = c.scope.intro || '';
+      { const tn = S?.typeById?.[pp.project_type_id]?.name, tl = tn && (en ? (PP_TYPE_EN[tn] || tn) : tn).toLowerCase();
+        if (tl && scopeIntro && !scopeIntro.toLowerCase().includes(tl)) {
+          if (!en && / para o (imóvel|terreno|edifício|prédio)/i.test(scopeIntro)) scopeIntro = scopeIntro.replace(/ para o (imóvel|terreno|edifício|prédio)/i, ` de **${tl}** para o $1`);
+          else if (en && / for the (property|site|building|plot)/i.test(scopeIntro)) scopeIntro = scopeIntro.replace(/ for the (property|site|building|plot)/i, ` (**${tl}**) for the $1`);
+          else scopeIntro = scopeIntro.trim() + (en ? ` This is a **${tl}** project.` : ` Trata-se de um projeto de **${tl}**.`);
+        } }
+      p(md(scopeIntro));
       // Área Total de Construção = acima + abaixo do solo (sempre que se conhece), com o detalhe por baixo
       const facts = (c.scope.facts || []).map(f => ({ ...f }));
-      // Tipologia (tipo de projeto) em primeiro, se ainda não estiver no quadro
-      { const tn = S?.typeById?.[pp.project_type_id]?.name;
-        if (tn && !facts.some(f => /tipolog|^type\b|project type/i.test(f.k || ''))) facts.unshift({ k: en ? 'Project Type' : 'Tipologia', v: en ? (PP_TYPE_EN[tn] || tn) : tn }); }
+
       { const above = Number(pp.area) || 0, below = Number(c.scope.below) || 0, tot = above + below;
         if (tot) {
           const auto = { v: nf(tot) + ' m²', sub: below ? (en ? `${nf(above)} m² above + ${nf(below)} m² below ground` : `${nf(above)} m² acima + ${nf(below)} m² abaixo do solo`) : '' };
@@ -23085,7 +23091,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         B.push(`<div class="b gap"></div>`);
         // milhares sempre com espaço (2 500 m²), mesmo nos valores escritos à mão
         const thou = t => String(t ?? '').replace(/(^|[^\d,.])(\d{4,})((?:,\d+)?)(?=\s*(?:m²|m2|m\b|€|$))/g, (m, a, d, dec) => a + grp(Number(d), 0) + dec);
-        B.push(`<div class="b facts">${factsOn.map(f => `<div class="fct${/\d/.test(String(f.v)) ? '' : ' txt'}"><span>${e(f.k)}</span><b>${md(thou(f.v), { para: false })}</b>${f.sub ? `<small>${e(f.sub)}</small>` : ''}</div>`).join('')}</div>`);
+        B.push(`<div class="b facts">${factsOn.map(f => `<div class="fct${/\d/.test(String(f.v)) ? '' : ' txt'}"><span>${e(f.k)}</span><b>${md(thou(f.v), { para: false })}</b><small>${f.sub ? e(f.sub) : ''}</small></div>`).join('')}</div>`);
       }
       if ((c.scope.blocks || []).length) { B.push(`<div class="b gap"></div>`); hb(c.scope.blocks); }
       if (c.scope.groups.length) {
@@ -23288,9 +23294,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           .gap { height: 9pt; } .gap2 { height: 0; }
           /* Dados do imóvel em destaque */
           .fct small { display: block; margin-top: 2pt; font-size: 6.8pt; color: var(--mute); }
-          .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(29mm, 1fr)); gap: 5pt; margin: 4pt 0 2pt; }
-          .fct { background: var(--tint); border-radius: 4pt; padding: 9pt 11pt 10pt; }
-          .fct span { display: block; font-size: 6.4pt; letter-spacing: .08em; text-transform: uppercase; color: var(--mute); margin-bottom: 3pt; }
+          .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(36mm, 1fr)); column-gap: 5pt; row-gap: 0; margin: 4pt 0 2pt; }
+          .fct { background: var(--tint); border-radius: 4pt; padding: 9pt 11pt 10pt; display: grid; grid-row: span 3; grid-template-rows: subgrid; row-gap: 0; margin-bottom: 5pt; align-content: start; }
+          .fct span { display: block; align-self: end; font-size: 6.4pt; letter-spacing: .08em; text-transform: uppercase; color: var(--mute); margin-bottom: 3pt; }
           .fct b { display: block; font-size: 14pt; font-weight: 600; line-height: 1.2; letter-spacing: -.015em; font-variant-numeric: tabular-nums; } .fct b p { margin: 0; } .fct.txt b { font-size: 10.5pt; letter-spacing: -.005em; }
           /* Tabelas */
           .tr { display: grid; gap: 10pt; padding: 5.6pt 0; border-bottom: .5pt solid var(--line); align-items: baseline; font-variant-numeric: tabular-nums; color: var(--ink2); }
