@@ -23051,7 +23051,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         String(x.b || '').replace(/\r\n?/g, '\n').split(/\n{2,}/).filter(t => t.trim()).forEach(t => B.push(`<div class="b txt"${U()}>${md(t)}</div>`));
       }));
       const p = html => { if (html) B.push(`<div class="b txt"${U()}>${html}</div>`); };
-      const note = list => { const l = (list || []).map(x => typeof x === 'string' ? x : x.t).filter(s => (s || '').trim()); if (l.length) B.push(`<div class="b note"${U()}>${l.map(s => md(s, { para: false })).join('<br>')}</div>`); };
+      const note = list => { const l = (list || []).map(x => typeof x === 'string' ? x : x?.t).filter(s => (s || '').trim()); if (l.length) B.push(`<div class="b note"${U()}>${l.map(s => md(s, { para: false })).join('<br>')}</div>`); };
       const row = (cells, cls = '', cols = '') => `<div class="b tr ${cls}"${U()}${cols ? ` style="grid-template-columns:${cols}"` : ''}>${cells}</div>`;
       const mans = S.lib.filter(x => x.kind === 'text' && x.grp === 'manifesto');
       const man = c.manifesto === true ? mans[0] : mans.find(x => x.id === c.manifesto);
@@ -23087,7 +23087,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           g.items.filter(it => it.t || it.b).forEach(it => B.push(`<div class="b item${it.b ? ' long' : ''}"${U()}><div class="it">${md(it.t, { para: false })}</div>${it.b ? `<div class="ib">${md(it.b)}</div>` : ''}</div>`));
         }));
       }
-      if ((c.scope.after || []).length) { B.push(`<div class="b gap"></div>`); hb(c.scope.after); }
+      // «Prazo de Execução» vai para junto dos prazos (timeline ou tabela) quando eles aparecem
+      const tlOn = c.timeline?.on && (c.timeline.rows || []).some(r => r.t);
+      const isPrazo = x => /prazo de execu|execution (period|time)|lead time/i.test(x.t || '');
+      const prazoBlocks = tlOn ? (c.scope.after || []).filter(isPrazo) : [];
+      const afterRest = (c.scope.after || []).filter(x => !prazoBlocks.includes(x));
+      if (afterRest.length) { B.push(`<div class="b gap"></div>`); hb(afterRest); }
       note(c.scope.notes);
       // Secções próprias (Aperfeiçoamento, Metodologia, BIM…)
       (c.extra || []).filter(x => (x.t || '').trim() || (x.b || '').trim()).forEach(x => { h2(x.t || ''); hb([{ b: x.b }]); });
@@ -23143,7 +23148,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             B.push(row(`<span>${e(en ? 'Phase' : 'Fase')}</span><span class="r">${e(en ? 'Lead time' : 'Prazo')}</span>`, 'th', '1fr auto'));
             ours.forEach(x => B.push(row(`<span>${e(x.r.t)}</span><span class="r">${x.open ? (en ? 'during construction' : 'durante a obra') : DU(x.n, x.nMax)}</span>`, '', '1fr auto')));
           });
-          note([en ? 'Lead times count from the award and from the Client’s approval of each phase; they do not include review periods by public authorities.' : 'Prazos contados a partir da adjudicação e da aprovação de cada fase pelo Cliente; não incluem os prazos de apreciação das entidades.', c.timeline.note?.t]);
+          if (prazoBlocks.length) { B.push(`<div class="b gap"></div>`); hb(prazoBlocks); }
+          note([prazoBlocks.length ? null : (en ? 'Lead times count from the award and from the Client’s approval of each phase; they do not include review periods by public authorities.' : 'Prazos contados a partir da adjudicação e da aprovação de cada fase pelo Cliente; não incluem os prazos de apreciação das entidades.'), c.timeline.note?.t]);
         } else {
         const di = k => Math.round((parseDateKey(k) - start) / 864e5);
         const MO = en ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] : ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -23177,6 +23183,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           }).join('')}</div>
           <div class="g2l"><span><i class="sw nova"></i>NOVA</span><span><i class="sw cam"></i>${en ? 'Municipality (legal deadline)' : 'Câmara (prazo legal)'}</span>${T.rows.some(x => x.nMax) ? `<span><i class="sw rng"></i>${en ? 'range (min.–max.)' : 'intervalo (mín.–máx.)'}</span>` : ''}<span><i class="sw x"></i>${en ? '23–31 Dec · NOVA closed' : '23–31 dez · NOVA fechada'}</span>${T.end ? `<span class="end"><i class="sw e"></i>${en ? 'Estimated completion' : 'Conclusão prevista'} <b>${e(dm(T.end))} ${parseDateKey(T.end).getFullYear()}</b></span>` : ''}</div>
         </div>`);
+        if (prazoBlocks.length) { B.push(`<div class="b gap"></div>`); hb(prazoBlocks); }
         p(`<span class="g2n">${en ? 'Durations in working days, excluding weekends and public holidays.' : 'Durações em dias úteis, sem fins de semana nem feriados.'}</span>`);
         note([c.timeline.note?.t]);
         }
