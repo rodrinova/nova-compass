@@ -22135,9 +22135,13 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           const client = d.clients.find(x => x.id === (plot?.origin === 'client' ? plot.client_id : inv?.client_id));
           const en = preset.lang ? preset.lang === 'en' : (client?.language === 'en' || cfg.lang === 'en');
           const fr = c?.feas?.units || plot?.fractions_est || null;
+          // acima do solo: habitação + comércio da viabilidade (ou a área pelo índice); abaixo: a cave da viabilidade
+          const aboveV = c?.feas ? (Number(c.feas.housing) || 0) + (Number(c.feas.commerce) || 0) : 0;
+          const aboveA = aboveV ? Math.round(aboveV * 100) / 100 : c?.build ? Math.round(c.build * 100) / 100 : null;
+          const belowA = c?.feas && Number(c.feas.below) ? Math.round(Number(c.feas.below) * 100) / 100 : null;
           const facts = plot ? [
             Number(plot.land_area) ? { k: en ? 'Plot Area' : 'Área do Terreno', v: fmtNum(plot.land_area) + ' m²', pt: 'Área do Terreno', en: 'Plot Area' } : null,
-            Number(c?.build) ? { k: en ? 'Total Construction Area' : 'Área Total de Construção', v: fmtNum(Math.round(c.build * 100) / 100) + ' m²', pt: 'Área Total de Construção', en: 'Total Construction Area' } : null,
+            { k: en ? 'Total Construction Area' : 'Área Total de Construção', v: '', pt: 'Área Total de Construção', en: 'Total Construction Area' },
             Number(fr) ? { k: en ? 'Number of Apartments' : 'Nº de Frações', v: String(fr), pt: 'Nº de Frações', en: 'Number of Apartments' } : null
           ].filter(Boolean) : [];
           const tpl = ppTemplates(cfg).find(t => t.key === preset.tpl) || null;
@@ -22146,7 +22150,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             id: null, number: plot?.cst || null, version: 1, title: plot ? plot.name : '', plot_id: plot?.id || null,
             client_id: client?.id || null, investor_id: inv?.id || null,
             client_name: inv ? [inv.name, inv.company].filter(Boolean).join(' — ') : null,
-            project_type_id: typeId, method: 'global', area: c?.build ? Math.round(c.build * 100) / 100 : null, fractions: fr,
+            project_type_id: typeId, method: 'global', area: aboveA, fractions: fr,
             unit_value: null, total: null, est_hours: null, cost_per_hour: cfg.cost_per_hour ?? autoCph, target_rate: cfg.target_rate,
             specialties: specialtyPreset(cfg, typeId), phases: [], status: 'draft', language: en ? 'en' : 'pt', valid_days: Number(cfg.valid_days) || 30, notes: null,
             source: plot ? 'intelligence' : 'direct', owner_id: meM?.id ?? null, probability: null, followup_on: null, expected_on: null,
@@ -22155,6 +22159,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               : ppDefaultContent(lib, en, meM, { lines: [en ? 'Architecture Project' : 'Projeto de Arquitetura', typeById[typeId]?.name || ''], place, region, facts }, cfg)
           };
           if (preset.cycles === 'all') ppSetCycles(pp.content, 'all', lib, en);
+          if (belowA) pp.content.scope.below = belowA;
           pp.total = ppTotals(pp.content).total || null;
         } else {
           pp = JSON.parse(JSON.stringify(pp));
@@ -22278,9 +22283,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             <div><label class="field-label">Local</label>${inp('content.cover.place', c.cover.place, { ph: 'ex.: Rua de Álvares Cabral' })}</div>
             <div><label class="field-label">Concelho / região</label>${inp('content.cover.region', c.cover.region, { ph: 'ex.: Vila Nova de Gaia' })}</div>
             <div><label class="field-label">Tipologia</label><select class="form-input" data-pp="project_type_id" id="pp-type"><option value="">Escolhe…</option>${typeOpts}</select></div>
-            <div><label class="field-label">Área de construção (m²)</label>${inp('area', pp.area, { n: true })}</div>
+            <div><label class="field-label">Área acima do solo (m²)</label>${inp('area', pp.area, { n: true })}</div>
+            <div><label class="field-label">Área abaixo do solo (m²)</label>${inp('content.scope.below', c.scope.below, { n: true, ph: 'ex.: cave, estacionamento' })}</div>
             <div><label class="field-label">Frações</label>${inp('fractions', pp.fractions, { n: true })}</div>
           </div>
+          <div class="field-hint">O Âmbito mostra a <b>Área Total de Construção</b> (acima + abaixo do solo), com o detalhe por baixo.</div>
           <label class="pp-chk"><input type="checkbox" data-ppc="content.rehab"${c.rehab ? ' checked' : ''}> Projeto de reabilitação <span class="muted">— a capa fica «Reabilitação de …» e a abertura e as linhas do valor ajustam-se</span></label>`,
         coverMore: () => `
           <div class="form-grid">
@@ -22374,10 +22381,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <label class="pp-chk" style="margin-top:0;"><input type="checkbox" data-ppc="content.timeline.on"${c.timeline.on ? ' checked' : ''}> Incluir os prazos (timeline)</label>
           ${c.timeline.on ? `
           <div class="form-grid"><div><label class="field-label">Mostrar como</label><select class="form-input" data-pp="content.timeline.mode"><option value="table"${(c.timeline.mode || 'gantt') === 'table' ? ' selected' : ''}>Tabela de prazos (só as fases da NOVA)</option><option value="gantt"${(c.timeline.mode || 'gantt') === 'gantt' ? ' selected' : ''}>Gráfico (cronograma com datas)</option></select></div><div><label class="field-label">Início previsto</label><input type="date" class="form-input" data-pp="content.timeline.start" value="${escapeHtml(String(c.timeline.start || '').length === 7 ? c.timeline.start + '-01' : (c.timeline.start || ''))}"></div></div>
-          <div class="field-hint">Cada fase dura os dias úteis indicados e começa quando a anterior acaba (ou <b>em simultâneo</b> com ela). As fases da <b>Câmara / terceiros</b> ficam a cinzento e contam só fins de semana e feriados; as da NOVA saltam também o fecho de 23 a 31 de dezembro.</div>
-          <div class="pp-th" style="grid-template-columns:1.5fr .5fr .8fr .9fr .75fr 1fr 52px"><span>Fase</span><span>Dias úteis</span><span></span><span></span><span></span><span>Datas</span><span></span></div>
-          ${rowsUI('content.timeline.rows', ppTlNormalize(c.timeline.rows), [{ k: 't', ph: 'ex.: Estudo Prévio', w: '1.5fr' }, { k: 'days', ph: '20', n: true, w: '.5fr' }, { k: 'par', chk: true, ph: 'em simultâneo', w: '.8fr' }, { k: 'muted', chk: true, ph: 'Câmara / terceiros', w: '.9fr' }, { k: 'open', chk: true, ph: 'continua ▶', w: '.75fr' }, { k: '_d', ro: r => ppTlDates(r), w: '1fr' }], { empty: 'Sem fases no cronograma.' })}
-          <div class="pp-btnrow"><button type="button" class="text-btn" data-act="add" data-path="content.timeline.rows" data-tpl='{"t":"","days":null,"par":false,"muted":false,"open":false}'>+ Fase</button><button type="button" class="text-btn" data-act="tl-from-pay">Gerar a partir do pagamento</button>
+          <div class="field-hint">Para um intervalo, escreve o mínimo e o máximo (ex.: 30 até 45); as datas contam pelo máximo. Cada fase dura os dias úteis indicados e começa quando a anterior acaba (ou <b>em simultâneo</b> com ela). As fases da <b>Câmara / terceiros</b> ficam a cinzento e contam só fins de semana e feriados; as da NOVA saltam também o fecho de 23 a 31 de dezembro.</div>
+          <div class="pp-th" style="grid-template-columns:1.5fr .45fr .45fr .8fr .9fr .75fr 1fr 52px"><span>Fase</span><span>Dias úteis</span><span>até</span><span></span><span></span><span></span><span>Datas</span><span></span></div>
+          ${rowsUI('content.timeline.rows', ppTlNormalize(c.timeline.rows), [{ k: 't', ph: 'ex.: Estudo Prévio', w: '1.5fr' }, { k: 'days', ph: '30', n: true, w: '.45fr' }, { k: 'days_max', ph: '45', n: true, w: '.45fr' }, { k: 'par', chk: true, ph: 'em simultâneo', w: '.8fr' }, { k: 'muted', chk: true, ph: 'Câmara / terceiros', w: '.9fr' }, { k: 'open', chk: true, ph: 'continua ▶', w: '.75fr' }, { k: '_d', ro: r => ppTlDates(r), w: '1fr' }], { empty: 'Sem fases no cronograma.' })}
+          <div class="pp-btnrow"><button type="button" class="text-btn" data-act="add" data-path="content.timeline.rows" data-tpl='{"t":"","days":null,"days_max":null,"par":false,"muted":false,"open":false}'>+ Fase</button><button type="button" class="text-btn" data-act="tl-from-pay">Gerar a partir do pagamento</button>
             ${Object.keys(PP_CAM_ROW).map(k => `<button type="button" class="text-btn" data-act="tl-cam" data-k="${k}">+ ${escapeHtml(PP_CAM_ROW[k][0])}</button>`).join('')}</div>
           <label class="field-label">Texto</label>${area('content.timeline.intro.t', c.timeline.intro?.t, 2)}
           <label class="field-label">Nota</label>${area('content.timeline.note.t', c.timeline.note?.t, 3)}` : ''}`,
@@ -22751,7 +22758,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         ['rehab', '_rhType'].forEach(x => delete snap[x]);
         ['mail', 'referral', 'date', 'kind'].forEach(x => delete snap[x]);
         snap.cover = { lines: snap.cover.lines, i18n: snap.cover.i18n };
-        snap.scope.facts = (snap.scope.facts || []).map(f => ({ ...f, v: '' }));
+        snap.scope.facts = (snap.scope.facts || []).map(f => ({ ...f, v: '' })); delete snap.scope.below;
         delete snap.closing.signer;
         const cfg = await loadProposalCfg();
         cfg.templates = { ...(cfg.templates || {}), [k]: { key: k, name: base?.name || name, desc: base?.desc || '', lang: pp.language, snap, at: new Date().toISOString() } };
@@ -22985,11 +22992,14 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const out = []; let lastEnd = null, prevStart = null;
       rows.forEach((r, i) => {
         if (!r.t) return;
+        // intervalo «30 a 45»: as datas (e a fase seguinte) contam pelo máximo, o lado prudente
         const ours = !r.muted, n = Math.max(1, Math.round(Number(r.days) || 0) || 1);
+        const nMax = Number(r.days_max) > n ? Math.round(Number(r.days_max)) : null;
         const s0 = r.par && prevStart ? prevStart : lastEnd ? addDaysKey(lastEnd, 1) : start;
         const s = firstDay(s0, ours);
-        const e = r.open ? null : addWorkdays(addDaysKey(s, -1), n, ours ? xmas : []);
-        out.push({ r, src: src[i], i, s, e, n, open: !!r.open, ours });
+        const eMin = r.open ? null : addWorkdays(addDaysKey(s, -1), n, ours ? xmas : []);
+        const e = r.open ? null : nMax ? addWorkdays(addDaysKey(s, -1), nMax, ours ? xmas : []) : eMin;
+        out.push({ r, src: src[i], i, s, e, eMin, n, nMax, open: !!r.open, ours });
         prevStart = s; if (e && (!lastEnd || e > lastEnd)) lastEnd = e;
       });
       return { start, rows: out, end: lastEnd, xmas };
@@ -23052,10 +23062,19 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       // Âmbito
       h2(L.scope, true);
       p(md(c.scope.intro));
-      const facts = c.scope.facts.filter(f => String(f.v ?? '').trim());
-      if (facts.length) {
+      // Área Total de Construção = acima + abaixo do solo (sempre que se conhece), com o detalhe por baixo
+      const facts = (c.scope.facts || []).map(f => ({ ...f }));
+      { const above = Number(pp.area) || 0, below = Number(c.scope.below) || 0, tot = above + below;
+        if (tot) {
+          const auto = { v: nf(tot) + ' m²', sub: below ? (en ? `${nf(above)} m² above + ${nf(below)} m² below ground` : `${nf(above)} m² acima + ${nf(below)} m² abaixo do solo`) : '' };
+          const i = facts.findIndex(f => /total de constru|total construction/i.test(f.k || '') || f.pt === 'Área Total de Construção');
+          if (i >= 0) { if (!String(facts[i].v ?? '').trim()) Object.assign(facts[i], auto); }
+          else { const j = facts.findIndex(f => /terreno|plot area/i.test(f.k || '')); facts.splice(j >= 0 ? j + 1 : 0, 0, { k: en ? 'Total Construction Area' : 'Área Total de Construção', ...auto }); }
+        } }
+      const factsOn = facts.filter(f => String(f.v ?? '').trim());
+      if (factsOn.length) {
         B.push(`<div class="b gap"></div>`);
-        B.push(`<div class="b facts">${facts.map(f => `<div class="fct"><span>${e(f.k)}</span><b>${md(f.v, { para: false })}</b></div>`).join('')}</div>`);
+        B.push(`<div class="b facts">${factsOn.map(f => `<div class="fct"><span>${e(f.k)}</span><b>${md(f.v, { para: false })}</b>${f.sub ? `<small>${e(f.sub)}</small>` : ''}</div>`).join('')}</div>`);
       }
       if ((c.scope.blocks || []).length) { B.push(`<div class="b gap"></div>`); hb(c.scope.blocks); }
       if (c.scope.groups.length) {
@@ -23114,13 +23133,13 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         h2(L.timeline);
         p(md(c.timeline.intro?.t));
         const T = ppTimelineCalc(c), start = parseDateKey(T.start);
-        const DU = n => `${n} ${en ? (n === 1 ? 'working day' : 'working days') : (n === 1 ? 'dia útil' : 'dias úteis')}`;
+        const DU = (n, m) => m ? `${n} ${en ? 'to' : 'a'} ${m} ${en ? 'working days' : 'dias úteis'}` : `${n} ${en ? (n === 1 ? 'working day' : 'working days') : (n === 1 ? 'dia útil' : 'dias úteis')}`;
         if ((c.timeline.mode || 'gantt') === 'table') {
           // Tabela de lead times: só as fases da NOVA (sem prazos das entidades)
           const ours = T.rows.filter(x => x.ours);
           unit(() => {
             B.push(row(`<span>${e(en ? 'Phase' : 'Fase')}</span><span class="r">${e(en ? 'Lead time' : 'Prazo')}</span>`, 'th', '1fr auto'));
-            ours.forEach(x => B.push(row(`<span>${e(x.r.t)}</span><span class="r">${x.open ? (en ? 'during construction' : 'durante a obra') : DU(x.n)}</span>`, '', '1fr auto')));
+            ours.forEach(x => B.push(row(`<span>${e(x.r.t)}</span><span class="r">${x.open ? (en ? 'during construction' : 'durante a obra') : DU(x.n, x.nMax)}</span>`, '', '1fr auto')));
           });
           note([en ? 'Lead times count from the award and from the Client’s approval of each phase; they do not include review periods by public authorities.' : 'Prazos contados a partir da adjudicação e da aprovação de cada fase pelo Cliente; não incluem os prazos de apreciação das entidades.', c.timeline.note?.t]);
         } else {
@@ -23151,10 +23170,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <div class="g2b"><div class="g2o">${grid}${xm}${endM}</div>
           ${T.rows.map(x => {
             const a0 = di(x.s), a1 = x.open ? totalD : di(x.e) + 1;
-            const meta = x.open ? `${en ? 'from' : 'a partir de'} ${dm(x.s)}` : `${DU(x.n)} · ${dm(x.s)} → ${dm(x.e)}`;
-            return `<div class="g2r${x.ours ? '' : ' cam'}${x.open ? ' open' : ''}"><span class="g2c"><b>${e(x.r.t)}</b><small>${meta}</small></span><span class="g2t"><span class="g2bar" style="left:${X(a0)};width:calc(${X(a1)} - ${X(a0)})"></span></span></div>`;
+            const meta = x.open ? `${en ? 'from' : 'a partir de'} ${dm(x.s)}` : `${DU(x.n, x.nMax)} · ${dm(x.s)} → ${dm(x.e)}`;
+            return `<div class="g2r${x.ours ? '' : ' cam'}${x.open ? ' open' : ''}"><span class="g2c"><b>${e(x.r.t)}</b><small>${meta}</small></span><span class="g2t"><span class="g2bar${x.nMax ? ' rng' : ''}" style="left:${X(a0)};width:calc(${X(a1)} - ${X(a0)})${x.nMax ? `;--min:${((di(x.eMin) + 1 - a0) / Math.max(1, a1 - a0) * 100).toFixed(2)}%` : ''}"></span></span></div>`;
           }).join('')}</div>
-          <div class="g2l"><span><i class="sw nova"></i>NOVA</span><span><i class="sw cam"></i>${en ? 'Municipality (legal deadline)' : 'Câmara (prazo legal)'}</span><span><i class="sw x"></i>${en ? '23–31 Dec · NOVA closed' : '23–31 dez · NOVA fechada'}</span>${T.end ? `<span class="end"><i class="sw e"></i>${en ? 'Estimated completion' : 'Conclusão prevista'} <b>${e(dm(T.end))} ${parseDateKey(T.end).getFullYear()}</b></span>` : ''}</div>
+          <div class="g2l"><span><i class="sw nova"></i>NOVA</span><span><i class="sw cam"></i>${en ? 'Municipality (legal deadline)' : 'Câmara (prazo legal)'}</span>${T.rows.some(x => x.nMax) ? `<span><i class="sw rng"></i>${en ? 'range (min.–max.)' : 'intervalo (mín.–máx.)'}</span>` : ''}<span><i class="sw x"></i>${en ? '23–31 Dec · NOVA closed' : '23–31 dez · NOVA fechada'}</span>${T.end ? `<span class="end"><i class="sw e"></i>${en ? 'Estimated completion' : 'Conclusão prevista'} <b>${e(dm(T.end))} ${parseDateKey(T.end).getFullYear()}</b></span>` : ''}</div>
         </div>`);
         p(`<span class="g2n">${en ? 'Durations in working days, excluding weekends and public holidays.' : 'Durações em dias úteis, sem fins de semana nem feriados.'}</span>`);
         note([c.timeline.note?.t]);
@@ -23242,6 +23261,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           .manifesto p strong, .manifesto p b { font-weight: 600; }
           .gap { height: 9pt; } .gap2 { height: 0; }
           /* Dados do imóvel em destaque */
+          .fct small { display: block; margin-top: 2pt; font-size: 6.8pt; color: var(--mute); }
           .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(36mm, 1fr)); gap: 5pt; margin: 4pt 0 2pt; }
           .fct { background: var(--tint); border-radius: 4pt; padding: 9pt 11pt 10pt; }
           .fct span { display: block; font-size: 6.4pt; letter-spacing: .08em; text-transform: uppercase; color: var(--mute); margin-bottom: 3pt; }
@@ -23290,6 +23310,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           .g2c small { display: block; margin-top: 1pt; font-size: 6.3pt; color: var(--mute); font-variant-numeric: tabular-nums; white-space: nowrap; }
           .g2r .g2t { height: 19pt; }
           .g2bar { position: absolute; top: 50%; height: 6.5pt; margin-top: -3.25pt; min-width: 2pt; border-radius: 3.25pt; background: var(--plum); }
+          .g2bar.rng { background: linear-gradient(90deg, var(--plum) 0 var(--min), rgba(110,63,115,.32) var(--min) 100%); }
           .g2r.cam .g2c b { color: var(--ink2); font-weight: 500; }
           .g2r.cam .g2bar { background: repeating-linear-gradient(135deg, #C9C0C7 0 1.2pt, #F1EDF0 1.2pt 3pt); box-shadow: inset 0 0 0 .6pt #B5ABB3; }
           .g2r.open .g2bar { background: linear-gradient(90deg, var(--plum) 0%, rgba(110,63,115,.15) 100%); border-radius: 3.25pt 0 0 3.25pt; }
@@ -23297,6 +23318,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           .g2l span { display: inline-flex; align-items: center; gap: 4pt; } .g2l .end { margin-left: auto; } .g2l b { color: var(--ink); font-weight: 600; }
           .g2l .sw { display: inline-block; width: 12pt; height: 5.5pt; border-radius: 2.75pt; }
           .g2l .sw.nova { background: var(--plum); }
+          .g2l .sw.rng { background: linear-gradient(90deg, var(--plum) 0 50%, rgba(110,63,115,.32) 50% 100%); }
           .g2l .sw.cam { background: repeating-linear-gradient(135deg, #C9C0C7 0 1.2pt, #F1EDF0 1.2pt 3pt); box-shadow: inset 0 0 0 .6pt #B5ABB3; }
           .g2l .sw.x { background: rgba(28,24,27,.09); border-radius: 0; width: 8pt; height: 8pt; }
           .g2l .sw.e { width: 5pt; height: 5pt; border-radius: 0; background: var(--plum); transform: rotate(45deg); }
