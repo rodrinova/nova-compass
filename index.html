@@ -23293,7 +23293,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           .content > .b.gap:first-child { display: none; }
           .h2 .sn { font-size: 8.4pt; font-weight: 600; color: var(--plum); letter-spacing: .06em; font-variant-numeric: tabular-nums; }
           h2 { font-size: 16.5pt; font-weight: 600; margin: 0; letter-spacing: -.02em; line-height: 1.2; color: var(--ink); }
-          .txt p { margin: 0 0 7pt; text-align: left; hyphens: auto; -webkit-hyphens: auto; color: var(--ink2); }
+          .txt p { margin: 0 0 7pt; text-align: left; color: var(--ink2); }
+          /* sem translineação (palavras partidas com hífen) em nenhum texto da proposta */
+          body, body * { hyphens: none !important; -webkit-hyphens: none !important; }
           .txt p b, .txt p strong { color: var(--ink); font-weight: 600; }
           .bh p { margin: 9pt 0 2pt; font-size: 9.6pt; } .bh p b { font-weight: 600; color: var(--ink); }
           .manifesto p { font-size: 12pt; line-height: 1.55; font-weight: 300; color: var(--ink); margin-bottom: 10pt; letter-spacing: -.005em; }
@@ -23424,17 +23426,25 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               if (u.length || hold.length) out.push(u.concat(hold));
               return out;
             }
+            // Só se salta para uma página nova se lá couber inteiro; se nem assim couber, parte-se a partir de onde se está (sem buracos)
+            function fresh(list) { var prev = box; newPage(); put(list); if (fits()) return true; take(list); pages.pop().remove(); box = prev; return false; }
             newPage();
             secs.forEach(function (sec) {
               if (sec[0].getAttribute('data-break') === 'before' && used()) newPage();
               put(sec); if (fits()) return;
               take(sec);
-              if (used()) { newPage(); put(sec); if (fits()) return; take(sec); }
+              if (used() && fresh(sec)) return;
               units(sec).forEach(function (un) {
                 put(un); if (fits()) return;
                 take(un);
-                if (used()) { newPage(); put(un); if (fits()) return; take(un); }
-                un.forEach(function (b) { box.appendChild(b); if (!fits() && used() > 1) { box.removeChild(b); newPage(); box.appendChild(b); } });
+                if (used() && fresh(un)) return;
+                un.forEach(function (b) {
+                  box.appendChild(b); if (fits() || used() < 2) return;
+                  // o que não cabe passa para a página seguinte, levando consigo os títulos que o antecedem
+                  var mv = [b]; box.removeChild(b);
+                  while (used() > 1 && box.lastElementChild && box.lastElementChild.getAttribute('data-keep') === 'next') mv.unshift(box.removeChild(box.lastElementChild));
+                  newPage(); put(mv);
+                });
               });
             });
             if (!used()) pages.pop().remove();
