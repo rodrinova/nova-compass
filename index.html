@@ -5151,7 +5151,8 @@
     const MOCK_EXPENSE_CATEGORIES = [
       { id: 'ec-1', name: 'Deslocações' },
       { id: 'ec-2', name: 'Material' },
-      { id: 'ec-3', name: 'Outros' }
+      { id: 'ec-3', name: 'Outros' },
+      { id: 'ec-4', name: 'Angariação' }
     ];
 
     let mockMeetingNotes = [
@@ -11896,7 +11897,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           ${people.length ? `<div class="table-scroll"><table class="mini-table mc-table"><thead><tr><th>Pessoa</th><th class="col-value">Oportunidades</th><th class="col-value">Viabilidades</th><th class="col-value">Apresentados</th><th class="col-value">À espera</th><th class="col-value">Ganhos</th><th class="col-value">Horas de scouting</th></tr></thead><tbody>
             ${people.map(x => `<tr><td>${escapeHtml(x.m.name)}</td><td class="col-value">${x.n}</td><td class="col-value">${x.feas}</td><td class="col-value">${x.pres}</td><td class="col-value${x.wait ? ' warn-text' : ''}">${x.wait}</td><td class="col-value">${x.won}</td><td class="col-value">${escapeHtml(fmtNum(Math.round(x.h * 10) / 10))} h</td></tr>`).join('')}
           </tbody></table></div>` : '<div class="gantt-empty">Sem oportunidades nem horas de scouting neste período.</div>'}
-          <div class="field-hint">Custo de aquisição por cliente (o mesmo do Pipeline): horas de <b>Angariação</b> × custo/hora da NOVA${rate ? ` (${eur(rate)}/h)` : ''} + despesas de Representação e Marketing + comissões a angariadores, desde sempre, a dividir pelos clientes que já temos. Horas de scouting neste período: ${escapeHtml(fmtNum(Math.round(hours)))} h. Propostas em aberto: ${eur(openVal || null)}${dec.length ? ` · ${dec.length} recusadas` : ''}.</div>
+          <div class="field-hint">Custo de aquisição por cliente (o mesmo do Pipeline): horas de <b>Angariação</b> × custo/hora da NOVA${rate ? ` (${eur(rate)}/h)` : ''} + despesas de Representação, Marketing e Angariação + comissões a angariadores, desde sempre, a dividir pelos clientes que já temos. Horas de scouting neste período: ${escapeHtml(fmtNum(Math.round(hours)))} h. Propostas em aberto: ${eur(openVal || null)}${dec.length ? ` · ${dec.length} recusadas` : ''}.</div>
         </div>`;
     }
     // ================= PONTUALIDADE: entradas, saídas e reuniões =================
@@ -15360,6 +15361,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <div class="card-head"><h2>Processo camarário</h2><button type="button" class="text-btn" id="cm-edit">Editar</button></div>
           <div class="invoice-row"><span>Município</span><span>${escapeHtml(project.municipality || '—')}</span></div>
           <div class="invoice-row"><span>N.º do processo</span><span class="cm-copyable">${project.municipal_process_code ? `${escapeHtml(project.municipal_process_code)} <button type="button" class="text-btn" data-copy="${escapeHtml(project.municipal_process_code)}">Copiar</button>` : '—'}</span></div>
+          <div class="invoice-row"><span>Técnico(a) gestor(a)</span><span>${escapeHtml(project.municipal_case_officer || '—')}</span></div>
           <div class="invoice-row"><span>Plataforma</span><span>${url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="text-btn">Abrir ↗</a>` : '—'}</span></div>
           ${current ? `<div class="invoice-row"><span>Estado atual</span><span><b>${escapeHtml(current.status)}</b> <small style="color:var(--text-3)">desde ${escapeHtml(fmtLongD(current.followup_date))}</small></span></div>` : ''}
         </div>
@@ -15431,6 +15433,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         <input type="text" id="cm-mun" class="form-input" placeholder="ex: Vila Nova de Gaia" value="${escapeHtml(project.municipality ?? '')}">
         <label class="field-label">N.º do processo</label>
         <input type="text" id="cm-code" class="form-input" placeholder="ex: PI 1234/25" value="${escapeHtml(project.municipal_process_code ?? '')}">
+        <label class="field-label">Técnico(a) gestor(a) do processo na Câmara</label>
+        <input type="text" id="cm-officer" class="form-input" placeholder="Nome" value="${escapeHtml(project.municipal_case_officer ?? '')}">
         <label class="field-label">Endereço da plataforma</label>
         <input type="url" id="cm-url" class="form-input" placeholder="https://…" value="${escapeHtml(project.municipal_platform_url ?? '')}">
         <button type="button" id="cm-save" class="primary-btn">Guardar</button>
@@ -15441,6 +15445,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const patch = {
           municipality: valOrNull(document.getElementById('cm-mun').value.trim()),
           municipal_process_code: valOrNull(document.getElementById('cm-code').value.trim()),
+          municipal_case_officer: valOrNull(document.getElementById('cm-officer').value.trim()),
           municipal_platform_url: valOrNull(urlV)
         };
         try { await dbUpdate('projects', project.id, patch, MOCK_PROJECTS); Object.assign(project, patch); closeQuickModal(); showToast('Guardado'); onSaved && onSaved(); }
@@ -17192,7 +17197,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { id: 'camara', cat: 'camara', ctx: ['detail:camara'], first: 7,
         q: 'acompanho um processo na Câmara',
         a: 'No projeto, separador Câmara: número do processo, acesso à plataforma, prazos e pontos de situação.',
-        steps: ['Abre o projeto → [[Câmara]].', 'Em **Processo camarário** toca em [[Editar]] para pôr o município, o número do processo e o link da plataforma.', 'Em **Acesso à plataforma** guarda o utilizador e a palavra-passe da plataforma municipal ([[+ Guardar acesso]]). Fica encriptado; cada consulta fica registada.', 'Em **Prazos** vês os prazos da lei (calculados a partir da data de entrega) e os teus.', 'Em **Tramitação** regista cada contacto ou novidade com [[+ Ponto de situação]].'],
+        steps: ['Abre o projeto → [[Câmara]].', 'Em **Processo camarário** toca em [[Editar]] para pôr o município, o número do processo, o técnico ou técnica que gere o processo na Câmara e o link da plataforma.', 'Em **Acesso à plataforma** guarda o utilizador e a palavra-passe da plataforma municipal ([[+ Guardar acesso]]). Fica encriptado; cada consulta fica registada.', 'Em **Prazos** vês os prazos da lei (calculados a partir da data de entrega) e os teus.', 'Em **Tramitação** regista cada contacto ou novidade com [[+ Ponto de situação]].'],
         kw: 'camara municipio processo plataforma licenciamento tramitacao acesso password camara municipal',
         tour: [{ go: 'project:camara', sel: '#camara-panel', text: 'Tudo sobre o processo na Câmara, num sítio.' }, { sel: '#cm-add-fu', text: 'Regista aqui cada novidade.' }] },
       { id: 'prazos-lei', cat: 'camara', ctx: ['detail:camara', 'home'],
@@ -17478,7 +17483,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { id: 'pipeline', cat: 'opps', ctx: ['pipeline', 'proposal', 'home'], first: 3,
         q: 'acompanho o pipeline de propostas (follow-up, versões, perdidas)',
         a: 'Clientes → Pipeline: propostas por estado, valor em aberto e ponderado, taxa de sucesso. A Hoje avisa os follow-ups e as validades; à segunda, o Daybreak mostra o resumo.',
-        steps: ['Em [[Pipeline]] as propostas estão por estado: **Rascunho → Enviada → Em negociação → Adjudicada / Perdida**. Em cima, o valor em aberto, o ponderado (valor × probabilidade), o adjudicado no ano, a taxa de sucesso e os dias até à decisão.', 'Na proposta, toca em [[Marcar como enviada]]: a app marca o **follow-up para daqui a 7 dias** e avisa-te na Hoje nesse dia. Também avisa 5 dias antes de acabar a validade.', 'O cliente pediu alterações? Toca em [[Nova versão]]: passa a **V2** com o mesmo CST e a V1 fica no histórico.', 'Não avançou? [[Perdida]] e escolhe o motivo — ajuda a perceber onde perdemos.', 'No primeiro dia útil de cada semana, o **Daybreak** mostra o resumo do pipeline e as propostas paradas.', 'O **custo de aquisição por cliente** soma as horas de Angariação (× custo/hora), as despesas de Representação e Marketing e as comissões a angariadores das propostas adjudicadas, a dividir pelos clientes que já temos. Por baixo, quanto passa a valer se a próxima proposta for adjudicada. A comissão de cada proposta escreve-se no painel do Pipeline da proposta.'],
+        steps: ['Em [[Pipeline]] as propostas estão por estado: **Rascunho → Enviada → Em negociação → Adjudicada / Perdida**. Em cima, o valor em aberto, o ponderado (valor × probabilidade), o adjudicado no ano, a taxa de sucesso e os dias até à decisão.', 'Na proposta, toca em [[Marcar como enviada]]: a app marca o **follow-up para daqui a 7 dias** e avisa-te na Hoje nesse dia. Também avisa 5 dias antes de acabar a validade.', 'O cliente pediu alterações? Toca em [[Nova versão]]: passa a **V2** com o mesmo CST e a V1 fica no histórico.', 'Não avançou? [[Perdida]] e escolhe o motivo — ajuda a perceber onde perdemos.', 'No primeiro dia útil de cada semana, o **Daybreak** mostra o resumo do pipeline e as propostas paradas.', 'O **custo de aquisição por cliente** soma as horas de Angariação (× custo/hora), as despesas de Representação, Marketing e Angariação e as comissões a angariadores das propostas adjudicadas, a dividir pelos clientes que já temos. Por baixo, quanto passa a valer se a próxima proposta for adjudicada. A comissão de cada proposta escreve-se no painel do Pipeline da proposta.'],
         kw: 'pipeline propostas follow-up seguimento validade versao v2 perdida motivo taxa sucesso ponderado probabilidade negociacao daybreak segunda custo aquisicao cliente cac angariacao comissao angariador',
         tour: [{ go: 'nav:pipeline', sel: '.pp-kpis', text: 'O resumo do pipeline.' }] },
       { id: 'proposta-aceite', cat: 'opps', ctx: ['proposal'],
@@ -21888,7 +21893,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     }
 
     // ---------- Custo de aquisição por cliente (desde sempre) ----------
-    // Custos: horas de Angariação × custo/hora + despesas de Representação e Marketing + comissões a angariadores
+    // Custos: horas de Angariação × custo/hora + despesas de Representação, Marketing e Angariação + comissões a angariadores
     // (das propostas adjudicadas). ÷ clientes com projeto. A próxima adjudicação: a proposta em aberto mais provável.
     async function loadCacData() {
       // custo/hora: o calculado em Pessoas, salários e custo/hora (o mesmo do Mission Control); o das propostas só se faltar
@@ -21902,7 +21907,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         selectAll(() => supabase.from('projects').select('id, client_id, client').order('id'))
       ]);
       const tIds = (tc.data || []).filter(c => /angaria/.test(normTxt(c.name))).map(c => c.id);
-      const eIds = (ec.data || []).filter(c => /representa|marketing/.test(normTxt(c.name))).map(c => c.id);
+      const eIds = (ec.data || []).filter(c => /representa|marketing|angaria/.test(normTxt(c.name))).map(c => c.id);
       const [te, ex] = await Promise.all([
         tIds.length ? selectAll(() => supabase.from('time_entries').select('hours').in('category_id', tIds).order('id')) : { data: [] },
         eIds.length ? selectAll(() => supabase.from('expenses').select('amount').in('category_id', eIds).is('archived_at', null).order('id')) : { data: [] }
@@ -21944,7 +21949,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <small>${escapeHtml(fmtEUR(Math.round(c.cost)))} ÷ ${c.n} ${c.n === 1 ? 'cliente' : 'clientes'} · desde sempre</small></div>
         <div class="pp-cac-parts">
           <div><span>Horas de angariação</span><b>${escapeHtml(fmtEUR(Math.round(c.hoursCost)))}</b><small>${escapeHtml(fmtNum(Math.round(c.hours * 10) / 10))} h × ${c.cph ? escapeHtml(fmtEUR(c.cph)) + '/h' : '<span class="warn-text">falta o custo/hora</span>'}</small></div>
-          <div><span>Representação e marketing</span><b>${escapeHtml(fmtEUR(Math.round(c.exp)))}</b><small>despesas</small></div>
+          <div><span>Representação, marketing e angariação</span><b>${escapeHtml(fmtEUR(Math.round(c.exp)))}</b><small>despesas</small></div>
           <div><span>Comissões a angariadores</span><b>${escapeHtml(fmtEUR(Math.round(c.comm)))}</b><small>propostas adjudicadas</small></div>
         </div>
         ${c.next ? `<div class="pp-cac-next"><span>Próxima adjudicação: <b>${escapeHtml(ppRef(c.next))}</b> · ${escapeHtml(who)} <em>${ppProb(c.next)}%</em></span>
