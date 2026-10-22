@@ -2521,6 +2521,17 @@
   .vt-fr-sc > div { background: var(--surface); border-radius: var(--r-md); padding: 8px 12px; } .vt-fr-sc span { display: block; font-size: var(--fs-xs); color: var(--text-2); }
   .vt-fr-sc b { font-size: var(--fs-lg); font-variant-numeric: tabular-nums; } .vt-fr-sc b.neg { color: var(--danger); } .vt-fr-sc small { display: block; font-size: var(--fs-xs); color: var(--text-2); }
   @media (max-width: 560px) { .vt-fr-r { grid-template-columns: minmax(0, 1fr) auto; } .vt-fr-r > span:last-child { grid-column: 1 / -1; justify-self: start; text-align: left; } }
+  /* Definições → Regime legal */
+  .lg-pend { border: 1px solid color-mix(in srgb, var(--warning) 40%, var(--border)); background: var(--warning-soft); border-radius: var(--r-md); padding: var(--sp-3); display: grid; gap: 6px; margin: var(--sp-3) 0; }
+  .lg-pr { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px var(--sp-2); font-size: var(--fs-sm); } .lg-pr-a { margin-left: auto; display: flex; gap: var(--sp-2); }
+  .lg-list { display: grid; margin-top: var(--sp-3); }
+  .lg-row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto; gap: var(--sp-3); align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .lg-m, .lg-s { display: grid; gap: 2px; min-width: 0; } .lg-m small, .lg-s small { font-size: var(--fs-xs); color: var(--text-2); } .lg-s .fr-chip { justify-self: start; }
+  .lg-a { display: flex; gap: var(--sp-2); }
+  .lg-log { margin-top: var(--sp-4); } .lg-log summary { cursor: pointer; font-weight: var(--fw-semibold); }
+  .lg-lr { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px var(--sp-2); font-size: var(--fs-sm); padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .lg-hist { display: grid; }
+  @media (max-width: 640px) { .lg-row { grid-template-columns: minmax(0, 1fr) auto; } .lg-s { grid-column: 1 / -1; grid-row: 2; } }
   /* painel vivo da Rentabilidade (habitação) */
   .lv { display: flex; flex-direction: column; gap: var(--sp-4); }
   .lv-k { display: block; font-size: var(--fs-xs); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: .06em; color: var(--text-2); margin-bottom: var(--sp-1); }
@@ -5114,6 +5125,7 @@
             <button type="button" class="settings-link" data-sec="payrem"><span>Lembretes de pagamento</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button type="button" class="settings-link" data-sec="nps"><span>Satisfação (NPS)</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button type="button" class="settings-link" data-sec="feas"><span>Rentabilidade de terrenos</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+            <button type="button" class="settings-link" data-sec="legal"><span>Regime legal (urbanismo)</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button type="button" class="settings-link" data-sec="proposals"><span>Propostas de honorários</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button type="button" class="settings-link" data-sec="clientscore"><span>Score de clientes</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
           </nav>
@@ -5169,6 +5181,10 @@
           <section class="settings-sec" data-sec-panel="feas" hidden>
             <h2 class="settings-title">Rentabilidade de terrenos</h2>
             <div class="gantt-wrap" id="settings-feas-container"><div class="detail-loading">A carregar...</div></div>
+          </section>
+          <section class="settings-sec" data-sec-panel="legal" hidden>
+            <h2 class="settings-title">Regime legal (urbanismo)</h2>
+            <div class="gantt-wrap" id="settings-legal-container"><div class="detail-loading">A carregar...</div></div>
           </section>
           <section class="settings-sec" data-sec-panel="proposals" hidden>
             <h2 class="settings-title">Propostas de honorários</h2>
@@ -6286,7 +6302,7 @@
       checklists: () => loadChecklistTemplateSettings(), categories: () => loadCategories(),
       mtypes: () => loadMilestoneTypeSettings(), clientscore: () => loadClientScoreSettings(),
       finance: () => loadFinanceSettingsPanel(), camara: () => loadCamaraSettings(),
-      nps: () => loadNpsSettings(), payrem: () => loadPayRemSettings(), ms365: () => loadMs365Settings(), proposals: () => loadProposalSettings(), payroll: () => loadPayrollSettings(), feas: () => loadFeasSettings()
+      nps: () => loadNpsSettings(), payrem: () => loadPayRemSettings(), ms365: () => loadMs365Settings(), proposals: () => loadProposalSettings(), payroll: () => loadPayrollSettings(), feas: () => loadFeasSettings(), legal: () => loadLegalSettings()
     };
     let settingsSection = 'models';
     async function loadMs365Settings() {
@@ -16146,7 +16162,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const ids = [r.note?.id, r.project, r.nps, r.client, r.ticket, r.invoice, r.co, r.proposal].filter(Boolean).join(',');
         items.push({ key: `t:${r.kind}:${ids}:${r.due || ''}:${r.title}`, title: r.title, sub: r.sub, pri: r.late || r.kind === 'meet' ? 0 : urgent ? 1 : 2, date: r.due || '9999', html: `
           <div class="alert-row team${urgent ? ' ' + urgent : ''}" data-alert-team="${r.kind}"${r.note ? ` data-note="${escapeHtml(r.note.id)}"` : ''}${r.project ? ` data-project="${escapeHtml(r.project)}"` : ''}${r.nps ? ` data-nps="${escapeHtml(r.nps)}"` : ''}${r.client ? ` data-client="${escapeHtml(r.client)}"` : ''}${r.ticket ? ` data-ticket="${escapeHtml(r.ticket)}"` : ''}${r.invoice ? ` data-invoice="${escapeHtml(r.invoice)}"` : ''}${r.co ? ` data-co-alert="${escapeHtml(r.co)}"` : ''}${r.proposal ? ` data-prop-alert="${escapeHtml(r.proposal)}"` : ''}${r.url ? ` data-url="${escapeHtml(r.url)}" role="link" tabindex="0"` : ''}>
-            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : r.kind === 'nps' ? '★' : r.kind === 'debt' ? '€' : r.kind === 'law' ? '§' : r.kind === 'radar' ? '◎' : r.kind === 'meet' ? '▶' : r.kind === 'transcript' ? '≡' : r.kind === 'bday' ? '✦' : r.kind === 'ticket' ? '💡' : r.kind === 'absence' ? '◐' : r.kind === 'data' ? '!' : r.kind === 'payrem' ? '€' : r.kind === 'co' ? 'Ⓣ' : r.kind === 'pipe' ? '✉' : '+'}</span>
+            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : r.kind === 'nps' ? '★' : r.kind === 'debt' ? '€' : r.kind === 'law' || r.kind === 'legal' ? '§' : r.kind === 'radar' ? '◎' : r.kind === 'meet' ? '▶' : r.kind === 'transcript' ? '≡' : r.kind === 'bday' ? '✦' : r.kind === 'ticket' ? '💡' : r.kind === 'absence' ? '◐' : r.kind === 'data' ? '!' : r.kind === 'payrem' ? '€' : r.kind === 'co' ? 'Ⓣ' : r.kind === 'pipe' ? '✉' : '+'}</span>
             <span class="alert-text"><b>${escapeHtml(r.title)}</b><span>${escapeHtml(r.sub)}</span></span>
             <span class="alert-when">${escapeHtml(r.when)}</span>
           </div>` });
@@ -16218,6 +16234,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         else if (k === 'owner') openProjectsModule();
         else if (k === 'debt') { navStack = []; openBillingModule('toreceive'); }
         else if (k === 'law') { navStack = []; openSettingsModule(); showSettingsSection('payroll'); }
+        else if (k === 'legal') { navStack = []; openSettingsModule(); showSettingsSection('legal'); }
         else if (k === 'radar') { navStack = []; openOppsModule('pres'); }
         else if (k === 'camara') { detailTabByProject[r.dataset.project] = 'camara'; openDetail(r.dataset.project); }
         else if (k === 'nps') openNpsModal(r.dataset.nps, () => renderToday());
@@ -16676,7 +16693,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         renderWeekHours(hoursEl, hours, tg);
         // Avisos de organização: horas em falta (a partir de sexta), projetos sem responsável,
         // fases em curso/seguintes sem ninguém nos projetos de que sou responsável
-        const teamAlerts = [...await meetingAlerts(milestones, me, todayKey).catch(() => []), ...await transcriptAlerts(me).catch(() => []), ...await birthdayAlerts().catch(() => []), ...await ticketAlerts(me).catch(() => []), ...await absenceAlerts(me).catch(() => []), ...await loadMissingDataAlerts(me).catch(() => []), ...await payReminderAlerts(me).catch(() => []), ...await changeOrderAlerts(me).catch(() => []), ...await pipelineAlerts(me).catch(() => []), ...radarAlerts, ...lawAlerts, ...debtAlerts, ...npsAlerts, ...camaraAlerts];
+        const teamAlerts = [...await meetingAlerts(milestones, me, todayKey).catch(() => []), ...await transcriptAlerts(me).catch(() => []), ...await birthdayAlerts().catch(() => []), ...await ticketAlerts(me).catch(() => []), ...await absenceAlerts(me).catch(() => []), ...await loadMissingDataAlerts(me).catch(() => []), ...await payReminderAlerts(me).catch(() => []), ...await changeOrderAlerts(me).catch(() => []), ...await pipelineAlerts(me).catch(() => []), ...await legalAlerts().catch(() => []), ...radarAlerts, ...lawAlerts, ...debtAlerts, ...npsAlerts, ...camaraAlerts];
         const wd = new Date().getDay();
         const missing = missingHourDays(hours, tg);
         if ((wd === 5 || wd === 6 || wd === 0) && missing.length)
@@ -21049,7 +21066,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
                 <div class="fr-step-btns"><button type="button" class="primary-btn" id="frp-run"${busy ? ' disabled' : ''}>${busy === 'run' ? 'A ler o regulamento e a analisar… (1 a 3 minutos)' : '✦ Analisar com IA'}</button>
                   ${!pdm ? '<span class="muted">sem regulamento, os parâmetros do PDM ficam «a confirmar»</span>' : pdm.status !== 'verificado' ? '<span class="muted">confirma primeiro o regulamento</span>' : ''}</div>
                 <div class="fr-vers">${reps == null ? '<span class="muted">a carregar as versões…</span>' : reps.length ? reps.map(r => `<button type="button" class="fr-ver" data-rep="${escapeHtml(r.id)}">
-                    <b>v${r.version}</b><span class="fr-chip ${st(r.status)[1]}">${escapeHtml(st(r.status)[0])}</span>${r.simulation ? '<span class="fr-chip warn">simulação</span>' : ''}${r.kind === 'reanalise' ? '<span class="fr-chip">reanálise</span>' : ''}
+                    <b>v${r.version}</b><span class="fr-chip ${st(r.status)[1]}">${escapeHtml(st(r.status)[0])}</span>${r.simulation ? '<span class="fr-chip warn">simulação</span>' : ''}${r.outdated_at && r.status !== 'desatualizado' ? '<span class="fr-chip warn">lei alterada depois</span>' : ''}${r.kind === 'reanalise' ? '<span class="fr-chip">reanálise</span>' : ''}
                     <span class="muted">${escapeHtml(frDate(r.created_at))}${r.created_by_name ? ' · ' + escapeHtml(r.created_by_name) : ''}${r.status === 'desatualizado' && r.outdated_reason ? ' · ' + escapeHtml(r.outdated_reason) : ''}</span><i>Abrir</i></button>`).join('')
                   : '<span class="muted">Ainda não há relatórios. Cada análise cria uma versão nova; as entregues ao cliente nunca se alteram.</span>'}</div>
               </div></div>
@@ -21216,10 +21233,22 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           let out;
           if (devMode) { await new Promise(r => setTimeout(r, 500)); out = { report: frMockReport(p, F), model: 'teste', regime_snapshot: [], regime_checked_at: null, pdm_doc_id: F.pdm?.id || null }; }
           else {
-            const res = await frInvoke({ action: 'analyse', pdm_doc_id: F.pdm?.id || null, typology: F.form.typology || '', input, extracts: (F.extracts || []).filter(x => (x.text || '').trim()) });
+            // corre em segundo plano no servidor (um regulamento longo pode levar mais de 2 minutos); a app consulta o estado
+            const res = await frInvoke({ action: 'analyse_start', pdm_doc_id: F.pdm?.id || null, typology: F.form.typology || '', input, extracts: (F.extracts || []).filter(x => (x.text || '').trim()) });
             if (frAiErr(res.err, res.ej)) { busy = ''; draw(); return; }
             if (res.err) throw new Error(res.err);
-            out = res.data;
+            const t0 = Date.now();
+            let job = null;
+            while (Date.now() - t0 < 7 * 60000) {
+              await new Promise(r => setTimeout(r, 4000));
+              const q = await supabase.from('ai_jobs').select('status, result, error, error_code').eq('id', res.data.job).maybeSingle();
+              if (q.error) throw q.error;
+              if (q.data && q.data.status !== 'a_correr') { job = q.data; break; }
+            }
+            if (!job) throw new Error('A análise está a demorar demasiado. Tenta outra vez daqui a pouco.');
+            if (job.result?.usage) frAi = { ...(frAi || {}), configured: true, usage: job.result.usage }, frAiAt = Date.now();
+            if (job.status === 'erro') { if (frAiErr(job.error_code, job.result)) { busy = ''; draw(); return; } throw new Error(job.error || 'A análise falhou'); }
+            out = job.result;
           }
           const R = out.report, me = await getCurrentMember(), all = reps || await frReports(p);
           // o link do regulamento é sempre o da biblioteca (a IA não o escolhe)
@@ -21657,6 +21686,148 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       };
       el.querySelector('#vt-fr-all').addEventListener('click', () => apply(items.map(x => x[0])));
       el.querySelectorAll('[data-fr-use]').forEach(b => b.addEventListener('click', () => apply([b.dataset.frUse])));
+    }
+    // ---------- Definições → Regime legal (registo da legislação usado nos relatórios de enquadramento) ----------
+    // O estado de cada diploma vem daqui (nunca do texto da IA). A função legal-watch verifica-o todas as semanas;
+    // só uma publicação no Diário da República conta como alteração. Os sócios validam, veem o histórico e o registo
+    // de verificações, e podem simular uma alteração para testar o circuito (e revertê-la).
+    const LG_ST = { em_vigor: ['Em vigor', 'ok'], revogado_parcial: ['Revogado em parte', 'warn'], revogado: ['Revogado', 'bad'], publicado_sem_vigencia: ['Publicado, ainda sem vigência', 'warn'], em_preparacao: ['Em preparação', ''], a_validar: ['Por validar', 'warn'] };
+    const LG_KIND = { sem_alteracao: ['Sem alteração', ''], alerta: ['Alerta (sem fonte primária)', 'warn'], confirmada: ['Confirmada no DR', 'acc'], erro: ['Falhou', 'bad'], decisao: ['Decisão', ''], aplicada: ['Aplicada', 'ok'], simulacao: ['Simulação', 'warn'] };
+    let mockLegal = null, mockLegalLog = [];
+    const legalMock = () => mockLegal = mockLegal || [['rgeu', 'RGEU', 'Regulamento Geral das Edificações Urbanas', 'DL 38382/51'], ['codigo_construcao', 'Código da Construção', 'Código da Construção', ''], ['rjue', 'RJUE', 'Regime Jurídico da Urbanização e Edificação', 'DL 555/99'], ['simplex_urbanistico', 'DL 10/2024', 'Simplex urbanístico', 'DL 10/2024']]
+      .map(([id, short, name, diploma], i) => ({ id, short, name, diploma, status: 'a_validar', version: 1, watch: true, sort: i, checked_at: null, check_summary: null, verified_at: null }));
+    async function legalData() {
+      if (devMode) return { regs: legalMock(), log: mockLegalLog, vers: [] };
+      const [a, b] = await Promise.all([supabase.from('legal_regimes').select('*').order('sort'), supabase.from('legal_watch_log').select('*').order('run_at', { ascending: false }).limit(40)]);
+      if (a.error) throw a.error;
+      return { regs: a.data || [], log: b.data || [] };
+    }
+    async function loadLegalSettings() {
+      const box = document.getElementById('settings-legal-container');
+      const partner = isPartnerMember(await getCurrentMember());
+      let D;
+      try { D = await legalData(); } catch (err) { box.innerHTML = `<div class="error-box">Não foi possível ler o registo: ${escapeHtml(err.message)}</div>`; return; }
+      const last = D.regs.map(r => r.checked_at).filter(Boolean).sort().pop();
+      const days = last ? Math.floor((Date.now() - new Date(last)) / 864e5) : null;
+      const st = r => LG_ST[r.status] || [r.status, ''];
+      const kd = k => LG_KIND[k] || [k, ''];
+      const pend = D.log.filter(l => ['alerta', 'confirmada', 'erro'].includes(l.kind) && (!l.decision || l.decision === 'aplicada'));
+      box.innerHTML = `
+        <div class="card-head"><h2>Legislação vigiada</h2>${partner ? '<button type="button" class="secondary-btn toolbar-btn" id="lg-sim">Simular alteração</button>' : ''}<button type="button" class="secondary-btn toolbar-btn" id="lg-run">Verificar agora</button></div>
+        <div class="field-hint" style="margin-top:0">Última verificação: <b>${last ? escapeHtml(frDate(last)) + (days ? ` (há ${days} ${days === 1 ? 'dia' : 'dias'})` : ' (hoje)') : 'ainda nenhuma'}</b> · corre sozinha às segundas de manhã.
+          Só uma publicação no Diário da República conta como alteração; o resto fica como alerta. Os relatórios usam o estado que está aqui.${days != null && days > 9 ? ' <span class="fr-chip bad">a verificação não corre há mais de uma semana</span>' : ''}</div>
+        ${pend.length ? `<div class="lg-pend"><b>Por rever (${pend.length})</b>${pend.map(l => `<div class="lg-pr"><span class="fr-chip ${kd(l.kind)[1]}">${escapeHtml(kd(l.kind)[0])}</span><span><b>${escapeHtml(D.regs.find(r => r.id === l.regime_id)?.short || l.regime_id || 'Vigilância')}</b> · ${escapeHtml(l.finding || l.error || '')}${l.source_url ? ` · <a href="${escapeHtml(l.source_url)}" target="_blank" rel="noopener">fonte ↗</a>` : ''}</span>${partner ? `<span class="lg-pr-a">${l.kind === 'alerta' ? `<button type="button" class="text-btn" data-lg-apply="${l.id}">Confirmar e aplicar</button>` : ''}<button type="button" class="text-btn" data-lg-seen="${l.id}">Revisto</button></span>` : ''}</div>`).join('')}</div>` : ''}
+        <div class="lg-list">${D.regs.map(r => `<div class="lg-row">
+            <div class="lg-m"><b>${escapeHtml(r.short || r.name)}</b><small>${escapeHtml([r.name !== r.short ? r.name : null, r.diploma].filter(Boolean).join(' · '))}</small>
+              ${r.check_summary ? `<small class="muted">Última verificação: ${escapeHtml(r.check_summary)}</small>` : ''}</div>
+            <div class="lg-s"><span class="fr-chip ${st(r)[1]}">${escapeHtml(st(r)[0])}</span><small>v${r.version || 1}${r.verified_at ? ` · validado${r.verified_by_name ? ' por ' + escapeHtml(r.verified_by_name) : ''} a ${escapeHtml(frDate(r.verified_at))}` : ''}${r.in_force_on ? ` · em vigor desde ${escapeHtml(frDate(r.in_force_on))}` : ''}${r.watch ? '' : ' · não vigiado'}</small></div>
+            <div class="lg-a">${partner ? `<button type="button" class="text-btn" data-lg-edit="${escapeHtml(r.id)}">Validar</button>` : ''}<button type="button" class="text-btn" data-lg-hist="${escapeHtml(r.id)}">Histórico</button></div>
+          </div>`).join('')}</div>
+        <details class="lg-log"><summary>Registo das verificações (${D.log.length})</summary>
+          ${D.log.map(l => `<div class="lg-lr"><span class="muted">${escapeHtml(new Date(l.run_at).toLocaleString('pt-PT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))}</span><span class="fr-chip ${kd(l.kind)[1]}">${escapeHtml(kd(l.kind)[0])}</span>
+            <span>${escapeHtml(D.regs.find(r => r.id === l.regime_id)?.short || l.regime_id || '—')} · ${escapeHtml(l.finding || l.error || '')}${l.source_url ? ` · <a href="${escapeHtml(l.source_url)}" target="_blank" rel="noopener">${l.source_primary ? 'Diário da República' : 'fonte'} ↗</a>` : ''}${l.decision ? ` · <i>${escapeHtml(l.decision)}${l.decided_by_name ? ' (' + escapeHtml(l.decided_by_name) + ')' : ''}</i>` : ''}</span>
+            ${partner && l.kind === 'simulacao' && l.decision !== 'revertida' ? `<button type="button" class="text-btn" data-lg-revert="${l.id}">Reverter</button>` : ''}</div>`).join('') || '<p class="muted">Ainda não há verificações.</p>'}
+        </details>`;
+      const reload = () => loadLegalSettings();
+      const call = async body => { const r = await supabase.functions.invoke('legal-watch', { body }); const ej = r.error ? await r.error.context?.json?.().catch(() => null) : null; const err = r.error ? ej?.error || r.error.message : r.data?.error; if (err) throw new Error(err); return r.data; };
+      box.querySelector('#lg-run').addEventListener('click', async e => {
+        const b = e.currentTarget; b.disabled = true; b.textContent = 'A verificar… (até 2 minutos)';
+        try {
+          if (devMode) { await new Promise(r => setTimeout(r, 400)); const now = new Date().toISOString(); legalMock().forEach(r => { r.checked_at = now; r.check_summary = 'Sem alterações encontradas'; }); mockLegalLog.unshift(...legalMock().map((r, i) => ({ id: Date.now() + i, run_at: now, regime_id: r.id, kind: 'sem_alteracao', finding: 'Sem alterações encontradas' }))); showToast('Verificação feita: sem alterações'); }
+          else { const o = await call({ action: 'run', trigger: 'manual' }); showToast(`Verificação feita: ${o.confirmada} ${o.confirmada === 1 ? 'alteração confirmada' : 'alterações confirmadas'}, ${o.alerta} ${o.alerta === 1 ? 'alerta' : 'alertas'}`, { ms: 7000 }); }
+        } catch (err) { showError('verificar a legislação', err); }
+        reload();
+      });
+      box.querySelector('#lg-sim')?.addEventListener('click', () => {
+        openQuickModal('Simular uma alteração da lei', `
+          <p class="field-hint" style="margin-top:0">Para testar o circuito: o regime muda como se a lei tivesse sido publicada, os relatórios feitos com ele ficam desatualizados e nascem rascunhos de reanálise, todos marcados como <b>simulação</b>. Depois revertes no registo.</p>
+          <label class="field-label" for="lg-s-reg">Regime</label><select class="form-input" id="lg-s-reg">${D.regs.map(r => `<option value="${escapeHtml(r.id)}"${r.id === 'codigo_construcao' ? ' selected' : ''}>${escapeHtml(r.short || r.name)}</option>`).join('')}</select>
+          <label class="field-label" for="lg-s-st">Passa a</label><select class="form-input" id="lg-s-st">${Object.entries(LG_ST).map(([k, [l]]) => `<option value="${k}"${k === 'em_vigor' ? ' selected' : ''}>${escapeHtml(l)}</option>`).join('')}</select>
+          <button type="button" class="primary-btn" id="lg-s-go" style="margin-top:var(--sp-4)">Simular</button>`);
+        document.getElementById('lg-s-go').addEventListener('click', async e => {
+          e.currentTarget.disabled = true;
+          try { const o = devMode ? { affected: 0, drafts: 0 } : await call({ action: 'simulate', regime_id: document.getElementById('lg-s-reg').value, proposed: { status: document.getElementById('lg-s-st').value, in_force_on: new Date().toISOString().slice(0, 10) } });
+            closeQuickModal(); showToast(`Simulação feita: ${o.affected} ${o.affected === 1 ? 'relatório desatualizado' : 'relatórios desatualizados'}, ${o.drafts} ${o.drafts === 1 ? 'rascunho' : 'rascunhos'} de reanálise`, { ms: 8000 }); reload(); }
+          catch (err) { e.target.disabled = false; showError('simular a alteração', err); }
+        });
+      });
+      box.querySelectorAll('[data-lg-revert]').forEach(b => b.addEventListener('click', async () => {
+        b.disabled = true;
+        try { if (!devMode) await call({ action: 'revert', log_id: Number(b.dataset.lgRevert) }); showToast('Simulação revertida'); reload(); }
+        catch (err) { b.disabled = false; showError('reverter a simulação', err); }
+      }));
+      const me = await getCurrentMember();
+      box.querySelectorAll('[data-lg-seen]').forEach(b => b.addEventListener('click', async () => {
+        try { await dbUpdate('legal_watch_log', b.dataset.lgSeen, { decision: 'revista', decided_by: me?.id || null, decided_by_name: me?.name || null, decided_at: new Date().toISOString() }, mockLegalLog); reload(); }
+        catch (err) { showError('marcar como revisto', err); }
+      }));
+      // validar um regime (à mão, por um sócio): nova versão no histórico
+      const edit = (id, prefill = {}, logId = null) => {
+        const r = D.regs.find(x => x.id === id); if (!r) return;
+        const v = k => escapeHtml(prefill[k] ?? r[k] ?? '');
+        openQuickModal(`Validar · ${r.short || r.name}`, `
+          <label class="field-label" for="lg-e-st" style="margin-top:0">Estado</label><select class="form-input" id="lg-e-st">${Object.entries(LG_ST).map(([k, [l]]) => `<option value="${k}"${(prefill.status || r.status) === k ? ' selected' : ''}>${escapeHtml(l)}</option>`).join('')}</select>
+          <div class="fr-form"><label class="fr-f"><span>Publicado a</span><input type="date" class="form-input" id="lg-e-pub" value="${v('published_on')}"></label>
+            <label class="fr-f"><span>Em vigor desde</span><input type="date" class="form-input" id="lg-e-vig" value="${v('in_force_on')}"></label>
+            <label class="fr-f"><span>Revogado a</span><input type="date" class="form-input" id="lg-e-rev" value="${v('revoked_on')}"></label></div>
+          <label class="field-label" for="lg-e-art">Artigos afetados</label><input type="text" class="form-input" id="lg-e-art" value="${v('articles_affected')}">
+          <label class="field-label" for="lg-e-tr">Regime transitório</label><textarea class="form-input" id="lg-e-tr" rows="2">${v('transitional')}</textarea>
+          <label class="field-label" for="lg-e-url">Link do Diário da República</label><input type="url" class="form-input" id="lg-e-url" value="${v('source_url')}" placeholder="https://diariodarepublica.pt/…">
+          <label class="field-label" for="lg-e-why">Motivo</label><input type="text" class="form-input" id="lg-e-why" value="${escapeHtml(prefill.reason || '')}" placeholder="ex.: confirmado no Diário da República">
+          <label class="check-row"><input type="checkbox" id="lg-e-watch"${r.watch ? ' checked' : ''}> Vigiar todas as semanas</label>
+          <p class="field-hint">Os relatórios feitos com a versão anterior ficam desatualizados e nascem rascunhos de reanálise.</p>
+          <button type="button" class="primary-btn" id="lg-e-go">Validar</button>`);
+        document.getElementById('lg-e-go').addEventListener('click', async e => {
+          const btn = e.currentTarget, url = document.getElementById('lg-e-url').value.trim(), now = new Date().toISOString();
+          const patch = { status: document.getElementById('lg-e-st').value, published_on: document.getElementById('lg-e-pub').value || null, in_force_on: document.getElementById('lg-e-vig').value || null,
+            revoked_on: document.getElementById('lg-e-rev').value || null, articles_affected: document.getElementById('lg-e-art').value.trim() || null, transitional: document.getElementById('lg-e-tr').value.trim() || null,
+            source_url: /^https?:\/\//i.test(url) ? url : null, watch: document.getElementById('lg-e-watch').checked, version: (r.version || 1) + 1, verified_at: now, verified_by: me?.id || null, verified_by_name: me?.name || null, updated_at: now };
+          btn.disabled = true;
+          try {
+            await dbUpdate('legal_regimes', r.id, patch, legalMock());
+            if (!devMode) {
+              const why = document.getElementById('lg-e-why').value.trim() || 'Validado por um sócio';
+              await supabase.from('legal_regime_versions').insert({ regime_id: r.id, version: patch.version, data: { ...r, ...patch }, reason: why, source_url: patch.source_url, changed_by: me?.id || null, changed_by_name: me?.name || null });
+              await supabase.from('legal_watch_log').insert({ regime_id: r.id, kind: 'decisao', finding: `${why} · ${(LG_ST[patch.status] || [patch.status])[0]}`, source_url: patch.source_url, source_primary: /diariodarepublica\.pt|dre\.pt/.test(patch.source_url || ''), decided_by: me?.id || null, decided_by_name: me?.name || null, decided_at: now });
+              if (logId) await supabase.from('legal_watch_log').update({ decision: 'aplicada', decided_by: me?.id || null, decided_by_name: me?.name || null, decided_at: now }).eq('id', logId);
+              // relatórios feitos com a versão anterior: desatualizados (os entregues mantêm o conteúdo e o estado)
+              const reps = await supabase.from('framing_reports').select('id, status, regime_snapshot').is('outdated_at', null);
+              const hit = (reps.data || []).filter(x => (x.regime_snapshot || []).some(s => s.id === r.id && (s.version || 1) < patch.version));
+              const reason = `${r.short || r.name}: ${why}`;
+              for (const x of hit) await supabase.from('framing_reports').update({ outdated_at: now, outdated_reason: reason, ...(x.status === 'entregue' ? {} : { status: 'desatualizado' }) }).eq('id', x.id);
+              if (hit.length) showToast(`${hit.length} ${hit.length === 1 ? 'relatório ficou desatualizado' : 'relatórios ficaram desatualizados'}`, { ms: 7000 });
+            }
+            closeQuickModal(); showToast('Regime validado'); reload();
+          } catch (err) { btn.disabled = false; showError('validar o regime', err); }
+        });
+      };
+      box.querySelectorAll('[data-lg-edit]').forEach(b => b.addEventListener('click', () => edit(b.dataset.lgEdit)));
+      box.querySelectorAll('[data-lg-apply]').forEach(b => b.addEventListener('click', () => { const l = D.log.find(x => String(x.id) === b.dataset.lgApply); edit(l.regime_id, { ...(l.proposed || {}), source_url: l.source_url, reason: l.finding }, l.id); }));
+      box.querySelectorAll('[data-lg-hist]').forEach(b => b.addEventListener('click', async () => {
+        const r = D.regs.find(x => x.id === b.dataset.lgHist);
+        let vers = [];
+        if (!devMode) { const q = await supabase.from('legal_regime_versions').select('*').eq('regime_id', r.id).order('version', { ascending: false }); vers = q.data || []; }
+        openQuickModal(`Histórico · ${r.short || r.name}`, vers.length ? `<div class="lg-hist">${vers.map(x => `<div class="lg-lr"><b>v${x.version}</b><span class="fr-chip ${(LG_ST[x.data?.status] || ['', ''])[1]}">${escapeHtml((LG_ST[x.data?.status] || [x.data?.status || '—'])[0])}</span>
+            <span>${escapeHtml(x.reason || '')}<br><small class="muted">${escapeHtml(frDate(x.changed_at))}${x.changed_by_name ? ' · ' + escapeHtml(x.changed_by_name) : ''}${x.source_url ? ` · <a href="${escapeHtml(x.source_url)}" target="_blank" rel="noopener">fonte ↗</a>` : ''}</small></span></div>`).join('')}</div>` : '<p class="muted">Sem histórico.</p>');
+      }));
+    }
+    // Avisos na Hoje: alterações e alertas por rever, relatórios desatualizados, vigilância parada
+    async function legalAlerts() {
+      if (devMode) return [];
+      const [lg, rp, rg] = await Promise.all([
+        supabase.from('legal_watch_log').select('id, kind, decision, regime_id, run_at').in('kind', ['alerta', 'confirmada', 'erro']).gte('run_at', new Date(Date.now() - 30 * 864e5).toISOString()),
+        supabase.from('framing_reports').select('id, plot_id, status, kind, simulation').not('outdated_at', 'is', null).neq('status', 'entregue'),
+        supabase.from('legal_regimes').select('checked_at').eq('watch', true)]);
+      const out = [];
+      const pend = (lg.data || []).filter(l => !l.decision || l.decision === 'aplicada');
+      const conf = pend.filter(l => l.kind === 'confirmada').length, al = pend.filter(l => l.kind === 'alerta').length, er = pend.filter(l => l.kind === 'erro').length;
+      if (conf || al || er) out.push({ kind: 'legal', title: conf ? `Legislação: ${conf} ${conf === 1 ? 'alteração confirmada' : 'alterações confirmadas'} no Diário da República` : er ? 'A verificação da legislação falhou' : `Legislação: ${al} ${al === 1 ? 'alerta' : 'alertas'} por rever`,
+        sub: [conf && 'relatórios afetados marcados', al && `${al} sem fonte primária`, er && 'vê o registo'].filter(Boolean).join(' · '), when: 'Rever' });
+      const out2 = (rp.data || []).filter(r => r.kind !== 'reanalise');
+      if (out2.length) out.push({ kind: 'legal', title: `${out2.length} ${out2.length === 1 ? 'relatório de enquadramento desatualizado' : 'relatórios de enquadramento desatualizados'}`, sub: 'a lei mudou depois da análise: há rascunhos de reanálise', when: 'Ver' });
+      const last = (rg.data || []).map(r => r.checked_at).filter(Boolean).sort().pop();
+      if (last && Date.now() - new Date(last) > 9 * 864e5) out.push({ kind: 'legal', title: 'A verificação da legislação não corre há mais de uma semana', sub: `última: ${frDate(last)}`, when: 'Ver' });
+      return out;
     }
     // Relatório de enquadramento (janela para imprimir / guardar em PDF), com o aspeto do Investment Intelligence
     async function printFraming(p, F) {

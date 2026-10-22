@@ -3,6 +3,7 @@
 //   status    — chave ligada, utilização de hoje e limite conhecido (indicador da app)
 //   find_pdm  — procura no site da câmara o PDF do Regulamento do PDM em vigor (pesquisa Google), confirma que é um PDF
 //               de um site oficial, guarda-o no armazenamento (pdm-docs) e na biblioteca (pdm_library)
+//   analyse_start — o mesmo que analyse, em segundo plano (resultado em ai_jobs)
 //   analyse   — lê o regulamento (PDF), os dados do formulário, a tipologia e o registo de regimes legais (legal_regimes)
 //               e devolve o relatório estruturado: parâmetros com artigo e fonte, grau de certeza, condicionantes,
 //               transição RGEU → Código da Construção, lei geral, restrições, riscos e fontes
@@ -18,6 +19,7 @@ const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers
 const json = (v: unknown, status = 200) => new Response(JSON.stringify(v), { status, headers: { ...cors, "Content-Type": "application/json" } });
 const cut = (s: unknown, n: number) => String(s ?? "").slice(0, n);
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void };
 
 // ---------- base de dados (service role) ----------
 const rest = (path: string, init: RequestInit = {}) => fetch(`${SB_URL}/rest/v1/${path}`, {
@@ -64,12 +66,19 @@ function quotaOf(body: any) {
 // Um pedido com novas tentativas: 503 (sobrecarregado) repete e passa ao modelo seguinte; modelo inexistente ou sem a funcionalidade no plano gratuito passa ao seguinte.
 class AiError extends Error { constructor(public code: string, msg: string, public extra: any = null) { super(msg); } }
 async function gemini(feature: string, user: string | null, body: Record<string, unknown>) {
-  let last: { status: number; body: any } | null = null, model = MODELS[0], planDenied = false, skipped = false;
+  // (body pode perder o thinkingConfig num modelo que não o aceite)
+  let last: { status: number; body: any; ms?: number } | null = null, model = MODELS[0], planDenied = false, skipped = false;
   for (const m of MODELS) {
     model = m;
     for (let i = 0; i < 2; i++) {
+      const t0 = Date.now();
       const r = await fetch(`${API}/v1beta/models/${m}:generateContent`, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": KEY }, body: JSON.stringify(body) });
-      last = { status: r.status, body: await r.json().catch(() => ({})) };
+      last = { status: r.status, body: await r.json().catch(() => ({})), ms: Date.now() - t0 };
+      // um modelo que não aceite o limite de raciocínio: tenta a outra forma (thinkingBudget) e depois sem limite
+      const tc = (body as any).generationConfig?.thinkingConfig;
+      if (last.status === 400 && tc && /thinking/i.test(last.body?.error?.message || "")) {
+        body = { ...body, generationConfig: { ...(body as any).generationConfig, thinkingConfig: tc.thinkingLevel ? { thinkingBudget: 1024 } : undefined } }; i--; continue;
+      }
       if (last.status !== 503) break;
       await sleep(1500);
     }
@@ -91,7 +100,8 @@ async function gemini(feature: string, user: string | null, body: Record<string,
     throw new AiError(last?.status === 503 ? "busy" : "error", msg);
   }
   const um = last.body?.usageMetadata || {};
-  await log({ user_id: user, model, feature, status: "ok", prompt_tokens: um.promptTokenCount ?? null, output_tokens: um.candidatesTokenCount ?? null, total_tokens: um.totalTokenCount ?? null });
+  await log({ user_id: user, model, feature, status: "ok", prompt_tokens: um.promptTokenCount ?? null, output_tokens: um.candidatesTokenCount ?? null, total_tokens: um.totalTokenCount ?? null,
+    detail: { ms: last.ms, version: last.body?.modelVersion || null, thoughts: um.thoughtsTokenCount ?? null } });
   const cand = last.body?.candidates?.[0] || {};
   return { model, text: (cand.content?.parts || []).map((p: any) => p.text || "").join(""), grounding: cand.groundingMetadata || null };
 }
@@ -248,7 +258,7 @@ REGRAS DE RIGOR (obrigatórias):
 3. O estado de vigência da legislação geral é o do REGISTO DE REGIMES LEGAIS fornecido. Não afirmes que uma norma está em vigor ou revogada para além do que o registo diz. Se o registo disser "a_validar", trata o estado como não confirmado, diz isso e aplica a hipótese mais conservadora (a regra mais exigente).
 4. Quando o PDM for ambíguo ou houver sobreposição de regimes (PDM, RJUE, regulamento municipal, RGEU/Código da Construção), assinala o conflito, diz qual prevalece e porquê, ou marca "a validar juridicamente".
 5. Usa os conceitos técnicos do Decreto Regulamentar 5/2019 e confirma se as definições do PDM coincidem (área de construção, implantação, cércea, índices).
-6. Não faças contas de capacidade construtiva: devolve os parâmetros; as contas são feitas pela aplicação.
+6. Não faças contas de capacidade construtiva: devolve os parâmetros; as contas são feitas pela aplicação. Os parâmetros terminados em _pct vão em percentagem (70 = 70%), os índices em fração (0,8).
 7. Adapta a análise à tipologia de investimento indicada.
 8. Termina sempre com pontos a validar com a Câmara (incluindo que regime transitório a câmara está a aplicar na prática e a oportunidade de um pedido de informação prévia).`;
 const STR = { type: "STRING" }, NUM = { type: "NUMBER", nullable: true }, BOOL = { type: "BOOLEAN" };
@@ -278,6 +288,11 @@ const SCHEMA_ANALYSE = {
   },
   required: ["summary", "risk", "pdm", "identification", "constraints", "params", "parking", "transition", "general_law", "restrictions", "to_validate", "sources"],
 };
+// A análise vai em dois pedidos em paralelo (cada um com metade do relatório): um pedido só, com um regulamento
+// longo, passa dos 150 s que o Supabase dá a cada função
+const PART_A = ["summary", "risk", "risk_reason", "pdm", "identification", "constraints", "params", "parking", "uses"];
+const PART_B = ["transition", "general_law", "restrictions", "conflicts", "to_validate", "sources"];
+const schemaOf = (keys: string[]) => ({ type: "OBJECT", properties: Object.fromEntries(keys.map((k) => [k, (SCHEMA_ANALYSE.properties as any)[k]])), required: SCHEMA_ANALYSE.required.filter((k) => keys.includes(k)) });
 async function analyse(user: string | null, b: any) {
   const regimes = await restJson("legal_regimes?select=id,name,short,diploma,status,published_on,in_force_on,revoked_on,articles_affected,transitional,scope,source_url,version,checked_at,verified_at,notes&order=sort");
   let doc: any = null;
@@ -302,9 +317,15 @@ async function analyse(user: string | null, b: any) {
     "REGISTO DE REGIMES LEGAIS (fonte única do estado de vigência; não o contradigas):",
     JSON.stringify(regimes, null, 1),
   ].join("\n") });
-  const g = await gemini("analyse", user, { systemInstruction: { parts: [{ text: SYSTEM_ANALYSE }] }, contents: [{ role: "user", parts }],
-    generationConfig: { temperature: 0.2, responseMimeType: "application/json", responseSchema: SCHEMA_ANALYSE, maxOutputTokens: 16384 } });
-  let out: any; try { out = JSON.parse(g.text); } catch { throw new Error("Resposta da IA ilegível"); }
+  const ask = (keys: string[], focus: string) => gemini("analyse", user, { systemInstruction: { parts: [{ text: SYSTEM_ANALYSE }] },
+    contents: [{ role: "user", parts: [...parts, { text: `NESTE PEDIDO devolve só: ${focus}. Sê conciso: frases curtas, sem repetir o regulamento.` }] }],
+    generationConfig: { temperature: 0.2, responseMimeType: "application/json", responseSchema: schemaOf(keys), maxOutputTokens: 8192, thinkingConfig: { thinkingLevel: "low" } } });
+  const [ga, gb] = await Promise.all([
+    ask(PART_A, "sumário, risco, PDM consultado, identificação, condicionantes, parâmetros urbanísticos, estacionamento e usos"),
+    ask(PART_B, "enquadramento legal transitório (RGEU → Código da Construção), legislação geral, restrições consolidadas, conflitos, pontos a validar com a Câmara e fontes"),
+  ]);
+  let out: any; try { out = { ...JSON.parse(ga.text), ...JSON.parse(gb.text) }; } catch { throw new Error("Resposta da IA ilegível"); }
+  const g = ga;
   // fotografia do regime legal com que a análise foi feita
   const snapshot = regimes.map((r: any) => ({ id: r.id, short: r.short || r.name, status: r.status, version: r.version, in_force_on: r.in_force_on, revoked_on: r.revoked_on, checked_at: r.checked_at, verified_at: r.verified_at }));
   const checked = regimes.map((r: any) => r.checked_at || r.verified_at).filter(Boolean).sort().pop() || null;
@@ -339,6 +360,20 @@ Deno.serve(async (req) => {
         const same = await restJson(`pdm_library?source_url=eq.${encodeURIComponent(f.url)}&select=*`).catch(() => []);
         const doc = same[0] || await storePdm(user, mun, f);
         return json({ found: true, searched: f.searched, page: f.page, doc, usage: await usage() });
+      }
+      // Análise em segundo plano: responde já com o n.º do trabalho e grava o resultado em ai_jobs (a app vai consultando);
+      // assim um regulamento longo não esbarra no limite de 150 s de um pedido
+      if (b.action === "analyse_start") {
+        const job = (await restJson("ai_jobs", { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify({ kind: "analyse", user_id: user }) }))[0];
+        // o Supabase corta a função aos 150 s: antes disso o trabalho fica marcado como falhado (em vez de «a correr» para sempre)
+        const guard = setTimeout(() => { rest(`ai_jobs?id=eq.${job.id}&status=eq.a_correr`, { method: "PATCH", body: JSON.stringify({ status: "erro", error_code: "timeout", error: "A análise passou do tempo máximo do servidor (150 s).", finished_at: new Date().toISOString() }) }); }, 140000);
+        const run = (async () => {
+          try { const r = await analyse(user, b); await rest(`ai_jobs?id=eq.${job.id}`, { method: "PATCH", body: JSON.stringify({ status: "ok", result: { ...r, usage: await usage() }, finished_at: new Date().toISOString() }) }); }
+          catch (e) { await rest(`ai_jobs?id=eq.${job.id}`, { method: "PATCH", body: JSON.stringify({ status: "erro", error: cut((e as Error).message, 500), error_code: e instanceof AiError ? e.code : null, result: e instanceof AiError && e.extra ? { quota: e.extra } : null, finished_at: new Date().toISOString() }) }); }
+          finally { clearTimeout(guard); }
+        })();
+        if (typeof EdgeRuntime !== "undefined") EdgeRuntime.waitUntil(run); else await run;
+        return json({ job: job.id });
       }
       if (b.action === "analyse") {
         const r = await analyse(user, b);
