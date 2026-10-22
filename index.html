@@ -21724,8 +21724,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const pend = D.log.filter(l => ['alerta', 'confirmada', 'erro'].includes(l.kind) && (!l.decision || l.decision === 'aplicada'));
       box.innerHTML = `
         <div class="card-head"><h2>Legislação vigiada</h2>${partner ? '<button type="button" class="secondary-btn toolbar-btn" id="lg-sim">Simular alteração</button>' : ''}<button type="button" class="secondary-btn toolbar-btn" id="lg-run">Verificar agora</button></div>
-        <div class="field-hint" style="margin-top:0">Última verificação: <b>${last ? escapeHtml(frDate(last)) + (days ? ` (há ${days} ${days === 1 ? 'dia' : 'dias'})` : ' (hoje)') : 'ainda nenhuma'}</b> · corre sozinha às segundas de manhã.
-          Só uma publicação no Diário da República conta como alteração; o resto fica como alerta. Os relatórios usam o estado que está aqui.${days != null && days > 9 ? ' <span class="fr-chip bad">a verificação não corre há mais de uma semana</span>' : ''}</div>
+        <div class="field-hint" style="margin-top:0">Última verificação: <b>${last ? escapeHtml(frDate(last)) + (days ? ` (há ${days} ${days === 1 ? 'dia' : 'dias'})` : ' (hoje)') : 'ainda nenhuma'}</b> · corre sozinha no dia 1 de cada mês, de manhã.
+          Só uma publicação no Diário da República conta como alteração; o resto fica como alerta. Os relatórios usam o estado que está aqui.${days != null && days > 35 ? ' <span class="fr-chip bad">a verificação não corre há mais de um mês</span>' : ''}</div>
         ${pend.length ? `<div class="lg-pend"><b>Por rever (${pend.length})</b>${pend.map(l => `<div class="lg-pr"><span class="fr-chip ${kd(l.kind)[1]}">${escapeHtml(kd(l.kind)[0])}</span><span><b>${escapeHtml(D.regs.find(r => r.id === l.regime_id)?.short || l.regime_id || 'Vigilância')}</b> · ${escapeHtml(l.finding || l.error || '')}${l.source_url ? ` · <a href="${escapeHtml(l.source_url)}" target="_blank" rel="noopener">fonte ↗</a>` : ''}</span>${partner ? `<span class="lg-pr-a">${l.kind === 'alerta' ? `<button type="button" class="text-btn" data-lg-apply="${l.id}">Confirmar e aplicar</button>` : ''}<button type="button" class="text-btn" data-lg-seen="${l.id}">Revisto</button></span>` : ''}</div>`).join('')}</div>` : ''}
         <div class="lg-list">${D.regs.map(r => `<div class="lg-row">
             <div class="lg-m"><b>${escapeHtml(r.short || r.name)}</b><small>${escapeHtml([r.name !== r.short ? r.name : null, r.diploma].filter(Boolean).join(' · '))}</small>
@@ -21836,7 +21836,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const out2 = (rp.data || []).filter(r => r.kind !== 'reanalise');
       if (out2.length) out.push({ kind: 'legal', title: `${out2.length} ${out2.length === 1 ? 'relatório de enquadramento desatualizado' : 'relatórios de enquadramento desatualizados'}`, sub: 'a lei mudou depois da análise: há rascunhos de reanálise', when: 'Ver' });
       const last = (rg.data || []).map(r => r.checked_at).filter(Boolean).sort().pop();
-      if (last && Date.now() - new Date(last) > 9 * 864e5) out.push({ kind: 'legal', title: 'A verificação da legislação não corre há mais de uma semana', sub: `última: ${frDate(last)}`, when: 'Ver' });
+      if (last && Date.now() - new Date(last) > 35 * 864e5) out.push({ kind: 'legal', title: 'A verificação da legislação não corre há mais de um mês', sub: `última: ${frDate(last)}`, when: 'Ver' });
       return out;
     }
     // Relatório de enquadramento (janela para imprimir / guardar em PDF), com o aspeto do Investment Intelligence
