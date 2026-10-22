@@ -116,10 +116,12 @@ Deno.serve(async (req) => {
       b.notes ? "NOTAS DA EQUIPA\n" + cut(b.notes, 3000) : "",
     ].join("\n");
     let last: { status: number; body: any } | null = null, model = MODELS[0];
+    // 404: o modelo já não existe; 503: o Google está sobrecarregado (temporário) — tenta outra vez e depois o modelo seguinte
     for (const m of MODELS) {
       model = m;
       last = await ask(m, prompt);
-      if (last.status === 404) continue;   // modelo que já não existe: tenta o seguinte
+      if (last.status === 503) { await new Promise((r) => setTimeout(r, 1500)); last = await ask(m, prompt); }
+      if (last.status === 404 || last.status === 503) continue;
       break;
     }
     if (!last || last.status !== 200) {
@@ -130,7 +132,7 @@ Deno.serve(async (req) => {
       }
       const msg = last?.body?.error?.message || `Erro ${last?.status}`;
       await log({ user_id: user, model, status: "error", detail: { status: last?.status, message: String(msg).slice(0, 300) } });
-      return json({ error: msg }, 502);
+      return json({ error: last?.status === 503 ? "busy" : msg }, 502);
     }
     const um = last.body?.usageMetadata || {};
     await log({ user_id: user, model, status: "ok", prompt_tokens: um.promptTokenCount ?? null, output_tokens: um.candidatesTokenCount ?? null, total_tokens: um.totalTokenCount ?? null });
