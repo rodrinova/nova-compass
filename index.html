@@ -2463,6 +2463,78 @@
   .fr-ai-bar > i { display: block; height: 100%; background: var(--success); border-radius: 3px; transition: width .5s cubic-bezier(.2, .8, .2, 1); }
   .fr-ai-bar > i.warn { background: var(--warning); }
   @media (max-width: 560px) { .fr-ext-top { grid-template-columns: minmax(0, 1fr) auto; } .fr-ext-top .fr-art { grid-column: 1; grid-row: 2; } .ps-frame .fr-pdf { margin-left: 0; } }
+  /* Análise do PDM com IA: 3 passos (regulamento, dados do prédio, relatório) */
+  .fr-pdm { border: 1px solid var(--border); border-radius: var(--r-lg); padding: var(--sp-4); background: color-mix(in srgb, var(--accent-soft) 35%, var(--surface)); }
+  .fr-pdm-sub { font-size: var(--fs-sm); }
+  .fr-steps { display: grid; gap: var(--sp-4); margin-top: var(--sp-3); }
+  .fr-step { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: var(--sp-3); }
+  .fr-step-n { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: var(--fs-sm); font-weight: var(--fw-semibold); background: var(--accent); color: #fff; }
+  .fr-step-b { display: grid; gap: var(--sp-2); min-width: 0; }
+  .fr-step-b > b { line-height: 28px; }
+  .fr-step-btns { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+  .fr-doc { display: grid; gap: 4px; padding: var(--sp-3); border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); min-width: 0; }
+  .fr-doc-t { font-weight: var(--fw-semibold); }
+  .fr-doc-m { font-size: var(--fs-sm); color: var(--text-2); }
+  .fr-doc-l { font-size: var(--fs-sm); overflow-wrap: anywhere; word-break: break-all; max-width: 100%; }
+  .fr-doc-a { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); margin-top: 4px; }
+  .fr-chip { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-xs); font-weight: var(--fw-semibold); border-radius: var(--r-full); padding: 2px 9px; background: var(--surface-2); color: var(--text-2); }
+  .fr-chip.ok { background: var(--success-soft); color: var(--success); } .fr-chip.warn { background: var(--warning-soft); color: color-mix(in srgb, var(--warning) 70%, var(--text)); }
+  .fr-chip.acc { background: var(--accent-soft); color: var(--accent); } .fr-chip.bad { background: color-mix(in srgb, var(--danger) 12%, transparent); color: var(--danger); }
+  .fr-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: var(--sp-2) var(--sp-3); }
+  .fr-f { display: grid; gap: 4px; min-width: 0; } .fr-f > span { font-size: var(--fs-xs); color: var(--text-2); }
+  .fr-f .form-input { margin: 0; } .fr-f-wide { grid-column: 1 / -1; }
+  .fr-conds-l { font-size: var(--fs-xs); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: .06em; color: var(--text-2); margin-top: var(--sp-2); }
+  .fr-conds { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 6px var(--sp-3); }
+  .fr-cond { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); font-size: var(--fs-sm); min-width: 0; }
+  .fr-seg { display: inline-flex; flex: 0 0 auto; border: 1px solid var(--border); border-radius: var(--r-full); overflow: hidden; }
+  .fr-seg button { font: inherit; font-size: var(--fs-xs); border: 0; background: transparent; color: var(--text-2); padding: 3px 10px; min-height: 28px; cursor: pointer; }
+  .fr-seg button + button { border-left: 1px solid var(--border); }
+  .fr-seg button.on { background: var(--accent); color: #fff; }
+  .fr-seg button.on[data-v="?"] { background: var(--surface-2); color: var(--text); font-weight: var(--fw-semibold); }
+  .fr-vers { display: grid; gap: 6px; }
+  .fr-ver { display: flex; flex-wrap: wrap; align-items: center; gap: 6px var(--sp-2); text-align: left; font: inherit; border: 1px solid var(--border); background: var(--surface); border-radius: var(--r-md); padding: 8px 12px; cursor: pointer; color: var(--text); }
+  .fr-ver:hover { border-color: var(--accent); } .fr-ver i { margin-left: auto; font-style: normal; font-size: var(--fs-sm); color: var(--accent); font-weight: var(--fw-semibold); }
+  .fr-ver .muted { font-size: var(--fs-sm); }
+  .fr-mchk { margin-top: var(--sp-2); font-size: var(--fs-sm); line-height: 1.8; }
+  .fr-sug { font: inherit; font-size: var(--fs-sm); border: 1px solid var(--accent); color: var(--accent); background: transparent; border-radius: var(--r-full); padding: 1px 10px; cursor: pointer; }
+  .fr-lib { display: grid; gap: 6px; margin-top: var(--sp-3); }
+  .fr-lib-row { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); border: 1px solid var(--border); border-radius: var(--r-md); padding: 8px 12px; }
+  .fr-lib-row > span { display: grid; gap: 2px; min-width: 0; font-size: var(--fs-sm); } .fr-lib-row small { color: var(--text-2); } .fr-lib-row a { overflow-wrap: anywhere; font-size: var(--fs-xs); }
+  /* pré-visualizador do relatório: barra em cima e o documento tal como sai em PDF */
+  .frv { position: fixed; inset: 0; z-index: 29; display: flex; flex-direction: column; background: color-mix(in srgb, #0F0E0D 72%, transparent); }
+  .frv-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); padding: 10px max(16px, env(safe-area-inset-right)) 10px max(16px, env(safe-area-inset-left)); padding-top: max(10px, env(safe-area-inset-top)); background: var(--surface); border-bottom: 1px solid var(--border); }
+  .frv-t { display: flex; flex-wrap: wrap; align-items: center; gap: 6px var(--sp-2); min-width: 0; }
+  .frv-a { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); margin-left: auto; }
+  .frv-a .muted, .frv-t .muted { font-size: var(--fs-sm); }
+  .frv-a > button { width: auto; margin: 0; min-height: 36px; padding: 6px 14px; font-size: var(--fs-sm); line-height: 1.2; }
+  .frv-doc { flex: 1 1 auto; width: 100%; border: 0; background: #F7F7F5; }
+  @media (max-width: 640px) { .frv-a { margin-left: 0; width: 100%; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; } .frv-a > * { flex: 0 0 auto; white-space: nowrap; } .fr-step { grid-template-columns: minmax(0, 1fr); } .fr-step-n { display: none; } }
+  /* Rentabilidade: valores vindos do enquadramento aprovado */
+  .vt-fr { border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--sp-3); margin: var(--sp-2) 0 var(--sp-3); background: color-mix(in srgb, var(--accent-soft) 40%, var(--surface)); display: grid; gap: var(--sp-2); }
+  .vt-fr-soft { font-size: var(--fs-sm); color: var(--text-2); }
+  .vt-fr-h { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); } .vt-fr-h .secondary-btn { margin-left: auto; }
+  .vt-fr-l { display: grid; gap: 4px; }
+  .vt-fr-r { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(120px, auto); gap: var(--sp-2); align-items: center; font-size: var(--fs-sm); padding: 4px 0; border-bottom: 1px solid var(--border); }
+  .vt-fr-r small { display: block; color: var(--text-2); font-size: var(--fs-xs); }
+  .vt-fr-v { font-variant-numeric: tabular-nums; font-weight: var(--fw-semibold); white-space: nowrap; }
+  .vt-fr-r > span:last-child { justify-self: end; text-align: right; }
+  .vt-fr-sc { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); }
+  .vt-fr-sc > div { background: var(--surface); border-radius: var(--r-md); padding: 8px 12px; } .vt-fr-sc span { display: block; font-size: var(--fs-xs); color: var(--text-2); }
+  .vt-fr-sc b { font-size: var(--fs-lg); font-variant-numeric: tabular-nums; } .vt-fr-sc b.neg { color: var(--danger); } .vt-fr-sc small { display: block; font-size: var(--fs-xs); color: var(--text-2); }
+  @media (max-width: 560px) { .vt-fr-r { grid-template-columns: minmax(0, 1fr) auto; } .vt-fr-r > span:last-child { grid-column: 1 / -1; justify-self: start; text-align: left; } }
+  /* Definições → Regime legal */
+  .lg-pend { border: 1px solid color-mix(in srgb, var(--warning) 40%, var(--border)); background: var(--warning-soft); border-radius: var(--r-md); padding: var(--sp-3); display: grid; gap: 6px; margin: var(--sp-3) 0; }
+  .lg-pr { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px var(--sp-2); font-size: var(--fs-sm); } .lg-pr-a { margin-left: auto; display: flex; gap: var(--sp-2); }
+  .lg-list { display: grid; margin-top: var(--sp-3); }
+  .lg-row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto; gap: var(--sp-3); align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .lg-m, .lg-s { display: grid; gap: 2px; min-width: 0; } .lg-m small, .lg-s small { font-size: var(--fs-xs); color: var(--text-2); } .lg-s .fr-chip { justify-self: start; }
+  .lg-a { display: flex; gap: var(--sp-2); }
+  .lg-log { margin-top: var(--sp-4); } .lg-log summary { cursor: pointer; font-weight: var(--fw-semibold); }
+  .lg-lr { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px var(--sp-2); font-size: var(--fs-sm); padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .lg-hist { display: grid; }
+  @media (max-width: 640px) { .lg-row { grid-template-columns: minmax(0, 1fr) auto; } .lg-s { grid-column: 1 / -1; grid-row: 2; } }
+  .np-svc-l { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 2px var(--sp-3); max-height: 220px; overflow: auto; margin-bottom: var(--sp-2); }
+  .np-svc-l .check-row { margin: 0; font-size: var(--fs-sm); }
   /* painel vivo da Rentabilidade (habitação) */
   .lv { display: flex; flex-direction: column; gap: var(--sp-4); }
   .lv-k { display: block; font-size: var(--fs-xs); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: .06em; color: var(--text-2); margin-bottom: var(--sp-1); }
@@ -5056,6 +5128,7 @@
             <button type="button" class="settings-link" data-sec="payrem"><span>Lembretes de pagamento</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button type="button" class="settings-link" data-sec="nps"><span>Satisfação (NPS)</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button type="button" class="settings-link" data-sec="feas"><span>Rentabilidade de terrenos</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+            <button type="button" class="settings-link" data-sec="legal"><span>Regime legal (urbanismo)</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button type="button" class="settings-link" data-sec="proposals"><span>Propostas de honorários</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button type="button" class="settings-link" data-sec="clientscore"><span>Score de clientes</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
           </nav>
@@ -5111,6 +5184,10 @@
           <section class="settings-sec" data-sec-panel="feas" hidden>
             <h2 class="settings-title">Rentabilidade de terrenos</h2>
             <div class="gantt-wrap" id="settings-feas-container"><div class="detail-loading">A carregar...</div></div>
+          </section>
+          <section class="settings-sec" data-sec-panel="legal" hidden>
+            <h2 class="settings-title">Regime legal (urbanismo)</h2>
+            <div class="gantt-wrap" id="settings-legal-container"><div class="detail-loading">A carregar...</div></div>
           </section>
           <section class="settings-sec" data-sec-panel="proposals" hidden>
             <h2 class="settings-title">Propostas de honorários</h2>
@@ -6228,7 +6305,7 @@
       checklists: () => loadChecklistTemplateSettings(), categories: () => loadCategories(),
       mtypes: () => loadMilestoneTypeSettings(), clientscore: () => loadClientScoreSettings(),
       finance: () => loadFinanceSettingsPanel(), camara: () => loadCamaraSettings(),
-      nps: () => loadNpsSettings(), payrem: () => loadPayRemSettings(), ms365: () => loadMs365Settings(), proposals: () => loadProposalSettings(), payroll: () => loadPayrollSettings(), feas: () => loadFeasSettings()
+      nps: () => loadNpsSettings(), payrem: () => loadPayRemSettings(), ms365: () => loadMs365Settings(), proposals: () => loadProposalSettings(), payroll: () => loadPayrollSettings(), feas: () => loadFeasSettings(), legal: () => loadLegalSettings()
     };
     let settingsSection = 'models';
     async function loadMs365Settings() {
@@ -8928,7 +9005,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const d = w.document;
         if (!d.body || d.getElementById('k-doc-back')) return;
         const st = d.createElement('style');
-        st.textContent = '#k-doc-back{position:fixed;top:max(10px,env(safe-area-inset-top));left:10px;z-index:2147483647;font:600 14px -apple-system,"Segoe UI",Roboto,sans-serif;background:#fff;color:#4A2350;border:1px solid #D9D6D0;border-radius:999px;padding:9px 16px;box-shadow:0 2px 12px rgba(0,0,0,.14);cursor:pointer}@media print{#k-doc-back{display:none!important}}';
+        st.textContent = '#k-doc-back{position:fixed;top:max(10px,env(safe-area-inset-top));left:10px;z-index:2147483647;font:600 14px -apple-system,"Segoe UI",Roboto,sans-serif;background:#fff;color:#4A2350;border:1px solid #D9D6D0;border-radius:999px;padding:9px 16px;box-shadow:0 2px 12px rgba(0,0,0,.14);cursor:pointer}body>.bar{padding-left:160px!important}body>.bar button{white-space:nowrap}@media (max-width:560px){body>.bar>span{display:none}}@media print{#k-doc-back{display:none!important}}';
         (d.head || d.body).appendChild(st);
         const b = d.createElement('button');
         b.id = 'k-doc-back'; b.type = 'button'; b.textContent = '← Voltar à app';
@@ -8995,9 +9072,18 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const shot = (el, o) => window.html2canvas(el, { scale: 3, useCORS: true, logging: false, windowWidth: W, ...o });
         const pages = [...doc.querySelectorAll('.page')];
         if (pages.length) {   // documento já paginado (proposta): uma imagem por página
+          // A janela de captura tem a largura de um A4 (794 px) e apanhava as regras de ecrã pequeno (página encolhida,
+          // com margem e sombra): no PDF a página saía mais pequena, com moldura branca. Aqui a página é sempre o A4 inteiro.
+          const fix = doc.createElement('style');
+          fix.textContent = 'html,body{margin:0!important;padding:0!important;background:#fff!important} .page{transform:none!important;zoom:1!important;margin:0!important;box-shadow:none!important;border-radius:0!important}';
+          doc.head.appendChild(fix);
+          await new Promise(r => setTimeout(r, 60));
+          // verificação: cada página tem de medir 210 × 297 mm e começar na margem esquerda; senão, não sai o PDF
+          const bad = pages.map((pg, i) => { const r = pg.getBoundingClientRect(); return Math.abs(r.width - 793.7) > 2 || Math.abs(r.height - 1122.5) > 2 || Math.abs(r.left) > 1 ? i + 1 : 0; }).filter(Boolean);
+          if (bad.length) throw new Error(`a página ${bad.join(', ')} não ocupa o A4 inteiro`);
           for (let i = 0; i < pages.length; i++) {
             onStep && onStep(i + 1, pages.length);
-            const c = await shot(pages[i], { backgroundColor: '#FFFFFF' });
+            const c = await shot(pages[i], { backgroundColor: '#FFFFFF', width: Math.floor(pages[i].getBoundingClientRect().width), height: Math.floor(pages[i].getBoundingClientRect().height), scrollX: 0, scrollY: 0 });
             if (i) pdf.addPage();
             pdf.addImage(c, 'PNG', 0, 0, 210, 297, undefined, 'FAST');
           }
@@ -16088,7 +16174,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const ids = [r.note?.id, r.project, r.nps, r.client, r.ticket, r.invoice, r.co, r.proposal].filter(Boolean).join(',');
         items.push({ key: `t:${r.kind}:${ids}:${r.due || ''}:${r.title}`, title: r.title, sub: r.sub, pri: r.late || r.kind === 'meet' ? 0 : urgent ? 1 : 2, date: r.due || '9999', html: `
           <div class="alert-row team${urgent ? ' ' + urgent : ''}" data-alert-team="${r.kind}"${r.note ? ` data-note="${escapeHtml(r.note.id)}"` : ''}${r.project ? ` data-project="${escapeHtml(r.project)}"` : ''}${r.nps ? ` data-nps="${escapeHtml(r.nps)}"` : ''}${r.client ? ` data-client="${escapeHtml(r.client)}"` : ''}${r.ticket ? ` data-ticket="${escapeHtml(r.ticket)}"` : ''}${r.invoice ? ` data-invoice="${escapeHtml(r.invoice)}"` : ''}${r.co ? ` data-co-alert="${escapeHtml(r.co)}"` : ''}${r.proposal ? ` data-prop-alert="${escapeHtml(r.proposal)}"` : ''}${r.url ? ` data-url="${escapeHtml(r.url)}" role="link" tabindex="0"` : ''}>
-            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : r.kind === 'nps' ? '★' : r.kind === 'debt' ? '€' : r.kind === 'law' ? '§' : r.kind === 'radar' ? '◎' : r.kind === 'meet' ? '▶' : r.kind === 'transcript' ? '≡' : r.kind === 'bday' ? '✦' : r.kind === 'ticket' ? '💡' : r.kind === 'absence' ? '◐' : r.kind === 'data' ? '!' : r.kind === 'payrem' ? '€' : r.kind === 'co' ? 'Ⓣ' : r.kind === 'pipe' ? '✉' : '+'}</span>
+            <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : r.kind === 'nps' ? '★' : r.kind === 'debt' ? '€' : r.kind === 'law' || r.kind === 'legal' ? '§' : r.kind === 'radar' ? '◎' : r.kind === 'meet' ? '▶' : r.kind === 'transcript' ? '≡' : r.kind === 'bday' ? '✦' : r.kind === 'ticket' ? '💡' : r.kind === 'absence' ? '◐' : r.kind === 'data' ? '!' : r.kind === 'payrem' ? '€' : r.kind === 'co' ? 'Ⓣ' : r.kind === 'pipe' ? '✉' : '+'}</span>
             <span class="alert-text"><b>${escapeHtml(r.title)}</b><span>${escapeHtml(r.sub)}</span></span>
             <span class="alert-when">${escapeHtml(r.when)}</span>
           </div>` });
@@ -16160,6 +16246,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         else if (k === 'owner') openProjectsModule();
         else if (k === 'debt') { navStack = []; openBillingModule('toreceive'); }
         else if (k === 'law') { navStack = []; openSettingsModule(); showSettingsSection('payroll'); }
+        else if (k === 'legal') { navStack = []; openSettingsModule(); showSettingsSection('legal'); }
         else if (k === 'radar') { navStack = []; openOppsModule('pres'); }
         else if (k === 'camara') { detailTabByProject[r.dataset.project] = 'camara'; openDetail(r.dataset.project); }
         else if (k === 'nps') openNpsModal(r.dataset.nps, () => renderToday());
@@ -16618,7 +16705,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         renderWeekHours(hoursEl, hours, tg);
         // Avisos de organização: horas em falta (a partir de sexta), projetos sem responsável,
         // fases em curso/seguintes sem ninguém nos projetos de que sou responsável
-        const teamAlerts = [...await meetingAlerts(milestones, me, todayKey).catch(() => []), ...await transcriptAlerts(me).catch(() => []), ...await birthdayAlerts().catch(() => []), ...await ticketAlerts(me).catch(() => []), ...await absenceAlerts(me).catch(() => []), ...await loadMissingDataAlerts(me).catch(() => []), ...await payReminderAlerts(me).catch(() => []), ...await changeOrderAlerts(me).catch(() => []), ...await pipelineAlerts(me).catch(() => []), ...radarAlerts, ...lawAlerts, ...debtAlerts, ...npsAlerts, ...camaraAlerts];
+        const teamAlerts = [...await meetingAlerts(milestones, me, todayKey).catch(() => []), ...await transcriptAlerts(me).catch(() => []), ...await birthdayAlerts().catch(() => []), ...await ticketAlerts(me).catch(() => []), ...await absenceAlerts(me).catch(() => []), ...await loadMissingDataAlerts(me).catch(() => []), ...await payReminderAlerts(me).catch(() => []), ...await changeOrderAlerts(me).catch(() => []), ...await pipelineAlerts(me).catch(() => []), ...await legalAlerts().catch(() => []), ...radarAlerts, ...lawAlerts, ...debtAlerts, ...npsAlerts, ...camaraAlerts];
         const wd = new Date().getDay();
         const missing = missingHourDays(hours, tg);
         if ((wd === 5 || wd === 6 || wd === 0) && missing.length)
@@ -17568,7 +17655,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         tour: [{ go: 'nav:opps', sel: '[data-otab="pres"]', text: 'As apresentações estão neste separador.' }] },
       { id: 'proposta', cat: 'opps', ctx: ['pipeline', 'opps', 'plot', 'proposal', 'settings:proposals'], first: 2,
         q: 'faço uma proposta de honorários',
-        a: 'Clientes → Pipeline → + Nova proposta: escolhe o tipo (Estudo Preliminar, PIP, Estudo de Viabilidade ou Projeto Completo), a tipologia e a língua. O modelo do tipo já traz serviços, valores, pagamento, textos, opcionais e exclusões.',
+        a: 'Clientes → Pipeline → + Nova proposta: escolhe o tipo (Estudo Preliminar, PIP, Estudo de Viabilidade, Projeto Completo ou Proposta de Serviços), a tipologia e a língua. Na Proposta de Serviços não há tipologia: escolhes logo os serviços da NOVA e os de parceiros a incluir. O modelo do tipo já traz serviços, valores, pagamento, textos, opcionais e exclusões.',
         steps: ['Abre [[Pipeline]] → [[+ Nova proposta]]. Escolhe **que proposta é** (o modelo pré-configura tudo), a **tipologia** e a **língua**. Se vier de uma oportunidade do Intelligence, escolhe-a: usa o **mesmo CST** e traz o local, a área e o cliente.', 'No editor ficam à vista as partes principais: **Cliente e local**, **Serviços**, **Valor**, **Outros serviços** e **Pagamento**. Em **Outros serviços** pões os serviços de parceiros que a NOVA revende (topografia, carpintaria, serralharia, materiais…): escreves o fornecedor, o custo e a margem, e o cliente vê só o preço, num capítulo próprio do PDF, à parte dos honorários. Ajusta o que for preciso — os valores do modelo são um ponto de partida.', 'A língua muda-se a qualquer momento no **PT | EN** do topo: os textos da biblioteca e do modelo passam para a outra língua.', 'O resto está em **Mais opções**: capa e manifesto, textos do âmbito (Base de trabalho, Pressupostos, Prazo…), secções próprias (ex.: Aperfeiçoamento), custo e margem, timeline, opcionais, exclusões e assinatura.', 'Nos textos, {h} é a taxa horária dos opcionais, {local} o local e concelho, {validade}/{ate} a validade, e {Opcionais} (ou outro título) o número dessa secção no documento.', 'Toca em [[Criar proposta]] (recebe o CST). A partir daí grava sozinha. Para que as próximas deste tipo comecem assim, toca em **Guardar como modelo**.', 'Para enviar: [[Enviar por email]]. A app gera o PDF e descarrega o email com o PDF e a tua assinatura: abre o ficheiro e o Outlook mostra a mensagem pronta (fica também nos Rascunhos). Carregas em **Enviar** e a proposta fica marcada como enviada a essa hora, com follow-up a 7 dias.'],
         kw: 'proposta honorarios orcamento preco valor fee revenda outros servicos topografia carpintaria serralharia materiais parceiros fornecedor margem nota de honorarios cst pdf modelo nova capa ambito exclusoes opcionais timeline pagamento biblioteca ingles email outlook enviar anexo pip viabilidade estudo preliminar projeto completo tipo lingua aperfeicoamento taxa horaria guardar como modelo',
         tour: [{ go: 'nav:pipeline', sel: '#pipe-new', text: 'Começa aqui uma proposta nova.' }] },
@@ -18868,7 +18955,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         <div class="capa"><header><div class="brand"><img src="${e(logo)}" alt="NOVA"><span class="ii">Investment Intelligence</span></div><div class="meta">NOVA Associates<br>${e(new Date().toLocaleDateString(loc, { day: 'numeric', month: 'long', year: 'numeric' }))}</div></header>
         <div class="title"><div class="eyebrow">${e(T('Estudo de rentabilidade', 'Profitability study'))}</div><h1>${e(p.name)}</h1>
           <div class="loc">${e([p.address, p.parish, p.municipality].filter(Boolean).join(', '))}${p.maps_url && /^https?:/i.test(p.maps_url) ? ` · <a href="${e(p.maps_url)}">${e(T('ver no mapa', 'view map'))}</a>` : ''}</div></div></div>
-        ${IND ? indBody() : `
+        <!--FZ-->${IND ? indBody() : `
         <div class="kpis">
           ${kpi(T('Custo', 'Cost'), T('Custo global', 'Total cost'), e(eur(c.costGlobal)), `${e(T('terreno', 'land'))} ${e(eur(c.acquisition))} · ${e(T('construção e outros', 'construction & other'))} ${e(eur(c.costGlobal - c.acquisition))}`)}
           ${kpi(T('Venda', 'Sale'), 'ROI', e(pc(c.roi)), `${e(T('Lucro', 'Profit'))} ${e(eur(c.profit))}${R ? ` · ${e(T('intervalo', 'range'))} ${e(pc(R[0].roi))} – ${e(pc(R[1].roi))}` : ''}`)}
@@ -18936,8 +19023,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           ${c.ratios.unit ? row(e(T('Terreno por fração', 'Land per unit')), '', '', e(eur(c.ratios.unit))) : ''}
         </table></section>
         `}
-        <footer><span>${e(T(`Os valores considerados e estimados são sensíveis à data do estudo (${new Date().toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })}).`, `The values considered and estimated are sensitive to the date of the study (${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}).`))}</span><span>NOVA Investment Intelligence</span></footer>
+        <!--/FZ--><footer><span>${e(T(`Os valores considerados e estimados são sensíveis à data do estudo (${new Date().toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })}).`, `The values considered and estimated are sensitive to the date of the study (${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}).`))}</span><span>NOVA Investment Intelligence</span></footer>
         </body></html>`;
+      if (o.embed) return { css: html.match(/<style>([\s\S]*?)<\/style>/)[1], content: html.split('<!--FZ-->')[1].split('<!--/FZ-->')[0] };
       const w = window.open('', '_blank');
       if (!w) { showToast('O navegador bloqueou a janela. Permite janelas deste site e tenta outra vez.', { type: 'error', ms: 7000 }); return; }
       w.document.open(); w.document.write(html); w.document.close(); kDocBack(w);
@@ -20628,9 +20716,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <div class="card-head fr-head"><h2>Enquadramento urbanístico</h2>
             <label class="vt-chk fr-on"><input type="checkbox" id="fr-on"${F.on ? ' checked' : ''}> incluir</label>
             <small class="muted">${F.on ? 'plantas, extratos da legislação e o relatório · grava sozinho' : 'opcional · relatório de enquadramento com plantas, extratos e parâmetros'}</small>
-            ${F.on ? '<button type="button" class="secondary-btn fr-pdf" id="fr-pdf">Relatório (PDF)</button>' : ''}</div>
+            ${F.on ? '<button type="button" class="secondary-btn fr-pdf" id="fr-pdf" title="Só com as plantas, os extratos e o texto livre (sem a análise do PDM)">Relatório simples (PDF)</button>' : ''}</div>
           ${F.on ? `
           <div class="fr-body">
+            <section class="fr-sec fr-pdm" id="fr-pdm"></section>
             <section class="fr-sec">
               <div class="section-label">Plantas da Câmara</div>
               <div class="fr-plants">${F.plants.map((x, i) => `<figure class="fr-plant" data-i="${i}">
@@ -20653,10 +20742,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               <button type="button" class="text-btn" id="fr-ext-add">+ Extrato</button>
             </section>
             <section class="fr-sec">
-              <div class="fr-txt-head"><div class="section-label">Texto do relatório</div>
+              <div class="fr-txt-head"><div class="section-label">Relatório simples (texto livre)</div>
                 <span><button type="button" class="secondary-btn" id="fr-ai">✦ Escrever com IA</button><button type="button" class="text-btn" id="fr-tpl">Texto-tipo</button></span></div>
               <div class="fr-ai-meter" id="fr-ai-meter" aria-live="polite" title="Contado pela app: o Google não mostra em tempo real quanto falta. O limite aparece quando o Google o indica.">${frAiMeter(frAi)}</div>
-              <div class="field-hint">A IA escreve um rascunho a partir das Condicionantes, dos extratos e das legendas das plantas; o texto-tipo monta-se com o que está preenchido. Revê sempre: o que faltar fica «[a confirmar]».</div>
+              <div class="field-hint">Para um relatório curto, sem a análise do PDM: a IA escreve um rascunho a partir das Condicionantes, dos extratos e das legendas das plantas; o texto-tipo monta-se com o que está preenchido. O relatório completo, com o regulamento, faz-se na Análise do PDM acima.</div>
               ${FR_SECS.map(([k, l]) => `<label class="field-label" for="fr-t-${k}">${l}</label><textarea class="form-input pp-grow" id="fr-t-${k}" data-tk="${k}" rows="3">${escapeHtml(F.text[k] || '')}</textarea>`).join('')}
             </section>
           </div>` : ''}`;
@@ -20698,6 +20787,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         box.querySelector('#fr-on').addEventListener('change', e => { F.on = e.target.checked; save(); draw(); if (F.on) setTimeout(() => box.scrollIntoView({ behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'start' }), 50); });
         if (!F.on) return;
         box.querySelector('#fr-pdf').addEventListener('click', () => printFraming(p, F));
+        mountPdmPanel(box.querySelector('#fr-pdm'), p, d, F, ctx);
         // indicador de utilização: ao abrir e de minuto a minuto enquanto o cartão estiver no ecrã
         const meter = box.querySelector('#fr-ai-meter'), aiBtn = box.querySelector('#fr-ai');
         const paintMeter = st => { if (!meter.isConnected) return; meter.innerHTML = frAiMeter(st); const u = st?.usage; const blocked = st && (!st.configured || (u?.limitHit && !u.limitHit.perMinute)); aiBtn.disabled = !!blocked; aiBtn.title = blocked ? (st.configured ? 'Limite diário do Gemini atingido' : 'Falta a chave do Gemini no Supabase') : ''; };
@@ -20769,6 +20859,985 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         });
       }
       draw();
+    }
+    // ---------- Análise do PDM com IA (regulamento, formulário do prédio e versões do relatório) ----------
+    // 1. Confirma-se o concelho (a app compara com a lista dos 308 concelhos e pergunta quando há dúvida).
+    // 2. A IA procura o PDF do Regulamento do PDM no site da Câmara (framing-ai 'find_pdm'); se não encontrar, carrega-se.
+    //    A equipa confirma sempre que é o documento certo; o link fica no relatório.
+    // 3. Formulário do prédio + análise (framing-ai 'analyse') → nova versão em framing_reports (rascunho).
+    // 4. O relatório abre num pré-visualizador editável (o original da IA fica guardado), um sócio aprova, e só se
+    //    descarrega depois de se confirmar que a informação foi verificada (fica registado quem e quando).
+    const PT_MUNIS = ('Águeda|Albergaria-a-Velha|Anadia|Arouca|Aveiro|Castelo de Paiva|Espinho|Estarreja|Ílhavo|Mealhada|Murtosa|Oliveira de Azeméis|Oliveira do Bairro|Ovar|Santa Maria da Feira|São João da Madeira|Sever do Vouga|Vagos|Vale de Cambra'
+      + '|Aljustrel|Almodôvar|Alvito|Barrancos|Beja|Castro Verde|Cuba|Ferreira do Alentejo|Mértola|Moura|Odemira|Ourique|Serpa|Vidigueira'
+      + '|Amares|Barcelos|Braga|Cabeceiras de Basto|Celorico de Basto|Esposende|Fafe|Guimarães|Póvoa de Lanhoso|Terras de Bouro|Vieira do Minho|Vila Nova de Famalicão|Vila Verde|Vizela'
+      + '|Alfândega da Fé|Bragança|Carrazeda de Ansiães|Freixo de Espada à Cinta|Macedo de Cavaleiros|Miranda do Douro|Mirandela|Mogadouro|Torre de Moncorvo|Vila Flor|Vimioso|Vinhais'
+      + '|Belmonte|Castelo Branco|Covilhã|Fundão|Idanha-a-Nova|Oleiros|Penamacor|Proença-a-Nova|Sertã|Vila de Rei|Vila Velha de Ródão'
+      + '|Arganil|Cantanhede|Coimbra|Condeixa-a-Nova|Figueira da Foz|Góis|Lousã|Mira|Miranda do Corvo|Montemor-o-Velho|Oliveira do Hospital|Pampilhosa da Serra|Penacova|Penela|Soure|Tábua|Vila Nova de Poiares'
+      + '|Alandroal|Arraiolos|Borba|Estremoz|Évora|Montemor-o-Novo|Mora|Mourão|Portel|Redondo|Reguengos de Monsaraz|Vendas Novas|Viana do Alentejo|Vila Viçosa'
+      + '|Albufeira|Alcoutim|Aljezur|Castro Marim|Faro|Lagoa|Lagos|Loulé|Monchique|Olhão|Portimão|São Brás de Alportel|Silves|Tavira|Vila do Bispo|Vila Real de Santo António'
+      + '|Aguiar da Beira|Almeida|Celorico da Beira|Figueira de Castelo Rodrigo|Fornos de Algodres|Gouveia|Guarda|Manteigas|Mêda|Pinhel|Sabugal|Seia|Trancoso|Vila Nova de Foz Côa'
+      + '|Alcobaça|Alvaiázere|Ansião|Batalha|Bombarral|Caldas da Rainha|Castanheira de Pera|Figueiró dos Vinhos|Leiria|Marinha Grande|Nazaré|Óbidos|Pedrógão Grande|Peniche|Pombal|Porto de Mós'
+      + '|Alenquer|Amadora|Arruda dos Vinhos|Azambuja|Cadaval|Cascais|Lisboa|Loures|Lourinhã|Mafra|Odivelas|Oeiras|Sintra|Sobral de Monte Agraço|Torres Vedras|Vila Franca de Xira'
+      + '|Alter do Chão|Arronches|Avis|Campo Maior|Castelo de Vide|Crato|Elvas|Fronteira|Gavião|Marvão|Monforte|Nisa|Ponte de Sor|Portalegre|Sousel'
+      + '|Amarante|Baião|Felgueiras|Gondomar|Lousada|Maia|Marco de Canaveses|Matosinhos|Paços de Ferreira|Paredes|Penafiel|Porto|Póvoa de Varzim|Santo Tirso|Trofa|Valongo|Vila do Conde|Vila Nova de Gaia'
+      + '|Abrantes|Alcanena|Almeirim|Alpiarça|Benavente|Cartaxo|Chamusca|Constância|Coruche|Entroncamento|Ferreira do Zêzere|Golegã|Mação|Ourém|Rio Maior|Salvaterra de Magos|Santarém|Sardoal|Tomar|Torres Novas|Vila Nova da Barquinha'
+      + '|Alcácer do Sal|Alcochete|Almada|Barreiro|Grândola|Moita|Montijo|Palmela|Santiago do Cacém|Seixal|Sesimbra|Setúbal|Sines'
+      + '|Arcos de Valdevez|Caminha|Melgaço|Monção|Paredes de Coura|Ponte da Barca|Ponte de Lima|Valença|Viana do Castelo|Vila Nova de Cerveira'
+      + '|Alijó|Boticas|Chaves|Mesão Frio|Mondim de Basto|Montalegre|Murça|Peso da Régua|Ribeira de Pena|Sabrosa|Santa Marta de Penaguião|Valpaços|Vila Pouca de Aguiar|Vila Real'
+      + '|Armamar|Carregal do Sal|Castro Daire|Cinfães|Lamego|Mangualde|Moimenta da Beira|Mortágua|Nelas|Oliveira de Frades|Penalva do Castelo|Penedono|Resende|Santa Comba Dão|São João da Pesqueira|São Pedro do Sul|Sátão|Sernancelhe|Tabuaço|Tarouca|Tondela|Vila Nova de Paiva|Viseu|Vouzela'
+      + '|Angra do Heroísmo|Calheta|Corvo|Horta|Lajes das Flores|Lajes do Pico|Madalena|Nordeste|Ponta Delgada|Povoação|Ribeira Grande|Santa Cruz da Graciosa|Santa Cruz das Flores|São Roque do Pico|Velas|Vila da Praia da Vitória|Vila do Porto|Vila Franca do Campo'
+      + '|Câmara de Lobos|Funchal|Machico|Ponta do Sol|Porto Moniz|Porto Santo|Ribeira Brava|Santa Cruz|Santana|São Vicente').split('|');
+    const frNorm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    function frLev(a, b) {
+      const v = Array.from({ length: b.length + 1 }, (_, i) => i);
+      for (let i = 1; i <= a.length; i++) {
+        let prev = v[0]; v[0] = i;
+        for (let j = 1; j <= b.length; j++) { const t = v[j]; v[j] = Math.min(v[j] + 1, v[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1)); prev = t; }
+      }
+      return v[b.length];
+    }
+    // O concelho existe? Se não, as sugestões mais parecidas (erro de escrita, nome incompleto ou com a freguesia)
+    function frMuniCheck(name) {
+      const n = frNorm(name);
+      if (!n) return { ok: false, sug: [] };
+      const hit = PT_MUNIS.find(m => frNorm(m) === n);
+      if (hit) return { ok: true, name: hit };
+      const sug = PT_MUNIS.map(m => { const k = frNorm(m); return [m, k.includes(n) || n.includes(k) ? 0.5 : frLev(k, n)]; })
+        .filter(([, dist]) => dist <= Math.max(2, Math.round(n.length / 4))).sort((a, b) => a[1] - b[1]).slice(0, 4).map(x => x[0]);
+      return { ok: false, sug };
+    }
+    const FR_FORM = [
+      ['artigo', 'Artigo matricial', 'ex.: U-1234 (urbano) ou R-56 (rústico)'], ['predial', 'Descrição predial (Conservatória)', 'ex.: n.º 1234/20100101'],
+      ['area', 'Área do prédio (m²)', '', 'num'], ['frente', 'Frente para a via pública (m)', '', 'num'],
+      ['solo', 'Classificação do solo', '', ['', 'Urbano', 'Rústico']], ['qualif', 'Qualificação / categoria de espaço', 'como aparece na planta de ordenamento'],
+      ['subcat', 'Subcategoria', ''], ['plano', 'Plano de urbanização / pormenor / UOPG', 'se houver'],
+      ['loteamento', 'Alvará de loteamento', 'n.º e data, se houver'], ['existente', 'Construção existente (m²)', '', 'num'],
+      ['abc_est', 'Área de construção estimada pela equipa (m²)', 'só se o PDM não tiver índices', 'num'],
+    ];
+    const FR_CONDS = [['ren', 'REN'], ['ran', 'RAN'], ['hidrico', 'Domínio público hídrico'], ['cheia', 'Zona inundável ou ameaçada pelas cheias'], ['patrimonio', 'Património classificado / zona de proteção'],
+      ['aru', 'ARU'], ['rodo', 'Servidão rodoviária'], ['ferro', 'Servidão ferroviária'], ['eletrica', 'Linhas elétricas'], ['gas', 'Gasoduto / oleoduto'], ['aero', 'Servidão aeronáutica'],
+      ['ruido', 'Zona de conflito acústico'], ['natura', 'Rede Natura 2000'], ['ardida', 'Área ardida'], ['militar', 'Servidão militar']];
+    const FR_ST = { rascunho: ['Rascunho', ''], aprovado: ['Aprovado', 'ok'], entregue: ['Entregue ao cliente', 'acc'], desatualizado: ['Desatualizado', 'warn'], pendente: ['Pendente', 'warn'] };
+    const FR_RISK = { verde: ['Viável', 'ok'], amarelo: ['Viável com condicionantes', 'warn'], vermelho: ['Risco elevado', 'bad'] };
+    const FR_GRADE = { a: 'confirmado no regulamento', b: 'interpretação do texto', c: 'a confirmar (plantas / Câmara)' };
+    const FR_PARK_M2 = 30;   // área bruta por lugar em cave, com circulação e rampas (estimativa de estudo)
+    const frSlug = s => frNorm(s).replace(/ /g, '-');
+    const frToday = () => new Date().toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' });
+    const frDate = s => s ? new Date(s.length === 10 ? s + 'T12:00' : s).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+    const frTypology = (p, d) => plotTypes(p).map(id => (d.types || []).find(t => t.id === id)?.name).filter(Boolean).join(' + ');
+    let frMockReports = [], frMockLib = [];
+    async function frReports(p) {
+      if (devMode) return frMockReports.filter(r => r.plot_id === p.id).sort((a, b) => b.version - a.version);
+      const r = await supabase.from('framing_reports').select('*').eq('plot_id', p.id).order('version', { ascending: false });
+      if (r.error) throw r.error;
+      return r.data || [];
+    }
+    async function frLibrary(municipality) {
+      if (devMode) return frMockLib.filter(x => frNorm(x.municipality) === frNorm(municipality));
+      const r = await supabase.from('pdm_library').select('*').ilike('municipality', municipality).order('created_at', { ascending: false });
+      if (r.error) throw r.error;
+      return r.data || [];
+    }
+    // Erros da função de IA em linguagem simples (devolve true quando já mostrou a mensagem)
+    function frAiErr(err, ej) {
+      if (err === 'no_key') { showToast('A IA ainda não está ligada: falta guardar a chave do Gemini no Supabase.', { type: 'error', ms: 9000 }); return true; }
+      if (err === 'limit') { const q = ej?.quota || {}; showToast(q.perMinute && !q.perDay ? 'Limite por minuto do Gemini: espera um minuto e tenta outra vez.' : 'Chegou-se ao limite diário gratuito do Gemini. Tenta amanhã.', { type: 'error', ms: 10000 }); return true; }
+      if (err === 'busy') { showToast('O Gemini está sobrecarregado neste momento (do lado do Google). Tenta daqui a um minuto.', { type: 'error', ms: 9000 }); return true; }
+      if (err === 'plan') { showToast('O plano gratuito do Gemini não permite este pedido. Tenta mais tarde.', { type: 'error', ms: 9000 }); return true; }
+      return false;
+    }
+    async function frInvoke(body) {
+      const r = await supabase.functions.invoke('framing-ai', { body });
+      const ej = r.error ? await r.error.context?.json?.().catch(() => null) : null;
+      const err = r.error ? ej?.error || r.error.message : r.data?.error;
+      if (ej?.usage || r.data?.usage) frAi = { ...(frAi || {}), configured: true, usage: ej?.usage || r.data.usage }, frAiAt = Date.now();
+      return { data: r.data, err, ej };
+    }
+    // Relatório de teste (modo de demonstração): parâmetros plausíveis, todos marcados para confirmar
+    let frMockFixture = null;
+    if (devMode) window.__frTest = { fixture: fx => { frMockFixture = fx; }, reports: () => frMockReports, lib: () => frMockLib };
+    function frMockReport(p, F) {
+      if (frMockFixture) return JSON.parse(JSON.stringify(frMockFixture));
+      const A = Number(F.form?.area || p.land_area) || 1000;
+      return {
+        summary: `Prédio em solo urbano, em ${F.form?.qualif || 'espaço central'}. A edificação para habitação coletiva é admitida, com índice de construção de 1,2 e até 5 pisos acima do solo, sujeita à confirmação das condicionantes nas plantas.`,
+        risk: 'amarelo', risk_reason: 'Parâmetros confirmados no regulamento, mas falta confirmar a ARU e a zona de proteção nas plantas.',
+        pdm: { title: F.pdm?.title || `Regulamento do PDM de ${p.municipality || ''}`, version: F.pdm?.version_label || '', date: F.pdm?.published_on || '', url: F.pdm?.source_url || '', other_plans: 'Não foram identificados planos de urbanização ou de pormenor.' },
+        identification: `Prédio com ${frThou(A)} m², na ${p.address || 'morada a confirmar'}.`,
+        constraints: [{ name: 'REN', applies: 'não', description: 'Fora da REN.', article: 'Planta de condicionantes', source: 'PDM', grade: 'c', impact: '—' },
+          { name: 'ARU', applies: 'a confirmar', description: 'Pode estar em ARU.', article: '', source: 'Delimitação da ARU', grade: 'c', impact: 'Benefícios fiscais; regras de reabilitação.' }],
+        params: [{ key: 'ic', label: 'Índice de construção', value: '1,2', num: 1.2, unit: '', article: 'art. 42.º', source: 'Regulamento do PDM', grade: 'a', impact: 'Define a área de construção máxima.' },
+          { key: 'pisos_acima', label: 'Pisos acima do solo', value: '5', num: 5, unit: 'pisos', article: 'art. 42.º, n.º 2', source: 'Regulamento do PDM', grade: 'a', impact: '' },
+          { key: 'io', label: 'Índice de ocupação', value: '0,5', num: 0.5, unit: '', article: 'art. 42.º', source: 'Regulamento do PDM', grade: 'b', impact: '' },
+          { key: 'estac_por_fogo', label: 'Estacionamento por fogo', value: '1,5 lugares', num: 1.5, unit: 'lugares/fogo', article: 'art. 95.º', source: 'Regulamento do PDM', grade: 'a', impact: 'Obriga a cave.', strict_num: 2, strict_source: 'Regra mais exigente em caso de dúvida' },
+          { key: 'pe_direito_min_m', label: 'Pé-direito mínimo', value: '2,40 m', num: 2.4, unit: 'm', article: 'art. 65.º RGEU', source: 'RGEU', grade: 'b', impact: '', sensitive_transition: true, strict_num: 2.6, strict_source: 'Código da Construção' }],
+        parking: 'Estacionamento no interior do prédio, em cave. Cedências para espaços verdes e equipamentos a confirmar com a Câmara.',
+        uses: 'Habitação, comércio e serviços no piso térreo.',
+        transition: { status_text: 'O registo de regimes legais ainda está por validar: aplica-se a regra mais exigente.', regime_adopted: 'Regra mais exigente entre o RGEU e o Código da Construção.', risks: 'O pé-direito mínimo pode subir.', recommendation: 'Confirmar com a Câmara o regime que está a aplicar.',
+          table: [{ param: 'Pé-direito mínimo', rgeu: '2,40 m', new_rule: '2,60 m', stricter: '2,60 m', source: 'RGEU art. 65.º / Código da Construção' }] },
+        general_law: [{ topic: 'Edificação', rule: 'Distância a construções vizinhas e janelas', diploma: 'Código Civil', article: 'art. 1360.º', impact: 'Afastamento de 1,5 m a vãos.' }],
+        restrictions: [{ param: 'Área de construção', value: `${frThou(A * 1.2)} m²`, article: 'art. 42.º', source: 'PDM', impact: 'Limite do projeto', grade: 'a' }],
+        conflicts: [], to_validate: ['Confirmar se o prédio está em ARU.', 'Confirmar o regime transitório que a Câmara está a aplicar.', 'Ponderar um pedido de informação prévia.'],
+        sources: [{ title: F.pdm?.title || 'Regulamento do PDM', url: F.pdm?.source_url || '', date: F.pdm?.published_on || '', kind: 'pdm' }],
+      };
+    }
+    // Capacidade construtiva calculada pela app (a IA só devolve os parâmetros). strict = regra mais exigente quando há dúvida.
+    function frCapacity(R, p, F, strict = false, units = 0) {
+      const P = {};
+      (R?.params || []).forEach(x => {
+        const raw = strict && x.strict_num != null ? x.strict_num : x.num; let v = Number(raw);
+        if (raw == null || raw === '' || !Number.isFinite(v) || P[x.key]) return;
+        if (/_pct$/.test(x.key) && v > 0 && v <= 1) v *= 100;   // a IA às vezes devolve 0,7 em vez de 70%
+        P[x.key] = { v, x };
+      });
+      const A = Number(F.form?.area) || Number(p.land_area) || 0, n = v => frNum(v);
+      const out = { A, caps: [], bind: null, abc: null, imp: null, floors: null, floorsNote: '', places: null, placesNote: '', parkArea: null, ced: [], perm: null, P };
+      if (!A) return out;
+      if (P.ic) out.caps.push({ label: 'Pelo índice de construção', f: `${n(A)} m² × ${n(P.ic.v)}`, area: A * P.ic.v, ref: P.ic.x });
+      const imps = [];
+      if (P.io) imps.push({ area: A * P.io.v, f: `${n(A)} m² × ${n(P.io.v)}`, ref: P.io.x });
+      if (P.implantacao_max_pct) imps.push({ area: A * P.implantacao_max_pct.v / 100, f: `${n(A)} m² × ${n(P.implantacao_max_pct.v)}%`, ref: P.implantacao_max_pct.x });
+      if (P.implantacao_max_m2) imps.push({ area: P.implantacao_max_m2.v, f: 'valor máximo', ref: P.implantacao_max_m2.x });
+      if (imps.length) out.imp = imps.reduce((a, b) => b.area < a.area ? b : a);
+      if (P.pisos_acima) { out.floors = P.pisos_acima.v; out.floorsNote = P.pisos_acima.x.article || 'parâmetro do PDM'; }
+      else if (P.cercea_m) { out.floors = Math.max(1, Math.floor(P.cercea_m.v / 3)); out.floorsNote = `cércea de ${n(P.cercea_m.v)} m ÷ 3 m por piso (estimativa)`; }
+      if (out.imp && out.floors) out.caps.push({ label: 'Pela implantação × pisos', f: `${n(out.imp.area)} m² × ${n(out.floors)} pisos`, area: out.imp.area * out.floors, ref: out.imp.ref });
+      // PDM sem índices (ex.: Porto, regras de alinhamento e cércea): vale a estimativa da equipa, feita sobre o desenho
+      const est = Number(F.form?.abc_est) || 0;
+      if (est > 0) out.caps.push({ label: 'Estimativa da equipa (volumetria)', f: 'desenho sobre alinhamentos, cércea e profundidade', area: est, team: true });
+      if (out.caps.length) { out.bind = out.caps.reduce((a, b) => b.area < a.area ? b : a); out.abc = out.bind.area; }
+      if (out.abc) {
+        const est = units > 0 ? units : Math.max(1, Math.round(out.abc / 100));
+        if (P.estac_por_fogo) { out.places = Math.ceil(est * P.estac_por_fogo.v); out.placesNote = `${est} ${units > 0 ? 'frações (da Rentabilidade)' : 'fogos estimados (1 por 100 m²)'} × ${n(P.estac_por_fogo.v)}`; }
+        else if (P.estac_por_100m2) { out.places = Math.ceil(out.abc / 100 * P.estac_por_100m2.v); out.placesNote = `${n(out.abc)} m² ÷ 100 × ${n(P.estac_por_100m2.v)}`; }
+        if (out.places && P.estac_visitantes_pct) { const vis = Math.ceil(out.places * P.estac_visitantes_pct.v / 100); out.places += vis; out.placesNote += ` + ${vis} para visitantes (${n(P.estac_visitantes_pct.v)}%)`; }
+        if (out.places) out.parkArea = out.places * FR_PARK_M2;
+        if (P.cedencia_verdes_m2_por_100m2) out.ced.push({ label: P.cedencia_verdes_m2_por_100m2.x.label || 'Cedência para espaços verdes', area: out.abc / 100 * P.cedencia_verdes_m2_por_100m2.v, f: `${n(out.abc)} m² ÷ 100 × ${n(P.cedencia_verdes_m2_por_100m2.v)} m²` });
+        if (P.cedencia_equip_m2_por_100m2) out.ced.push({ label: P.cedencia_equip_m2_por_100m2.x.label || 'Cedência para equipamentos', area: out.abc / 100 * P.cedencia_equip_m2_por_100m2.v, f: `${n(out.abc)} m² ÷ 100 × ${n(P.cedencia_equip_m2_por_100m2.v)} m²` });
+      }
+      if (P.permeavel_pct) out.perm = { area: A * P.permeavel_pct.v / 100, f: `${n(A)} m² × ${n(P.permeavel_pct.v)}%` };
+      else if (P.imperm_pct) out.perm = { area: A * (1 - P.imperm_pct.v / 100), f: `${n(A)} m² × (100% − ${n(P.imperm_pct.v)}%)` };
+      return out;
+    }
+    const frHasStrict = R => (R?.params || []).some(x => x.strict_num != null && Number(x.strict_num) !== Number(x.num));
+    function frUnits(p, ctx) { try { const f = ctx?.feas?.(); return f ? feasCalc(p, f).units || 0 : 0; } catch { return 0; } }
+
+    // ---- painel na ficha ----
+    function mountPdmPanel(el, p, d, F, ctx) {
+      if (!el) return;
+      F.form = F.form || {}; F.form.conds = F.form.conds || {};
+      // pré-preenche com o que já está nas Condicionantes (sem sobrepor o que a equipa escreveu)
+      const cons = p.constraints || {};
+      if (F.form.area == null && p.land_area) F.form.area = p.land_area;
+      if (!F.form.qualif && (p.pdm_class || cons.pdm_class)) F.form.qualif = p.pdm_class || cons.pdm_class;
+      [['ren', 'ren'], ['ran', 'ran'], ['aru', 'aru'], ['apa', 'hidrico']].forEach(([a, b]) => { if (cons[a] && !F.form.conds[b]) F.form.conds[b] = 'sim'; });
+      if (!F.form.typology) F.form.typology = frTypology(p, d);
+      let reps = null, busy = '';
+      const save = () => ctx.save();
+      const st = s => FR_ST[s] || [s || '—', ''];
+      const draw = () => {
+        const pdm = F.pdm, mun = F.municipality || p.municipality || '', chk = frMuniCheck(mun);
+        el.innerHTML = `
+          <div class="fr-txt-head"><div class="section-label">Análise do PDM com IA</div>
+            <span class="muted fr-pdm-sub">carrega-se o regulamento, a IA lê-o e prepara o relatório; a equipa revê e um sócio aprova</span></div>
+          <div class="fr-steps">
+            <div class="fr-step">
+              <div class="fr-step-n">1</div>
+              <div class="fr-step-b">
+                <b>Regulamento do PDM</b>
+                ${pdm ? `<div class="fr-doc">
+                    <div class="fr-doc-t">${escapeHtml(pdm.title || 'Regulamento do PDM')}</div>
+                    <div class="fr-doc-m">${escapeHtml([pdm.municipality, pdm.version_label, pdm.published_on ? frDate(pdm.published_on) : null].filter(Boolean).join(' · '))}</div>
+                    ${pdm.source_url ? `<a class="fr-doc-l" href="${escapeHtml(pdm.source_url)}" target="_blank" rel="noopener">${escapeHtml(pdm.source_url)} ↗</a>` : '<span class="muted">PDF carregado pela equipa (sem link público)</span>'}
+                    <div class="fr-doc-a">${pdm.status === 'verificado' ? `<span class="fr-chip ok">✓ confirmado${pdm.verified_by_name ? ' por ' + escapeHtml(pdm.verified_by_name) : ''}</span>` : '<span class="fr-chip warn">por confirmar: abre o link e confirma que é o regulamento certo e em vigor</span>'}
+                      ${pdm.status !== 'verificado' ? '<button type="button" class="secondary-btn" id="frp-ok">É este — confirmar</button>' : ''}
+                      ${pdm.storage_path ? '<button type="button" class="text-btn" id="frp-copy">Abrir a cópia guardada</button>' : ''}
+                      <button type="button" class="text-btn" id="frp-change">Trocar</button></div></div>`
+                  : `<div class="fr-step-t">Concelho: <b>${escapeHtml(mun || 'sem concelho')}</b>${mun && !chk.ok ? ' <span class="fr-chip warn">não reconheço este concelho</span>' : ''}</div>
+                    <div class="field-hint" style="margin:0">Descarrega do site da Câmara o PDF do Regulamento do PDM em vigor (de preferência a versão consolidada) e carrega-o aqui.</div>
+                    <div class="fr-step-btns"><button type="button" class="secondary-btn" id="frp-find"${busy ? ' disabled' : ''}>${busy === 'find' ? 'A procurar no site da Câmara…' : 'Carregar o PDF do regulamento'}</button></div>`}
+              </div></div>
+            <div class="fr-step">
+              <div class="fr-step-n">2</div>
+              <div class="fr-step-b"><b>Dados do prédio</b>
+                <div class="fr-form">
+                  <label class="fr-f fr-f-wide"><span>Tipologia de investimento</span><input type="text" class="form-input" data-ff="typology" list="fr-typs" value="${escapeHtml(F.form.typology || '')}">
+                    <datalist id="fr-typs">${(d.types || []).map(t => `<option value="${escapeHtml(t.name)}">`).join('')}</datalist></label>
+                  ${FR_FORM.map(([k, l, ph, t]) => `<label class="fr-f"><span>${escapeHtml(l)}</span>${Array.isArray(t)
+                    ? `<select class="form-input" data-ff="${k}">${t.map(o => `<option value="${escapeHtml(o)}"${(F.form[k] || '') === o ? ' selected' : ''}>${escapeHtml(o || '—')}</option>`).join('')}</select>`
+                    : `<input type="${t === 'num' ? 'number' : 'text'}" class="form-input" data-ff="${k}" value="${escapeHtml(F.form[k] ?? '')}" placeholder="${escapeHtml(ph)}"${t === 'num' ? ' step="any" inputmode="decimal"' : ''}>`}</label>`).join('')}
+                </div>
+                <div class="fr-conds-l">Condicionantes (das plantas)</div>
+                <div class="fr-conds">${FR_CONDS.map(([k, l]) => { const v = F.form.conds[k] || '?'; return `<div class="fr-cond"><span>${escapeHtml(l)}</span>
+                  <span class="fr-seg" role="group" aria-label="${escapeHtml(l)}">${[['sim', 'Sim'], ['nao', 'Não'], ['?', '?']].map(([o, ol]) => `<button type="button" data-cond="${k}" data-v="${o}" class="${v === o ? 'on' : ''}" aria-pressed="${v === o}">${ol}</button>`).join('')}</span></div>`; }).join('')}</div>
+                <label class="fr-f fr-f-wide"><span>Outras informações</span><textarea class="form-input" data-ff="notas" rows="2" placeholder="Informação prévia, conversas com a Câmara, o que se pretende construir…">${escapeHtml(F.form.notas || '')}</textarea></label>
+              </div></div>
+            <div class="fr-step">
+              <div class="fr-step-n">3</div>
+              <div class="fr-step-b"><b>Relatório</b>
+                <div class="fr-step-btns"><button type="button" class="primary-btn" id="frp-run"${busy ? ' disabled' : ''}>${busy === 'run' ? 'A ler o regulamento e a analisar… (1 a 3 minutos)' : '✦ Analisar com IA'}</button>
+                  ${!pdm ? '<span class="muted">carrega primeiro o regulamento: sem ele, os parâmetros do PDM ficam por confirmar</span>' : pdm.status !== 'verificado' ? '<span class="muted">confirma primeiro o regulamento</span>' : ''}</div>
+                <div class="fr-vers">${reps == null ? '<span class="muted">a carregar as versões…</span>' : reps.length ? reps.map(r => `<button type="button" class="fr-ver" data-rep="${escapeHtml(r.id)}">
+                    <b>v${r.version}</b><span class="fr-chip ${st(r.status)[1]}">${escapeHtml(st(r.status)[0])}</span>${r.simulation ? '<span class="fr-chip warn">simulação</span>' : ''}${r.outdated_at && r.status !== 'desatualizado' ? '<span class="fr-chip warn">lei alterada depois</span>' : ''}${r.kind === 'reanalise' ? '<span class="fr-chip">reanálise</span>' : ''}
+                    <span class="muted">${escapeHtml(frDate(r.created_at))}${r.created_by_name ? ' · ' + escapeHtml(r.created_by_name) : ''}${r.status === 'desatualizado' && r.outdated_reason ? ' · ' + escapeHtml(r.outdated_reason) : ''}</span><i>Abrir</i></button>`).join('')
+                  : '<span class="muted">Ainda não há relatórios. Cada análise cria uma versão nova; as entregues ao cliente nunca se alteram.</span>'}</div>
+              </div></div>
+          </div>`;
+        bind();
+      };
+      const loadReps = async () => { try { reps = await frReports(p); } catch (err) { reps = []; showError('ler os relatórios', err); } if (el.isConnected) draw(); };
+      function bind() {
+        el.querySelectorAll('[data-ff]').forEach(inp => inp.addEventListener(inp.tagName === 'SELECT' ? 'change' : 'input', () => {
+          const k = inp.dataset.ff; F.form[k] = inp.type === 'number' ? (inp.value === '' ? null : Number(inp.value)) : inp.value; save();
+        }));
+        el.querySelectorAll('[data-cond]').forEach(b => b.addEventListener('click', () => {
+          F.form.conds[b.dataset.cond] = b.dataset.v; save();
+          b.parentElement.querySelectorAll('button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); });
+        }));
+        el.querySelector('#frp-find')?.addEventListener('click', () => askMunicipality());
+        el.querySelector('#frp-change')?.addEventListener('click', () => askMunicipality());
+        el.querySelector('#frp-ok')?.addEventListener('click', () => confirmPdm());
+        el.querySelector('#frp-copy')?.addEventListener('click', async () => {
+          const w = window.open('', '_blank');
+          try { const r = await supabase.storage.from('pdm-docs').createSignedUrl(F.pdm.storage_path, 3600); if (r.error) throw r.error; w.location.href = r.data.signedUrl; }
+          catch (err) { w?.close(); showError('abrir a cópia do regulamento', err); }
+        });
+        el.querySelector('#frp-run')?.addEventListener('click', () => runAnalysis());
+        el.querySelectorAll('[data-rep]').forEach(b => b.addEventListener('click', () => {
+          const rep = reps.find(r => String(r.id) === b.dataset.rep);
+          if (rep) openFramingViewer(p, d, F, rep, { ...ctx, reps, reload: loadReps });
+        }));
+      }
+      // Confirmar o concelho antes de procurar (e mostrar o que já está na biblioteca)
+      async function askMunicipality() {
+        const cur = F.municipality || p.municipality || '';
+        openQuickModal('Regulamento do PDM', `
+          <p class="field-hint" style="margin-top:0">Confirma o concelho, para usarmos o regulamento certo.</p>
+          <label class="field-label" for="frm-mun">Concelho</label>
+          <input type="text" class="form-input" id="frm-mun" value="${escapeHtml(cur)}" list="frm-munis" autocomplete="off">
+          <datalist id="frm-munis">${PT_MUNIS.map(m => `<option value="${escapeHtml(m)}">`).join('')}</datalist>
+          <div id="frm-chk" class="fr-mchk" aria-live="polite"></div>
+          <div id="frm-lib" class="fr-lib"></div>
+          <div class="fr-step-btns" style="margin-top:var(--sp-4)"><button type="button" class="primary-btn" id="frm-up">Carregar o PDF</button><button type="button" class="text-btn" id="frm-go">Tentar encontrar no site da Câmara</button></div>`);
+        const inp = document.getElementById('frm-mun'), box = document.getElementById('frm-chk'), lib = document.getElementById('frm-lib'), go = document.getElementById('frm-go');
+        let libT = null;
+        const check = () => {
+          const c = frMuniCheck(inp.value);
+          go.disabled = !c.ok; document.getElementById('frm-up').disabled = !c.ok;
+          box.innerHTML = !inp.value.trim() ? '<span class="fr-chip warn">Escreve o concelho.</span>' : c.ok ? `<span class="fr-chip ok">✓ ${escapeHtml(c.name)}</span>`
+            : `<span class="fr-chip warn">Não encontro «${escapeHtml(inp.value.trim())}» na lista dos concelhos.</span>${c.sug.length ? ` Querias dizer: ${c.sug.map(s => `<button type="button" class="fr-sug" data-sug="${escapeHtml(s)}">${escapeHtml(s)}</button>`).join(' ')}` : ' Confirma o nome (é o concelho, não a freguesia).'}`;
+          box.querySelectorAll('[data-sug]').forEach(b => b.addEventListener('click', () => { inp.value = b.dataset.sug; check(); }));
+          clearTimeout(libT);
+          if (c.ok) libT = setTimeout(async () => {
+            try {
+              const docs = await frLibrary(c.name);
+              if (!lib.isConnected) return;
+              lib.innerHTML = docs.length ? `<div class="fr-conds-l">Já temos na biblioteca</div>${docs.map(x => `<div class="fr-lib-row"><span><b>${escapeHtml(x.title || 'Regulamento do PDM')}</b><small>${escapeHtml([x.version_label, x.published_on ? frDate(x.published_on) : null, x.status === 'verificado' ? 'confirmado' : 'por confirmar'].filter(Boolean).join(' · '))}</small>${x.source_url ? `<a href="${escapeHtml(x.source_url)}" target="_blank" rel="noopener">${escapeHtml(x.source_url)} ↗</a>` : ''}</span><button type="button" class="secondary-btn" data-lib="${escapeHtml(x.id)}">Usar este</button></div>`).join('')}` : '';
+              lib.querySelectorAll('[data-lib]').forEach(b => b.addEventListener('click', () => { const x = docs.find(z => String(z.id) === b.dataset.lib); closeQuickModal(); setPdm(x, c.name); }));
+            } catch { lib.innerHTML = ''; }
+          }, 250); else lib.innerHTML = '';
+        };
+        inp.addEventListener('input', check); check();
+        document.getElementById('frm-up').addEventListener('click', () => { const c = frMuniCheck(inp.value); closeQuickModal(); uploadPdm(c.ok ? c.name : inp.value.trim()); });
+        go.addEventListener('click', () => { const c = frMuniCheck(inp.value); if (!c.ok) return; closeQuickModal(); findPdm(c.name); });
+      }
+      const setPdm = (doc, mun) => {
+        F.municipality = mun || doc.municipality;
+        F.pdm = { id: doc.id, municipality: doc.municipality, title: doc.title, version_label: doc.version_label, published_on: doc.published_on, source_url: doc.source_url, storage_path: doc.storage_path, status: doc.status, verified_by_name: doc.verified_by_name, verified_at: doc.verified_at, page: (String(doc.notes || '').match(/Página da câmara: (\S+)/) || [])[1] || null };
+        save(); draw();
+      };
+      async function findPdm(mun) {
+        busy = 'find'; draw();
+        try {
+          let res;
+          if (devMode) { await new Promise(r => setTimeout(r, 500)); const doc = { id: 'pdm-' + Date.now(), municipality: mun, title: `Regulamento do Plano Diretor Municipal de ${mun}`, version_label: '1.ª revisão', published_on: '2021-06-18', source_url: `https://www.cm-${frSlug(mun)}.pt/pdm/regulamento.pdf`, storage_path: null, status: 'encontrado', notes: '' }; frMockLib.push(doc); res = { data: { found: true, doc, page: `https://www.cm-${frSlug(mun)}.pt/pdm` } }; }
+          else res = await frInvoke({ action: 'find_pdm', municipality: mun, typology: F.form.typology || '' });
+          busy = ''; draw();
+          if (frAiErr(res.err, res.ej)) return;
+          if (res.err) throw new Error(res.err);
+          const r = res.data;
+          if (r.found) {
+            const x = r.doc;
+            openQuickModal('Encontrei este regulamento', `
+              <p class="field-hint" style="margin-top:0">Abre o link e confirma que é o Regulamento do PDM de <b>${escapeHtml(mun)}</b>, na versão em vigor.</p>
+              <div class="fr-doc"><div class="fr-doc-t">${escapeHtml(x.title || 'Regulamento do PDM')}</div>
+                <div class="fr-doc-m">${escapeHtml([x.version_label, x.published_on ? frDate(x.published_on) : null, x.size_bytes ? (x.size_bytes / 1048576).toLocaleString('pt-PT', { maximumFractionDigits: 1 }) + ' MB' : null].filter(Boolean).join(' · '))}</div>
+                ${x.source_url ? `<a class="fr-doc-l" href="${escapeHtml(x.source_url)}" target="_blank" rel="noopener">${escapeHtml(x.source_url)} ↗</a>` : ''}
+                ${r.page ? `<small class="muted">encontrado a partir de <a href="${escapeHtml(r.page)}" target="_blank" rel="noopener">${escapeHtml(r.page)}</a></small>` : ''}</div>
+              <p class="field-hint">A versão e a data foram lidas pela IA: confirma-as no próprio documento.</p>
+              <div class="fr-step-btns" style="margin-top:var(--sp-4)"><button type="button" class="primary-btn" id="frf-ok">É este — usar e confirmar</button><button type="button" class="secondary-btn" id="frf-later">Usar, confirmo depois</button><button type="button" class="text-btn" id="frf-no">Não é este — carregar o PDF</button></div>`);
+            document.getElementById('frf-ok').addEventListener('click', async () => { closeQuickModal(); setPdm(x, mun); await confirmPdm(); });
+            document.getElementById('frf-later').addEventListener('click', () => { closeQuickModal(); setPdm(x, mun); });
+            document.getElementById('frf-no').addEventListener('click', () => { closeQuickModal(); uploadPdm(mun); });
+          } else {
+            const page = r.hint?.page || (r.tried || []).find(u => /^https?:/.test(u));
+            openQuickModal('Não encontrei o PDF do regulamento', `
+              <p style="margin-top:0">Procurei no site da Câmara de <b>${escapeHtml(mun)}</b> mas não encontrei o ficheiro PDF do Regulamento do PDM.</p>
+              ${page ? `<p>Página oficial do PDM: <a href="${escapeHtml(page)}" target="_blank" rel="noopener">${escapeHtml(page)} ↗</a><br><small class="muted">Descarrega lá o regulamento (de preferência a versão consolidada) e carrega-o aqui.</small></p>` : ''}
+              ${r.notes ? `<p class="field-hint">O que a IA sabe: ${escapeHtml(r.notes)}</p>` : ''}
+              <div class="fr-step-btns" style="margin-top:var(--sp-4)"><button type="button" class="primary-btn" id="frn-up">Carregar o PDF</button></div>`);
+            document.getElementById('frn-up').addEventListener('click', () => { closeQuickModal(); uploadPdm(mun, r.hint); });
+          }
+        } catch (err) { busy = ''; draw(); showError('procurar o regulamento do PDM', err); }
+      }
+      // Carregar o PDF à mão (quando a IA não encontra, ou quando o cliente o envia)
+      function uploadPdm(mun, hint = null) {
+        openQuickModal('Carregar o regulamento do PDM', `
+          <label class="field-label" for="fru-mun" style="margin-top:0">Concelho</label><input type="text" class="form-input" id="fru-mun" value="${escapeHtml(mun || '')}" list="fru-munis"><datalist id="fru-munis">${PT_MUNIS.map(m => `<option value="${escapeHtml(m)}">`).join('')}</datalist>
+          <label class="field-label" for="fru-title">Título</label><input type="text" class="form-input" id="fru-title" value="${escapeHtml(hint?.title || (mun ? `Regulamento do PDM de ${mun}` : ''))}">
+          <label class="field-label" for="fru-ver">Versão</label><input type="text" class="form-input" id="fru-ver" value="${escapeHtml(hint?.version || '')}" placeholder="ex.: 1.ª revisão, republicação de 2024">
+          <label class="field-label" for="fru-date">Data de publicação</label><input type="date" class="form-input" id="fru-date" value="${escapeHtml(/^\d{4}-\d{2}-\d{2}$/.test(hint?.date || '') ? hint.date : '')}">
+          <label class="field-label" for="fru-url">Link de onde veio (fica no relatório)</label><input type="url" class="form-input" id="fru-url" value="${escapeHtml(hint?.page || '')}" placeholder="https://…">
+          <label class="field-label" for="fru-file">Ficheiro PDF</label><input type="file" class="form-input" id="fru-file" accept="application/pdf">
+          <p class="field-hint">Ao carregar confirmas que é o regulamento certo e em vigor.</p>
+          <button type="button" class="primary-btn" id="fru-go">Guardar</button>`);
+        document.getElementById('fru-go').addEventListener('click', async e => {
+          const btn = e.currentTarget, file = document.getElementById('fru-file').files[0];
+          const c = frMuniCheck(document.getElementById('fru-mun').value);
+          if (!c.ok) return showToast(c.sug.length ? `Confirma o concelho: querias dizer ${c.sug.join(' ou ')}?` : 'Escreve o nome do concelho.', { type: 'error', ms: 7000 });
+          if (!file) return showToast('Escolhe o ficheiro PDF.', { type: 'error' });
+          if (!/pdf/i.test(file.type) && !/\.pdf$/i.test(file.name)) return showToast('O ficheiro tem de ser um PDF.', { type: 'error' });
+          if (file.size > 50 * 1048576) return showToast('O PDF tem mais de 50 MB.', { type: 'error' });
+          btn.disabled = true; btn.textContent = 'A guardar…';
+          try {
+            const me = await getCurrentMember(), now = new Date().toISOString(), url = document.getElementById('fru-url').value.trim();
+            const row = { municipality: c.name, title: document.getElementById('fru-title').value.trim() || `Regulamento do PDM de ${c.name}`, version_label: document.getElementById('fru-ver').value.trim() || null,
+              published_on: document.getElementById('fru-date').value || null, source_url: /^https?:\/\//i.test(url) ? url : null, size_bytes: file.size, found_by: 'equipa', status: 'verificado',
+              verified_at: now, verified_by: me?.id || null, verified_by_name: me?.name || null };
+            if (!devMode) {
+              const path = `${frSlug(c.name)}/${crypto.randomUUID()}.pdf`;
+              const up = await supabase.storage.from('pdm-docs').upload(path, file, { contentType: 'application/pdf', upsert: false });
+              if (up.error) throw up.error;
+              row.storage_path = path;
+            }
+            const doc = await dbInsert('pdm_library', row, frMockLib);
+            closeQuickModal(); setPdm(doc, c.name); showToast('Regulamento guardado na biblioteca');
+          } catch (err) { btn.disabled = false; btn.textContent = 'Guardar'; showError('guardar o regulamento', err); }
+        });
+      }
+      async function confirmPdm() {
+        try {
+          const me = await getCurrentMember(), now = new Date().toISOString();
+          const patch = { status: 'verificado', verified_at: now, verified_by: me?.id || null, verified_by_name: me?.name || null };
+          await dbUpdate('pdm_library', F.pdm.id, patch, frMockLib);
+          Object.assign(F.pdm, patch); save(); draw(); showToast('Regulamento confirmado');
+        } catch (err) { showError('confirmar o regulamento', err); }
+      }
+      async function runAnalysis() {
+        if (!(Number(F.form.area) > 0)) { showToast('Indica a área do prédio, para a app calcular a capacidade construtiva.', { type: 'error', ms: 7000 }); el.querySelector('[data-ff="area"]')?.focus(); return; }
+        if (F.pdm && F.pdm.status !== 'verificado') {
+          openQuickModal('Confirmar o regulamento', `<p style="margin-top:0">Ainda ninguém confirmou que <b>${escapeHtml(F.pdm.title || 'o regulamento')}</b> é o documento certo e em vigor.</p>
+            ${F.pdm.source_url ? `<p><a href="${escapeHtml(F.pdm.source_url)}" target="_blank" rel="noopener">Abrir o regulamento ↗</a></p>` : ''}
+            <div class="fr-step-btns"><button type="button" class="primary-btn" id="frc-ok">Confirmo — analisar</button><button type="button" class="text-btn" id="frc-no">Trocar o regulamento</button></div>`);
+          document.getElementById('frc-ok').addEventListener('click', async () => { closeQuickModal(); await confirmPdm(); runAnalysis(); });
+          document.getElementById('frc-no').addEventListener('click', () => { closeQuickModal(); askMunicipality(); });
+          return;
+        }
+        busy = 'run'; draw();
+        try {
+          const condLabel = Object.fromEntries(FR_CONDS);
+          const input = { morada: p.address, freguesia: p.parish, concelho: F.municipality || p.municipality, coordenadas: p.lat != null ? `${p.lat}, ${p.lng}` : null,
+            ...Object.fromEntries(FR_FORM.map(([k, l]) => [l, F.form[k] ?? null])), 'Outras informações': F.form.notas || null,
+            condicionantes: Object.fromEntries(FR_CONDS.map(([k]) => [condLabel[k], { sim: 'sim', nao: 'não' }[F.form.conds[k]] || 'a confirmar'])),
+            parametros_ja_conhecidos: frParamList(p).map(x => `${x.l}: ${x.v}`), plantas: (F.plants || []).map(x => x.caption).filter(Boolean) };
+          let out;
+          if (devMode) { await new Promise(r => setTimeout(r, 500)); out = { report: frMockReport(p, F), model: 'teste', regime_snapshot: [], regime_checked_at: null, pdm_doc_id: F.pdm?.id || null }; }
+          else {
+            // corre em segundo plano no servidor (um regulamento longo pode levar mais de 2 minutos); a app consulta o estado
+            const res = await frInvoke({ action: 'analyse_start', pdm_doc_id: F.pdm?.id || null, typology: F.form.typology || '', input, extracts: (F.extracts || []).filter(x => (x.text || '').trim()) });
+            if (frAiErr(res.err, res.ej)) { busy = ''; draw(); return; }
+            if (res.err) throw new Error(res.err);
+            const t0 = Date.now();
+            let job = null;
+            while (Date.now() - t0 < 7 * 60000) {
+              await new Promise(r => setTimeout(r, 4000));
+              const q = await supabase.from('ai_jobs').select('status, result, error, error_code').eq('id', res.data.job).maybeSingle();
+              if (q.error) throw q.error;
+              if (q.data && q.data.status !== 'a_correr') { job = q.data; break; }
+            }
+            if (!job) throw new Error('A análise está a demorar demasiado. Tenta outra vez daqui a pouco.');
+            if (job.result?.usage) frAi = { ...(frAi || {}), configured: true, usage: job.result.usage }, frAiAt = Date.now();
+            if (job.status === 'erro') { if (frAiErr(job.error_code, job.result)) { busy = ''; draw(); return; } throw new Error(job.error || 'A análise falhou'); }
+            out = job.result;
+          }
+          const R = out.report, me = await getCurrentMember(), all = reps || await frReports(p);
+          // o link do regulamento é sempre o da biblioteca (a IA não o escolhe)
+          R.pdm = { ...(R.pdm || {}), title: F.pdm?.title || R.pdm?.title || '', url: F.pdm?.source_url || '', version: F.pdm?.version_label || R.pdm?.version || '', date: F.pdm?.published_on || R.pdm?.date || '' };
+          const cap = frCapacity(R, p, F, false, frUnits(p, ctx)), capS = frHasStrict(R) ? frCapacity(R, p, F, true, frUnits(p, ctx)) : null;
+          const row = { plot_id: p.id, version: (all[0]?.version || 0) + 1, kind: 'normal', status: 'rascunho', typology: F.form.typology || null, input: { ...input, pdm: F.pdm || null },
+            params: R.params || [], sections: R, capacity: { abc: cap.abc, imp: cap.imp?.area ?? null, floors: cap.floors, places: cap.places, parkArea: cap.parkArea, strict: capS ? { abc: capS.abc, places: capS.places, parkArea: capS.parkArea } : null },
+            risk: R.risk || null, sources: R.sources || [], regime_snapshot: out.regime_snapshot || [], regime_checked_at: out.regime_checked_at || null, pdm_doc_id: out.pdm_doc_id || F.pdm?.id || null,
+            model: out.model || null, diff: { original: JSON.parse(JSON.stringify(R)) }, created_at: new Date().toISOString(), created_by: me?.id || null, created_by_name: me?.name || null };
+          const rep = await dbInsert('framing_reports', row, frMockReports);
+          busy = ''; await loadReps();
+          showToast(`Relatório v${rep.version} criado — revê-o antes de aprovar`);
+          openFramingViewer(p, d, F, rep, { ...ctx, reps, reload: loadReps });
+        } catch (err) { busy = ''; draw(); showError('analisar o PDM', err); }
+      }
+      draw(); loadReps();
+    }
+
+    // ---- o documento do relatório (o mesmo HTML no pré-visualizador, no PDF e no dossier) ----
+    const FR_DOC_CSS = `
+      @page { size: A4; margin: 14mm 14mm 16mm; }
+      * { box-sizing: border-box; }
+      html { background: #F7F7F5; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      body { font: 9.5pt/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1B1A19; margin: 0 auto; padding: 28px 24px 40px; max-width: 820px; font-variant-numeric: tabular-nums; }
+      .bar { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+      .bar button { font: inherit; font-weight: 600; background: #714D79; color: #fff; border: 0; border-radius: 10px; padding: 9px 16px; cursor: pointer; }
+      .capa { background: radial-gradient(60% 70% at 50% 47%, rgba(181,155,187,.05), transparent 70%), radial-gradient(120% 150% at 2% 108%, rgba(124,84,132,.46), rgba(124,84,132,.2) 35%, transparent 62%), radial-gradient(110% 130% at 98% -12%, rgba(140,108,76,.16), rgba(140,108,76,.06) 38%, transparent 64%), linear-gradient(180deg, #1A1817, #0F0E0D); color: #F4F3EF; border-radius: 16px; padding: 22px 26px 26px; margin-bottom: 18px; break-inside: avoid; }
+      .capa header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+      .capa header img { height: 26px; } .capa .brand { display: flex; align-items: center; gap: 10px; }
+      .capa .ii { font-size: 9pt; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #C9B3CE; border-left: 1.5px solid rgba(201,179,206,.6); padding-left: 10px; line-height: 1.1; }
+      .capa .meta { text-align: right; font-size: 8.5pt; color: #A8A29A; }
+      .eyebrow { font-size: 8pt; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #C9B3CE; }
+      h1 { font-size: 22pt; line-height: 1.12; margin: 4px 0 6px; font-weight: 600; letter-spacing: -0.02em; }
+      .loc { color: #B8B2AA; font-size: 9pt; } .loc a, .capa a { color: #E4D6E8; }
+      .capa .pdm { margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.12); font-size: 8.5pt; color: #C9C3BB; }
+      .capa .pdm b { color: #F4F3EF; font-weight: 600; } .capa .pdm a { word-break: break-all; }
+      .draft { display: inline-block; margin-top: 12px; font-size: 8pt; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #1A1817; background: #E8C66A; border-radius: 99px; padding: 3px 10px; }
+      .fr .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 4px 0 12px; }
+      .fr .kpi { background: #F7F7F5; border: 1px solid #E4E3DE; border-radius: 12px; padding: 10px 12px; break-inside: avoid; }
+      .fr .kpi span { display: block; font-size: 8pt; color: #6B6660; } .fr .kpi b { display: block; font-size: 13pt; font-weight: 600; letter-spacing: -0.01em; margin-top: 2px; } .fr .kpi small { display: block; font-size: 7.5pt; color: #736D66; }
+      .fr section { background: #fff; border: 1px solid #E4E3DE; border-radius: 14px; padding: 12px 16px; margin-bottom: 12px; break-inside: auto; }
+      .fr h2 { display: flex; align-items: baseline; gap: 10px; font-size: 10.5pt; font-weight: 600; margin: 0 0 8px; padding-bottom: 6px; border-bottom: 2px solid #1B1A19; break-after: avoid; }
+      .fr h2 span { font-size: 8pt; color: #714D79; font-weight: 600; letter-spacing: .04em; }
+      .fr h3 { font-size: 9pt; font-weight: 600; margin: 12px 0 4px; break-after: avoid; }
+      .fr .txt { white-space: pre-wrap; margin: 0 0 8px; } .fr .txt:empty { display: none; }
+      .fr table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 8.5pt; }
+      .fr td, .fr th { padding: 5px 4px; border-bottom: 1px solid #EEEDE9; text-align: left; vertical-align: top; }
+      .fr th { font-size: 7.5pt; font-weight: 500; color: #736D66; border-bottom: 1px solid #E4E3DE; }
+      .fr tr { break-inside: avoid; } .fr td:first-child { width: auto; }
+      .fr table.pt td:nth-child(1) { width: 24%; } .fr table.pt td:nth-child(2) { width: 22%; font-weight: 600; } .fr table.pt td:nth-child(3) { width: 20%; }
+      .fr .r { text-align: right; white-space: nowrap; } .fr td small { display: block; color: #736D66; font-size: 7.5pt; }
+      .fr tr.sub td { background: #F3F3F0; font-weight: 600; border-bottom: 0; } .fr tr.sub td:first-child { border-radius: 8px 0 0 8px; } .fr tr.sub td:last-child { border-radius: 0 8px 8px 0; }
+      .g { display: inline-block; min-width: 16px; text-align: center; font-size: 7pt; font-weight: 700; border-radius: 4px; padding: 1px 4px; text-transform: uppercase; }
+      .g.a { background: #E3F1E6; color: #2D6A3E; } .g.b { background: #FBF0D9; color: #7A5A12; } .g.c { background: #F6E1DF; color: #9A3A33; }
+      .chip { display: inline-block; font-size: 7.5pt; border-radius: 99px; padding: 1px 8px; background: #F3F3F0; color: #3D3A37; white-space: nowrap; }
+      .chip.sim { background: #F6E1DF; color: #9A3A33; } .chip.nao { background: #E3F1E6; color: #2D6A3E; } .chip.conf { background: #FBF0D9; color: #7A5A12; }
+      .risk { display: flex; align-items: center; gap: 10px; border-radius: 12px; padding: 10px 14px; margin-bottom: 10px; font-weight: 600; }
+      .risk i { width: 12px; height: 12px; border-radius: 50%; flex: 0 0 auto; }
+      .risk.verde { background: #E3F1E6; } .risk.verde i { background: #2F8A4C; } .risk.amarelo { background: #FBF0D9; } .risk.amarelo i { background: #D19A1F; } .risk.vermelho { background: #F6E1DF; } .risk.vermelho i { background: #C4453D; }
+      .risk small { display: block; font-weight: 400; color: #3D3A37; }
+      .legend { font-size: 7.5pt; color: #736D66; margin-top: 6px; } .legend .g { margin: 0 2px 0 8px; } .legend .g:first-child { margin-left: 0; }
+      .note { font-size: 7.5pt; color: #736D66; margin: 6px 0 0; }
+      .warnbox { background: #FBF0D9; border-radius: 10px; padding: 8px 12px; margin: 8px 0; font-size: 8.5pt; }
+      .fr ul, .fr ol { margin: 4px 0 0; padding-left: 18px; } .fr li { margin-bottom: 3px; }
+      .fr a { color: #5A3D61; word-break: break-word; }
+      .src li { break-inside: avoid; } .src small { color: #736D66; }
+      .limit { font-size: 8pt; color: #3D3A37; background: #F3F3F0; border-radius: 10px; padding: 10px 12px; margin-top: 10px; }
+      figure { margin: 0 0 12px; break-inside: avoid; } figure img { display: block; width: 100%; max-height: 220mm; object-fit: contain; border: 1px solid #E4E3DE; border-radius: 10px; background: #fff; }
+      figcaption { font-size: 8pt; color: #6B6660; margin-top: 4px; }
+      .ext { break-inside: avoid; margin-bottom: 10px; } .ext b { display: block; font-size: 8.5pt; } .ext div { font-size: 8.5pt; color: #3D3A37; white-space: pre-wrap; border-left: 2px solid #E4D6E8; padding-left: 10px; margin-top: 3px; }
+      .part { break-before: page; margin: 0 0 14px; padding: 18px 22px; border-radius: 14px; background: #1A1817; color: #F4F3EF; }
+      .part .eyebrow { color: #C9B3CE; } .part h1 { font-size: 17pt; margin: 2px 0 0; }
+      .toc { columns: 2; font-size: 8.5pt; margin: 4px 0 0; padding-left: 18px; }
+      .verif { font-size: 7.5pt; color: #736D66; margin-top: 8px; }
+      footer { display: flex; justify-content: space-between; gap: 16px; font-size: 7.5pt; color: #736D66; margin-top: 16px; }
+      footer span:last-child { white-space: nowrap; }
+      [contenteditable] { outline: 1px dashed transparent; border-radius: 4px; transition: outline-color .15s, background-color .15s; cursor: text; }
+      [contenteditable]:hover { outline-color: #C9B3CE; } [contenteditable]:focus { outline: 2px solid #714D79; background: #FBF8FC; }
+      [contenteditable]:empty::before { content: attr(data-ph); color: #A29C95; }
+      .edhint { position: sticky; top: 0; z-index: 2; background: #714D79; color: #fff; font-size: 8.5pt; border-radius: 10px; padding: 7px 12px; margin-bottom: 12px; }
+      @media print { html { background: #F7F7F5; } body { padding: 0; max-width: none; } .bar, .edhint { display: none; } [contenteditable] { outline: none !important; background: none !important; } }
+      @media (max-width: 640px) { .fr .kpis { grid-template-columns: 1fr 1fr; } .toc { columns: 1; } }`;
+    // Conteúdo do relatório (as 11 secções e os anexos). o.edit → campos editáveis (data-k = caminho no relatório)
+    function frReportBody(p, rep, F, o = {}) {
+      const R = rep.sections || {}, e = escapeHtml, ed = !!o.edit, A = o.urls || {};
+      const T = (k, v, tag = 'div', cls = 'txt', ph = '') => ed ? `<${tag} class="${cls}" contenteditable="true" data-k="${e(k)}" data-ph="${e(ph || 'clica para escrever')}">${e(v || '')}</${tag}>` : (v ? `<${tag} class="${cls}">${e(v)}</${tag}>` : '');
+      const C = (k, v) => ed ? `<span contenteditable="true" data-k="${e(k)}" data-ph="—">${e(v ?? '')}</span>` : e(v ?? '') || '—';
+      const g = x => x ? `<span class="g ${e(x)}" title="${e(FR_GRADE[x] || '')}">${e(x)}</span>` : '';
+      const cap = frCapacity(R, p, F, false, o.units || 0), capS = frHasStrict(R) ? frCapacity(R, p, F, true, o.units || 0) : null;
+      const m2 = v => v == null ? '—' : frThou(v) + ' m²';
+      let n = o.start || 0; const h2 = t => `<h2><span>${String(++n).padStart(2, '0')}</span>${e(t)}</h2>`;
+      const form = rep.input || {}, fm = F.form || {}, pdm = R.pdm || {};
+      const risk = FR_RISK[R.risk] || null;
+      const rows = (arr, cols) => (arr || []).map((x, i) => `<tr>${cols.map(c => `<td${c.cls ? ` class="${c.cls}"` : ''}>${c.fn ? c.fn(x, i) : C(`${c.path}.${i}.${c.k}`, x[c.k])}</td>`).join('')}</tr>`).join('');
+      const toValidate = R.to_validate || [];
+      const lastCheck = rep.regime_checked_at ? frDate(rep.regime_checked_at) : null;
+      const snapA = (rep.regime_snapshot || []).filter(x => x.status === 'a_validar').length;
+      return `
+        ${h2('Sumário executivo')}
+        ${risk ? `<div class="risk ${e(R.risk)}"><i></i><span>${e(risk[0])}${R.risk_reason || ed ? `<small>${C('risk_reason', R.risk_reason)}</small>` : ''}</span></div>` : ''}
+        ${T('summary', R.summary, 'div', 'txt', 'Sumário executivo')}
+        <table>
+          <tr><td>Área do prédio</td><td class="r">${m2(cap.A || null)}</td></tr>
+          <tr class="sub"><td>Área de construção máxima${cap.bind ? `<small>${e(cap.bind.label.toLowerCase())}</small>` : ''}</td><td class="r">${m2(cap.abc)}${capS && capS.abc !== cap.abc ? `<small>${m2(capS.abc)} na regra mais exigente</small>` : ''}</td></tr>
+          ${cap.floors ? `<tr><td>Pisos acima do solo</td><td class="r">${e(frNum(cap.floors))}</td></tr>` : ''}
+          ${cap.places ? `<tr><td>Lugares de estacionamento exigidos</td><td class="r">${e(String(cap.places))}${capS && capS.places !== cap.places ? `<small>${e(String(capS.places))} na regra mais exigente</small>` : ''}</td></tr>` : ''}
+          <tr><td>Pontos a validar com a Câmara</td><td class="r">${toValidate.length}</td></tr>
+        </table>
+      </section><section>
+        ${h2('Identificação do prédio')}
+        <table>
+          ${[['Morada', p.address], ['Freguesia', p.parish], ['Concelho', F.municipality || p.municipality], ['Artigo matricial', fm.artigo], ['Descrição predial', fm.predial],
+            ['Área do prédio', fm.area ? frThou(fm.area) + ' m²' : null], ['Frente para a via pública', fm.frente ? frNum(fm.frente) + ' m' : null], ['Construção existente', fm.existente ? frThou(fm.existente) + ' m²' : null],
+            ['Coordenadas', p.lat != null && p.lng != null ? `${Number(p.lat).toFixed(5)}, ${Number(p.lng).toFixed(5)}` : null], ['Tipologia de investimento', rep.typology]]
+            .filter(([, v]) => v != null && v !== '').map(([l, v]) => `<tr><td>${e(l)}</td><td class="r">${e(String(v))}</td></tr>`).join('')}
+        </table>
+        ${T('identification', R.identification, 'div', 'txt', 'Localização e instrumentos aplicáveis')}
+      </section><section>
+        ${h2('Regulamento do PDM consultado')}
+        <table>
+          <tr><td>Documento</td><td>${e(pdm.title || 'Regulamento do PDM não disponível')}</td></tr>
+          ${pdm.version ? `<tr><td>Versão</td><td>${e(pdm.version)}</td></tr>` : ''}
+          ${pdm.date ? `<tr><td>Data de publicação</td><td>${e(frDate(pdm.date))}</td></tr>` : ''}
+          <tr><td>Link</td><td>${pdm.url ? `<a href="${e(pdm.url)}">${e(pdm.url)}</a>` : 'PDF fornecido à NOVA (sem link público)'}</td></tr>
+          ${form.pdm?.status === 'verificado' ? `<tr><td>Confirmado</td><td>pela NOVA${form.pdm.verified_by_name ? ' (' + e(form.pdm.verified_by_name) + ')' : ''}${form.pdm.verified_at ? ', a ' + e(frDate(form.pdm.verified_at)) : ''}</td></tr>` : ''}
+        </table>
+        ${!pdm.url && !pdm.title ? '<div class="warnbox">A análise foi feita sem o regulamento do PDM: os parâmetros do PDM estão por confirmar.</div>' : ''}
+        <h3>Outros planos e instrumentos</h3>${T('pdm.other_plans', pdm.other_plans, 'div', 'txt', 'Planos de urbanização, pormenor, UOPG…')}
+      </section><section>
+        ${h2('Classificação, qualificação e usos')}
+        <table>${[['Classificação do solo', fm.solo], ['Qualificação / categoria', fm.qualif], ['Subcategoria', fm.subcat], ['Plano / UOPG', fm.plano], ['Alvará de loteamento', fm.loteamento]].filter(([, v]) => v).map(([l, v]) => `<tr><td>${e(l)}</td><td>${e(v)}</td></tr>`).join('')}</table>
+        <h3>Usos admitidos</h3>${T('uses', R.uses, 'div', 'txt', 'Usos admitidos e compatíveis')}
+      </section><section>
+        ${h2('Condicionantes e servidões')}
+        ${(R.constraints || []).length ? `<table><tr><th>Condicionante</th><th>Aplica-se</th><th>Descrição e impacto</th><th>Fonte</th><th></th></tr>
+          ${rows(R.constraints, [{ path: 'constraints', k: 'name' }, { fn: x => `<span class="chip ${x.applies === 'sim' ? 'sim' : x.applies === 'não' ? 'nao' : 'conf'}">${e(x.applies || 'a confirmar')}</span>` },
+            { fn: (x, i) => `${C(`constraints.${i}.description`, x.description)}${x.impact ? `<small>${C(`constraints.${i}.impact`, x.impact)}</small>` : ''}` },
+            { fn: (x, i) => `${C(`constraints.${i}.article`, x.article)}<small>${e(x.source || '')}</small>` }, { fn: x => g(x.grade) }])}</table>` : '<p class="note">Sem condicionantes identificadas.</p>'}
+      </section><section>
+        ${h2('Parâmetros urbanísticos')}
+        <table class="pt"><tr><th>Parâmetro</th><th>Valor</th><th>Artigo e fonte</th><th>Impacto</th><th></th></tr>
+          ${rows(R.params, [{ fn: x => `${e(x.label || x.key)}${x.sensitive_transition ? '<small>pode mudar com o Código da Construção</small>' : ''}` },
+            { fn: (x, i) => `${C(`params.${i}.value`, x.value)}${x.strict_num != null && Number(x.strict_num) !== Number(x.num) ? `<small>mais exigente: ${e(frNum(x.strict_num))} ${e(x.unit || '')}</small>` : ''}` },
+            { fn: (x, i) => `${C(`params.${i}.article`, x.article)}<small>${e(x.source || '')}</small>` }, { path: 'params', k: 'impact' }, { fn: x => g(x.grade) }])}
+        </table>
+        <div class="legend">Grau de certeza: ${g('a')} ${FR_GRADE.a} ${g('b')} ${FR_GRADE.b} ${g('c')} ${FR_GRADE.c}</div>
+      </section><section>
+        ${h2('Capacidade construtiva')}
+        ${cap.A ? `<table><tr><th>Cálculo</th><th>Fórmula</th><th class="r">Resultado</th></tr>
+          ${cap.imp ? `<tr><td>Implantação máxima</td><td>${e(cap.imp.f)}</td><td class="r">${m2(cap.imp.area)}</td></tr>` : ''}
+          ${cap.floors ? `<tr><td>Pisos acima do solo</td><td>${e(cap.floorsNote)}</td><td class="r">${e(frNum(cap.floors))}</td></tr>` : ''}
+          ${cap.caps.map(c => `<tr><td>${e(c.label)}${cap.bind === c && cap.caps.length > 1 ? '<small>é o que limita</small>' : ''}</td><td>${e(c.f)}</td><td class="r">${m2(c.area)}</td></tr>`).join('')}
+          <tr class="sub"><td>Área de construção máxima</td><td></td><td class="r">${m2(cap.abc)}</td></tr>
+          ${cap.perm ? `<tr><td>Área permeável mínima</td><td>${e(cap.perm.f)}</td><td class="r">${m2(cap.perm.area)}</td></tr>` : ''}
+          ${cap.ced.map(c => `<tr><td>${e(c.label)}</td><td>${e(c.f)}</td><td class="r">${m2(c.area)}</td></tr>`).join('')}
+        </table>
+        ${capS ? `<h3>Cenário com a regra mais exigente</h3><table>
+          <tr><td>Área de construção máxima</td><td class="r">${m2(capS.abc)}</td></tr>
+          ${capS.places ? `<tr><td>Lugares de estacionamento</td><td class="r">${e(String(capS.places))}</td></tr>` : ''}
+          <tr><td>Parâmetros que mudam</td><td class="r">${e((R.params || []).filter(x => x.strict_num != null && Number(x.strict_num) !== Number(x.num)).map(x => x.label).join(', '))}</td></tr></table>` : ''}
+        ${!cap.abc ? '<div class="warnbox">O regulamento não define um índice de construção nem uma implantação máxima para este caso (a edificabilidade resulta de alinhamentos, cércea e profundidade). A área de construção tem de ser estimada sobre o desenho: indica-a nos dados do prédio («Área de construção estimada pela equipa»).</div>' : ''}
+        <p class="note">Calculado pela NOVA a partir dos parâmetros acima. Não inclui áreas que o regulamento exclua do cálculo (ex.: caves de estacionamento), a confirmar.</p>` : '<div class="warnbox">Falta a área do prédio para calcular a capacidade.</div>'}
+      </section><section>
+        ${h2('Estacionamento, cedências e espaços exteriores')}
+        ${T('parking', R.parking, 'div', 'txt', 'Estacionamento, cedências e espaços exteriores')}
+        ${cap.places ? `<table><tr><td>Lugares exigidos<small>${e(cap.placesNote)}</small></td><td class="r">${e(String(cap.places))}</td></tr>
+          <tr><td>Área de estacionamento estimada<small>${FR_PARK_M2} m² por lugar, com circulação e rampas</small></td><td class="r">${m2(cap.parkArea)}</td></tr>
+          ${capS && capS.places !== cap.places ? `<tr><td>Na regra mais exigente</td><td class="r">${e(String(capS.places))} lugares · ${m2(capS.parkArea)}</td></tr>` : ''}</table>` : ''}
+      </section><section>
+        ${h2('Enquadramento legal transitório')}
+        <p class="note" style="margin-top:0">Transição do RGEU para o Código da Construção. ${lastCheck ? `Estado da legislação verificado a ${e(lastCheck)}.` : 'Estado da legislação ainda não verificado pela NOVA.'}${snapA ? ` ${snapA} ${snapA === 1 ? 'regime está' : 'regimes estão'} por validar: aplica-se a regra mais exigente.` : ''}</p>
+        <h3>Estado à data</h3>${T('transition.status_text', R.transition?.status_text, 'div', 'txt')}
+        <h3>Regime adotado neste relatório</h3>${T('transition.regime_adopted', R.transition?.regime_adopted, 'div', 'txt')}
+        ${(R.transition?.table || []).length ? `<table><tr><th>Parâmetro</th><th>RGEU</th><th>Nova regra</th><th>Mais exigente</th><th>Fonte</th></tr>
+          ${rows(R.transition.table, ['param', 'rgeu', 'new_rule', 'stricter', 'source'].map(k => ({ path: 'transition.table', k })))}</table>` : ''}
+        <h3>Riscos</h3>${T('transition.risks', R.transition?.risks, 'div', 'txt')}
+        <h3>Recomendação</h3>${T('transition.recommendation', R.transition?.recommendation, 'div', 'txt')}
+      </section><section>
+        ${h2('Legislação geral, restrições e conflitos')}
+        ${(R.general_law || []).length ? `<h3>Legislação geral aplicável</h3><table><tr><th>Tema</th><th>Regra</th><th>Diploma</th><th>Impacto</th></tr>
+          ${rows(R.general_law, [{ path: 'general_law', k: 'topic' }, { path: 'general_law', k: 'rule' }, { fn: (x, i) => `${C(`general_law.${i}.diploma`, x.diploma)}<small>${e(x.article || '')}</small>` }, { path: 'general_law', k: 'impact' }])}</table>` : ''}
+        ${(R.restrictions || []).length ? `<h3>Restrições a respeitar no projeto</h3><table><tr><th>Parâmetro</th><th>Valor</th><th>Fonte</th><th>Impacto</th><th></th></tr>
+          ${rows(R.restrictions, [{ path: 'restrictions', k: 'param' }, { path: 'restrictions', k: 'value' }, { fn: (x, i) => `${C(`restrictions.${i}.article`, x.article)}<small>${e(x.source || '')}</small>` }, { path: 'restrictions', k: 'impact' }, { fn: x => g(x.grade) }])}</table>` : ''}
+        ${(R.conflicts || []).length ? `<h3>Conflitos e ambiguidades</h3><table><tr><th>Questão</th><th>Prevalece</th><th>Porquê</th></tr>${rows(R.conflicts, ['issue', 'prevails', 'why'].map(k => ({ path: 'conflicts', k })))}</table>` : ''}
+      </section><section>
+        ${h2('Pontos a validar com a Câmara e fontes')}
+        ${toValidate.length ? `<ol>${toValidate.map((x, i) => `<li>${C(`to_validate.${i}`, x)}</li>`).join('')}</ol>` : '<p class="note">Sem pontos assinalados.</p>'}
+        <h3>Fontes consultadas</h3>
+        <ul class="src">${[{ title: pdm.title || 'Regulamento do PDM', url: pdm.url, date: pdm.date }, ...(R.sources || []).filter(s => s.kind !== 'pdm' && (!pdm.url || s.url !== pdm.url))]
+          .filter(s => s.title).map(s => `<li>${e(s.title)}${s.date ? ` <small>· ${e(/^\d{4}-\d{2}-\d{2}$/.test(s.date) ? frDate(s.date) : s.date)}</small>` : ''}${s.url ? `<br><a href="${e(s.url)}">${e(s.url)}</a>` : ''}</li>`).join('')}</ul>
+        <div class="limit"><b>Limitação.</b> Este enquadramento é preliminar e baseia-se no regulamento indicado, nos elementos fornecidos e na legislação em vigor à data (${e(frDate(rep.created_at) || frToday())}). Não dispensa a consulta das plantas oficiais nem a confirmação junto da Câmara Municipal, que é a entidade competente para a interpretação do PDM. Recomenda-se um pedido de informação prévia antes de decisões de investimento.</div>
+        ${rep.verified_at ? `<p class="verif">Informação verificada pela NOVA${rep.verified_by_name ? ' (' + e(rep.verified_by_name) + ')' : ''} a ${e(frDate(rep.verified_at))}.${rep.approved_at ? ` Aprovado${rep.approved_by_name ? ' por ' + e(rep.approved_by_name) : ''} a ${e(frDate(rep.approved_at))}.` : ''}</p>` : ''}
+      </section>
+      ${(F.plants || []).filter(x => A[x.id]).length ? `<section>${h2('Anexo — plantas')}${F.plants.filter(x => A[x.id]).map(x => `<figure><img src="${e(A[x.id])}" alt="${e(x.caption || 'Planta')}"><figcaption>${e(x.caption || '')}</figcaption></figure>`).join('')}</section>` : ''}
+      ${(F.extracts || []).filter(x => (x.text || '').trim()).length ? `<section>${h2('Anexo — extratos da legislação')}${F.extracts.filter(x => (x.text || '').trim()).map(x => `<div class="ext"><b>${e([x.reg, x.art].filter(Boolean).join(' — '))}</b><div>${e(x.text.trim())}</div></div>`).join('')}</section>` : ''}`
+        .replace(/^\s*/, '<section>');
+    }
+    function frCover(p, rep, F, eyebrow, extra = '') {
+      const e = escapeHtml, pdm = rep.sections?.pdm || {}, logo = new URL('assets/nova-logo-lilac-cropped.png', location.href).href;
+      return `<div class="capa"><header><div class="brand"><img src="${e(logo)}" alt="NOVA"><span class="ii">Investment Intelligence</span></div><div class="meta">NOVA Associates<br>${e(frToday())}<br>versão ${rep.version}</div></header>
+        <div class="eyebrow">${e(eyebrow)}</div><h1>${e(p.name)}</h1>
+        <div class="loc">${e([p.address, p.parish, F.municipality || p.municipality].filter(Boolean).join(', '))}${p.maps_url && /^https?:/i.test(p.maps_url) ? ` · <a href="${e(p.maps_url)}">ver no mapa</a>` : ''}</div>
+        <div class="pdm">Regulamento consultado: <b>${e(pdm.title || 'não disponível')}</b>${pdm.version ? ' · ' + e(pdm.version) : ''}${pdm.url ? `<br><a href="${e(pdm.url)}">${e(pdm.url)}</a>` : ''}</div>
+        ${rep.status !== 'aprovado' && rep.status !== 'entregue' ? '<span class="draft">Rascunho — não aprovado</span>' : ''}${extra}</div>`;
+    }
+    function frDocHtml(title, body, o = {}) {
+      return `<!doctype html><html lang="pt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(title)}</title>
+        <style>${o.css || ''}${FR_DOC_CSS}</style></head><body>${o.edit ? '' : '<div class="bar"><button onclick="window.print()">Imprimir / guardar em PDF</button></div>'}${body}</body></html>`;
+    }
+    async function frBuild(p, rep, F, ctx, o = {}) {
+      const urls = await frUrls(F.plants || []).catch(() => ({}));
+      const units = frUnits(p, ctx);
+      const body = `${o.edit ? '<div class="edhint">Clica em qualquer texto com contorno para o corrigir. Grava sozinho. O texto original da IA fica guardado.</div>' : ''}
+        ${frCover(p, rep, F, 'Enquadramento urbanístico')}<div class="fr">${frReportBody(p, rep, F, { edit: o.edit, urls, units })}</div>
+        <footer><span>Enquadramento urbanístico preliminar · ${escapeHtml(frToday())}</span><span>NOVA Investment Intelligence</span></footer>`;
+      return frDocHtml(`${p.name} — Enquadramento urbanístico — NOVA`, body, o);
+    }
+    // Dossier de investimento: enquadramento + rentabilidade num só documento, com uma síntese para o investidor
+    async function frBuildDossier(p, rep, F, ctx) {
+      const e = escapeHtml, f = ctx?.feas?.(), urls = await frUrls(F.plants || []).catch(() => ({}));
+      if (!f) throw new Error('Falta a Rentabilidade desta oportunidade');
+      const fz = printFeasibility(p, f, { lang: 'pt', scen: true, rent: !!f.rent_on, embed: true });
+      const c = feasCalc(p, f), R = rep.sections || {}, cap = frCapacity(R, p, F, false, c.units || 0), risk = FR_RISK[R.risk];
+      const eur = v => v == null || !Number.isFinite(v) ? '—' : Math.round(v).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+      const pc = v => v == null || !Number.isFinite(v) ? '—' : (v * 100).toLocaleString('pt-PT', { maximumFractionDigits: 1 }) + '%';
+      const used = Number(c.housing || 0) + Number(c.commerce || 0);
+      const over = cap.abc && used > cap.abc * 1.005;
+      const toV = (R.to_validate || []).length;
+      const body = `${frCover(p, rep, F, 'Dossier de investimento')}
+        <div class="fr"><section><h2><span>00</span>Síntese para o investidor</h2>
+          ${risk ? `<div class="risk ${e(R.risk)}"><i></i><span>Urbanismo: ${e(risk[0])}${R.risk_reason ? `<small>${e(R.risk_reason)}</small>` : ''}</span></div>` : ''}
+          <div class="kpis">
+            <div class="kpi"><span>Área de construção máxima</span><b>${cap.abc ? e(frThou(cap.abc)) + ' m²' : '—'}</b><small>${cap.bind?.team ? 'estimativa da equipa' : 'pelo PDM'}</small></div>
+            <div class="kpi"><span>Custo global</span><b>${e(eur(c.costGlobal))}</b><small>terreno ${e(eur(c.acquisition))}</small></div>
+            <div class="kpi"><span>Lucro</span><b>${e(eur(c.profit))}</b><small>ROI ${e(pc(c.roi))}</small></div>
+            <div class="kpi"><span>A validar com a Câmara</span><b>${toV}</b><small>${toV === 1 ? 'ponto' : 'pontos'}</small></div>
+          </div>
+          ${cap.abc && used && used < cap.abc * 0.9 ? `<div class="warnbox" style="background:#E3F1E6"><b>Margem de otimização:</b> a rentabilidade considera ${e(frThou(used))} m² de construção, abaixo dos ${e(frThou(cap.abc))} m² admitidos (${e(pc(1 - used / cap.abc))} por aproveitar).</div>` : ''}
+          ${over ? `<div class="warnbox"><b>Atenção:</b> a rentabilidade considera ${e(frThou(used))} m² de construção acima do solo, mais do que os ${e(frThou(cap.abc))} m² que o PDM admite. O resultado deve ser revisto.</div>` : ''}
+          ${frHasStrict(R) ? (() => { const s = frCapacity(R, p, F, true, c.units || 0); return s.abc !== cap.abc || s.places !== cap.places ? `<div class="warnbox">Na regra mais exigente (transição RGEU → Código da Construção): ${s.abc ? e(frThou(s.abc)) + ' m² de construção' : ''}${s.places ? ` · ${s.places} lugares de estacionamento` : ''}.</div>` : ''; })() : ''}
+          ${R.summary ? `<div class="txt">${e(R.summary)}</div>` : ''}
+          <h3>Índice</h3><ol class="toc"><li>Enquadramento urbanístico</li><li>Estudo de rentabilidade</li><li>Anexos (plantas e extratos)</li></ol>
+        </section></div>
+        <div class="part"><div class="eyebrow">Parte I</div><h1>Enquadramento urbanístico</h1></div>
+        <div class="fr">${frReportBody(p, rep, F, { urls, units: c.units || 0 })}</div>
+        <div class="part"><div class="eyebrow">Parte II</div><h1>Estudo de rentabilidade</h1></div>
+        <div class="fz">${fz.content}</div>
+        <footer><span>Dossier de investimento · valores e enquadramento sensíveis à data do estudo (${e(frToday())}). Não dispensa a confirmação junto da Câmara Municipal.</span><span>NOVA Investment Intelligence</span></footer>`;
+      return frDocHtml(`${p.name} — Dossier de investimento — NOVA`, body, { css: fz.css });
+    }
+
+    // ---- pré-visualizador editável ----
+    function openFramingViewer(p, d, F, rep0, ctx) {
+      document.querySelector('.frv')?.remove();
+      let rep = rep0, saving = null, dirty = false;
+      const partner = d.partner, locked = () => rep.status === 'entregue';
+      const ov = document.createElement('div');
+      ov.className = 'frv'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Relatório de enquadramento');
+      document.body.appendChild(ov); document.body.style.overflow = 'hidden';
+      const close = async () => { if (dirty) await flush(); ov.remove(); document.body.style.overflow = ''; document.removeEventListener('keydown', onKey); ctx.reload?.(); document.dispatchEvent(new CustomEvent('fr-reports')); };
+      const onKey = ev => { if (ev.key === 'Escape' && document.getElementById('quick-modal').style.display !== 'flex') close(); };
+      document.addEventListener('keydown', onKey);
+      const st = () => FR_ST[rep.status] || [rep.status, ''];
+      const bar = () => `
+        <div class="frv-bar">
+          <button type="button" class="ck-x frv-x" id="frv-x" aria-label="Fechar">×</button>
+          <div class="frv-t"><b>Relatório de enquadramento · v${rep.version}</b><span class="fr-chip ${st()[1]}">${escapeHtml(st()[0])}</span><span class="muted" id="frv-save" aria-live="polite"></span></div>
+          <div class="frv-a">
+            ${locked() ? '<span class="muted">Entregue ao cliente: não se altera.</span><button type="button" class="secondary-btn" id="frv-new">Nova versão para editar</button>' : ''}
+            ${!locked() && rep.diff?.original ? '<button type="button" class="text-btn" id="frv-reset">Repor o texto da IA</button>' : ''}
+            ${!locked() && rep.status !== 'aprovado' && partner ? '<button type="button" class="secondary-btn" id="frv-approve">Aprovar</button>' : ''}
+            ${!locked() && rep.status !== 'aprovado' && !partner ? '<span class="muted">um sócio tem de aprovar</span>' : ''}
+            <button type="button" class="secondary-btn" id="frv-dossier">Dossier com a Rentabilidade</button>
+            <button type="button" class="primary-btn" id="frv-pdf">Descarregar PDF</button>
+          </div>
+        </div>
+        <iframe class="frv-doc" id="frv-doc" title="Relatório de enquadramento"></iframe>`;
+      const setAt = (obj, path, val) => { const ks = path.split('.'); let o = obj; ks.slice(0, -1).forEach((k, i) => { o[k] = o[k] ?? (/^\d+$/.test(ks[i + 1]) ? [] : {}); o = o[k]; }); o[ks.at(-1)] = val; };
+      async function flush() {
+        if (!dirty) return; dirty = false;
+        const lab = ov.querySelector('#frv-save'); if (lab) lab.textContent = 'a gravar…';
+        try {
+          const cap = frCapacity(rep.sections, p, F, false, frUnits(p, ctx));
+          const patch = { sections: rep.sections, params: rep.sections.params || [], risk: rep.sections.risk || null, capacity: { ...(rep.capacity || {}), abc: cap.abc, places: cap.places, parkArea: cap.parkArea }, updated_at: new Date().toISOString() };
+          await dbUpdate('framing_reports', rep.id, patch, frMockReports); Object.assign(rep, patch);
+          if (lab?.isConnected) lab.textContent = 'gravado';
+        } catch (err) { dirty = true; if (lab?.isConnected) lab.textContent = 'não gravou'; showError('gravar o relatório', err); }
+      }
+      async function paint() {
+        const y = ov.querySelector('#frv-doc')?.contentWindow?.scrollY || 0;
+        ov.innerHTML = bar();
+        const fr = ov.querySelector('#frv-doc');
+        fr.srcdoc = await frBuild(p, rep, F, ctx, { edit: !locked() });
+        fr.addEventListener('load', () => {
+          const doc = fr.contentDocument; if (!doc) return;
+          fr.contentWindow.scrollTo(0, y);
+          doc.querySelectorAll('a[href]').forEach(a => { a.target = '_blank'; a.rel = 'noopener'; });
+          let t = null;
+          doc.addEventListener('input', ev => {
+            const k = ev.target.closest('[data-k]')?.dataset.k; if (!k) return;
+            const val = ev.target.innerText.replace(/ /g, ' ').replace(/\n$/, '');
+            setAt(rep.sections, k, val);
+            // o valor de um parâmetro também alimenta as contas: lê o número escrito (vírgula decimal)
+            const m = k.match(/^params\.(\d+)\.value$/);
+            if (m) { const num = parseFloat((val.match(/-?\d+(?:[.,]\d+)?/) || [''])[0].replace(',', '.')); rep.sections.params[m[1]].num = Number.isFinite(num) ? num : null; ev.target.dataset.recalc = '1'; }
+            dirty = true; const lab = ov.querySelector('#frv-save'); if (lab) lab.textContent = 'por gravar…';
+            clearTimeout(t); t = setTimeout(flush, 900);
+          });
+          // depois de mudar um valor, refaz as contas (ao sair do campo)
+          doc.addEventListener('focusout', ev => { if (ev.target.dataset?.recalc) { clearTimeout(t); flush().then(paint); } });
+        }, { once: true });
+        bindBar();
+      }
+      function bindBar() {
+        ov.querySelector('#frv-x').addEventListener('click', close);
+        ov.querySelector('#frv-reset')?.addEventListener('click', async () => {
+          const before = JSON.parse(JSON.stringify(rep.sections));
+          rep.sections = JSON.parse(JSON.stringify(rep.diff.original)); dirty = true; await flush(); paint();
+          showToast('Texto da IA reposto', { ms: 8000, undo: async () => { rep.sections = before; dirty = true; await flush(); paint(); } });
+        });
+        ov.querySelector('#frv-approve')?.addEventListener('click', async () => {
+          await flush();
+          try {
+            const me = await getCurrentMember(), patch = { status: 'aprovado', approved_at: new Date().toISOString(), approved_by: me?.id || null, approved_by_name: me?.name || null };
+            await dbUpdate('framing_reports', rep.id, patch, frMockReports); Object.assign(rep, patch); paint(); showToast('Relatório aprovado');
+          } catch (err) { showError('aprovar o relatório', err); }
+        });
+        ov.querySelector('#frv-new')?.addEventListener('click', async () => {
+          try {
+            const me = await getCurrentMember(), all = await frReports(p);
+            const row = { plot_id: p.id, version: (all[0]?.version || 0) + 1, kind: rep.kind === 'legado' ? 'normal' : rep.kind, status: 'rascunho', typology: rep.typology, input: rep.input, params: rep.params, sections: JSON.parse(JSON.stringify(rep.sections)),
+              capacity: rep.capacity, risk: rep.risk, sources: rep.sources, regime_snapshot: rep.regime_snapshot, regime_checked_at: rep.regime_checked_at, pdm_doc_id: rep.pdm_doc_id, model: rep.model,
+              diff: { original: rep.diff?.original || rep.sections, from_version: rep.version }, supersedes: rep.id, created_at: new Date().toISOString(), created_by: me?.id || null, created_by_name: me?.name || null };
+            rep = await dbInsert('framing_reports', row, frMockReports); showToast(`Versão ${rep.version} criada`); paint();
+          } catch (err) { showError('criar a nova versão', err); }
+        });
+        ov.querySelector('#frv-pdf').addEventListener('click', () => gate('report'));
+        ov.querySelector('#frv-dossier').addEventListener('click', () => gate('dossier'));
+      }
+      // Antes de descarregar: a informação foi toda verificada? (fica registado quem e quando)
+      function gate(kind) {
+        const approved = rep.status === 'aprovado' || rep.status === 'entregue';
+        const pdm = rep.sections?.pdm || {};
+        openQuickModal('Antes de descarregar', `
+          <p style="margin-top:0"><b>A informação deste relatório foi toda verdadeiramente verificada?</b> O documento vai para o cliente.</p>
+          <label class="check-row"><input type="checkbox" class="frg"> O regulamento do PDM é o do concelho certo e está em vigor${pdm.url ? ` (<a href="${escapeHtml(pdm.url)}" target="_blank" rel="noopener">abrir</a>)` : ''}</label>
+          <label class="check-row"><input type="checkbox" class="frg"> Conferi cada parâmetro com o artigo citado</label>
+          <label class="check-row"><input type="checkbox" class="frg"> Confirmei as condicionantes nas plantas</label>
+          <label class="check-row"><input type="checkbox" class="frg"> Revi os pontos a validar com a Câmara e o enquadramento legal transitório</label>
+          ${kind === 'dossier' ? '<label class="check-row"><input type="checkbox" class="frg"> A Rentabilidade está atualizada e coerente com este enquadramento</label>' : ''}
+          ${!approved ? `<div class="warnbox" style="margin-top:var(--sp-3)">Ainda não foi aprovado por um sócio: o PDF sai marcado como <b>rascunho</b>.${partner ? ' <label class="check-row" style="margin:6px 0 0"><input type="checkbox" id="frg-ap"> Aprovo este relatório</label>' : ''}</div>` : ''}
+          <p class="field-hint">Fica registado que foste tu a verificar, com a data.</p>
+          <button type="button" class="primary-btn" id="frg-go" disabled>Sim, está verificado — descarregar</button>`);
+        const go = document.getElementById('frg-go'), boxes = [...document.querySelectorAll('.frg')];
+        boxes.forEach(b => b.addEventListener('change', () => { go.disabled = !boxes.every(x => x.checked); }));
+        go.addEventListener('click', async () => {
+          const w = window.open('', '_blank');
+          if (!w) { showToast('O navegador bloqueou a janela. Permite janelas deste site e tenta outra vez.', { type: 'error', ms: 7000 }); return; }
+          w.document.write('<p style="font:14px system-ui;padding:24px">A preparar o documento…</p>');
+          const ap = document.getElementById('frg-ap')?.checked;
+          closeQuickModal();
+          try {
+            await flush();
+            const me = await getCurrentMember(), now = new Date().toISOString();
+            const patch = { verified_at: now, verified_by: me?.id || null, verified_by_name: me?.name || null };
+            if (ap) Object.assign(patch, { status: 'aprovado', approved_at: now, approved_by: me?.id || null, approved_by_name: me?.name || null });
+            if (approved || ap) Object.assign(patch, { status: 'entregue', delivered_at: now });
+            await dbUpdate('framing_reports', rep.id, patch, frMockReports); Object.assign(rep, patch);
+            const html = kind === 'dossier' ? await frBuildDossier(p, rep, F, ctx) : await frBuild(p, rep, F, ctx);
+            w.document.open(); w.document.write(html); w.document.close(); kDocBack(w);
+            paint();
+          } catch (err) { w.close(); showError('preparar o documento', err); }
+        });
+      }
+      paint();
+      if (ctx.autoGate) gate(ctx.autoGate);
+    }
+    // ---- Rentabilidade alimentada pelo enquadramento aprovado ----
+    // Propõe os valores do relatório aprovado (ou entregue) com a origem; a equipa usa-os com um clique e pode alterá-los
+    // depois (o valor do enquadramento fica guardado em feasibility.fr_origin). O que não está confirmado (grau c ou sem
+    // número) não se preenche: fica vazio e assinalado. Mostra também o resultado com a regra mais exigente.
+    async function mountFeasFromFraming(el, p, d, f, reopen) {
+      if (!el) return;
+      let reps; try { reps = await frReports(p); } catch { return; }
+      const rep = reps.find(r => r.status === 'entregue' || r.status === 'aprovado'), draft = !rep && reps[0];
+      if (!el.isConnected) return;
+      if (!rep) { el.innerHTML = draft ? `<div class="vt-fr vt-fr-soft">Há um relatório de enquadramento (v${draft.version}) por aprovar. Depois de aprovado, os parâmetros podem alimentar esta rentabilidade.</div>` : ''; return; }
+      const F = p.framing || {}, R = rep.sections || {}, units = (() => { try { return feasCalc(p, f).units || 0; } catch { return 0; } })();
+      const cap = frCapacity(R, p, F, false, units), capS = frHasStrict(R) ? frCapacity(R, p, F, true, units) : null;
+      const P = cap.P, ok = x => x && x.x.grade !== 'c';
+      const O = (p.feasibility || {}).fr_origin || {};
+      const n = v => v == null ? '—' : frNum(v);
+      // [chave, rótulo, valor proposto, unidade, referência, valor atual]
+      const items = [
+        ['buildable_area', 'Área de construção', cap.abc != null && (cap.bind?.team || ok(cap.bind?.ref ? { x: cap.bind.ref } : null) || !cap.bind?.ref) ? Math.round(cap.abc) : null, 'm²', cap.bind?.team ? 'estimativa da equipa' : cap.bind?.ref?.article, p.buildable_area],
+        ['pdm_index', 'Índice de construção', ok(P.ic) ? P.ic.v : null, '', P.ic?.x.article, p.pdm_index, !P.ic],
+        ['max_floors', 'Pisos acima do solo', ok(P.pisos_acima) ? P.pisos_acima.v : null, '', P.pisos_acima?.x.article, p.max_floors, !P.pisos_acima],
+        ['below_area', 'Estacionamento em cave', cap.parkArea != null && ok(P.estac_por_fogo || P.estac_por_100m2) ? Math.round(cap.parkArea) : null, 'm²', cap.places ? `${cap.places} lugares × ${FR_PARK_M2} m²` : (P.estac_por_fogo || P.estac_por_100m2)?.x.article, f.below_area],
+      ].filter(x => !x[6]);
+      const unconf = (R.params || []).filter(x => x.grade === 'c' || x.num == null).map(x => x.label);
+      // cenário com a regra mais exigente
+      let scen = '';
+      if (capS && (capS.abc !== cap.abc || capS.parkArea !== cap.parkArea)) {
+        try {
+          const cur = feasCalc(p, f);
+          const pS = { ...p, buildable_area: capS.abc ?? p.buildable_area };
+          const fS = { ...f, housing_area: (p.feasibility || {}).housing_area != null ? f.housing_area : (capS.abc ?? f.housing_area), below_area: capS.parkArea ?? f.below_area };
+          const st = feasCalc(pS, fS), eur = v => Math.round(v).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }), pc = v => (v * 100).toLocaleString('pt-PT', { maximumFractionDigits: 1 }) + '%';
+          scen = `<div class="vt-fr-sc"><div><span>Regime atual</span><b>${pc(cur.roi)}</b><small>lucro ${eur(cur.profit)}</small></div><div><span>Regra mais exigente</span><b class="${st.roi < cur.roi ? 'neg' : ''}">${pc(st.roi)}</b><small>lucro ${eur(st.profit)}${capS.places ? ` · ${capS.places} lugares` : ''}</small></div></div>`;
+        } catch { /* sem dados suficientes para o cenário */ }
+      }
+      el.innerHTML = `<div class="vt-fr">
+          <div class="vt-fr-h"><b>Do enquadramento urbanístico</b><span class="fr-chip ${rep.status === 'entregue' ? 'acc' : 'ok'}">v${rep.version} · ${rep.status === 'entregue' ? 'entregue' : 'aprovado'}</span><button type="button" class="secondary-btn" id="vt-fr-all">Usar os valores</button></div>
+          <div class="vt-fr-l">${items.map(([k, l, v, u, ref, curV]) => {
+            const orig = O[k], has = curV != null && curV !== '';
+            const state = v == null ? '<span class="fr-chip warn">não confirmado — fica vazio</span>'
+              : orig && has && Number(curV) !== Number(orig.value) ? `<span class="fr-chip">editado · enquadramento: ${n(orig.value)} ${u}</span>`
+              : has && Number(curV) === Number(v) ? '<span class="fr-chip ok">do enquadramento</span>'
+              : `<button type="button" class="text-btn" data-fr-use="${k}">usar ${n(v)} ${u}</button>`;
+            return `<div class="vt-fr-r"><span>${escapeHtml(l)}<small>${escapeHtml(ref || '')}</small></span><span class="vt-fr-v">${v == null ? '—' : `${n(v)} ${u}`}</span><span>${state}</span></div>`; }).join('')}</div>
+          ${unconf.length ? `<p class="field-hint">Não confirmados no enquadramento (não entram nas contas): ${escapeHtml(unconf.slice(0, 6).join('; '))}${unconf.length > 6 ? '…' : ''}.</p>` : ''}
+          ${scen}
+        </div>`;
+      const apply = async keys => {
+        const pick = items.filter(it => keys.includes(it[0]) && it[2] != null);
+        if (!pick.length) return;
+        const origin = { ...O }, patch = {}, feas = { ...(p.feasibility || {}) };
+        pick.forEach(([k, , v, , ref]) => {
+          origin[k] = { value: v, rep: rep.id, version: rep.version, ref: ref || null, at: new Date().toISOString() };
+          if (k === 'below_area') feas.below_area = v; else patch[k] = v;
+        });
+        feas.fr_origin = origin; patch.feasibility = feas;
+        try { await dbUpdate('land_plots', p.id, { ...patch, updated_at: new Date().toISOString() }, mockPlots); Object.assign(p, patch); showToast('Valores do enquadramento aplicados'); reopen(); }
+        catch (err) { showError('aplicar os valores do enquadramento', err); }
+      };
+      el.querySelector('#vt-fr-all').addEventListener('click', () => apply(items.map(x => x[0])));
+      el.querySelectorAll('[data-fr-use]').forEach(b => b.addEventListener('click', () => apply([b.dataset.frUse])));
+    }
+    // ---------- Definições → Regime legal (registo da legislação usado nos relatórios de enquadramento) ----------
+    // O estado de cada diploma vem daqui (nunca do texto da IA). A função legal-watch verifica-o todas as semanas;
+    // só uma publicação no Diário da República conta como alteração. Os sócios validam, veem o histórico e o registo
+    // de verificações, e podem simular uma alteração para testar o circuito (e revertê-la).
+    const LG_ST = { em_vigor: ['Em vigor', 'ok'], revogado_parcial: ['Revogado em parte', 'warn'], revogado: ['Revogado', 'bad'], publicado_sem_vigencia: ['Publicado, ainda sem vigência', 'warn'], em_preparacao: ['Em preparação', ''], a_validar: ['Por validar', 'warn'] };
+    const LG_KIND = { sem_alteracao: ['Sem alteração', ''], alerta: ['Alerta (sem fonte primária)', 'warn'], confirmada: ['Confirmada no DR', 'acc'], erro: ['Falhou', 'bad'], decisao: ['Decisão', ''], aplicada: ['Aplicada', 'ok'], simulacao: ['Simulação', 'warn'] };
+    let mockLegal = null, mockLegalLog = [];
+    const legalMock = () => mockLegal = mockLegal || [['rgeu', 'RGEU', 'Regulamento Geral das Edificações Urbanas', 'DL 38382/51'], ['codigo_construcao', 'Código da Construção', 'Código da Construção', ''], ['rjue', 'RJUE', 'Regime Jurídico da Urbanização e Edificação', 'DL 555/99'], ['simplex_urbanistico', 'DL 10/2024', 'Simplex urbanístico', 'DL 10/2024']]
+      .map(([id, short, name, diploma], i) => ({ id, short, name, diploma, status: 'a_validar', version: 1, watch: true, sort: i, checked_at: null, check_summary: null, verified_at: null }));
+    async function legalData() {
+      if (devMode) return { regs: legalMock(), log: mockLegalLog, vers: [] };
+      const [a, b] = await Promise.all([supabase.from('legal_regimes').select('*').order('sort'), supabase.from('legal_watch_log').select('*').order('run_at', { ascending: false }).limit(40)]);
+      if (a.error) throw a.error;
+      return { regs: a.data || [], log: b.data || [] };
+    }
+    async function loadLegalSettings() {
+      const box = document.getElementById('settings-legal-container');
+      const partner = isPartnerMember(await getCurrentMember());
+      let D;
+      try { D = await legalData(); } catch (err) { box.innerHTML = `<div class="error-box">Não foi possível ler o registo: ${escapeHtml(err.message)}</div>`; return; }
+      const last = D.regs.map(r => r.checked_at).filter(Boolean).sort().pop();
+      const days = last ? Math.floor((Date.now() - new Date(last)) / 864e5) : null;
+      const st = r => LG_ST[r.status] || [r.status, ''];
+      const kd = k => LG_KIND[k] || [k, ''];
+      const pend = D.log.filter(l => ['alerta', 'confirmada', 'erro'].includes(l.kind) && (!l.decision || l.decision === 'aplicada'));
+      box.innerHTML = `
+        <div class="card-head"><h2>Legislação vigiada</h2>${partner ? '<button type="button" class="secondary-btn toolbar-btn" id="lg-sim">Simular alteração</button>' : ''}<button type="button" class="secondary-btn toolbar-btn" id="lg-run">Verificar agora</button></div>
+        <div class="field-hint" style="margin-top:0">Última verificação: <b>${last ? escapeHtml(frDate(last)) + (days ? ` (há ${days} ${days === 1 ? 'dia' : 'dias'})` : ' (hoje)') : 'ainda nenhuma'}</b> · corre sozinha às segundas de manhã.
+          Só uma publicação no Diário da República conta como alteração; o resto fica como alerta. Os relatórios usam o estado que está aqui.${days != null && days > 9 ? ' <span class="fr-chip bad">a verificação não corre há mais de uma semana</span>' : ''}</div>
+        ${pend.length ? `<div class="lg-pend"><b>Por rever (${pend.length})</b>${pend.map(l => `<div class="lg-pr"><span class="fr-chip ${kd(l.kind)[1]}">${escapeHtml(kd(l.kind)[0])}</span><span><b>${escapeHtml(D.regs.find(r => r.id === l.regime_id)?.short || l.regime_id || 'Vigilância')}</b> · ${escapeHtml(l.finding || l.error || '')}${l.source_url ? ` · <a href="${escapeHtml(l.source_url)}" target="_blank" rel="noopener">fonte ↗</a>` : ''}</span>${partner ? `<span class="lg-pr-a">${l.kind === 'alerta' ? `<button type="button" class="text-btn" data-lg-apply="${l.id}">Confirmar e aplicar</button>` : ''}<button type="button" class="text-btn" data-lg-seen="${l.id}">Revisto</button></span>` : ''}</div>`).join('')}</div>` : ''}
+        <div class="lg-list">${D.regs.map(r => `<div class="lg-row">
+            <div class="lg-m"><b>${escapeHtml(r.short || r.name)}</b><small>${escapeHtml([r.name !== r.short ? r.name : null, r.diploma].filter(Boolean).join(' · '))}</small>
+              ${r.check_summary ? `<small class="muted">Última verificação: ${escapeHtml(r.check_summary)}</small>` : ''}</div>
+            <div class="lg-s"><span class="fr-chip ${st(r)[1]}">${escapeHtml(st(r)[0])}</span><small>v${r.version || 1}${r.verified_at ? ` · validado${r.verified_by_name ? ' por ' + escapeHtml(r.verified_by_name) : ''} a ${escapeHtml(frDate(r.verified_at))}` : ''}${r.in_force_on ? ` · em vigor desde ${escapeHtml(frDate(r.in_force_on))}` : ''}${r.watch ? '' : ' · não vigiado'}</small></div>
+            <div class="lg-a">${partner ? `<button type="button" class="text-btn" data-lg-edit="${escapeHtml(r.id)}">Validar</button>` : ''}<button type="button" class="text-btn" data-lg-hist="${escapeHtml(r.id)}">Histórico</button></div>
+          </div>`).join('')}</div>
+        <details class="lg-log"><summary>Registo das verificações (${D.log.length})</summary>
+          ${D.log.map(l => `<div class="lg-lr"><span class="muted">${escapeHtml(new Date(l.run_at).toLocaleString('pt-PT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))}</span><span class="fr-chip ${kd(l.kind)[1]}">${escapeHtml(kd(l.kind)[0])}</span>
+            <span>${escapeHtml(D.regs.find(r => r.id === l.regime_id)?.short || l.regime_id || '—')} · ${escapeHtml(l.finding || l.error || '')}${l.source_url ? ` · <a href="${escapeHtml(l.source_url)}" target="_blank" rel="noopener">${l.source_primary ? 'Diário da República' : 'fonte'} ↗</a>` : ''}${l.decision ? ` · <i>${escapeHtml(l.decision)}${l.decided_by_name ? ' (' + escapeHtml(l.decided_by_name) + ')' : ''}</i>` : ''}</span>
+            ${partner && l.kind === 'simulacao' && l.decision !== 'revertida' ? `<button type="button" class="text-btn" data-lg-revert="${l.id}">Reverter</button>` : ''}</div>`).join('') || '<p class="muted">Ainda não há verificações.</p>'}
+        </details>`;
+      const reload = () => loadLegalSettings();
+      const call = async body => { const r = await supabase.functions.invoke('legal-watch', { body }); const ej = r.error ? await r.error.context?.json?.().catch(() => null) : null; const err = r.error ? ej?.error || r.error.message : r.data?.error; if (err) throw new Error(err); return r.data; };
+      box.querySelector('#lg-run').addEventListener('click', async e => {
+        const b = e.currentTarget; b.disabled = true; b.textContent = 'A pedir a verificação…';
+        try {
+          if (devMode) { await new Promise(r => setTimeout(r, 400)); const now = new Date().toISOString(); legalMock().forEach(r => { r.checked_at = now; r.check_summary = 'Sem alterações encontradas'; }); mockLegalLog.unshift(...legalMock().map((r, i) => ({ id: Date.now() + i, run_at: now, regime_id: r.id, kind: 'sem_alteracao', finding: 'Sem alterações encontradas' }))); showToast('Verificação feita: sem alterações'); }
+          else { await call({ action: 'run', trigger: 'manual' }); showToast('A verificação está a correr. O resultado aparece no registo dentro de um ou dois minutos.', { ms: 8000 }); setTimeout(() => { if (document.getElementById('settings-legal-container')?.isConnected) reload(); }, 90000); }
+        } catch (err) { showError('verificar a legislação', err); }
+        reload();
+      });
+      box.querySelector('#lg-sim')?.addEventListener('click', () => {
+        openQuickModal('Simular uma alteração da lei', `
+          <p class="field-hint" style="margin-top:0">Para testar o circuito: o regime muda como se a lei tivesse sido publicada, os relatórios feitos com ele ficam desatualizados e nascem rascunhos de reanálise, todos marcados como <b>simulação</b>. Depois revertes no registo.</p>
+          <label class="field-label" for="lg-s-reg">Regime</label><select class="form-input" id="lg-s-reg">${D.regs.map(r => `<option value="${escapeHtml(r.id)}"${r.id === 'codigo_construcao' ? ' selected' : ''}>${escapeHtml(r.short || r.name)}</option>`).join('')}</select>
+          <label class="field-label" for="lg-s-st">Passa a</label><select class="form-input" id="lg-s-st">${Object.entries(LG_ST).map(([k, [l]]) => `<option value="${k}"${k === 'em_vigor' ? ' selected' : ''}>${escapeHtml(l)}</option>`).join('')}</select>
+          <button type="button" class="primary-btn" id="lg-s-go" style="margin-top:var(--sp-4)">Simular</button>`);
+        document.getElementById('lg-s-go').addEventListener('click', async e => {
+          e.currentTarget.disabled = true;
+          try { const o = devMode ? { affected: 0, drafts: 0 } : await call({ action: 'simulate', regime_id: document.getElementById('lg-s-reg').value, proposed: { status: document.getElementById('lg-s-st').value, in_force_on: new Date().toISOString().slice(0, 10) } });
+            closeQuickModal(); showToast(`Simulação feita: ${o.affected} ${o.affected === 1 ? 'relatório desatualizado' : 'relatórios desatualizados'}, ${o.drafts} ${o.drafts === 1 ? 'rascunho' : 'rascunhos'} de reanálise`, { ms: 8000 }); reload(); }
+          catch (err) { e.target.disabled = false; showError('simular a alteração', err); }
+        });
+      });
+      box.querySelectorAll('[data-lg-revert]').forEach(b => b.addEventListener('click', async () => {
+        b.disabled = true;
+        try { if (!devMode) await call({ action: 'revert', log_id: Number(b.dataset.lgRevert) }); showToast('Simulação revertida'); reload(); }
+        catch (err) { b.disabled = false; showError('reverter a simulação', err); }
+      }));
+      const me = await getCurrentMember();
+      box.querySelectorAll('[data-lg-seen]').forEach(b => b.addEventListener('click', async () => {
+        try { await dbUpdate('legal_watch_log', b.dataset.lgSeen, { decision: 'revista', decided_by: me?.id || null, decided_by_name: me?.name || null, decided_at: new Date().toISOString() }, mockLegalLog); reload(); }
+        catch (err) { showError('marcar como revisto', err); }
+      }));
+      // validar um regime (à mão, por um sócio): nova versão no histórico
+      const edit = (id, prefill = {}, logId = null) => {
+        const r = D.regs.find(x => x.id === id); if (!r) return;
+        const v = k => escapeHtml(prefill[k] ?? r[k] ?? '');
+        openQuickModal(`Validar · ${r.short || r.name}`, `
+          <label class="field-label" for="lg-e-st" style="margin-top:0">Estado</label><select class="form-input" id="lg-e-st">${Object.entries(LG_ST).map(([k, [l]]) => `<option value="${k}"${(prefill.status || r.status) === k ? ' selected' : ''}>${escapeHtml(l)}</option>`).join('')}</select>
+          <div class="fr-form"><label class="fr-f"><span>Publicado a</span><input type="date" class="form-input" id="lg-e-pub" value="${v('published_on')}"></label>
+            <label class="fr-f"><span>Em vigor desde</span><input type="date" class="form-input" id="lg-e-vig" value="${v('in_force_on')}"></label>
+            <label class="fr-f"><span>Revogado a</span><input type="date" class="form-input" id="lg-e-rev" value="${v('revoked_on')}"></label></div>
+          <label class="field-label" for="lg-e-art">Artigos afetados</label><input type="text" class="form-input" id="lg-e-art" value="${v('articles_affected')}">
+          <label class="field-label" for="lg-e-tr">Regime transitório</label><textarea class="form-input" id="lg-e-tr" rows="2">${v('transitional')}</textarea>
+          <label class="field-label" for="lg-e-url">Link do Diário da República</label><input type="url" class="form-input" id="lg-e-url" value="${v('source_url')}" placeholder="https://diariodarepublica.pt/…">
+          <label class="field-label" for="lg-e-why">Motivo</label><input type="text" class="form-input" id="lg-e-why" value="${escapeHtml(prefill.reason || '')}" placeholder="ex.: confirmado no Diário da República">
+          <label class="check-row"><input type="checkbox" id="lg-e-watch"${r.watch ? ' checked' : ''}> Vigiar todas as semanas</label>
+          <p class="field-hint">Os relatórios feitos com a versão anterior ficam desatualizados e nascem rascunhos de reanálise.</p>
+          <button type="button" class="primary-btn" id="lg-e-go">Validar</button>`);
+        document.getElementById('lg-e-go').addEventListener('click', async e => {
+          const btn = e.currentTarget, url = document.getElementById('lg-e-url').value.trim(), now = new Date().toISOString();
+          const patch = { status: document.getElementById('lg-e-st').value, published_on: document.getElementById('lg-e-pub').value || null, in_force_on: document.getElementById('lg-e-vig').value || null,
+            revoked_on: document.getElementById('lg-e-rev').value || null, articles_affected: document.getElementById('lg-e-art').value.trim() || null, transitional: document.getElementById('lg-e-tr').value.trim() || null,
+            source_url: /^https?:\/\//i.test(url) ? url : null, watch: document.getElementById('lg-e-watch').checked, version: (r.version || 1) + 1, verified_at: now, verified_by: me?.id || null, verified_by_name: me?.name || null, updated_at: now };
+          btn.disabled = true;
+          try {
+            await dbUpdate('legal_regimes', r.id, patch, legalMock());
+            if (!devMode) {
+              const why = document.getElementById('lg-e-why').value.trim() || 'Validado por um sócio';
+              await supabase.from('legal_regime_versions').insert({ regime_id: r.id, version: patch.version, data: { ...r, ...patch }, reason: why, source_url: patch.source_url, changed_by: me?.id || null, changed_by_name: me?.name || null });
+              await supabase.from('legal_watch_log').insert({ regime_id: r.id, kind: 'decisao', finding: `${why} · ${(LG_ST[patch.status] || [patch.status])[0]}`, source_url: patch.source_url, source_primary: /diariodarepublica\.pt|dre\.pt/.test(patch.source_url || ''), decided_by: me?.id || null, decided_by_name: me?.name || null, decided_at: now });
+              if (logId) await supabase.from('legal_watch_log').update({ decision: 'aplicada', decided_by: me?.id || null, decided_by_name: me?.name || null, decided_at: now }).eq('id', logId);
+              // relatórios feitos com a versão anterior: desatualizados (os entregues mantêm o conteúdo e o estado)
+              const reps = await supabase.from('framing_reports').select('id, status, regime_snapshot').is('outdated_at', null);
+              const hit = (reps.data || []).filter(x => (x.regime_snapshot || []).some(s => s.id === r.id && (s.version || 1) < patch.version));
+              const reason = `${r.short || r.name}: ${why}`;
+              for (const x of hit) await supabase.from('framing_reports').update({ outdated_at: now, outdated_reason: reason, ...(x.status === 'entregue' ? {} : { status: 'desatualizado' }) }).eq('id', x.id);
+              if (hit.length) showToast(`${hit.length} ${hit.length === 1 ? 'relatório ficou desatualizado' : 'relatórios ficaram desatualizados'}`, { ms: 7000 });
+            }
+            closeQuickModal(); showToast('Regime validado'); reload();
+          } catch (err) { btn.disabled = false; showError('validar o regime', err); }
+        });
+      };
+      box.querySelectorAll('[data-lg-edit]').forEach(b => b.addEventListener('click', () => edit(b.dataset.lgEdit)));
+      box.querySelectorAll('[data-lg-apply]').forEach(b => b.addEventListener('click', () => { const l = D.log.find(x => String(x.id) === b.dataset.lgApply); edit(l.regime_id, { ...(l.proposed || {}), source_url: l.source_url, reason: l.finding }, l.id); }));
+      box.querySelectorAll('[data-lg-hist]').forEach(b => b.addEventListener('click', async () => {
+        const r = D.regs.find(x => x.id === b.dataset.lgHist);
+        let vers = [];
+        if (!devMode) { const q = await supabase.from('legal_regime_versions').select('*').eq('regime_id', r.id).order('version', { ascending: false }); vers = q.data || []; }
+        openQuickModal(`Histórico · ${r.short || r.name}`, vers.length ? `<div class="lg-hist">${vers.map(x => `<div class="lg-lr"><b>v${x.version}</b><span class="fr-chip ${(LG_ST[x.data?.status] || ['', ''])[1]}">${escapeHtml((LG_ST[x.data?.status] || [x.data?.status || '—'])[0])}</span>
+            <span>${escapeHtml(x.reason || '')}<br><small class="muted">${escapeHtml(frDate(x.changed_at))}${x.changed_by_name ? ' · ' + escapeHtml(x.changed_by_name) : ''}${x.source_url ? ` · <a href="${escapeHtml(x.source_url)}" target="_blank" rel="noopener">fonte ↗</a>` : ''}</small></span></div>`).join('')}</div>` : '<p class="muted">Sem histórico.</p>');
+      }));
+    }
+    // Avisos na Hoje: alterações e alertas por rever, relatórios desatualizados, vigilância parada
+    async function legalAlerts() {
+      if (devMode) return [];
+      const [lg, rp, rg] = await Promise.all([
+        supabase.from('legal_watch_log').select('id, kind, decision, regime_id, run_at').in('kind', ['alerta', 'confirmada', 'erro']).gte('run_at', new Date(Date.now() - 30 * 864e5).toISOString()),
+        supabase.from('framing_reports').select('id, plot_id, status, kind, simulation').not('outdated_at', 'is', null).neq('status', 'entregue'),
+        supabase.from('legal_regimes').select('checked_at').eq('watch', true)]);
+      const out = [];
+      const pend = (lg.data || []).filter(l => !l.decision || l.decision === 'aplicada');
+      const conf = pend.filter(l => l.kind === 'confirmada').length, al = pend.filter(l => l.kind === 'alerta').length, er = pend.filter(l => l.kind === 'erro').length;
+      if (conf || al || er) out.push({ kind: 'legal', title: conf ? `Legislação: ${conf} ${conf === 1 ? 'alteração confirmada' : 'alterações confirmadas'} no Diário da República` : er ? 'A verificação da legislação falhou' : `Legislação: ${al} ${al === 1 ? 'alerta' : 'alertas'} por rever`,
+        sub: [conf && 'relatórios afetados marcados', al && `${al} sem fonte primária`, er && 'vê o registo'].filter(Boolean).join(' · '), when: 'Rever' });
+      const out2 = (rp.data || []).filter(r => r.kind !== 'reanalise');
+      if (out2.length) out.push({ kind: 'legal', title: `${out2.length} ${out2.length === 1 ? 'relatório de enquadramento desatualizado' : 'relatórios de enquadramento desatualizados'}`, sub: 'a lei mudou depois da análise: há rascunhos de reanálise', when: 'Ver' });
+      const last = (rg.data || []).map(r => r.checked_at).filter(Boolean).sort().pop();
+      if (last && Date.now() - new Date(last) > 9 * 864e5) out.push({ kind: 'legal', title: 'A verificação da legislação não corre há mais de uma semana', sub: `última: ${frDate(last)}`, when: 'Ver' });
+      return out;
     }
     // Relatório de enquadramento (janela para imprimir / guardar em PDF), com o aspeto do Investment Intelligence
     async function printFraming(p, F) {
@@ -21014,6 +22083,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         <div class="vt-layout">
           <div class="gantt-wrap vt-sheet${isIndPlot(p) ? ' is-ind' : ''}">
             <div class="card-head"><h2>Rentabilidade</h2><small class="muted">valor unitário × quantidade = valor global · grava sozinho</small><button type="button" class="text-btn vt-all" id="vt-all"></button></div>
+            <div id="vt-fr"></div>
             ${grp('vt-areas', 'Áreas', '', `${vhead('Índice / %', 'Base', 'Área')}
               ${vrow('Área do terreno', '', '', pIn('land_area', 'm²', 'ex.: 1200'))}
               ${vrow('Área de construção<small>índice × área do terreno (limitada pelo IOS × pisos) — ou escreve-a</small>', pIn('pdm_index', '', 'índice'), o('landQ'), pIn('buildable_area', 'm²', areaHint()))}
@@ -21102,7 +22172,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         ${d.partner ? `<div class="gantt-wrap" id="ps-props"></div>` : ''}`;
 
       mountPlotNotes(document.getElementById('ps-notes'), p, d);
-      mountFraming(document.getElementById('ps-frame'), p, d, { save: () => { pPatch.framing = p.framing; savePlot(); } });
+      mountFraming(document.getElementById('ps-frame'), p, d, { save: () => { pPatch.framing = p.framing; savePlot(); }, feas: () => f });
+      // o quadro do enquadramento na Rentabilidade refaz-se quando um relatório muda (aprovado, entregue, nova versão)
+      const frFeas = () => { const el = document.getElementById('vt-fr'); if (!el) return document.removeEventListener('fr-reports', frFeas); if (!isIndPlot(p)) mountFeasFromFraming(el, p, d, f, () => { suppressNavPush = true; openPlotView(p.id); }); };
+      document.addEventListener('fr-reports', frFeas); frFeas();
       // ---- grupos que abrem e fecham ----
       const vtToggle = (sec, closed) => { sec.classList.toggle('closed', closed); sec.querySelector('.vt-tog')?.setAttribute('aria-expanded', String(!closed)); vtRemember(sec.id, closed); };
       const vtGroups = () => [...view.querySelectorAll('.vt-sheet .vt-g')].filter(x => getComputedStyle(x).display !== 'none');
@@ -21785,10 +22858,22 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <div class="segmented" id="fz-lang"><button type="button" data-l="pt" class="active">Português</button><button type="button" data-l="en">English</button></div>
           <label class="check-row"><input type="checkbox" id="fz-p-scen"> Incluir os cenários</label>
           <label class="check-row"><input type="checkbox" id="fz-p-rent"${f.rent_on ? ' checked' : ''}> Incluir o arrendamento</label>
+          <label class="check-row"><input type="checkbox" id="fz-p-fr"> Juntar o enquadramento urbanístico (dossier de investimento, em português)</label>
           <button type="button" class="primary-btn" id="fz-p-go">Abrir o resumo</button>`);
         let lang = 'pt';
         document.getElementById('fz-lang').addEventListener('click', e => { const b = e.target.closest('[data-l]'); if (!b) return; lang = b.dataset.l; document.querySelectorAll('#fz-lang button').forEach(x => x.classList.toggle('active', x === b)); });
-        document.getElementById('fz-p-go').addEventListener('click', () => { const o = { lang, scen: document.getElementById('fz-p-scen').checked, rent: document.getElementById('fz-p-rent').checked }; closeQuickModal(); printFeasibility(p, f, o); });
+        document.getElementById('fz-p-go').addEventListener('click', async () => {
+          const o = { lang, scen: document.getElementById('fz-p-scen').checked, rent: document.getElementById('fz-p-rent').checked };
+          if (!document.getElementById('fz-p-fr').checked) { closeQuickModal(); printFeasibility(p, f, o); return; }
+          // dossier: usa o relatório de enquadramento mais avançado (entregue ou aprovado; senão o mais recente)
+          try {
+            const reps = await frReports(p), rep = reps.find(r => r.status === 'entregue' || r.status === 'aprovado') || reps[0];
+            closeQuickModal();
+            if (!rep) return showToast('Ainda não há relatório de enquadramento. Cria-o em Enquadramento urbanístico → Análise do PDM.', { type: 'error', ms: 9000 });
+            p.framing = p.framing || {};
+            openFramingViewer(p, d, p.framing, rep, { save: () => { pPatch.framing = p.framing; savePlot(); }, feas: () => f, reps, autoGate: 'dossier' });
+          } catch (err) { showError('abrir o dossier', err); }
+        });
       });
       document.getElementById('ps-more').addEventListener('click', () => {
         const el = mountCellPopover(document.getElementById('ps-more'), 'Mais ações', `<b>${escapeHtml(p.name)}</b><span>mais ações</span>`, `
@@ -22130,6 +23215,16 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         payNotes: [], terms: [['pay_terms', 'Momento de faturação', '=Cada fatura é emitida no marco indicado na tabela.'], ['pay_terms', 'Prazo e forma de pagamento']],
         optionals: ['Estudos volumétricos', 'Reuniões adicionais com o Cliente', 'Visitas ao imóvel', 'Análise e integração de estudos'],
         exclIntro: 'Exclusões', exclusions: ['Levantamento topográfico, cadastral', 'Reuniões de certificação'] },
+      { key: 'servicos', name: 'Proposta de Serviços', desc: 'Serviços avulsos da NOVA e de parceiros, sem fases de projeto.', noType: true,
+        cover: [['Proposta de Serviços', 'Services Proposal']],
+        intro: ['O presente documento descreve a proposta de prestação de serviços para o imóvel sito em {local}, de acordo com o pedido do Cliente.',
+          'This document sets out our proposal for the services requested by the Client for the property located in {local}.'],
+        facts: [],
+        valueIntro: null, lines: null,
+        valueNotes: ['Aos valores apresentados acresce IVA'],
+        payIntro: null, pay: [[['Adjudicação', 'Award'], 50, 'Adjudicação'], [['Conclusão dos serviços', 'Completion of the services'], 50, null]],
+        payNotes: [], terms: [['pay_terms', 'Momento de faturação', '=Cada fatura é emitida no marco indicado na tabela.'], ['pay_terms', 'Prazo e forma de pagamento']],
+        optionals: [], exclIntro: null, exclusions: [] },
       { key: 'full', name: 'Projeto Completo', desc: 'Arquitetura e especialidades, do estudo prévio à assistência técnica.',
         cover: [['Projeto de Arquitetura', 'Architecture Project']],
         intro: ['O presente documento descreve a proposta de prestação de serviços para o desenvolvimento do Projeto de Arquitetura e Especialidades para o imóvel sito em {local}.',
@@ -22563,17 +23658,27 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       });
       document.getElementById('pipe-new').addEventListener('click', () => openNewProposalChooser(d));
     }
+    // Serviços de parceiros que a NOVA costuma revender (proposta de serviços)
+    const NP_PARTNER_SVC = ['Levantamento topográfico', 'Levantamento arquitetónico', 'Estudo geotécnico', 'Carpintaria', 'Serralharia', 'Materiais e acabamentos', 'Mobiliário e decoração'];
     // Nova proposta: a partir de uma oportunidade do Intelligence (mesmo CST) ou sem oportunidade (CST novo)
     async function openNewProposalChooser(d, preset = {}) {
-      const cfg = await loadProposalCfg().catch(() => PROPOSAL_DEFAULT);
+      const [cfg, lib] = await Promise.all([loadProposalCfg().catch(() => PROPOSAL_DEFAULT), loadPropLib().catch(() => [])]);
       const tpls = ppTemplates(cfg);
       const open = d.plots.filter(p => PLOT_OPEN.includes(p.status));
       let tpl = preset.tpl || tpls[0].key, lang = cfg.lang || 'pt';
-      openQuickModal('Nova proposta de honorários', `
+      openQuickModal('Nova proposta', `
         <label class="field-label" style="margin-top:0;">Que proposta é?</label>
         <div class="np-tpls" role="radiogroup">${tpls.map(t => `<button type="button" class="np-tpl${t.key === tpl ? ' on' : ''}" role="radio" aria-checked="${t.key === tpl}" data-tpl="${escapeHtml(t.key)}"><b>${escapeHtml(t.name)}</b><span>${escapeHtml(t.desc || '')}</span></button>`).join('')}</div>
+        <div id="np-svc"${tpl === 'servicos' ? '' : ' hidden'}>
+          <label class="field-label">Serviços da NOVA <small class="muted">(à hora ou a preço fixo)</small></label>
+          <div class="np-svc-l">${lib.filter(x => x.kind === 'optional').map(x => `<label class="check-row"><input type="checkbox" data-np-nova="${escapeHtml(x.id)}"> ${escapeHtml(libT(x, false))}</label>`).join('') || '<span class="muted">Sem serviços na biblioteca.</span>'}</div>
+          <label class="field-label">Serviços de parceiros <small class="muted">(revenda: custo + margem, no editor)</small></label>
+          <div class="np-svc-l">${NP_PARTNER_SVC.map(t => `<label class="check-row"><input type="checkbox" data-np-part="${escapeHtml(t)}"> ${escapeHtml(t)}</label>`).join('')}</div>
+          <input type="text" id="np-part-other" class="form-input" placeholder="Outro serviço de parceiro (opcional)">
+          <div class="field-hint">Os valores preenchem-se no editor. Pode juntar ou tirar serviços depois.</div>
+        </div>
         <div class="form-grid">
-          <div><label class="field-label">Tipologia</label><select id="np-type" class="form-input"><option value="">—</option>${d.types.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('')}</select></div>
+          <div id="np-type-wrap"${tpl === 'servicos' ? ' hidden' : ''}><label class="field-label">Tipologia</label><select id="np-type" class="form-input"><option value="">—</option>${d.types.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('')}</select></div>
           <div><label class="field-label">Língua</label><div class="segmented np-lang" role="radiogroup"><button type="button" data-lang="pt" class="${lang === 'pt' ? 'active' : ''}">Português</button><button type="button" data-lang="en" class="${lang === 'en' ? 'active' : ''}">English</button></div></div>
         </div>
         <div id="np-cycles-row"${tpl === 'pip' ? '' : ' hidden'}><label class="field-label">Aperfeiçoamento</label>
@@ -22586,7 +23691,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const box = document;
       let cycles = 'one';
       const cyHint = { one: 'Inclui a resposta à primeira notificação da Câmara; as seguintes são trabalho adicional.', all: 'Inclui todas as respostas até à decisão, desde que não obriguem a reformular a solução.' };
-      box.querySelectorAll('.np-tpl').forEach(b => b.addEventListener('click', () => { tpl = b.dataset.tpl; box.querySelectorAll('.np-tpl').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', x === b); }); document.getElementById('np-cycles-row').hidden = tpl !== 'pip'; }));
+      box.querySelectorAll('.np-tpl').forEach(b => b.addEventListener('click', () => { tpl = b.dataset.tpl; box.querySelectorAll('.np-tpl').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', x === b); }); document.getElementById('np-cycles-row').hidden = tpl !== 'pip'; document.getElementById('np-svc').hidden = tpl !== 'servicos'; document.getElementById('np-type-wrap').hidden = tpl === 'servicos'; }));
       box.querySelectorAll('.np-cycles button').forEach(b => b.addEventListener('click', () => { cycles = b.dataset.cy; box.querySelectorAll('.np-cycles button').forEach(x => x.classList.toggle('active', x === b)); document.getElementById('np-cycles-hint').textContent = cyHint[cycles]; }));
       box.querySelectorAll('.np-lang button').forEach(b => b.addEventListener('click', () => { lang = b.dataset.lang; box.querySelectorAll('.np-lang button').forEach(x => x.classList.toggle('active', x === b)); }));
       const plotSel = document.getElementById('np-plot'), typeSel = document.getElementById('np-type');
@@ -22600,8 +23705,14 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       document.getElementById('np-go').addEventListener('click', () => {
         const plot = d.plots.find(p => String(p.id) === plotSel.value) || null;
         const keen = plot ? d.presentations.find(x => x.plot_id === plot.id && ['proposal', 'interested'].includes(x.status)) : null;
+        let services = null;
+        if (tpl === 'servicos') {
+          const other = document.getElementById('np-part-other').value.trim();
+          services = { nova: [...document.querySelectorAll('[data-np-nova]:checked')].map(x => x.dataset.npNova), partners: [...[...document.querySelectorAll('[data-np-part]:checked')].map(x => x.dataset.npPart), ...(other ? [other] : [])] };
+          if (!services.nova.length && !services.partners.length) return showToast('Escolhe pelo menos um serviço.', { type: 'error' });
+        }
         closeQuickModal();
-        openProposalView(null, { plot, investor: keen ? d.investors.find(i => i.id === keen.investor_id) : null, tpl, lang, typeId: typeSel.value || null, cycles: tpl === 'pip' ? cycles : null });
+        openProposalView(null, { plot, investor: keen ? d.investors.find(i => i.id === keen.investor_id) : null, tpl, lang, typeId: tpl === 'servicos' ? null : typeSel.value || null, cycles: tpl === 'pip' ? cycles : null, services });
       });
     }
 
@@ -22657,6 +23768,16 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               : ppDefaultContent(lib, en, meM, { lines: [en ? 'Architecture Project' : 'Projeto de Arquitetura', typeById[typeId]?.name || ''], place, region, facts }, cfg)
           };
           if (preset.cycles === 'all') ppSetCycles(pp.content, 'all', lib, en);
+          // proposta de serviços: os serviços da NOVA entram no âmbito e no valor (os à hora com a taxa das Definições,
+          // horas por preencher); os de parceiros entram em Outros serviços (custo e margem por preencher)
+          if (preset.services) {
+            const nova = preset.services.nova.map(id => lib.find(x => String(x.id) === String(id))).filter(Boolean);
+            if (nova.length) pp.content.scope.groups = [{ g: '', t: en ? 'Services' : 'Serviços', items: nova.map(x => ({ lib: x.id, t: libT(x, en), b: libB(x, en) })) }];
+            pp.content.value.lines = nova.map(x => /\{h\}/.test(x.value_text || '')
+              ? { g: '', t: libT(x, en), pt: libT(x, false), en: libT(x, true), q: null, u: ppRate(cfg), v: null, kind: 'fee' }
+              : { g: '', t: libT(x, en), pt: libT(x, false), en: libT(x, true), q: null, u: null, v: null, kind: 'fee' });
+            pp.content.resale.lines = preset.services.partners.map(t => ({ t, b: '', sup: '', cost: null, margin: 15 }));
+          }
           if (belowA) pp.content.scope.below = belowA;
           pp.total = ppTotals(pp.content).total || null;
         } else {
@@ -22780,13 +23901,13 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <div class="form-grid">
             <div><label class="field-label">Local</label>${inp('content.cover.place', c.cover.place, { ph: 'ex.: Rua de Álvares Cabral' })}</div>
             <div><label class="field-label">Concelho / região</label>${inp('content.cover.region', c.cover.region, { ph: 'ex.: Vila Nova de Gaia' })}</div>
-            <div><label class="field-label">Tipologia</label><select class="form-input" data-pp="project_type_id" id="pp-type"><option value="">Escolhe…</option>${typeOpts}</select></div>
+            ${c.kind === 'servicos' ? '' : `<div><label class="field-label">Tipologia</label><select class="form-input" data-pp="project_type_id" id="pp-type"><option value="">Escolhe…</option>${typeOpts}</select></div>
             <div><label class="field-label">Área acima do solo (m²)</label>${inp('area', pp.area, { n: true })}</div>
             <div><label class="field-label">Área abaixo do solo (m²)</label>${inp('content.scope.below', c.scope.below, { n: true, ph: 'ex.: cave, estacionamento' })}</div>
-            <div><label class="field-label">Frações</label>${inp('fractions', pp.fractions, { n: true })}</div>
+            <div><label class="field-label">Frações</label>${inp('fractions', pp.fractions, { n: true })}</div>`}
           </div>
-          <div class="field-hint">O Âmbito mostra a <b>Área Total de Construção</b> (acima + abaixo do solo), com o detalhe por baixo.</div>
-          <label class="pp-chk"><input type="checkbox" data-ppc="content.rehab"${c.rehab ? ' checked' : ''}> Projeto de reabilitação <span class="muted">— a capa fica «Reabilitação de …» e a abertura e as linhas do valor ajustam-se</span></label>`,
+          ${c.kind === 'servicos' ? '<div class="field-hint">Proposta de serviços: os serviços da NOVA vão em «Serviços» e «Valor» (os à hora com a taxa das Definições — falta pôr as horas); os de parceiros vão em «Outros serviços», com o custo e a margem.</div>' : `<div class="field-hint">O Âmbito mostra a <b>Área Total de Construção</b> (acima + abaixo do solo), com o detalhe por baixo.</div>
+          <label class="pp-chk"><input type="checkbox" data-ppc="content.rehab"${c.rehab ? ' checked' : ''}> Projeto de reabilitação <span class="muted">— a capa fica «Reabilitação de …» e a abertura e as linhas do valor ajustam-se</span></label>`}`,
         coverMore: () => `
           <div class="form-grid">
             <div><label class="field-label" style="margin-top:0;">Nome na capa (se não for o do cliente)</label>${inp('client_name', pp.client_name, { ph: 'ex.: Maria e Reynald Aeschlimann' })}</div>
@@ -22925,7 +24046,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       view.innerHTML = `
         <div class="detail-header pp-header">
           <div class="titles"><div class="pp-ref">${escapeHtml(ppRef(pp) || 'CST por atribuir')} ${pill(pp.status)}${plot ? ` <button type="button" class="text-btn" data-open-plot="${escapeHtml(plot.id)}">oportunidade: ${escapeHtml(plot.name)}</button>` : ''}</div>
-            <h2>${escapeHtml(ppClientName(pp, d) || pp.title || 'Nova proposta de honorários')}</h2>
+            <h2>${escapeHtml(ppClientName(pp, d) || pp.title || (c.kind === 'servicos' ? 'Nova proposta de serviços' : 'Nova proposta de honorários'))}</h2>
             <div class="sub">${escapeHtml([pp.title && ppClientName(pp, d) ? pp.title : null, S.typeById[pp.project_type_id]?.name, c.rehab ? 'Reabilitação' : null, c.cover.region].filter(Boolean).join(' · '))}</div></div>
           <div class="pp-head-right"><div class="segmented pp-langseg" role="radiogroup" aria-label="Língua da proposta"><button type="button" data-lang="pt" class="${en ? '' : 'active'}">PT</button><button type="button" data-lang="en" class="${en ? 'active' : ''}">EN</button></div>
             <span class="pp-saved" id="pp-saved" aria-live="polite"></span></div>
@@ -23629,7 +24750,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       note(c.scope.notes);
       // Secções próprias (Aperfeiçoamento, Metodologia, BIM…)
       (c.extra || []).filter(x => (x.t || '').trim() || (x.b || '').trim()).forEach(x => { h2(x.t || ''); hb([{ b: x.b }]); });
-      // Valor
+      // Valor (numa proposta de serviços só com parceiros não há honorários: a secção não aparece)
+      const noFees = c.kind === 'servicos' && !c.value.lines.some(l => l.t || ppLineAmount(l, c.value.lines));
+      if (!noFees) {
       h2(L.value);
       p(md(c.value.intro?.t));
       const allL = c.value.lines, lines = allL.filter(l => ppIsDisc(l) ? ppLineAmount(l, allL) : l.t || ppLineAmount(l, allL)); // descontos a 0 € não aparecem
@@ -23654,6 +24777,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         }
         note(c.value.notes);
       }); else note(c.value.notes);
+      }
       // Outros serviços (parceiros): só a descrição e o preço; subtotal à parte dos honorários
       const RS = ppResaleTotals(c);
       if (RS.lines.length) {
@@ -23903,7 +25027,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           .sign .note { margin: -24pt 0 0; width: 80mm; }
           #flow { position: absolute; left: -9999px; top: 0; width: 174mm; }
           @media print { body { background: none; } .bar { display: none; } .page { margin: 0; box-shadow: none; } }
-          @media screen and (max-width: 820px) { .page { transform: scale(calc((100vw - 16px) / 793.7)); transform-origin: top left; margin: 8px; } }
+          @media screen and (max-width: 820px) { .paged .page { zoom: var(--pz, 1); margin: 8px; } }
           ${opts.capture ? `/* PDF do email (html2canvas): sem translineação nem variantes tipográficas, que ele não sabe desenhar */
           body { font-feature-settings: normal; text-rendering: auto; -webkit-font-smoothing: auto; }
           .txt p, .item .ib p { hyphens: manual; -webkit-hyphens: manual; }
@@ -23973,6 +25097,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             if (!used()) pages.pop().remove();
             flow.remove();
             pages.forEach(function (pg, i) { pg.querySelector('.pno').textContent = String(i + 2).padStart(2, '0'); });
+            // no telemóvel a folha encolhe para caber no ecrã (só depois de paginar, para não mexer nas medidas)
+            function fitScreen() { document.documentElement.style.setProperty('--pz', String(Math.min(1, (Math.min(window.innerWidth, screen.width || 9999) - 16) / 793.7))); }
+            fitScreen(); window.addEventListener('resize', fitScreen);
+            document.documentElement.classList.add('paged');
           }
           (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(function () { setTimeout(paginate, 30); });
         <\/script>
