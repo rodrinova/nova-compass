@@ -35,7 +35,10 @@ async function gemini(body: Record<string, unknown>): Promise<any> {
     for (const m of MODELS) {
       const gc = { ...(body as any).generationConfig, ...(noThinkingCap ? {} : { thinkingConfig: { thinkingBudget: 512 } }) };
       const b = withSearch ? { ...body, generationConfig: gc, tools: [{ google_search: {} }] } : { ...body, generationConfig: { ...gc, responseMimeType: "application/json" } };
-      const r = await fetch(`${API}/v1beta/models/${m}:generateContent`, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": KEY }, body: JSON.stringify(b) });
+      // modelo que não responda em 60 s: passa ao seguinte
+      let r: Response;
+      try { r = await fetch(`${API}/v1beta/models/${m}:generateContent`, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": KEY }, body: JSON.stringify(b), signal: AbortSignal.timeout(60000) }); }
+      catch { last = { status: 504, body: { error: { message: `O modelo ${m} não respondeu a tempo` } }, model: m }; continue; }
       last = { status: r.status, body: await r.json().catch(() => ({})), model: m };
       // modelo que não aceite o limite de raciocínio: daqui em diante vai sem ele
       if (r.status === 400 && !noThinkingCap && /thinking/i.test(last.body?.error?.message || "")) { noThinkingCap = true; return gemini(body); }

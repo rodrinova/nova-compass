@@ -15,6 +15,7 @@ const KEY = (KEY_NAMES.map((n) => Deno.env.get(n)).find((v) => v && v.trim()) ??
 const MODELS = [...new Set([Deno.env.get("GEMINI_MODEL"), "gemini-flash-latest", "gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-2.5-flash"].filter(Boolean) as string[])];
 const SB_URL = Deno.env.get("SUPABASE_URL") ?? "", SB_SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const API = "https://generativelanguage.googleapis.com";
+const PER_CALL_MS = 65000;
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type" };
 const json = (v: unknown, status = 200) => new Response(JSON.stringify(v), { status, headers: { ...cors, "Content-Type": "application/json" } });
 const cut = (s: unknown, n: number) => String(s ?? "").slice(0, n);
@@ -72,7 +73,10 @@ async function gemini(feature: string, user: string | null, body: Record<string,
     model = m;
     for (let i = 0; i < 2; i++) {
       const t0 = Date.now();
-      const r = await fetch(`${API}/v1beta/models/${m}:generateContent`, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": KEY }, body: JSON.stringify(body) });
+      // tempo máximo por pedido: um modelo que não responda passa ao seguinte (o Supabase corta tudo aos 150 s)
+      let r: Response;
+      try { r = await fetch(`${API}/v1beta/models/${m}:generateContent`, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": KEY }, body: JSON.stringify(body), signal: AbortSignal.timeout(PER_CALL_MS) }); }
+      catch { last = { status: 504, body: { error: { message: `O modelo ${m} não respondeu a tempo` } }, ms: Date.now() - t0 }; await log({ user_id: user, model: m, feature, status: "error", detail: { status: 504, ms: last.ms } }); break; }
       last = { status: r.status, body: await r.json().catch(() => ({})), ms: Date.now() - t0 };
       // um modelo que não aceite o limite de raciocínio: tenta a outra forma (thinkingBudget) e depois sem limite
       const tc = (body as any).generationConfig?.thinkingConfig;
@@ -83,7 +87,7 @@ async function gemini(feature: string, user: string | null, body: Record<string,
       await sleep(1500);
     }
     // modelo inexistente ou retirado para contas novas: passa ao seguinte
-    skipped = last.status === 404 || last.status === 503 || (last.status === 400 && /no longer available|not found|not supported/i.test(last.body?.error?.message || ""));
+    skipped = last.status === 404 || last.status === 503 || last.status === 504 || (last.status === 400 && /no longer available|not found|not supported/i.test(last.body?.error?.message || ""));
     if (skipped) continue;
     // 429 sem quota identificada = esta funcionalidade (ex.: pesquisa Google) não está no plano gratuito deste modelo: tenta o seguinte
     if (last.status === 429) {
@@ -97,7 +101,7 @@ async function gemini(feature: string, user: string | null, body: Record<string,
     if (last?.status === 429) { const q = quotaOf(last.body); await log({ user_id: user, model, feature, status: "limit", detail: q }); throw new AiError("limit", "limit", q); }
     const msg = last?.body?.error?.message || `Erro ${last?.status}`;
     await log({ user_id: user, model, feature, status: "error", detail: { status: last?.status, message: cut(msg, 300) } });
-    throw new AiError(last?.status === 503 ? "busy" : "error", msg);
+    throw new AiError(last?.status === 503 || last?.status === 504 ? "busy" : "error", msg);
   }
   const um = last.body?.usageMetadata || {};
   await log({ user_id: user, model, feature, status: "ok", prompt_tokens: um.promptTokenCount ?? null, output_tokens: um.candidatesTokenCount ?? null, total_tokens: um.totalTokenCount ?? null,
