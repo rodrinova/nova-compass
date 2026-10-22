@@ -2455,6 +2455,13 @@
   .fr-txt-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--sp-2); }
   .fr-txt-head > span { display: flex; align-items: center; gap: var(--sp-2); }
   .fr-sec textarea[data-tk] { min-height: 70px; }
+  .fr-ai-meter { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: var(--sp-2) 0 var(--sp-1); padding: 8px 12px; border-radius: var(--r-md); background: var(--surface-2); font-size: var(--fs-sm); color: var(--text-2); }
+  .fr-ai-meter b { color: var(--text); font-weight: var(--fw-semibold); }
+  .fr-ai-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; background: var(--text-3); }
+  .fr-ai-dot.on { background: var(--success); } .fr-ai-dot.warn { background: var(--warning); } .fr-ai-dot.bad, .fr-ai-dot.off { background: var(--danger); }
+  .fr-ai-bar { flex: 1 1 120px; max-width: 220px; height: 5px; border-radius: 3px; background: color-mix(in srgb, var(--text-3) 25%, transparent); overflow: hidden; margin-left: auto; }
+  .fr-ai-bar > i { display: block; height: 100%; background: var(--success); border-radius: 3px; transition: width .5s cubic-bezier(.2, .8, .2, 1); }
+  .fr-ai-bar > i.warn { background: var(--warning); }
   @media (max-width: 560px) { .fr-ext-top { grid-template-columns: minmax(0, 1fr) auto; } .fr-ext-top .fr-art { grid-column: 1; grid-row: 2; } .ps-frame .fr-pdf { margin-left: 0; } }
   /* painel vivo da Rentabilidade (habitação) */
   .lv { display: flex; flex-direction: column; gap: var(--sp-4); }
@@ -20587,6 +20594,27 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       }
       return { out, total: doc.numPages };
     }
+    // Utilização da IA: o Google não diz em tempo real quanto falta; a app conta os pedidos e tokens de hoje
+    // (o dia do Google começa à meia-noite da Califórnia) e guarda o limite que o Google indica quando se chega a ele.
+    let frAi = null, frAiAt = 0;
+    async function frAiStatus(force = false) {
+      if (devMode) return frAi = frAi || { configured: true, usage: { requests: 2, tokens: 5400, resetAt: new Date(Date.now() + 6 * 36e5).toISOString(), limitHit: null, knownLimit: { perDay: true, value: 20 } } };
+      if (!force && frAi && Date.now() - frAiAt < 30000) return frAi;
+      const r = await supabase.functions.invoke('framing-ai', { body: { action: 'status' } });
+      if (r.error) throw r.error;
+      frAiAt = Date.now(); return frAi = r.data;
+    }
+    function frAiMeter(st) {
+      if (!st) return '<span class="muted">IA: a verificar…</span>';
+      if (!st.configured) return `<span class="fr-ai-dot off"></span><span><b>IA desligada</b> · falta a chave do Gemini no Supabase${st.keyNames?.length ? ` (encontrei: ${escapeHtml(st.keyNames.join(', '))})` : ''}</span>`;
+      const u = st.usage || {}, lim = u.knownLimit, reset = u.resetAt ? new Date(u.resetAt).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) : '';
+      const tok = u.tokens >= 1000 ? `${(u.tokens / 1000).toLocaleString('pt-PT', { maximumFractionDigits: 1 })} mil tokens` : `${u.tokens || 0} tokens`;
+      if (u.limitHit && u.limitHit.perMinute && !u.limitHit.perDay && Date.now() - new Date(u.limitHit.at).getTime() < 120000)
+        return `<span class="fr-ai-dot warn"></span><span><b>Limite por minuto</b> · espera um minuto e tenta outra vez</span>`;
+      if (u.limitHit && !u.limitHit.perMinute) return `<span class="fr-ai-dot bad"></span><span><b>Limite diário atingido</b> · ${u.requests} ${u.requests === 1 ? 'pedido' : 'pedidos'} hoje · volta às ${escapeHtml(reset)}</span>`;
+      const day = lim && lim.perDay && lim.value ? lim.value : null, pctv = day ? Math.min(1, u.requests / day) : null;
+      return `<span class="fr-ai-dot ${pctv != null && pctv >= 0.8 ? 'warn' : 'on'}"></span><span><b>IA hoje</b> · ${u.requests || 0}${day ? ` de ${day}` : ''} ${(u.requests || 0) === 1 && !day ? 'pedido' : 'pedidos'} · ${escapeHtml(tok)} · renova às ${escapeHtml(reset)}</span>${day ? `<i class="fr-ai-bar"><i class="${pctv >= 0.8 ? 'warn' : ''}" style="width:${Math.round(pctv * 100)}%"></i></i>` : ''}`;
+    }
     function mountFraming(box, p, d, ctx) {
       if (!box) return;
       const fr = () => (p.framing = (p.framing && typeof p.framing === 'object') ? p.framing : { on: false, plants: [], extracts: [], text: {} });
@@ -20627,6 +20655,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             <section class="fr-sec">
               <div class="fr-txt-head"><div class="section-label">Texto do relatório</div>
                 <span><button type="button" class="secondary-btn" id="fr-ai">✦ Escrever com IA</button><button type="button" class="text-btn" id="fr-tpl">Texto-tipo</button></span></div>
+              <div class="fr-ai-meter" id="fr-ai-meter" aria-live="polite" title="Contado pela app: o Google não mostra em tempo real quanto falta. O limite aparece quando o Google o indica.">${frAiMeter(frAi)}</div>
               <div class="field-hint">A IA escreve um rascunho a partir das Condicionantes, dos extratos e das legendas das plantas; o texto-tipo monta-se com o que está preenchido. Revê sempre: o que faltar fica «[a confirmar]».</div>
               ${FR_SECS.map(([k, l]) => `<label class="field-label" for="fr-t-${k}">${l}</label><textarea class="form-input pp-grow" id="fr-t-${k}" data-tk="${k}" rows="3">${escapeHtml(F.text[k] || '')}</textarea>`).join('')}
             </section>
@@ -20669,6 +20698,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         box.querySelector('#fr-on').addEventListener('change', e => { F.on = e.target.checked; save(); draw(); if (F.on) setTimeout(() => box.scrollIntoView({ behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'start' }), 50); });
         if (!F.on) return;
         box.querySelector('#fr-pdf').addEventListener('click', () => printFraming(p, F));
+        // indicador de utilização: ao abrir e de minuto a minuto enquanto o cartão estiver no ecrã
+        const meter = box.querySelector('#fr-ai-meter'), aiBtn = box.querySelector('#fr-ai');
+        const paintMeter = st => { if (!meter.isConnected) return; meter.innerHTML = frAiMeter(st); const u = st?.usage; const blocked = st && (!st.configured || (u?.limitHit && !u.limitHit.perMinute)); aiBtn.disabled = !!blocked; aiBtn.title = blocked ? (st.configured ? 'Limite diário do Gemini atingido' : 'Falta a chave do Gemini no Supabase') : ''; };
+        const refreshMeter = force => frAiStatus(force).then(paintMeter).catch(() => { if (meter.isConnected) meter.innerHTML = '<span class="muted">IA: não foi possível ver a utilização</span>'; });
+        refreshMeter(false);
+        clearInterval(box._aiTimer); box._aiTimer = setInterval(() => { if (!meter.isConnected) return clearInterval(box._aiTimer); if (document.visibilityState === 'visible') refreshMeter(true); }, 60000);
         const drop = box.querySelector('#fr-drop'), file = box.querySelector('#fr-file');
         box.querySelector('#fr-pick')?.addEventListener('click', () => file.click());
         file.addEventListener('change', () => { if (file.files.length) addFiles(file.files); });
@@ -20718,13 +20753,18 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               extracts: F.extracts.filter(x => (x.text || '').trim())
             };
             const r = await supabase.functions.invoke('framing-ai', { body });
-            const err = r.error ? (await r.error.context?.json?.().catch(() => null))?.error || r.error.message : r.data?.error;
-            if (err === 'no_key') return showToast('A IA ainda não está ligada: falta guardar a chave do Gemini no Supabase. Usa o texto-tipo entretanto.', { type: 'error', ms: 9000 });
-            if (err === 'limit') return showToast('Chegou-se ao limite gratuito do Gemini por agora. Tenta daqui a pouco ou usa o texto-tipo.', { type: 'error', ms: 9000 });
+            const ej = r.error ? await r.error.context?.json?.().catch(() => null) : null;
+            const err = r.error ? ej?.error || r.error.message : r.data?.error;
+            if (ej?.usage || r.data?.usage) frAi = { ...(frAi || {}), configured: true, usage: ej?.usage || r.data.usage }, frAiAt = Date.now();
+            if (err === 'no_key') { frAi = { ...(frAi || {}), configured: false }; return showToast('A IA ainda não está ligada: falta guardar a chave do Gemini no Supabase. Usa o texto-tipo entretanto.', { type: 'error', ms: 9000 }); }
+            if (err === 'limit') {
+              const q = ej?.quota || {}, reset = frAi?.usage?.resetAt ? new Date(frAi.usage.resetAt).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) : '';
+              return showToast(q.perMinute && !q.perDay ? 'Limite por minuto do Gemini: espera um minuto e tenta outra vez.' : `Chegou-se ao limite diário gratuito do Gemini${q.value ? ` (${q.value} pedidos)` : ''}. Volta às ${reset}; entretanto usa o texto-tipo.`, { type: 'error', ms: 10000 });
+            }
             if (err) throw new Error(err);
             fill(r.data, 'Rascunho escrito pela IA — revê antes de usar');
           } catch (err) { showError('escrever com a IA', err); }
-          finally { if (btn.isConnected) { btn.disabled = false; btn.textContent = '✦ Escrever com IA'; } }
+          finally { if (btn.isConnected) { btn.disabled = false; btn.textContent = '✦ Escrever com IA'; } const m = box.querySelector('#fr-ai-meter'); if (m && frAi) { m.innerHTML = frAiMeter(frAi); } }
         });
       }
       draw();
