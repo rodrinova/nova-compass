@@ -21202,7 +21202,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           try {
             const me = await getCurrentMember(), now = new Date().toISOString(), url = document.getElementById('fru-url').value.trim();
             const row = { municipality: c.name, title: document.getElementById('fru-title').value.trim() || `Regulamento do PDM de ${c.name}`, version_label: document.getElementById('fru-ver').value.trim() || null,
-              published_on: document.getElementById('fru-date').value || null, source_url: /^https?:\/\//i.test(url) ? url : null, size_bytes: file.size, found_by: 'equipa', status: 'verificado',
+              published_on: document.getElementById('fru-date').value || null, source_url: /^https?:\/\//i.test(url) ? url : null, size_bytes: file.size, found_by: 'upload', status: 'verificado',
               verified_at: now, verified_by: me?.id || null, verified_by_name: me?.name || null };
             if (!devMode) {
               const path = `${frSlug(c.name)}/${crypto.randomUUID()}.pdf`;
@@ -21210,7 +21210,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               if (up.error) throw up.error;
               row.storage_path = path;
             }
-            const doc = await dbInsert('pdm_library', row, frMockLib);
+            let doc;
+            // se o registo falhar, o ficheiro que já subiu é apagado (não fica perdido no armazenamento)
+            try { doc = await dbInsert('pdm_library', row, frMockLib); }
+            catch (err) { if (row.storage_path) await supabase.storage.from('pdm-docs').remove([row.storage_path]).catch(() => {}); throw err; }
             closeQuickModal(); setPdm(doc, c.name); showToast('Regulamento guardado na biblioteca');
           } catch (err) { btn.disabled = false; btn.textContent = 'Guardar'; showError('guardar o regulamento', err); }
         });
