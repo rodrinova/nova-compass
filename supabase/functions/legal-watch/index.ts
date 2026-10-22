@@ -1,5 +1,5 @@
 // NOVA Compass — vigilância da legislação urbanística (registo de regimes legais em legal_regimes)
-// run       — semanal (pg_cron) ou «Verificar agora» na app: pergunta ao Gemini se houve alterações a cada regime vigiado
+// run       — mensal (pg_cron, dia 1) ou «Verificar agora» na app: pergunta ao Gemini se houve alterações a cada regime vigiado
 //             e classifica: sem_alteracao · alerta (sinal sem fonte primária) · confirmada (há link do Diário da República
 //             que a função abriu e onde encontrou o diploma). Só a fonte primária conta como alteração.
 //             Confirmada → atualiza o registo (nova versão em legal_regime_versions), marca os relatórios afetados como
@@ -171,7 +171,7 @@ ${JSON.stringify(list.map((r: any) => ({ id: r.id, nome: r.name, diploma: r.dipl
   }
   if (findings.length) {
     out.notified = await notifyPartners(`NOVA Compass · legislação: ${out.confirmada ? `${out.confirmada} alteração(ões) confirmada(s)` : `${out.alerta} alerta(s)`}`,
-      `<p>Olá,</p><p>A verificação ${trigger === "cron" ? "semanal" : "pedida na app"} da legislação urbanística encontrou:</p><ul>${findings.join("")}</ul><p>Revê em <a href="${APP_URL}">NOVA Compass → Definições → Regime legal</a>.</p>`);
+      `<p>Olá,</p><p>A verificação ${trigger === "cron" ? "mensal" : "pedida na app"} da legislação urbanística encontrou:</p><ul>${findings.join("")}</ul><p>Revê em <a href="${APP_URL}">NOVA Compass → Definições → Regime legal</a>.</p>`);
     await db.from("legal_watch_log").update({ notified: !!out.notified?.ok }).eq("run_id", runId).neq("kind", "sem_alteracao");
   }
   return out;
