@@ -2508,6 +2508,19 @@
   .frv-a .muted, .frv-t .muted { font-size: var(--fs-sm); }
   .frv-doc { flex: 1 1 auto; width: 100%; border: 0; background: #F7F7F5; }
   @media (max-width: 640px) { .frv-a { margin-left: 0; width: 100%; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; } .frv-a > * { flex: 0 0 auto; white-space: nowrap; } .fr-step { grid-template-columns: minmax(0, 1fr); } .fr-step-n { display: none; } }
+  /* Rentabilidade: valores vindos do enquadramento aprovado */
+  .vt-fr { border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--sp-3); margin: var(--sp-2) 0 var(--sp-3); background: color-mix(in srgb, var(--accent-soft) 40%, var(--surface)); display: grid; gap: var(--sp-2); }
+  .vt-fr-soft { font-size: var(--fs-sm); color: var(--text-2); }
+  .vt-fr-h { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); } .vt-fr-h .secondary-btn { margin-left: auto; }
+  .vt-fr-l { display: grid; gap: 4px; }
+  .vt-fr-r { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(120px, auto); gap: var(--sp-2); align-items: center; font-size: var(--fs-sm); padding: 4px 0; border-bottom: 1px solid var(--border); }
+  .vt-fr-r small { display: block; color: var(--text-2); font-size: var(--fs-xs); }
+  .vt-fr-v { font-variant-numeric: tabular-nums; font-weight: var(--fw-semibold); white-space: nowrap; }
+  .vt-fr-r > span:last-child { justify-self: end; text-align: right; }
+  .vt-fr-sc { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); }
+  .vt-fr-sc > div { background: var(--surface); border-radius: var(--r-md); padding: 8px 12px; } .vt-fr-sc span { display: block; font-size: var(--fs-xs); color: var(--text-2); }
+  .vt-fr-sc b { font-size: var(--fs-lg); font-variant-numeric: tabular-nums; } .vt-fr-sc b.neg { color: var(--danger); } .vt-fr-sc small { display: block; font-size: var(--fs-xs); color: var(--text-2); }
+  @media (max-width: 560px) { .vt-fr-r { grid-template-columns: minmax(0, 1fr) auto; } .vt-fr-r > span:last-child { grid-column: 1 / -1; justify-self: start; text-align: left; } }
   /* painel vivo da Rentabilidade (habitação) */
   .lv { display: flex; flex-direction: column; gap: var(--sp-4); }
   .lv-k { display: block; font-size: var(--fs-xs); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: .06em; color: var(--text-2); margin-bottom: var(--sp-1); }
@@ -21466,7 +21479,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const ov = document.createElement('div');
       ov.className = 'frv'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Relatório de enquadramento');
       document.body.appendChild(ov); document.body.style.overflow = 'hidden';
-      const close = async () => { if (dirty) await flush(); ov.remove(); document.body.style.overflow = ''; document.removeEventListener('keydown', onKey); ctx.reload?.(); };
+      const close = async () => { if (dirty) await flush(); ov.remove(); document.body.style.overflow = ''; document.removeEventListener('keydown', onKey); ctx.reload?.(); document.dispatchEvent(new CustomEvent('fr-reports')); };
       const onKey = ev => { if (ev.key === 'Escape' && document.getElementById('quick-modal').style.display !== 'flex') close(); };
       document.addEventListener('keydown', onKey);
       const st = () => FR_ST[rep.status] || [rep.status, ''];
@@ -21583,6 +21596,67 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       }
       paint();
       if (ctx.autoGate) gate(ctx.autoGate);
+    }
+    // ---- Rentabilidade alimentada pelo enquadramento aprovado ----
+    // Propõe os valores do relatório aprovado (ou entregue) com a origem; a equipa usa-os com um clique e pode alterá-los
+    // depois (o valor do enquadramento fica guardado em feasibility.fr_origin). O que não está confirmado (grau c ou sem
+    // número) não se preenche: fica vazio e assinalado. Mostra também o resultado com a regra mais exigente.
+    async function mountFeasFromFraming(el, p, d, f, reopen) {
+      if (!el) return;
+      let reps; try { reps = await frReports(p); } catch { return; }
+      const rep = reps.find(r => r.status === 'entregue' || r.status === 'aprovado'), draft = !rep && reps[0];
+      if (!el.isConnected) return;
+      if (!rep) { el.innerHTML = draft ? `<div class="vt-fr vt-fr-soft">Há um relatório de enquadramento (v${draft.version}) por aprovar. Depois de aprovado, os parâmetros podem alimentar esta rentabilidade.</div>` : ''; return; }
+      const F = p.framing || {}, R = rep.sections || {}, units = (() => { try { return feasCalc(p, f).units || 0; } catch { return 0; } })();
+      const cap = frCapacity(R, p, F, false, units), capS = frHasStrict(R) ? frCapacity(R, p, F, true, units) : null;
+      const P = cap.P, ok = x => x && x.x.grade !== 'c';
+      const O = (p.feasibility || {}).fr_origin || {};
+      const n = v => v == null ? '—' : frNum(v);
+      // [chave, rótulo, valor proposto, unidade, referência, valor atual]
+      const items = [
+        ['buildable_area', 'Área de construção', cap.abc != null && (cap.bind?.team || ok(cap.bind?.ref ? { x: cap.bind.ref } : null) || !cap.bind?.ref) ? Math.round(cap.abc) : null, 'm²', cap.bind?.team ? 'estimativa da equipa' : cap.bind?.ref?.article, p.buildable_area],
+        ['pdm_index', 'Índice de construção', ok(P.ic) ? P.ic.v : null, '', P.ic?.x.article, p.pdm_index, !P.ic],
+        ['max_floors', 'Pisos acima do solo', ok(P.pisos_acima) ? P.pisos_acima.v : null, '', P.pisos_acima?.x.article, p.max_floors, !P.pisos_acima],
+        ['below_area', 'Estacionamento em cave', cap.parkArea != null && ok(P.estac_por_fogo || P.estac_por_100m2) ? Math.round(cap.parkArea) : null, 'm²', cap.places ? `${cap.places} lugares × ${FR_PARK_M2} m²` : (P.estac_por_fogo || P.estac_por_100m2)?.x.article, f.below_area],
+      ].filter(x => !x[6]);
+      const unconf = (R.params || []).filter(x => x.grade === 'c' || x.num == null).map(x => x.label);
+      // cenário com a regra mais exigente
+      let scen = '';
+      if (capS && (capS.abc !== cap.abc || capS.parkArea !== cap.parkArea)) {
+        try {
+          const cur = feasCalc(p, f);
+          const pS = { ...p, buildable_area: capS.abc ?? p.buildable_area };
+          const fS = { ...f, housing_area: (p.feasibility || {}).housing_area != null ? f.housing_area : (capS.abc ?? f.housing_area), below_area: capS.parkArea ?? f.below_area };
+          const st = feasCalc(pS, fS), eur = v => Math.round(v).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }), pc = v => (v * 100).toLocaleString('pt-PT', { maximumFractionDigits: 1 }) + '%';
+          scen = `<div class="vt-fr-sc"><div><span>Regime atual</span><b>${pc(cur.roi)}</b><small>lucro ${eur(cur.profit)}</small></div><div><span>Regra mais exigente</span><b class="${st.roi < cur.roi ? 'neg' : ''}">${pc(st.roi)}</b><small>lucro ${eur(st.profit)}${capS.places ? ` · ${capS.places} lugares` : ''}</small></div></div>`;
+        } catch { /* sem dados suficientes para o cenário */ }
+      }
+      el.innerHTML = `<div class="vt-fr">
+          <div class="vt-fr-h"><b>Do enquadramento urbanístico</b><span class="fr-chip ${rep.status === 'entregue' ? 'acc' : 'ok'}">v${rep.version} · ${rep.status === 'entregue' ? 'entregue' : 'aprovado'}</span><button type="button" class="secondary-btn" id="vt-fr-all">Usar os valores</button></div>
+          <div class="vt-fr-l">${items.map(([k, l, v, u, ref, curV]) => {
+            const orig = O[k], has = curV != null && curV !== '';
+            const state = v == null ? '<span class="fr-chip warn">não confirmado — fica vazio</span>'
+              : orig && has && Number(curV) !== Number(orig.value) ? `<span class="fr-chip">editado · enquadramento: ${n(orig.value)} ${u}</span>`
+              : has && Number(curV) === Number(v) ? '<span class="fr-chip ok">do enquadramento</span>'
+              : `<button type="button" class="text-btn" data-fr-use="${k}">usar ${n(v)} ${u}</button>`;
+            return `<div class="vt-fr-r"><span>${escapeHtml(l)}<small>${escapeHtml(ref || '')}</small></span><span class="vt-fr-v">${v == null ? '—' : `${n(v)} ${u}`}</span><span>${state}</span></div>`; }).join('')}</div>
+          ${unconf.length ? `<p class="field-hint">Não confirmados no enquadramento (não entram nas contas): ${escapeHtml(unconf.slice(0, 6).join('; '))}${unconf.length > 6 ? '…' : ''}.</p>` : ''}
+          ${scen}
+        </div>`;
+      const apply = async keys => {
+        const pick = items.filter(it => keys.includes(it[0]) && it[2] != null);
+        if (!pick.length) return;
+        const origin = { ...O }, patch = {}, feas = { ...(p.feasibility || {}) };
+        pick.forEach(([k, , v, , ref]) => {
+          origin[k] = { value: v, rep: rep.id, version: rep.version, ref: ref || null, at: new Date().toISOString() };
+          if (k === 'below_area') feas.below_area = v; else patch[k] = v;
+        });
+        feas.fr_origin = origin; patch.feasibility = feas;
+        try { await dbUpdate('land_plots', p.id, { ...patch, updated_at: new Date().toISOString() }, mockPlots); Object.assign(p, patch); showToast('Valores do enquadramento aplicados'); reopen(); }
+        catch (err) { showError('aplicar os valores do enquadramento', err); }
+      };
+      el.querySelector('#vt-fr-all').addEventListener('click', () => apply(items.map(x => x[0])));
+      el.querySelectorAll('[data-fr-use]').forEach(b => b.addEventListener('click', () => apply([b.dataset.frUse])));
     }
     // Relatório de enquadramento (janela para imprimir / guardar em PDF), com o aspeto do Investment Intelligence
     async function printFraming(p, F) {
@@ -21828,6 +21902,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         <div class="vt-layout">
           <div class="gantt-wrap vt-sheet${isIndPlot(p) ? ' is-ind' : ''}">
             <div class="card-head"><h2>Rentabilidade</h2><small class="muted">valor unitário × quantidade = valor global · grava sozinho</small><button type="button" class="text-btn vt-all" id="vt-all"></button></div>
+            <div id="vt-fr"></div>
             ${grp('vt-areas', 'Áreas', '', `${vhead('Índice / %', 'Base', 'Área')}
               ${vrow('Área do terreno', '', '', pIn('land_area', 'm²', 'ex.: 1200'))}
               ${vrow('Área de construção<small>índice × área do terreno (limitada pelo IOS × pisos) — ou escreve-a</small>', pIn('pdm_index', '', 'índice'), o('landQ'), pIn('buildable_area', 'm²', areaHint()))}
@@ -21917,6 +21992,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
 
       mountPlotNotes(document.getElementById('ps-notes'), p, d);
       mountFraming(document.getElementById('ps-frame'), p, d, { save: () => { pPatch.framing = p.framing; savePlot(); }, feas: () => f });
+      // o quadro do enquadramento na Rentabilidade refaz-se quando um relatório muda (aprovado, entregue, nova versão)
+      const frFeas = () => { const el = document.getElementById('vt-fr'); if (!el) return document.removeEventListener('fr-reports', frFeas); if (!isIndPlot(p)) mountFeasFromFraming(el, p, d, f, () => { suppressNavPush = true; openPlotView(p.id); }); };
+      document.addEventListener('fr-reports', frFeas); frFeas();
       // ---- grupos que abrem e fecham ----
       const vtToggle = (sec, closed) => { sec.classList.toggle('closed', closed); sec.querySelector('.vt-tog')?.setAttribute('aria-expanded', String(!closed)); vtRemember(sec.id, closed); };
       const vtGroups = () => [...view.querySelectorAll('.vt-sheet .vt-g')].filter(x => getComputedStyle(x).display !== 'none');
