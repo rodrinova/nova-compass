@@ -2532,6 +2532,8 @@
   .lg-lr { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px var(--sp-2); font-size: var(--fs-sm); padding: 6px 0; border-bottom: 1px solid var(--border); }
   .lg-hist { display: grid; }
   @media (max-width: 640px) { .lg-row { grid-template-columns: minmax(0, 1fr) auto; } .lg-s { grid-column: 1 / -1; grid-row: 2; } }
+  .np-svc-l { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 2px var(--sp-3); max-height: 220px; overflow: auto; margin-bottom: var(--sp-2); }
+  .np-svc-l .check-row { margin: 0; font-size: var(--fs-sm); }
   /* painel vivo da Rentabilidade (habitação) */
   .lv { display: flex; flex-direction: column; gap: var(--sp-4); }
   .lv-k { display: block; font-size: var(--fs-xs); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: .06em; color: var(--text-2); margin-bottom: var(--sp-1); }
@@ -21027,7 +21029,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const pdm = F.pdm, mun = F.municipality || p.municipality || '', chk = frMuniCheck(mun);
         el.innerHTML = `
           <div class="fr-txt-head"><div class="section-label">Análise do PDM com IA</div>
-            <span class="muted fr-pdm-sub">a IA procura o regulamento, lê-o e prepara o relatório; a equipa confirma, um sócio aprova</span></div>
+            <span class="muted fr-pdm-sub">carrega-se o regulamento, a IA lê-o e prepara o relatório; a equipa revê e um sócio aprova</span></div>
           <div class="fr-steps">
             <div class="fr-step">
               <div class="fr-step-n">1</div>
@@ -21042,8 +21044,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
                       ${pdm.storage_path ? '<button type="button" class="text-btn" id="frp-copy">Abrir a cópia guardada</button>' : ''}
                       <button type="button" class="text-btn" id="frp-change">Trocar</button></div></div>`
                   : `<div class="fr-step-t">Concelho: <b>${escapeHtml(mun || 'sem concelho')}</b>${mun && !chk.ok ? ' <span class="fr-chip warn">não reconheço este concelho</span>' : ''}</div>
-                    <div class="fr-step-btns"><button type="button" class="secondary-btn" id="frp-find"${busy ? ' disabled' : ''}>${busy === 'find' ? 'A procurar no site da Câmara…' : 'Procurar o regulamento'}</button>
-                      <button type="button" class="text-btn" id="frp-up">Carregar o PDF</button></div>`}
+                    <div class="field-hint" style="margin:0">Descarrega do site da Câmara o PDF do Regulamento do PDM em vigor (de preferência a versão consolidada) e carrega-o aqui.</div>
+                    <div class="fr-step-btns"><button type="button" class="secondary-btn" id="frp-find"${busy ? ' disabled' : ''}>${busy === 'find' ? 'A procurar no site da Câmara…' : 'Carregar o PDF do regulamento'}</button></div>`}
               </div></div>
             <div class="fr-step">
               <div class="fr-step-n">2</div>
@@ -21064,7 +21066,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               <div class="fr-step-n">3</div>
               <div class="fr-step-b"><b>Relatório</b>
                 <div class="fr-step-btns"><button type="button" class="primary-btn" id="frp-run"${busy ? ' disabled' : ''}>${busy === 'run' ? 'A ler o regulamento e a analisar… (1 a 3 minutos)' : '✦ Analisar com IA'}</button>
-                  ${!pdm ? '<span class="muted">sem regulamento, os parâmetros do PDM ficam «a confirmar»</span>' : pdm.status !== 'verificado' ? '<span class="muted">confirma primeiro o regulamento</span>' : ''}</div>
+                  ${!pdm ? '<span class="muted">carrega primeiro o regulamento: sem ele, os parâmetros do PDM ficam por confirmar</span>' : pdm.status !== 'verificado' ? '<span class="muted">confirma primeiro o regulamento</span>' : ''}</div>
                 <div class="fr-vers">${reps == null ? '<span class="muted">a carregar as versões…</span>' : reps.length ? reps.map(r => `<button type="button" class="fr-ver" data-rep="${escapeHtml(r.id)}">
                     <b>v${r.version}</b><span class="fr-chip ${st(r.status)[1]}">${escapeHtml(st(r.status)[0])}</span>${r.simulation ? '<span class="fr-chip warn">simulação</span>' : ''}${r.outdated_at && r.status !== 'desatualizado' ? '<span class="fr-chip warn">lei alterada depois</span>' : ''}${r.kind === 'reanalise' ? '<span class="fr-chip">reanálise</span>' : ''}
                     <span class="muted">${escapeHtml(frDate(r.created_at))}${r.created_by_name ? ' · ' + escapeHtml(r.created_by_name) : ''}${r.status === 'desatualizado' && r.outdated_reason ? ' · ' + escapeHtml(r.outdated_reason) : ''}</span><i>Abrir</i></button>`).join('')
@@ -21083,7 +21085,6 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           b.parentElement.querySelectorAll('button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); });
         }));
         el.querySelector('#frp-find')?.addEventListener('click', () => askMunicipality());
-        el.querySelector('#frp-up')?.addEventListener('click', () => uploadPdm(F.municipality || p.municipality || ''));
         el.querySelector('#frp-change')?.addEventListener('click', () => askMunicipality());
         el.querySelector('#frp-ok')?.addEventListener('click', () => confirmPdm());
         el.querySelector('#frp-copy')?.addEventListener('click', async () => {
@@ -21100,20 +21101,19 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       // Confirmar o concelho antes de procurar (e mostrar o que já está na biblioteca)
       async function askMunicipality() {
         const cur = F.municipality || p.municipality || '';
-        openQuickModal('Procurar o regulamento do PDM', `
-          <p class="field-hint" style="margin-top:0">Confirma o concelho, para a IA ir ao documento certo.</p>
+        openQuickModal('Regulamento do PDM', `
+          <p class="field-hint" style="margin-top:0">Confirma o concelho, para usarmos o regulamento certo.</p>
           <label class="field-label" for="frm-mun">Concelho</label>
           <input type="text" class="form-input" id="frm-mun" value="${escapeHtml(cur)}" list="frm-munis" autocomplete="off">
           <datalist id="frm-munis">${PT_MUNIS.map(m => `<option value="${escapeHtml(m)}">`).join('')}</datalist>
           <div id="frm-chk" class="fr-mchk" aria-live="polite"></div>
           <div id="frm-lib" class="fr-lib"></div>
-          <div class="fr-step-btns" style="margin-top:var(--sp-4)"><button type="button" class="primary-btn" id="frm-go">Procurar no site da Câmara</button><button type="button" class="text-btn" id="frm-up">Carregar o PDF</button></div>`);
+          <div class="fr-step-btns" style="margin-top:var(--sp-4)"><button type="button" class="primary-btn" id="frm-up">Carregar o PDF</button><button type="button" class="text-btn" id="frm-go">Tentar encontrar no site da Câmara</button></div>`);
         const inp = document.getElementById('frm-mun'), box = document.getElementById('frm-chk'), lib = document.getElementById('frm-lib'), go = document.getElementById('frm-go');
         let libT = null;
         const check = () => {
           const c = frMuniCheck(inp.value);
-          go.textContent = c.ok ? `Procurar no site da Câmara de ${c.name}` : 'Procurar no site da Câmara';
-          go.disabled = !c.ok;
+          go.disabled = !c.ok; document.getElementById('frm-up').disabled = !c.ok;
           box.innerHTML = !inp.value.trim() ? '<span class="fr-chip warn">Escreve o concelho.</span>' : c.ok ? `<span class="fr-chip ok">✓ ${escapeHtml(c.name)}</span>`
             : `<span class="fr-chip warn">Não encontro «${escapeHtml(inp.value.trim())}» na lista dos concelhos.</span>${c.sug.length ? ` Querias dizer: ${c.sug.map(s => `<button type="button" class="fr-sug" data-sug="${escapeHtml(s)}">${escapeHtml(s)}</button>`).join(' ')}` : ' Confirma o nome (é o concelho, não a freguesia).'}`;
           box.querySelectorAll('[data-sug]').forEach(b => b.addEventListener('click', () => { inp.value = b.dataset.sug; check(); }));
@@ -21731,10 +21731,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const reload = () => loadLegalSettings();
       const call = async body => { const r = await supabase.functions.invoke('legal-watch', { body }); const ej = r.error ? await r.error.context?.json?.().catch(() => null) : null; const err = r.error ? ej?.error || r.error.message : r.data?.error; if (err) throw new Error(err); return r.data; };
       box.querySelector('#lg-run').addEventListener('click', async e => {
-        const b = e.currentTarget; b.disabled = true; b.textContent = 'A verificar… (até 2 minutos)';
+        const b = e.currentTarget; b.disabled = true; b.textContent = 'A pedir a verificação…';
         try {
           if (devMode) { await new Promise(r => setTimeout(r, 400)); const now = new Date().toISOString(); legalMock().forEach(r => { r.checked_at = now; r.check_summary = 'Sem alterações encontradas'; }); mockLegalLog.unshift(...legalMock().map((r, i) => ({ id: Date.now() + i, run_at: now, regime_id: r.id, kind: 'sem_alteracao', finding: 'Sem alterações encontradas' }))); showToast('Verificação feita: sem alterações'); }
-          else { const o = await call({ action: 'run', trigger: 'manual' }); showToast(`Verificação feita: ${o.confirmada} ${o.confirmada === 1 ? 'alteração confirmada' : 'alterações confirmadas'}, ${o.alerta} ${o.alerta === 1 ? 'alerta' : 'alertas'}`, { ms: 7000 }); }
+          else { await call({ action: 'run', trigger: 'manual' }); showToast('A verificação está a correr. O resultado aparece no registo dentro de um ou dois minutos.', { ms: 8000 }); setTimeout(() => { if (document.getElementById('settings-legal-container')?.isConnected) reload(); }, 90000); }
         } catch (err) { showError('verificar a legislação', err); }
         reload();
       });
@@ -23205,6 +23205,16 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         payNotes: [], terms: [['pay_terms', 'Momento de faturação', '=Cada fatura é emitida no marco indicado na tabela.'], ['pay_terms', 'Prazo e forma de pagamento']],
         optionals: ['Estudos volumétricos', 'Reuniões adicionais com o Cliente', 'Visitas ao imóvel', 'Análise e integração de estudos'],
         exclIntro: 'Exclusões', exclusions: ['Levantamento topográfico, cadastral', 'Reuniões de certificação'] },
+      { key: 'servicos', name: 'Proposta de Serviços', desc: 'Serviços avulsos da NOVA e de parceiros, sem fases de projeto.', noType: true,
+        cover: [['Proposta de Serviços', 'Services Proposal']],
+        intro: ['O presente documento descreve a proposta de prestação de serviços para o imóvel sito em {local}, de acordo com o pedido do Cliente.',
+          'This document sets out our proposal for the services requested by the Client for the property located in {local}.'],
+        facts: [],
+        valueIntro: null, lines: null,
+        valueNotes: ['Aos valores apresentados acresce IVA'],
+        payIntro: null, pay: [[['Adjudicação', 'Award'], 50, 'Adjudicação'], [['Conclusão dos serviços', 'Completion of the services'], 50, null]],
+        payNotes: [], terms: [['pay_terms', 'Momento de faturação', '=Cada fatura é emitida no marco indicado na tabela.'], ['pay_terms', 'Prazo e forma de pagamento']],
+        optionals: [], exclIntro: null, exclusions: [] },
       { key: 'full', name: 'Projeto Completo', desc: 'Arquitetura e especialidades, do estudo prévio à assistência técnica.',
         cover: [['Projeto de Arquitetura', 'Architecture Project']],
         intro: ['O presente documento descreve a proposta de prestação de serviços para o desenvolvimento do Projeto de Arquitetura e Especialidades para o imóvel sito em {local}.',
@@ -23638,17 +23648,27 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       });
       document.getElementById('pipe-new').addEventListener('click', () => openNewProposalChooser(d));
     }
+    // Serviços de parceiros que a NOVA costuma revender (proposta de serviços)
+    const NP_PARTNER_SVC = ['Levantamento topográfico', 'Levantamento arquitetónico', 'Estudo geotécnico', 'Carpintaria', 'Serralharia', 'Materiais e acabamentos', 'Mobiliário e decoração'];
     // Nova proposta: a partir de uma oportunidade do Intelligence (mesmo CST) ou sem oportunidade (CST novo)
     async function openNewProposalChooser(d, preset = {}) {
-      const cfg = await loadProposalCfg().catch(() => PROPOSAL_DEFAULT);
+      const [cfg, lib] = await Promise.all([loadProposalCfg().catch(() => PROPOSAL_DEFAULT), loadPropLib().catch(() => [])]);
       const tpls = ppTemplates(cfg);
       const open = d.plots.filter(p => PLOT_OPEN.includes(p.status));
       let tpl = preset.tpl || tpls[0].key, lang = cfg.lang || 'pt';
-      openQuickModal('Nova proposta de honorários', `
+      openQuickModal('Nova proposta', `
         <label class="field-label" style="margin-top:0;">Que proposta é?</label>
         <div class="np-tpls" role="radiogroup">${tpls.map(t => `<button type="button" class="np-tpl${t.key === tpl ? ' on' : ''}" role="radio" aria-checked="${t.key === tpl}" data-tpl="${escapeHtml(t.key)}"><b>${escapeHtml(t.name)}</b><span>${escapeHtml(t.desc || '')}</span></button>`).join('')}</div>
+        <div id="np-svc"${tpl === 'servicos' ? '' : ' hidden'}>
+          <label class="field-label">Serviços da NOVA <small class="muted">(à hora ou a preço fixo)</small></label>
+          <div class="np-svc-l">${lib.filter(x => x.kind === 'optional').map(x => `<label class="check-row"><input type="checkbox" data-np-nova="${escapeHtml(x.id)}"> ${escapeHtml(libT(x, false))}</label>`).join('') || '<span class="muted">Sem serviços na biblioteca.</span>'}</div>
+          <label class="field-label">Serviços de parceiros <small class="muted">(revenda: custo + margem, no editor)</small></label>
+          <div class="np-svc-l">${NP_PARTNER_SVC.map(t => `<label class="check-row"><input type="checkbox" data-np-part="${escapeHtml(t)}"> ${escapeHtml(t)}</label>`).join('')}</div>
+          <input type="text" id="np-part-other" class="form-input" placeholder="Outro serviço de parceiro (opcional)">
+          <div class="field-hint">Os valores preenchem-se no editor. Pode juntar ou tirar serviços depois.</div>
+        </div>
         <div class="form-grid">
-          <div><label class="field-label">Tipologia</label><select id="np-type" class="form-input"><option value="">—</option>${d.types.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('')}</select></div>
+          <div id="np-type-wrap"${tpl === 'servicos' ? ' hidden' : ''}><label class="field-label">Tipologia</label><select id="np-type" class="form-input"><option value="">—</option>${d.types.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('')}</select></div>
           <div><label class="field-label">Língua</label><div class="segmented np-lang" role="radiogroup"><button type="button" data-lang="pt" class="${lang === 'pt' ? 'active' : ''}">Português</button><button type="button" data-lang="en" class="${lang === 'en' ? 'active' : ''}">English</button></div></div>
         </div>
         <div id="np-cycles-row"${tpl === 'pip' ? '' : ' hidden'}><label class="field-label">Aperfeiçoamento</label>
@@ -23661,7 +23681,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const box = document;
       let cycles = 'one';
       const cyHint = { one: 'Inclui a resposta à primeira notificação da Câmara; as seguintes são trabalho adicional.', all: 'Inclui todas as respostas até à decisão, desde que não obriguem a reformular a solução.' };
-      box.querySelectorAll('.np-tpl').forEach(b => b.addEventListener('click', () => { tpl = b.dataset.tpl; box.querySelectorAll('.np-tpl').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', x === b); }); document.getElementById('np-cycles-row').hidden = tpl !== 'pip'; }));
+      box.querySelectorAll('.np-tpl').forEach(b => b.addEventListener('click', () => { tpl = b.dataset.tpl; box.querySelectorAll('.np-tpl').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', x === b); }); document.getElementById('np-cycles-row').hidden = tpl !== 'pip'; document.getElementById('np-svc').hidden = tpl !== 'servicos'; document.getElementById('np-type-wrap').hidden = tpl === 'servicos'; }));
       box.querySelectorAll('.np-cycles button').forEach(b => b.addEventListener('click', () => { cycles = b.dataset.cy; box.querySelectorAll('.np-cycles button').forEach(x => x.classList.toggle('active', x === b)); document.getElementById('np-cycles-hint').textContent = cyHint[cycles]; }));
       box.querySelectorAll('.np-lang button').forEach(b => b.addEventListener('click', () => { lang = b.dataset.lang; box.querySelectorAll('.np-lang button').forEach(x => x.classList.toggle('active', x === b)); }));
       const plotSel = document.getElementById('np-plot'), typeSel = document.getElementById('np-type');
@@ -23675,8 +23695,14 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       document.getElementById('np-go').addEventListener('click', () => {
         const plot = d.plots.find(p => String(p.id) === plotSel.value) || null;
         const keen = plot ? d.presentations.find(x => x.plot_id === plot.id && ['proposal', 'interested'].includes(x.status)) : null;
+        let services = null;
+        if (tpl === 'servicos') {
+          const other = document.getElementById('np-part-other').value.trim();
+          services = { nova: [...document.querySelectorAll('[data-np-nova]:checked')].map(x => x.dataset.npNova), partners: [...[...document.querySelectorAll('[data-np-part]:checked')].map(x => x.dataset.npPart), ...(other ? [other] : [])] };
+          if (!services.nova.length && !services.partners.length) return showToast('Escolhe pelo menos um serviço.', { type: 'error' });
+        }
         closeQuickModal();
-        openProposalView(null, { plot, investor: keen ? d.investors.find(i => i.id === keen.investor_id) : null, tpl, lang, typeId: typeSel.value || null, cycles: tpl === 'pip' ? cycles : null });
+        openProposalView(null, { plot, investor: keen ? d.investors.find(i => i.id === keen.investor_id) : null, tpl, lang, typeId: tpl === 'servicos' ? null : typeSel.value || null, cycles: tpl === 'pip' ? cycles : null, services });
       });
     }
 
@@ -23732,6 +23758,16 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               : ppDefaultContent(lib, en, meM, { lines: [en ? 'Architecture Project' : 'Projeto de Arquitetura', typeById[typeId]?.name || ''], place, region, facts }, cfg)
           };
           if (preset.cycles === 'all') ppSetCycles(pp.content, 'all', lib, en);
+          // proposta de serviços: os serviços da NOVA entram no âmbito e no valor (os à hora com a taxa das Definições,
+          // horas por preencher); os de parceiros entram em Outros serviços (custo e margem por preencher)
+          if (preset.services) {
+            const nova = preset.services.nova.map(id => lib.find(x => String(x.id) === String(id))).filter(Boolean);
+            if (nova.length) pp.content.scope.groups = [{ g: '', t: en ? 'Services' : 'Serviços', items: nova.map(x => ({ lib: x.id, t: libT(x, en), b: libB(x, en) })) }];
+            pp.content.value.lines = nova.map(x => /\{h\}/.test(x.value_text || '')
+              ? { g: '', t: libT(x, en), pt: libT(x, false), en: libT(x, true), q: null, u: ppRate(cfg), v: null, kind: 'fee' }
+              : { g: '', t: libT(x, en), pt: libT(x, false), en: libT(x, true), q: null, u: null, v: null, kind: 'fee' });
+            pp.content.resale.lines = preset.services.partners.map(t => ({ t, b: '', sup: '', cost: null, margin: 15 }));
+          }
           if (belowA) pp.content.scope.below = belowA;
           pp.total = ppTotals(pp.content).total || null;
         } else {
@@ -23855,13 +23891,13 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <div class="form-grid">
             <div><label class="field-label">Local</label>${inp('content.cover.place', c.cover.place, { ph: 'ex.: Rua de Álvares Cabral' })}</div>
             <div><label class="field-label">Concelho / região</label>${inp('content.cover.region', c.cover.region, { ph: 'ex.: Vila Nova de Gaia' })}</div>
-            <div><label class="field-label">Tipologia</label><select class="form-input" data-pp="project_type_id" id="pp-type"><option value="">Escolhe…</option>${typeOpts}</select></div>
+            ${c.kind === 'servicos' ? '' : `<div><label class="field-label">Tipologia</label><select class="form-input" data-pp="project_type_id" id="pp-type"><option value="">Escolhe…</option>${typeOpts}</select></div>
             <div><label class="field-label">Área acima do solo (m²)</label>${inp('area', pp.area, { n: true })}</div>
             <div><label class="field-label">Área abaixo do solo (m²)</label>${inp('content.scope.below', c.scope.below, { n: true, ph: 'ex.: cave, estacionamento' })}</div>
-            <div><label class="field-label">Frações</label>${inp('fractions', pp.fractions, { n: true })}</div>
+            <div><label class="field-label">Frações</label>${inp('fractions', pp.fractions, { n: true })}</div>`}
           </div>
-          <div class="field-hint">O Âmbito mostra a <b>Área Total de Construção</b> (acima + abaixo do solo), com o detalhe por baixo.</div>
-          <label class="pp-chk"><input type="checkbox" data-ppc="content.rehab"${c.rehab ? ' checked' : ''}> Projeto de reabilitação <span class="muted">— a capa fica «Reabilitação de …» e a abertura e as linhas do valor ajustam-se</span></label>`,
+          ${c.kind === 'servicos' ? '<div class="field-hint">Proposta de serviços: os serviços da NOVA vão em «Serviços» e «Valor» (os à hora com a taxa das Definições — falta pôr as horas); os de parceiros vão em «Outros serviços», com o custo e a margem.</div>' : `<div class="field-hint">O Âmbito mostra a <b>Área Total de Construção</b> (acima + abaixo do solo), com o detalhe por baixo.</div>
+          <label class="pp-chk"><input type="checkbox" data-ppc="content.rehab"${c.rehab ? ' checked' : ''}> Projeto de reabilitação <span class="muted">— a capa fica «Reabilitação de …» e a abertura e as linhas do valor ajustam-se</span></label>`}`,
         coverMore: () => `
           <div class="form-grid">
             <div><label class="field-label" style="margin-top:0;">Nome na capa (se não for o do cliente)</label>${inp('client_name', pp.client_name, { ph: 'ex.: Maria e Reynald Aeschlimann' })}</div>
@@ -24000,7 +24036,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       view.innerHTML = `
         <div class="detail-header pp-header">
           <div class="titles"><div class="pp-ref">${escapeHtml(ppRef(pp) || 'CST por atribuir')} ${pill(pp.status)}${plot ? ` <button type="button" class="text-btn" data-open-plot="${escapeHtml(plot.id)}">oportunidade: ${escapeHtml(plot.name)}</button>` : ''}</div>
-            <h2>${escapeHtml(ppClientName(pp, d) || pp.title || 'Nova proposta de honorários')}</h2>
+            <h2>${escapeHtml(ppClientName(pp, d) || pp.title || (c.kind === 'servicos' ? 'Nova proposta de serviços' : 'Nova proposta de honorários'))}</h2>
             <div class="sub">${escapeHtml([pp.title && ppClientName(pp, d) ? pp.title : null, S.typeById[pp.project_type_id]?.name, c.rehab ? 'Reabilitação' : null, c.cover.region].filter(Boolean).join(' · '))}</div></div>
           <div class="pp-head-right"><div class="segmented pp-langseg" role="radiogroup" aria-label="Língua da proposta"><button type="button" data-lang="pt" class="${en ? '' : 'active'}">PT</button><button type="button" data-lang="en" class="${en ? 'active' : ''}">EN</button></div>
             <span class="pp-saved" id="pp-saved" aria-live="polite"></span></div>
@@ -24704,7 +24740,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       note(c.scope.notes);
       // Secções próprias (Aperfeiçoamento, Metodologia, BIM…)
       (c.extra || []).filter(x => (x.t || '').trim() || (x.b || '').trim()).forEach(x => { h2(x.t || ''); hb([{ b: x.b }]); });
-      // Valor
+      // Valor (numa proposta de serviços só com parceiros não há honorários: a secção não aparece)
+      const noFees = c.kind === 'servicos' && !c.value.lines.some(l => l.t || ppLineAmount(l, c.value.lines));
+      if (!noFees) {
       h2(L.value);
       p(md(c.value.intro?.t));
       const allL = c.value.lines, lines = allL.filter(l => ppIsDisc(l) ? ppLineAmount(l, allL) : l.t || ppLineAmount(l, allL)); // descontos a 0 € não aparecem
@@ -24729,6 +24767,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         }
         note(c.value.notes);
       }); else note(c.value.notes);
+      }
       // Outros serviços (parceiros): só a descrição e o preço; subtotal à parte dos honorários
       const RS = ppResaleTotals(c);
       if (RS.lines.length) {

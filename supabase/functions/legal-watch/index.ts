@@ -23,17 +23,22 @@ const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers
 const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { ...cors, "Content-Type": "application/json" } });
 const cut = (s: unknown, n: number) => String(s ?? "").slice(0, n);
 const esc = (s: string) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void };
 const PRIMARY = /(^|\.)(diariodarepublica\.pt|dre\.pt)$/i;
 const STATUSES = ["em_vigor", "revogado_parcial", "revogado", "publicado_sem_vigencia", "em_preparacao", "a_validar"];
 
 // ---------- Gemini (com pesquisa Google quando o plano deixa; senão sem) ----------
-async function gemini(body: Record<string, unknown>) {
+let noThinkingCap = false;
+async function gemini(body: Record<string, unknown>): Promise<any> {
   let last: any = null;
   for (const withSearch of [true, false]) {
     for (const m of MODELS) {
-      const b = withSearch ? { ...body, tools: [{ google_search: {} }] } : { ...body, generationConfig: { ...(body as any).generationConfig, responseMimeType: "application/json" } };
+      const gc = { ...(body as any).generationConfig, ...(noThinkingCap ? {} : { thinkingConfig: { thinkingBudget: 512 } }) };
+      const b = withSearch ? { ...body, generationConfig: gc, tools: [{ google_search: {} }] } : { ...body, generationConfig: { ...gc, responseMimeType: "application/json" } };
       const r = await fetch(`${API}/v1beta/models/${m}:generateContent`, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": KEY }, body: JSON.stringify(b) });
       last = { status: r.status, body: await r.json().catch(() => ({})), model: m };
+      // modelo que não aceite o limite de raciocínio: daqui em diante vai sem ele
+      if (r.status === 400 && !noThinkingCap && /thinking/i.test(last.body?.error?.message || "")) { noThinkingCap = true; return gemini(body); }
       const um = last.body?.usageMetadata || {};
       if (r.status === 200) {
         await db.from("ai_usage").insert({ model: m, feature: "legal_watch", status: "ok", prompt_tokens: um.promptTokenCount ?? null, output_tokens: um.candidatesTokenCount ?? null, total_tokens: um.totalTokenCount ?? null });
@@ -129,14 +134,17 @@ async function run(trigger: string) {
   const { data: regs, error } = await db.from("legal_regimes").select("*").eq("watch", true).order("sort");
   if (error) throw error;
   const today = new Date().toISOString().slice(0, 10);
-  const prompt = `Hoje é ${today}. És um jurista português especialista em direito do urbanismo e da construção. Para cada regime abaixo, diz se houve, depois do que está registado, alguma publicação no Diário da República que o altere: nova lei ou decreto-lei, alteração, republicação, revogação, entrada em vigor, adiamento ou regime transitório.
+  const prompt = (list: any[]) => `Hoje é ${today}. És um jurista português especialista em direito do urbanismo e da construção. Para cada regime abaixo, diz se houve, depois do que está registado, alguma publicação no Diário da República que o altere: nova lei ou decreto-lei, alteração, republicação, revogação, entrada em vigor, adiamento ou regime transitório.
 Regra: só indiques "publicado" se souberes o número do diploma e a data de publicação; dá o link do Diário da República (diariodarepublica.pt) se o souberes. Se só ouviste falar (anúncio do Governo, proposta, notícia), usa "possivel". Se não sabes de nada, usa "nenhuma". Não inventes números nem links.
 Responde só com JSON: {"items":[{"id":"…","change":"nenhuma|possivel|publicado","summary":"…","diploma":"ex.: Decreto-Lei n.º 10/2024","date":"AAAA-MM-DD ou vazio","dr_url":"…","proposed":{"status":"em_vigor|revogado_parcial|revogado|publicado_sem_vigencia|em_preparacao|a_validar","published_on":"","in_force_on":"","revoked_on":"","articles_affected":"","transitional":""}}]}
 REGISTO ATUAL:
-${JSON.stringify((regs || []).map((r: any) => ({ id: r.id, nome: r.name, diploma: r.diploma, estado: r.status, publicado: r.published_on, em_vigor_desde: r.in_force_on, revogado: r.revoked_on, transitorio: r.transitional, ref_dr: r.dre_ref })), null, 1)}`;
+${JSON.stringify(list.map((r: any) => ({ id: r.id, nome: r.name, diploma: r.diploma, estado: r.status, publicado: r.published_on, em_vigor_desde: r.in_force_on, revogado: r.revoked_on, transitorio: r.transitional, ref_dr: r.dre_ref })), null, 1)}`;
   const out = { runId, trigger, checked: 0, sem_alteracao: 0, alerta: 0, confirmada: 0, notified: null as any };
-  const g = await gemini({ contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1 } });
-  const items = parseJson(g.text).items || [];
+  // dois pedidos em paralelo (metade dos regimes cada): um só passa do tempo que o Supabase dá a cada função
+  const half = Math.ceil((regs || []).length / 2), parts = [(regs || []).slice(0, half), (regs || []).slice(half)].filter((x) => x.length);
+  const gs = await Promise.all(parts.map((list) => gemini({ contents: [{ role: "user", parts: [{ text: prompt(list) }] }], generationConfig: { temperature: 0.1, maxOutputTokens: 4096 } })));
+  const g = { searched: gs.some((x) => x.searched) };
+  const items = gs.flatMap((x) => parseJson(x.text).items || []);
   const findings: string[] = [];
   for (const reg of regs || []) {
     const it = items.find((x: any) => x.id === reg.id) || { change: "nenhuma" };
@@ -182,7 +190,14 @@ Deno.serve(async (req) => {
       const me = b.trigger === "manual" ? await caller(req) : null;
       if (b.trigger === "manual" && !me) return json({ error: "Só para a equipa" }, 403);
       if (!KEY) throw new Error("Falta a chave do Gemini");
-      return json(await run(b.trigger === "manual" ? "manual" : "cron"));
+      // corre em segundo plano: a resposta sai já, o resultado fica no registo (legal_watch_log)
+      const job = run(b.trigger === "manual" ? "manual" : "cron").catch(async (e) => {
+        const msg = cut((e as Error).message, 500);
+        await db.from("legal_watch_log").insert({ run_id: crypto.randomUUID(), kind: "erro", finding: "A verificação da legislação falhou", error: msg });
+        await notifyPartners("NOVA Compass · a verificação da legislação falhou", `<p>A verificação da legislação urbanística não correu: ${esc(msg)}</p><p>Vê em NOVA Compass → Definições → Regime legal.</p>`).catch(() => null);
+      });
+      if (typeof EdgeRuntime !== "undefined") { EdgeRuntime.waitUntil(job); return json({ started: true }); }
+      await job; return json({ started: true });
     }
     const me = await caller(req);
     if (!me || !/partner|s[oó]cio/i.test(me.role || "")) return json({ error: "Só os sócios podem simular ou reverter" }, 403);
