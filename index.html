@@ -20761,6 +20761,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               const q = ej?.quota || {}, reset = frAi?.usage?.resetAt ? new Date(frAi.usage.resetAt).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) : '';
               return showToast(q.perMinute && !q.perDay ? 'Limite por minuto do Gemini: espera um minuto e tenta outra vez.' : `Chegou-se ao limite diário gratuito do Gemini${q.value ? ` (${q.value} pedidos)` : ''}. Volta às ${reset}; entretanto usa o texto-tipo.`, { type: 'error', ms: 10000 });
             }
+            if (err === 'busy') return showToast('O Gemini está sobrecarregado neste momento (do lado do Google). Tenta daqui a um minuto ou usa o texto-tipo.', { type: 'error', ms: 9000 });
             if (err) throw new Error(err);
             fill(r.data, 'Rascunho escrito pela IA — revê antes de usar');
           } catch (err) { showError('escrever com a IA', err); }
