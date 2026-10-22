@@ -30,7 +30,7 @@ const STATUSES = ["em_vigor", "revogado_parcial", "revogado", "publicado_sem_vig
 // ---------- Gemini (com pesquisa Google quando o plano deixa; senão sem) ----------
 let noThinkingCap = false;
 async function gemini(body: Record<string, unknown>): Promise<any> {
-  let last: any = null;
+  let last: any = null, limited = false;
   for (const withSearch of [true, false]) {
     for (const m of MODELS) {
       const gc = { ...(body as any).generationConfig, ...(noThinkingCap ? {} : { thinkingConfig: { thinkingBudget: 512 } }) };
@@ -49,11 +49,13 @@ async function gemini(body: Record<string, unknown>): Promise<any> {
         return { text: (cand.content?.parts || []).map((p: any) => p.text || "").join(""), searched: withSearch, model: m, chunks: (cand.groundingMetadata?.groundingChunks || []).map((c: any) => c.web?.uri).filter(Boolean) };
       }
       if (r.status === 429 && /PerDay|PerMinute/.test(JSON.stringify(last.body))) {
+        // o limite é por modelo: tenta o seguinte; só falha se todos estiverem esgotados
         await db.from("ai_usage").insert({ model: m, feature: "legal_watch", status: "limit", detail: { message: cut(last.body?.error?.message, 300) } });
-        throw new Error("Limite do Gemini atingido");
+        limited = true;
       }
     }
   }
+  if (limited && last?.status === 429) throw new Error("Limite diário do Gemini atingido em todos os modelos");
   throw new Error(`Gemini: ${cut(last?.body?.error?.message || last?.status, 300)}`);
 }
 const parseJson = (t: string) => { const m = t.match(/\{[\s\S]*\}/); if (!m) throw new Error("A IA não devolveu JSON"); return JSON.parse(m[0]); };

@@ -68,7 +68,7 @@ function quotaOf(body: any) {
 class AiError extends Error { constructor(public code: string, msg: string, public extra: any = null) { super(msg); } }
 async function gemini(feature: string, user: string | null, body: Record<string, unknown>) {
   // (body pode perder o thinkingConfig num modelo que não o aceite)
-  let last: { status: number; body: any; ms?: number } | null = null, model = MODELS[0], planDenied = false, skipped = false;
+  let last: { status: number; body: any; ms?: number } | null = null, model = MODELS[0], planDenied = false, skipped = false, dayLimit: any = null;
   for (const m of MODELS) {
     model = m;
     for (let i = 0; i < 2; i++) {
@@ -93,9 +93,12 @@ async function gemini(feature: string, user: string | null, body: Record<string,
     if (last.status === 429) {
       const q = quotaOf(last.body);
       if (!q.perDay && !q.perMinute && /billing|plan/i.test(q.message)) { await log({ user_id: user, model: m, feature, status: "error", detail: { status: 429, plan: true, message: q.message } }); planDenied = skipped = true; continue; }
+      // limite diário: é por modelo, por isso o modelo seguinte ainda tem quota
+      if (q.perDay) { await log({ user_id: user, model: m, feature, status: "limit", detail: q }); dayLimit = q; skipped = true; continue; }
     }
     break;
   }
+  if (dayLimit && skipped) throw new AiError("limit", "limit", dayLimit);
   if (planDenied && skipped) throw new AiError("plan", "plan");
   if (!last || last.status !== 200) {
     if (last?.status === 429) { const q = quotaOf(last.body); await log({ user_id: user, model, feature, status: "limit", detail: q }); throw new AiError("limit", "limit", q); }
