@@ -2760,6 +2760,35 @@
   .vt-plus { font-size: var(--fs-xs); color: var(--text-3); }
   .vt-mode { margin: var(--sp-2) 0; }
   .vt-note { font-size: var(--fs-xs); color: var(--text-3); text-align: right; padding: 2px 0; }
+  /* Comparar oportunidades (para o investidor): colunas lado a lado, como as páginas de comparação da Apple. Sempre claro, como os PDF. */
+  .cmp { position: fixed; inset: 0; z-index: var(--z-panel); display: flex; flex-direction: column; background: #FBFAF8; color: #1B1A19; color-scheme: light;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-feature-settings: "tnum" 1; opacity: 0; transition: opacity .3s ease; }
+  .cmp.in { opacity: 1; }
+  .cmp-top { display: flex; align-items: center; gap: 12px; padding: max(12px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) 12px max(20px, env(safe-area-inset-left)); border-bottom: 1px solid #ECEAE5; background: rgba(251,250,248,.86); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); }
+  .cmp-top img { height: 18px; } .cmp-top .t { font-size: 13px; color: #6B6660; border-left: 1px solid #D9D6D0; padding-left: 12px; line-height: 1.2; }
+  .cmp-top .t b { display: block; color: #1B1A19; font-weight: 600; font-size: 14px; }
+  .cmp-top .sp { flex: 1; }
+  .cmp-top button { font: 600 13px/1 inherit; font-family: inherit; border-radius: 999px; padding: 9px 16px; cursor: pointer; border: 1px solid #D9D6D0; background: #fff; color: #1B1A19; min-height: 36px; }
+  .cmp-top button.x { width: 36px; padding: 0; font-size: 18px; }
+  .cmp-top button.pdf { background: #714D79; border-color: #714D79; color: #fff; }
+  .cmp-scroll { flex: 1; overflow: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+  .cmp-grid { --n: 3; display: grid; grid-template-columns: repeat(var(--n), minmax(180px, 1fr)); column-gap: clamp(16px, 3vw, 44px); max-width: calc(var(--n) * 320px); margin: 0 auto; padding: 0 clamp(16px, 4vw, 40px) 64px; min-width: min-content; }
+  .cmp-head { position: sticky; top: 0; z-index: 2; grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; background: #FBFAF8; padding: 28px 0 16px; box-shadow: 0 1px 0 #ECEAE5, 0 12px 16px -12px rgba(27,26,25,.08); }
+  .cmp-col { text-align: center; padding: 0 4px; }
+  .cmp-col .nm { font-size: clamp(17px, 2vw, 24px); font-weight: 600; letter-spacing: -.02em; line-height: 1.15; text-wrap: balance; }
+  .cmp-col .loc { font-size: 13px; color: #6B6660; margin-top: 4px; }
+  .cmp-col .hero { margin-top: 14px; font-size: clamp(30px, 4vw, 44px); font-weight: 600; letter-spacing: -.03em; line-height: 1; }
+  .cmp-col .hero small { display: block; font-size: 12px; font-weight: 500; letter-spacing: 0; color: #6B6660; margin-top: 6px; }
+  .cmp-col .hero.best { color: #714D79; }
+  .cmp-sec { grid-column: 1 / -1; font-size: clamp(20px, 2.4vw, 28px); font-weight: 600; letter-spacing: -.02em; padding: 40px 0 6px; border-bottom: 1px solid #1B1A19; }
+  .cmp-lbl { grid-column: 1 / -1; font-size: 12px; color: #6B6660; text-align: center; padding: 18px 0 6px; }
+  .cmp-v { text-align: center; font-size: clamp(16px, 1.6vw, 19px); font-weight: 500; padding-bottom: 18px; border-bottom: 1px solid #ECEAE5; }
+  .cmp-v.na { color: #A8A29A; }
+  .cmp-v.best { color: #714D79; font-weight: 600; }
+  .cmp-v.best::after { content: 'melhor'; display: block; width: max-content; margin: 6px auto 0; font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #714D79; background: #F1E9F2; border-radius: 999px; padding: 3px 8px; }
+  .cmp-foot { grid-column: 1 / -1; font-size: 12px; color: #6B6660; padding-top: 28px; text-align: center; }
+  @media (max-width: 640px) { .cmp-top .t span { display: none; } .cmp-grid { grid-template-columns: repeat(var(--n), minmax(150px, 1fr)); } .cmp-top button.pdf span { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .cmp { transition: none; } }
   .vt-com-park { text-align: left; font-size: var(--fs-sm); color: var(--text-2); border-radius: var(--r-md); padding: 8px 12px; margin: 4px 0 6px; background: var(--surface-2, color-mix(in srgb, var(--text) 4%, transparent)); }
   .vt-com-park.warn { color: var(--text); background: var(--warning-soft); border: 1px solid color-mix(in srgb, var(--warning) 40%, var(--border)); }
   .vt-note .late { color: var(--danger); }
@@ -3871,6 +3900,7 @@
   .tk-addc { display: flex; gap: 8px; margin-top: 10px; } .tk-addc .form-input { flex: 1; } .tk-addc .secondary-btn { width: auto; margin: 0; padding: 0 14px; }
   /* ---- Investment Intelligence: página do investidor (para mostrar ao cliente) ---- */
   .iv-head .card-head { align-items: flex-end; flex-wrap: wrap; }
+  .iv-acts { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
   .iv-head .card-head h2 { font-size: clamp(28px, 3.6vw, 46px); font-weight: 700; letter-spacing: -.04em; line-height: 1.05; }
   .iv-head .card-head h2 .iv-nm, .iv-head .card-head h2 .kw { font-size: inherit; color: inherit; }
   .iv-head .card-head h2 small { font-size: .5em; font-weight: 500; letter-spacing: -.01em; }
@@ -17649,6 +17679,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         steps: ['Abre [[Investment Intelligence]] → separador **Investidores** → [[+ Investidor]].', 'Escolhe as **tipologias** que procura (pode ser mais do que uma). Em habitação coletiva, diz o intervalo de **frações**.', 'Indica o **investimento** mínimo e máximo (total: terreno + construção) e as **zonas** (concelhos ou freguesias, separados por vírgulas).', 'Diz se só quer terrenos **com projeto aprovado**, só **sem**, ou é indiferente.', 'A partir daí, cada terreno mostra os investidores que **encaixam** — e cada investidor, os terrenos que lhe servem.'],
         kw: 'investidor promotor perfil investimento zonas fracoes tipologia encaixa match',
         tour: [{ go: 'nav:opps', sel: '[data-otab="investors"]', text: 'Os investidores estão neste separador.' }] },
+      { id: 'comparar', cat: 'opps', ctx: ['opps'],
+        q: 'comparo oportunidades lado a lado para um investidor',
+        a: 'Na página do cliente (Investment Intelligence → Investidores → o cliente), marca 2 a 4 oportunidades e toca em Comparar. As colunas mostram a rentabilidade lado a lado, com o melhor valor de cada linha destacado.',
+        steps: ['Abre [[Investment Intelligence]] → separador **Investidores** e toca no cliente.', 'Marca na coluna **✓** as oportunidades a comparar (2 a 4).', 'Toca em **Comparar**: abre um ecrã limpo, sem métricas internas, para mostrar ao cliente. Em cada linha, a cor e a etiqueta «melhor» destacam o melhor valor (ROI, resultado, margem, yield e o terreno por m² de construção mais baixo).', 'No telemóvel desliza para os lados se houver mais colunas.', '**PDF para o cliente** junta o quadro comparativo no início do PDF, antes das fichas de cada oportunidade.'],
+        kw: 'comparar comparacao lado a lado apple oportunidades investidor cliente melhor roi rentabilidade',
+        tour: [{ go: 'nav:opps', sel: '[data-otab="investors"]', text: 'Abre um cliente neste separador para comparar oportunidades.' }] },
       { id: 'apresentar', cat: 'opps', ctx: ['plot'],
         q: 'apresento uma oportunidade e acompanho a resposta',
         a: 'Na oportunidade, Apresentar (investidor da base) ou + Registar apresentação (alguém de fora). Investment Intelligence → Apresentações mostra o que falta apresentar e o que espera resposta.',
@@ -17658,8 +17694,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { id: 'proposta', cat: 'opps', ctx: ['pipeline', 'opps', 'plot', 'proposal', 'settings:proposals'], first: 2,
         q: 'faço uma proposta de honorários',
         a: 'Clientes → Pipeline → + Nova proposta: escolhe o tipo (Estudo Preliminar, PIP, Estudo de Viabilidade, Projeto Completo ou Proposta de Serviços), a tipologia e a língua. Na Proposta de Serviços não há tipologia: escolhes logo os serviços da NOVA e os de parceiros a incluir. O modelo do tipo já traz serviços, valores, pagamento, textos, opcionais e exclusões.',
-        steps: ['Abre [[Pipeline]] → [[+ Nova proposta]]. Escolhe **que proposta é** (o modelo pré-configura tudo), a **tipologia** e a **língua**. Se vier de uma oportunidade do Intelligence, escolhe-a: usa o **mesmo CST** e traz o local, a área e o cliente.', 'No editor ficam à vista as partes principais: **Cliente e local**, **Serviços**, **Valor**, **Outros serviços** e **Pagamento**. Em **Outros serviços** pões os serviços de parceiros que a NOVA revende (topografia, carpintaria, serralharia, materiais…): escreves o fornecedor, o custo e a margem, e o cliente vê só o preço, num capítulo próprio do PDF, à parte dos honorários. Ajusta o que for preciso — os valores do modelo são um ponto de partida.', 'A língua muda-se a qualquer momento no **PT | EN** do topo: os textos da biblioteca e do modelo passam para a outra língua.', 'O resto está em **Mais opções**: capa e manifesto, textos do âmbito (Base de trabalho, Pressupostos, Prazo…), secções próprias (ex.: Aperfeiçoamento), custo e margem, timeline, opcionais, exclusões e assinatura.', 'Nos textos, {h} é a taxa horária dos opcionais, {local} o local e concelho, {validade}/{ate} a validade, e {Opcionais} (ou outro título) o número dessa secção no documento.', 'Toca em [[Criar proposta]] (recebe o CST). A partir daí grava sozinha. Para que as próximas deste tipo comecem assim, toca em **Guardar como modelo**.', 'Para enviar: [[Enviar por email]]. A app gera o PDF e descarrega o email com o PDF e a tua assinatura: abre o ficheiro e o Outlook mostra a mensagem pronta (fica também nos Rascunhos). Carregas em **Enviar** e a proposta fica marcada como enviada a essa hora, com follow-up a 7 dias.'],
-        kw: 'proposta honorarios orcamento preco valor fee revenda outros servicos topografia carpintaria serralharia materiais parceiros fornecedor margem nota de honorarios cst pdf modelo nova capa ambito exclusoes opcionais timeline pagamento biblioteca ingles email outlook enviar anexo pip viabilidade estudo preliminar projeto completo tipo lingua aperfeicoamento taxa horaria guardar como modelo',
+        steps: ['Abre [[Pipeline]] → [[+ Nova proposta]]. Escolhe **que proposta é** (o modelo pré-configura tudo), a **tipologia** e a **língua**. Se vier de uma oportunidade do Intelligence, escolhe-a: usa o **mesmo CST** e traz o local, a área e o cliente.', 'No editor ficam à vista as partes principais: **Cliente e local**, **Serviços**, **Valor**, **Outros serviços** e **Pagamento**. Em **Outros serviços** pões os serviços de parceiros que a NOVA revende (topografia, carpintaria, serralharia, materiais…): escreves o fornecedor, o custo e a margem, e o cliente vê só o preço, num capítulo próprio do PDF, à parte dos honorários. Em cada serviço escolhes o **pagamento**: 50% na adjudicação e 50% na entrega, ou 100% na entrega; estas parcelas entram na tabela de **Pagamento** e no total. Ajusta o que for preciso — os valores do modelo são um ponto de partida.', 'A língua muda-se a qualquer momento no **PT | EN** do topo: os textos da biblioteca e do modelo passam para a outra língua.', 'O resto está em **Mais opções**: capa e manifesto, textos do âmbito (Base de trabalho, Pressupostos, Prazo…), secções próprias (ex.: Aperfeiçoamento), custo e margem, timeline, opcionais, exclusões e assinatura.', 'Nos textos, {h} é a taxa horária dos opcionais, {local} o local e concelho, {validade}/{ate} a validade, e {Opcionais} (ou outro título) o número dessa secção no documento.', 'Toca em [[Criar proposta]] (recebe o CST). A partir daí grava sozinha. Para que as próximas deste tipo comecem assim, toca em **Guardar como modelo**.', 'Para enviar: [[Enviar por email]]. A app gera o PDF e descarrega o email com o PDF e a tua assinatura: abre o ficheiro e o Outlook mostra a mensagem pronta (fica também nos Rascunhos). Carregas em **Enviar** e a proposta fica marcada como enviada a essa hora, com follow-up a 7 dias.'],
+        kw: 'proposta honorarios orcamento preco valor fee revenda outros servicos pagamento outros servicos adjudicacao entrega 50 100 topografia carpintaria serralharia materiais parceiros fornecedor margem nota de honorarios cst pdf modelo nova capa ambito exclusoes opcionais timeline pagamento biblioteca ingles email outlook enviar anexo pip viabilidade estudo preliminar projeto completo tipo lingua aperfeicoamento taxa horaria guardar como modelo',
         tour: [{ go: 'nav:pipeline', sel: '#pipe-new', text: 'Começa aqui uma proposta nova.' }] },
       { id: 'pip-ciclos', cat: 'clients', ctx: ['pipeline', 'proposal'],
         q: 'escolho se o PIP inclui só um ciclo de aperfeiçoamento ou todas as respostas até à decisão',
@@ -19621,9 +19657,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           ${inv.notes ? `<div class="field-hint" style="white-space:pre-wrap">${escapeHtml(inv.notes)}</div>` : ''}
         </div>
         <div class="gantt-wrap iv-res${anim ? '' : ' iv-sorted'}">
-          <div class="card-head"><h2>Oportunidades por compatibilidade</h2><button type="button" class="secondary-btn toolbar-btn" id="iv-pdf">PDF para o cliente${invViewPick.ids.size ? ` (${invViewPick.ids.size})` : ''}</button></div>
+          <div class="card-head"><h2>Oportunidades por compatibilidade</h2><span class="iv-acts"><button type="button" class="secondary-btn toolbar-btn" id="iv-cmp">Comparar${invViewPick.ids.size ? ` (${invViewPick.ids.size})` : ''}</button><button type="button" class="secondary-btn toolbar-btn" id="iv-pdf">PDF para o cliente${invViewPick.ids.size ? ` (${invViewPick.ids.size})` : ''}</button></span></div>
           ${rows.length ? `<div class="iv-scan"><span class="iv-scan-t">${anim ? `A cruzar ${rows.length} ${rows.length === 1 ? 'oportunidade' : 'oportunidades'} com ${crit.length} ${crit.length === 1 ? 'critério' : 'critérios'} do perfil…` : `Ordenadas pela compatibilidade com o perfil de ${escapeHtml(attFirst(inv.name))}`}</span><i></i></div>
-          <div class="table-scroll"><table class="mini-table iv-table"><thead><tr><th class="iv-pick" title="Incluir no PDF">PDF</th><th>Score</th><th>Oportunidade</th>${crit.map(c => `<th title="${escapeHtml(c.l + ': ' + c.want)}">${escapeHtml(c.l)}<small>${escapeHtml(c.want)}</small></th>`).join('')}<th>Com este cliente</th></tr></thead><tbody>
+          <div class="table-scroll"><table class="mini-table iv-table"><thead><tr><th class="iv-pick" title="Incluir no PDF e na comparação">✓</th><th>Score</th><th>Oportunidade</th>${crit.map(c => `<th title="${escapeHtml(c.l + ': ' + c.want)}">${escapeHtml(c.l)}<small>${escapeHtml(c.want)}</small></th>`).join('')}<th>Com este cliente</th></tr></thead><tbody>
             ${rows.map((r, ri) => `<tr data-iv-row="${escapeHtml(r.p.id)}">
               <td class="iv-pick"><input type="checkbox" data-iv-pdf="${escapeHtml(r.p.id)}"${invViewPick.ids.has(r.p.id) ? ' checked' : ''} aria-label="Incluir ${escapeHtml(r.p.name)} no PDF"></td>
               <td>${ivRing(r.m)}</td>
@@ -19648,9 +19684,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         if (cb.checked) invViewPick.ids.add(cb.dataset.ivPdf); else invViewPick.ids.delete(cb.dataset.ivPdf);
         box.querySelectorAll(`[data-iv-pdf="${CSS.escape(cb.dataset.ivPdf)}"]`).forEach(o => { o.checked = cb.checked; });
         document.getElementById('iv-pdf').textContent = 'PDF para o cliente' + (invViewPick.ids.size ? ` (${invViewPick.ids.size})` : '');
+        document.getElementById('iv-cmp').textContent = 'Comparar' + (invViewPick.ids.size ? ` (${invViewPick.ids.size})` : '');
       }));
       box.querySelectorAll('[data-iv-present]').forEach(b => b.addEventListener('click', () =>
         openPresentModal(d.plots.find(p => String(p.id) === b.dataset.ivPresent), d, inv.id, async () => { oppsCache = null; suppressNavPush = true; openInvestorView(inv.id); })));
+      document.getElementById('iv-cmp').addEventListener('click', () => openInvestorCompare(inv, rows.filter(r => invViewPick.ids.has(r.p.id)), crit));
       document.getElementById('iv-pdf').addEventListener('click', () => {
         const pick = rows.filter(r => invViewPick.ids.has(r.p.id));
         if (!pick.length) { showToast('Marca na coluna PDF as oportunidades a incluir.', { type: 'error' }); return; }
@@ -19716,6 +19754,58 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         }
       }, 2500);
     }
+    // ---------- Comparar oportunidades (para o investidor) ----------
+    // Rentabilidade lado a lado, com o melhor valor de cada linha destacado (↑ maior é melhor, ↓ menor é melhor)
+    function ivCompareData(rows) {
+      const N = v => v == null || v === '' || !Number.isFinite(Number(v)) ? null : Number(v);
+      const cols = rows.map(({ p, v }) => {
+        const ok = v.hasSales && v.hasCosts, abc = v.ind ? v.ind.abc : plotAreas(p).build, price = N(p.asking_price);
+        const rentOn = v.ind ? v.yieldGross != null : feasInputs(p).rent_on && v.rentYear > 0;
+        return { p, name: p.name, loc: [p.parish, p.municipality].filter(Boolean).join(', '),
+          price, cost: v.hasCosts ? v.costGlobal : null, landM2: price && abc ? price / abc : null, sales: v.hasSales ? v.salesNet : null,
+          profit: ok ? v.profit : null, roi: ok ? v.roi : null, margin: ok && v.salesGross ? v.profit / v.salesGross : null,
+          rentYear: rentOn && !v.ind ? v.rentYear : null, yieldG: rentOn ? v.yieldGross : null, abc: N(abc), units: N(v.ind ? v.ind.lots : (v.units || p.fractions_est)), ind: !!v.ind };
+      });
+      const eur = n => Number(Math.round(n)).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+      const pc = (n, d = 1) => (n * 100).toLocaleString('pt-PT', { maximumFractionDigits: d }) + '%';
+      const m2 = n => Math.round(n).toLocaleString('pt-PT') + ' m²';
+      const L = (k, label, fmt, dir) => ({ k, label, fmt, dir });
+      const anyRent = cols.some(c => c.yieldG != null);
+      const groups = [
+        ['Rentabilidade', [L('roi', 'ROI (lucro ÷ investimento)', v => pc(v, 1), 1), L('profit', 'Resultado', eur, 1), L('margin', 'Margem sobre as vendas', v => pc(v, 1), 1)]],
+        ['Investimento', [L('price', 'Preço do terreno', eur, 0), L('cost', 'Investimento total estimado', eur, 0), L('landM2', 'Terreno por m² de construção', v => eur(v) + '/m²', -1)]],
+        ['Receita', [L('sales', 'Receita de venda estimada', eur, 0), ...(anyRent ? [L('rentYear', 'Renda anual (arrendamento)', eur, 0), L('yieldG', 'Yield bruto', v => pc(v, 1), 1)] : [])]],
+        ['Dimensão', [L('abc', 'Área de construção', m2, 0), L(cols.some(c => c.ind) ? 'units' : 'units', cols.every(c => c.ind) ? 'Lotes' : 'Frações', v => String(Math.round(v)), 0)]],
+      ].map(([g, lines]) => [g, lines.map(l => {
+        const vals = cols.map(c => c[l.k]), nums = vals.filter(x => x != null);
+        const best = l.dir && nums.length > 1 && new Set(nums).size > 1 ? (l.dir > 0 ? Math.max(...nums) : Math.min(...nums)) : null;
+        return { ...l, cells: vals.map(x => ({ txt: x == null ? '—' : l.fmt(x), best: best != null && x === best, na: x == null })) };
+      })]);
+      const roiNums = cols.map(c => c.roi).filter(x => x != null), bestRoi = roiNums.length > 1 ? Math.max(...roiNums) : null;
+      return { cols: cols.map(c => ({ ...c, heroTxt: c.roi == null ? '—' : pc(c.roi, 1), heroBest: bestRoi != null && c.roi === bestRoi && new Set(roiNums).size > 1 })), groups };
+    }
+    function openInvestorCompare(inv, rows, crit) {
+      if (rows.length < 2) { showToast('Marca 2 a 4 oportunidades para comparar.', { type: 'error' }); return; }
+      if (rows.length > 4) { showToast('Compara-se até 4 de cada vez: ficam as 4 primeiras.'); rows = rows.slice(0, 4); }
+      const D = ivCompareData(rows), e = escapeHtml;
+      const ov = document.createElement('div');
+      ov.className = 'cmp'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Comparar oportunidades');
+      ov.innerHTML = `
+        <div class="cmp-top"><img src="assets/nova-logo-plum-cropped.png" alt="NOVA"><div class="t"><b>Comparar oportunidades</b><span>${e(inv.name)}${inv.company ? ' · ' + e(inv.company) : ''}</span></div><span class="sp"></span>
+          <button type="button" class="pdf" id="cmp-pdf">PDF <span>para o cliente</span></button><button type="button" class="x" id="cmp-x" aria-label="Fechar">×</button></div>
+        <div class="cmp-scroll"><div class="cmp-grid" style="--n:${D.cols.length}">
+          <div class="cmp-head">${D.cols.map(c => `<div class="cmp-col"><div class="nm">${e(c.name)}</div><div class="loc">${e(c.loc || '—')}</div><div class="hero${c.heroBest ? ' best' : ''}">${e(c.heroTxt)}<small>ROI estimado</small></div></div>`).join('')}</div>
+          ${D.groups.map(([g, lines]) => `<div class="cmp-sec">${e(g)}</div>${lines.map(l => `<div class="cmp-lbl">${e(l.label)}</div>${l.cells.map(x => `<div class="cmp-v${x.best ? ' best' : ''}${x.na ? ' na' : ''}">${e(x.txt)}</div>`).join('')}`).join('')}`).join('')}
+          <div class="cmp-foot">Valores estimados pela NOVA à data de hoje, a confirmar em cada estudo de rentabilidade.</div>
+        </div></div>`;
+      document.body.appendChild(ov); requestAnimationFrame(() => ov.classList.add('in'));
+      const close = () => { document.removeEventListener('keydown', onKey); ov.classList.remove('in'); setTimeout(() => ov.remove(), reduceMotion.matches ? 0 : 300); };
+      const onKey = ev => { if (ev.key === 'Escape') close(); };
+      document.addEventListener('keydown', onKey);
+      ov.querySelector('#cmp-x').addEventListener('click', close);
+      ov.querySelector('#cmp-pdf').addEventListener('click', () => printClientDossier(inv, rows, crit));
+      ov.querySelector('#cmp-x').focus();
+    }
     // PDF para o cliente: as oportunidades escolhidas e os indicadores que ele procura (sem score nem métricas internas)
     function printClientDossier(inv, rows, crit) {
       const e = escapeHtml, loc = 'pt-PT';
@@ -19758,6 +19848,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           .kpi { background: #F3F3F0; border-radius: 10px; padding: 8px 10px; } .kpi .l { display: block; font-size: 8pt; color: #6B6660; } .kpi b { font-size: 13pt; font-weight: 600; }
           table { width: 100%; border-collapse: collapse; } td, th { padding: 4px; border-bottom: 1px solid #EEEDE9; text-align: left; } tr.h th { font-size: 7.5pt; font-weight: 500; color: #736D66; }
           .r { text-align: right; white-space: nowrap; } .ok { color: #2E7D4F; font-weight: 600; }
+          .cmpx tr.h th { font-size: 8.5pt; font-weight: 600; color: #1B1A19; white-space: normal; } .cmpx tr.g td { font-size: 7.5pt; letter-spacing: .1em; text-transform: uppercase; color: #736D66; font-weight: 600; padding-top: 10px; }
+          .cmpx td.best { color: #714D79; font-weight: 700; } .cmpx .cmpn { font-size: 7.5pt; color: #736D66; margin: 6px 0 0; }
           footer { display: flex; justify-content: space-between; gap: 16px; font-size: 7.5pt; color: #736D66; margin-top: 16px; }
           @media print { body { padding: 0; max-width: none; } .bar { display: none; } }
           @media (max-width: 640px) { .kpis { grid-template-columns: 1fr; } }
@@ -19765,6 +19857,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         <div class="bar"><button onclick="window.print()">Imprimir / guardar em PDF</button></div>
         <div class="capa"><header><div class="brand"><img src="${e(logoL)}" alt="NOVA"><span class="ii">Investment Intelligence</span></div><div class="meta">NOVA Associates<br>${e(date)}</div></header>
         <div class="title"><div class="eyebrow">Oportunidades selecionadas</div><h1>${e(inv.name)}${inv.company ? ' · ' + e(inv.company) : ''}</h1></div></div>
+        ${rows.length > 1 ? (() => { const D = ivCompareData(rows.slice(0, 4));
+          return `<section class="cmpx"><h2>Comparação${rows.length > 4 ? ' (as 4 primeiras)' : ''}</h2><table><tr class="h"><th></th>${D.cols.map(c => `<th class="r">${e(c.name)}</th>`).join('')}</tr>
+            ${D.groups.map(([g, lines]) => `<tr class="g"><td colspan="${D.cols.length + 1}">${e(g)}</td></tr>${lines.map(l => `<tr><td>${e(l.label)}</td>${l.cells.map(x => `<td class="r${x.best ? ' best' : ''}">${e(x.txt)}</td>`).join('')}</tr>`).join('')}`).join('')}
+          </table><p class="cmpn">A cor destaca o melhor valor de cada linha.</p></section>`; })() : ''}
         ${rows.map(card).join('')}
         <footer><span>${e(`Os valores considerados e estimados são sensíveis à data do estudo (${date}).`)}</span><span>NOVA Investment Intelligence</span></footer>
         </body></html>`;
@@ -23346,6 +23442,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const txt = (key, title) => { const x = title && lib.find(y => y.kind === 'text' && y.grp === key && n(y.title_pt).startsWith(n(title))); return x ? { lib: x.id, t: libTB(x, en) } : null; };
       if (tpl.valueIntro) c.value.intro = txt('value_intro', tpl.valueIntro) || c.value.intro;
       if (tpl.payIntro) c.pay.intro = txt('pay_intro', tpl.payIntro) || c.pay.intro;
+      // Proposta de Serviços: sem a abertura dos pagamentos «por entregáveis de Projeto»
+      else if (tpl.noType) c.pay.intro = { t: L2(['Os pagamentos fazem-se de acordo com a tabela abaixo:', 'Payments are made according to the table below:']) };
       if (tpl.exclIntro) c.exclusions.intro = txt('exclusions_intro', tpl.exclIntro) || c.exclusions.intro;
       if (tpl.optIntro === '') c.optionals.intro = { t: '' };
       const notesOf = (kind, list) => list.map(t => find(kind, t)).filter(Boolean).map(x => ({ lib: x.id, t: libT(x, en) }));
@@ -23519,6 +23617,14 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const lines = (c?.resale?.lines || []).filter(l => (l.t || '').trim() || Number(l.cost));
       const cost = ppR2(lines.reduce((t, l) => t + (Number(l.cost) || 0), 0)), price = ppR2(lines.reduce((t, l) => t + ppResalePrice(l), 0));
       return { lines, cost, price, margin: ppR2(price - cost) };
+    }
+    // Pagamento dos outros serviços: cada um paga 50% na adjudicação e 50% na entrega (por omissão) ou 100% na entrega
+    const PP_RS_PAY = [['split', '50% adjudicação · 50% entrega'], ['end', '100% na entrega']];
+    function ppResalePay(c) {
+      const RS = ppResaleTotals(c); let award = 0, end = 0;
+      RS.lines.forEach(l => { const v = ppResalePrice(l); if (l.pay === 'end') end += v; else { award += v / 2; end += v / 2; } });
+      const allEnd = RS.lines.length > 0 && RS.lines.every(l => l.pay === 'end'), allSplit = RS.lines.every(l => l.pay !== 'end');
+      return { total: RS.price, award: ppR2(award), end: ppR2(end), n: RS.lines.length, endPct: allEnd ? 100 : allSplit ? 50 : null };
     }
     const PP_RESALE_NOTE = {
       pt: 'Serviços prestados por entidades parceiras e coordenados pela NOVA. Valores sem IVA, faturados à parte dos honorários de projeto.',
@@ -23837,7 +23943,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             pp.content.value.lines = nova.map(x => /\{h\}/.test(x.value_text || '')
               ? { g: '', t: libT(x, en), pt: libT(x, false), en: libT(x, true), q: null, u: ppRate(cfg), v: null, kind: 'fee' }
               : { g: '', t: libT(x, en), pt: libT(x, false), en: libT(x, true), q: null, u: null, v: null, kind: 'fee' });
-            pp.content.resale.lines = preset.services.partners.map(t => ({ t, b: '', sup: '', cost: null, margin: 15 }));
+            pp.content.resale.lines = preset.services.partners.map(t => ({ t, b: '', sup: '', cost: null, margin: 15, pay: 'split' }));
           }
           if (belowA) pp.content.scope.below = belowA;
           pp.total = ppTotals(pp.content).total || null;
@@ -24025,10 +24131,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <div class="op-sum" id="pp-cost-sum"></div>`,
         resale: () => `
           <div class="field-hint" style="margin-top:0;">Serviços de parceiros que a NOVA revende (topografia, carpintaria, serralharia, materiais…). Na proposta aparecem num capítulo próprio, só com o preço; o fornecedor, o custo e a margem ficam para a NOVA.</div>
-          ${(c.resale.lines || []).length ? `<div class="pp-th" style="grid-template-columns:1.2fr 1.5fr .9fr .7fr .55fr .8fr 52px"><span>Serviço</span><span>Descrição</span><span>Fornecedor</span><span>Custo</span><span>Margem %</span><span>Preço</span><span></span></div>` : ''}
-          ${rowsUI('content.resale.lines', c.resale.lines || [], [{ k: 't', ph: 'ex.: Levantamento topográfico', w: '1.2fr' }, { k: 'b', ph: 'Descritivo (opcional)', w: '1.5fr', area: true }, { k: 'sup', ph: 'Nome', w: '.9fr' },
-            { k: 'cost', ph: '€', n: true, w: '.7fr' }, { k: 'margin', ph: '%', n: true, w: '.55fr' }, { k: '_p', ro: l => escapeHtml(fmtEUR(ppResalePrice(l))), w: '.8fr' }], { empty: 'Sem outros serviços nesta proposta.' })}
-          <div class="pp-btnrow"><button type="button" class="text-btn" data-act="add" data-path="content.resale.lines" data-tpl='{"t":"","b":"","sup":"","cost":null,"margin":15}'>+ Serviço</button></div>
+          ${(c.resale.lines || []).length ? `<div class="pp-th" style="grid-template-columns:1.1fr 1.3fr .8fr .65fr .5fr .75fr 1fr 52px"><span>Serviço</span><span>Descrição</span><span>Fornecedor</span><span>Custo</span><span>Margem %</span><span>Preço</span><span>Pagamento</span><span></span></div>` : ''}
+          ${rowsUI('content.resale.lines', c.resale.lines || [], [{ k: 't', ph: 'ex.: Levantamento topográfico', w: '1.1fr' }, { k: 'b', ph: 'Descritivo (opcional)', w: '1.3fr', area: true }, { k: 'sup', ph: 'Nome', w: '.8fr' },
+            { k: 'cost', ph: '€', n: true, w: '.65fr' }, { k: 'margin', ph: '%', n: true, w: '.5fr' }, { k: '_p', ro: l => escapeHtml(fmtEUR(ppResalePrice(l))), w: '.75fr' },
+            { k: 'pay', ph: 'Pagamento', sel: v => PP_RS_PAY.map(([k, t]) => `<option value="${k}"${(v || 'split') === k ? ' selected' : ''}>${t}</option>`).join(''), w: '1fr' }], { empty: 'Sem outros serviços nesta proposta.' })}
+          <div class="pp-btnrow"><button type="button" class="text-btn" data-act="add" data-path="content.resale.lines" data-tpl='{"t":"","b":"","sup":"","cost":null,"margin":15,"pay":"split"}'>+ Serviço</button></div>
           <div class="op-sum" id="pp-resale-sum"></div>
           ${(c.resale.lines || []).length ? `<label class="field-label">Nota por baixo da tabela</label>${area('content.resale.note', c.resale.note, 2, PP_RESALE_NOTE[en ? 'en' : 'pt'])}<div class="field-hint">Em branco, fica a nota acima.</div>` : ''}`,
         value: () => `
@@ -24051,9 +24158,13 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <div class="pp-th" style="grid-template-columns:2fr .6fr 1.3fr .9fr 52px"><span>Descrição</span><span>%</span><span>Fase do projeto (ao adjudicar)</span><span>Valor</span><span></span></div>
           ${rowsUI('content.pay.rows', c.pay.rows, [{ k: 't', ph: 'ex.: Adjudicação', w: '2fr' }, { k: 'pct', ph: '%', n: true, w: '.6fr' }, { k: 'stage', sel: stageOpts, w: '1.3fr' }, { k: '_v', ro: x => escapeHtml(fmtEUR(T.base * (Number(x.pct) || 0) / 100)), w: '.9fr' }], { empty: 'Sem faseamento.' })}
           ${c.value.lines.filter(l => l.kind === 'month').map(l => `<div class="pp-row pp-row-month" style="grid-template-columns:2fr .6fr 1.3fr .9fr 52px"><span>${escapeHtml(l.t || 'Avença')}</span><span class="muted">${escapeHtml(fmtEUR(l.u || 0))}/mês</span><span class="muted">${escapeHtml(fmtNum(l.q || 0))} meses (do valor)</span><span class="num">${escapeHtml(fmtEUR(ppLineAmount(l)))}</span><span></span></div>`).join('')}
+          ${(() => { const R = ppResalePay(c); return R.n ? `
+            <div class="pp-row pp-row-month" style="grid-template-columns:2fr .6fr 1.3fr .9fr 52px"><span>Outros serviços · na adjudicação</span><span class="muted">${R.award ? '50%' : '—'}</span><span class="muted">${R.n} ${R.n === 1 ? 'serviço' : 'serviços'} de parceiros</span><span class="num" data-ro="rs-award">${escapeHtml(fmtEUR(R.award))}</span><span></span></div>
+            <div class="pp-row pp-row-month" style="grid-template-columns:2fr .6fr 1.3fr .9fr 52px"><span>Outros serviços · na entrega</span><span class="muted" data-ro="rs-end-pct">${R.endPct ? R.endPct + '%' : '—'}</span><span class="muted">escolhe em Outros serviços</span><span class="num" data-ro="rs-end">${escapeHtml(fmtEUR(R.end))}</span><span></span></div>` : ''; })()}
           <div class="pp-total"><span>Soma das percentagens</span><b class="num ${Math.abs(T.pctSum - 100) > 0.01 && c.pay.rows.length ? 'warn-text' : ''}" id="pp-pct-sum">${escapeHtml(fmtNum(T.pctSum))}%</b></div>
+          ${!T.base && c.pay.rows.length && ppResalePay(c).n ? '<div class="field-hint">Esta proposta não tem honorários da NOVA com valor: as percentagens acima não entram no PDF, só os outros serviços.</div>' : ''}
           <div class="pp-btnrow"><button type="button" class="text-btn" data-act="add" data-path="content.pay.rows" data-tpl='{"t":"","pct":0,"stage":null}'>+ Linha</button><button type="button" class="text-btn" data-act="pay-model">Repor do modelo de fases</button></div>
-          <div class="field-hint">As percentagens aplicam-se ao valor sem as avenças mensais. A «fase do projeto» diz em que fase cada pagamento entra quando a proposta for adjudicada.</div>`,
+          <div class="field-hint">As percentagens aplicam-se ao valor sem as avenças mensais. A «fase do projeto» diz em que fase cada pagamento entra quando a proposta for adjudicada. Os outros serviços (parceiros) pagam-se 50% na adjudicação e 50% na entrega, ou 100% na entrega: escolhe-se em Outros serviços.</div>`,
         moneyText: () => `
           <label class="field-label" style="margin-top:0;">Abertura do valor</label>
           ${introUI('content.value.intro', 'value_intro')}
@@ -24341,6 +24452,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         ppDiscPh();
         c.pay.rows.forEach((x, i) => { const el = view.querySelector(`[data-ro="content.pay.rows.${i}._v"]`); if (el) el.textContent = fmtEUR(T2.base * (Number(x.pct) || 0) / 100); });
         (c.resale?.lines || []).forEach((l, i) => { const el = view.querySelector(`[data-ro="content.resale.lines.${i}._p"]`); if (el) el.textContent = fmtEUR(ppResalePrice(l)); });
+        { const R = ppResalePay(c), q = k => view.querySelector(`[data-ro="${k}"]`);
+          if (q('rs-award')) q('rs-award').textContent = fmtEUR(R.award); if (q('rs-end')) q('rs-end').textContent = fmtEUR(R.end); if (q('rs-end-pct')) q('rs-end-pct').textContent = R.endPct ? R.endPct + '%' : '—'; }
         (pp.specialties || []).forEach((s, i) => { const el = view.querySelector(`[data-ro="specialties.${i}._t"]`); if (el) el.textContent = fmtEUR(s.mode === 'm2' ? (Number(s.value) || 0) * (Number(pp.area) || 0) : Number(s.value) || 0); });
         (c.timeline?.rows || []).forEach((r, i) => { const el = view.querySelector(`[data-ro="content.timeline.rows.${i}._d"]`); if (el) el.textContent = ppTlDates(r); });
         const tot = document.getElementById('pp-total'); if (tot) tot.textContent = fmtEUR(T2.total);
@@ -24726,8 +24839,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const eurNeg = n => n < 0 ? `€\u00a0(${grp(-n, 2)})` : eur(n);
       const nf = n => { const v = Number(n) || 0; return Number.isInteger(v) ? grp(v, 0) : grp(v, 2).replace(/,?0+$/, ''); };
       const L = en
-        ? { scope: 'Scope', value: 'Value', resale: 'Other Services', pay: 'Payment Phasing', timeline: 'Timeline', opt: 'Optional Services', excl: 'Exclusions', desc: 'Description', val: 'Value', units: 'Units', unit: 'Value p/ Unit', tot: 'Total Value', total: 'Total', monthly: 'monthly fee', client: 'Client', valid: n => `This proposal is valid for ${n} days.`, manifesto: 'A NOVA home. Manifesto.' }
-        : { scope: 'Âmbito', value: 'Valor', resale: 'Outros Serviços', pay: 'Condições de Pagamento', timeline: 'Timeline', opt: 'Opcionais de Projeto', excl: 'Exclusões de Projeto', desc: 'Descrição', val: 'Valor', units: 'Unid.', unit: 'Valor unit.', tot: 'Valor total', total: 'Total', monthly: 'mensal', client: 'Cliente', valid: n => `Esta proposta é válida por ${n} dias.`, manifesto: 'Uma casa NOVA. Manifesto.' };
+        ? { scope: 'Scope', value: 'Value', resale: 'Other Services', rsAward: 'Other services · on award', rsEnd: 'Other services · on delivery', pay: 'Payment Phasing', timeline: 'Timeline', opt: 'Optional Services', excl: 'Exclusions', desc: 'Description', val: 'Value', units: 'Units', unit: 'Value p/ Unit', tot: 'Total Value', total: 'Total', monthly: 'monthly fee', client: 'Client', valid: n => `This proposal is valid for ${n} days.`, manifesto: 'A NOVA home. Manifesto.' }
+        : { scope: 'Âmbito', value: 'Valor', resale: 'Outros Serviços', rsAward: 'Outros serviços · na adjudicação', rsEnd: 'Outros serviços · na entrega', pay: 'Condições de Pagamento', timeline: 'Timeline', opt: 'Opcionais de Projeto', excl: 'Exclusões de Projeto', desc: 'Descrição', val: 'Valor', units: 'Unid.', unit: 'Valor unit.', tot: 'Valor total', total: 'Total', monthly: 'mensal', client: 'Cliente', valid: n => `Esta proposta é válida por ${n} dias.`, manifesto: 'Uma casa NOVA. Manifesto.' };
       const T = ppTotals(c);
       const client = ppClientName(pp, S.d) || pp.title || '';
       const docDate = parseDateKey(ppDocDate(pp));
@@ -24852,15 +24965,19 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         });
       }
       // Pagamento
-      if (c.pay.rows.length || T.monthly) {
+      const RSP = ppResalePay(c);
+      if (c.pay.rows.length || T.monthly || RSP.total) {
         h2(L.pay);
         p(md(c.pay.intro?.t));
         const cols = '2.4fr 1fr 1fr';
         unit(() => {
         B.push(row(`<span>${e(L.desc)}</span><span class="r">%</span><span class="r">${e(L.val)}</span>`, 'th', cols));
-        c.pay.rows.forEach(x => B.push(row(`<span>${e(x.t)}</span><span class="r">${e(nf(x.pct))}%</span><span class="r">${e(eur(T.base * (Number(x.pct) || 0) / 100))}</span>`, '', cols)));
+        // sem honorários com valor (ex.: proposta só de serviços de parceiros) as percentagens não se mostram a 0 €
+        if (T.base > 0) c.pay.rows.forEach(x => B.push(row(`<span>${e(x.t)}</span><span class="r">${e(nf(x.pct))}%</span><span class="r">${e(eur(T.base * (Number(x.pct) || 0) / 100))}</span>`, '', cols)));
         c.value.lines.filter(l => l.kind === 'month').forEach(l => B.push(row(`<span>${e(l.t)}</span><span class="r">${e(eur(l.u))} ${e(L.monthly)}</span><span class="r">${e(eur(ppLineAmount(l)))}</span>`, '', cols)));
-        B.push(row(`<span>${e(L.total)}</span><span class="r">${T.monthly ? '' : e(nf(T.pctSum)) + '%'}</span><span class="r">${e(eur(T.total))}</span>`, 'tot', cols));
+        if (RSP.award) B.push(row(`<span>${e(L.rsAward)}</span><span class="r">50%</span><span class="r">${e(eur(RSP.award))}</span>`, '', cols));
+        if (RSP.end) B.push(row(`<span>${e(L.rsEnd)}</span><span class="r">${RSP.endPct ? RSP.endPct + '%' : ''}</span><span class="r">${e(eur(RSP.end))}</span>`, '', cols));
+        B.push(row(`<span>${e(L.total)}</span><span class="r">${T.monthly || RSP.total ? '' : e(nf(T.pctSum)) + '%'}</span><span class="r">${e(eur(T.total + RSP.total))}</span>`, 'tot', cols));
         // Notas e condições de pagamento condensadas numa só nota por baixo da tabela. As condições de
         // sempre (fatura no marco, pagamento a pronto, suspensão e juros) viram um texto curto; condições
         // próprias (ex.: outro prazo) entram tal como foram escritas.
