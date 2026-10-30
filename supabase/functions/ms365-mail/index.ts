@@ -5,6 +5,7 @@
 // check:     vê se o email de uma proposta já saiu (o rascunho, ou o .eml enviado e encontrado nos Itens Enviados pelo
 //            assunto); se saiu, a proposta passa a enviada com a hora do envio e o rascunho que sobrou vai para o lixo.
 // check_all: o mesmo para todas as propostas com rascunho por enviar (a app chama ao abrir o Pipeline e a Hoje).
+// note_draft: rascunho simples sem anexo (parabéns de aniversário) na caixa de correio de uma pessoa da equipa.
 // Usa a mesma aplicação do Entra que a ms365-sync (MS_TENANT_ID, MS_CLIENT_ID, MS_CLIENT_SECRET), com mais uma
 // permissão de aplicação: Mail.ReadWrite (consentimento do administrador). Ids imutáveis, para o rascunho manter
 // o mesmo id depois de enviado.
@@ -154,6 +155,34 @@ Deno.serve(async (req) => {
       const mail = { id: msg.id, link: msg.webLink || null, by: mailbox, by_member: who.id, created_at: new Date().toISOString(), status: "draft", subject: body.subject || "", ref: body.ref || "", to: body.to || [] };
       await db.from("fee_proposals").update({ content: { ...(pr.data.content || {}), mail } }).eq("id", pr.data.id);
       return json({ ok: true, webLink: msg.webLink, id: msg.id });
+    }
+
+    // note_draft: rascunho simples (ex.: parabéns no aniversário do cliente) na caixa de correio de uma pessoa da equipa
+    // (por omissão, de quem chama). Os parabéns ficam registados em app_settings.bday_mails, para a Hoje saber que já estão.
+    if (body.action === "note_draft") {
+      const m = await db.from("team_members").select("id, email").eq("id", body.member_id || who.id).eq("active", true).maybeSingle();
+      const owner = m.data?.email ? m.data : who;
+      const mailbox = String(owner.email).toLowerCase();
+      const rec = (l: string[] = []) => l.map((a) => String(a).trim()).filter((a) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(a)).map((address) => ({ emailAddress: { address } }));
+      let msg: any;
+      try {
+        msg = await g("POST", `/users/${encodeURIComponent(mailbox)}/messages`, {
+          subject: String(body.subject || "").slice(0, 250),
+          body: { contentType: "HTML", content: String(body.html || "") },
+          toRecipients: rec(body.to),
+        }, IMMUTABLE);
+      } catch (e: any) {
+        console.error("ms365-mail note_draft:", e.status, e.message, "roles:", roles.join(","));
+        if (noPermission(e)) return json({ error: "permission", detail: e.message, status: e.status, roles, mailbox });
+        throw e;
+      }
+      if (body.kind === "bday" && body.client_id) {
+        const s = await db.from("app_settings").select("value").eq("key", "bday_mails").maybeSingle();
+        const v = s.data?.value || {};
+        v[body.client_id] = { year: Number(dayKey(new Date().toISOString()).slice(0, 4)), by: owner.id, at: new Date().toISOString() };
+        await db.from("app_settings").upsert({ key: "bday_mails", value: v, updated_at: new Date().toISOString() });
+      }
+      return json({ ok: true, webLink: msg.webLink, mailbox, mine: mailbox === String(who.email).toLowerCase() });
     }
 
     if (body.action === "check") {

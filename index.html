@@ -797,6 +797,10 @@
   .pp-mailstate.ok { color: var(--success, #2e7d4f); }
   .pp-actions { display: flex; flex-direction: column; gap: 6px; margin-top: var(--sp-2); }
   .pp-actions .primary-btn, .pp-actions .secondary-btn { margin: 0; }
+  .pp-fus { display: flex; flex-direction: column; gap: 6px; margin-top: var(--sp-2); font-size: var(--fs-xs); color: var(--text-2); }
+  .pp-fu { display: flex; flex-direction: column; gap: 1px; padding-left: 10px; border-left: 2px solid var(--border); }
+  .pp-fu b { font-weight: var(--fw-semibold); color: var(--text); }
+  .pp-fu span { color: var(--text-2); white-space: pre-wrap; }
   .pp-versions { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin-top: var(--sp-2); font-size: var(--fs-xs); color: var(--text-2); }
   .pp-sec { padding: 0; margin-bottom: var(--sp-2); }
   .pp-sec > summary { list-style: none; cursor: pointer; padding: var(--sp-3) var(--sp-4); font-weight: var(--fw-semibold); display: flex; align-items: center; gap: 10px; }
@@ -1740,6 +1744,13 @@
   .alert-text { flex: 1; min-width: 0; }
   .alert-text b { display: block; font-size: var(--fs-md); font-weight: var(--fw-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .alert-text span { display: block; font-size: var(--fs-sm); color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .alert-act { flex: none; width: auto; margin: 0; min-height: 30px; padding: 4px 12px; font-size: var(--fs-sm); white-space: nowrap; }
+  /* no telemóvel o botão do aviso passa para a linha de baixo, alinhado com o texto */
+  @media (max-width: 560px) {
+    .alert-row:has(.alert-act) { flex-wrap: wrap; row-gap: 6px; }
+    .alert-row:has(.alert-act) .alert-text { flex: 1 1 50%; }
+    .alert-row .alert-act { order: 9; margin-left: calc(22px + var(--sp-3)); }
+  }
   .alert-when { font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--warning); white-space: nowrap; }
   .alert-row.late .alert-when, .alert-row.soon .alert-when { color: var(--danger); }
   .alert-row.pause .alert-icon { background: var(--warning-soft); }
@@ -2981,6 +2992,9 @@
   .op-chip input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
   .op-chip span { display: inline-block; padding: 6px var(--sp-3); border: 1px solid var(--border); border-radius: var(--r-full); font-size: var(--fs-sm); color: var(--text-2); }
   .op-chip input:checked + span { background: var(--accent-soft); border-color: var(--accent); color: var(--text); font-weight: var(--fw-medium); }
+  button.op-chip { width: auto; margin: 0; padding: 0; border: 0; background: none; cursor: pointer; font: inherit; }
+  button.op-chip.on span { background: var(--accent-soft); border-color: var(--accent); color: var(--text); font-weight: var(--fw-medium); }
+  button.op-chip:focus-visible { outline: none; } button.op-chip:focus-visible span { outline: 2px solid var(--accent); outline-offset: 2px; }
   .op-chip input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
   .op-spec { display: grid; grid-template-columns: minmax(0, 1fr) 110px 90px 96px 32px; gap: var(--sp-2); align-items: center; margin-bottom: var(--sp-2); }
   #ps-lines .op-spec { grid-template-columns: minmax(0, 1fr) 110px 90px 32px; }
@@ -14758,7 +14772,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             <div class="invoice-row"><span>Email</span><span>${c.email ? `<a class="text-btn" href="mailto:${escapeHtml(c.email)}">${escapeHtml(c.email)}</a>` : '—'}</span></div>
             <div class="invoice-row"><span>Telefone</span><span>${c.phone ? `<a class="text-btn" href="tel:${escapeHtml(c.phone.replace(/[^\d+]/g, ''))}">${escapeHtml(c.phone)}</a>` : '—'}</span></div>
             <div class="invoice-row"><span>Morada</span><span>${escapeHtml(c.address || '—')}</span></div>
-            <div class="invoice-row"><span>Aniversário</span><span>${c.birthday ? escapeHtml(parseDateKey(c.birthday).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long' })) : '—'}</span></div>
+            <div class="invoice-row"><span>Aniversário</span><span>${c.birthday ? escapeHtml(parseDateKey(c.birthday).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long' })) + (c.email ? ' · <button type="button" class="text-btn" id="cl-bday-mail">Escrever parabéns</button>' : '') : '—'}</span></div>
             <div class="invoice-row"><span>Inquéritos de satisfação</span><span>${c.nps_opt_out ? 'Não enviar' : c.email ? 'Sim, em ' + (c.language === 'en' ? 'inglês' : 'português') : '<span class="warn-text">Falta o email</span>'}</span></div>
             ${c.notes ? `<div class="invoice-row"><span>Notas</span><span style="white-space:pre-wrap;text-align:right">${escapeHtml(c.notes)}</span></div>` : ''}
           </div>
@@ -14766,6 +14780,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const reopen = () => { suppressNavPush = true; openClientDetail(c.id); };
         document.getElementById('cl-edit').addEventListener('click', () => openClientModal(c, reopen));
         document.getElementById('cl-del').addEventListener('click', () => openDeleteClient(c));
+        document.getElementById('cl-bday-mail')?.addEventListener('click', () => openBdayMail(c.id));
         document.getElementById('cl-inv-card')?.addEventListener('click', async () => { await (oppsCache || loadOppsData()); openInvestorModal(civ, reopen); });
         document.getElementById('cl-add-entity').addEventListener('click', () => openEntityModal(c, null, reopen));
         document.getElementById('cl-add-pm').addEventListener('click', () => openPmModal(c, null, reopen));
@@ -16208,6 +16223,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <div class="alert-row team${urgent ? ' ' + urgent : ''}" data-alert-team="${r.kind}"${r.note ? ` data-note="${escapeHtml(r.note.id)}"` : ''}${r.project ? ` data-project="${escapeHtml(r.project)}"` : ''}${r.nps ? ` data-nps="${escapeHtml(r.nps)}"` : ''}${r.client ? ` data-client="${escapeHtml(r.client)}"` : ''}${r.ticket ? ` data-ticket="${escapeHtml(r.ticket)}"` : ''}${r.invoice ? ` data-invoice="${escapeHtml(r.invoice)}"` : ''}${r.co ? ` data-co-alert="${escapeHtml(r.co)}"` : ''}${r.proposal ? ` data-prop-alert="${escapeHtml(r.proposal)}"` : ''}${r.url ? ` data-url="${escapeHtml(r.url)}" role="link" tabindex="0"` : ''}>
             <span class="alert-icon" aria-hidden="true">${r.kind === 'hours' ? '◷' : r.kind === 'camara' ? '§' : r.kind === 'nps' ? '★' : r.kind === 'debt' ? '€' : r.kind === 'law' || r.kind === 'legal' ? '§' : r.kind === 'radar' ? '◎' : r.kind === 'meet' ? '▶' : r.kind === 'transcript' ? '≡' : r.kind === 'bday' ? '✦' : r.kind === 'ticket' ? '💡' : r.kind === 'absence' ? '◐' : r.kind === 'data' ? '!' : r.kind === 'payrem' ? '€' : r.kind === 'co' ? 'Ⓣ' : r.kind === 'pipe' ? '✉' : '+'}</span>
             <span class="alert-text"><b>${escapeHtml(r.title)}</b><span>${escapeHtml(r.sub)}</span></span>
+            ${r.act ? `<button type="button" class="secondary-btn alert-act" data-act="${escapeHtml(r.act.a)}">${escapeHtml(r.act.label)}</button>` : ''}
             <span class="alert-when">${escapeHtml(r.when)}</span>
           </div>` });
       });
@@ -16263,6 +16279,13 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       });
       el.querySelectorAll('[data-alert-marco]').forEach(r => r.addEventListener('click', () =>
         openMarcoModal({ milestoneId: r.dataset.alertMarco, onSuccess: () => renderToday() })));
+      // botão de ação no próprio aviso (ex.: «Feito» no follow-up, «Escrever parabéns»)
+      el.querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', e => {
+        e.stopPropagation();
+        const r = b.closest('[data-alert-team]');
+        if (b.dataset.act === 'fu') openFollowupDone(r.dataset.propAlert, () => renderToday());
+        else if (b.dataset.act === 'bday') openBdayMail(r.dataset.client, () => renderToday());
+      }));
       el.querySelectorAll('[data-alert-team]').forEach(r => r.addEventListener('click', () => {
         const k = r.dataset.alertTeam;
         if (k === 'meet') window.open(r.dataset.url, '_blank', 'noopener');
@@ -16691,6 +16714,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       if (devMode) rows = MOCK_CLIENT_ROWS.filter(c => c.birthday);
       else { const r = await supabase.from('clients').select('id, name, email, phone, birthday').not('birthday', 'is', null); rows = r.error ? [] : (r.data || []); }
       const today = dateKey(new Date()), y = Number(today.slice(0, 4));
+      // parabéns já preparados este ano (rascunho no Outlook)
+      let sent = {};
+      if (devMode) sent = mockBdayMails;
+      else if (rows.length) { const r = await supabase.from('app_settings').select('value').eq('key', 'bday_mails').maybeSingle(); sent = r.data?.value || {}; }
+      const done = id => sent[id]?.year === y && sent[id]?.at && dateKey(new Date(sent[id].at)) >= addDaysKey(today, -7);
+      await loadMemberNames(Object.values(sent).map(x => x.by)).catch(() => {});
       const next = b => {
         const md = String(b).slice(5, 10);
         const on = yy => { const leap = (yy % 4 === 0 && yy % 100 !== 0) || yy % 400 === 0; return `${yy}-${md === '02-29' && !leap ? '02-28' : md}`; };
@@ -16699,10 +16728,53 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       return rows.map(c => ({ c, day: next(c.birthday) })).map(x => ({ ...x, d: diffDays(today, x.day) })).filter(x => x.d >= 0 && x.d <= 7)
         .sort((a, b) => a.d - b.d).map(({ c, day, d }) => {
           const by = Number(String(c.birthday).slice(0, 4)), age = by > 1900 ? Number(day.slice(0, 4)) - by : null;
+          const ok = done(c.id), prep = ok ? ataMemberNames[sent[c.id].by] : '';
           return { kind: 'bday', client: c.id, due: day, title: `${d === 0 ? 'Hoje faz anos' : 'Aniversário'}: ${c.name}${age ? ` (${age} anos)` : ''}`,
-            sub: [d === 0 ? 'hoje' : d === 1 ? 'amanhã' : parseDateKey(day).toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' }), c.phone, c.email].filter(Boolean).join(' · '),
-            when: d === 0 ? 'Hoje' : d === 1 ? 'Amanhã' : `Em ${d} dias`, today: d === 0 };
+            sub: [d === 0 ? 'hoje' : d === 1 ? 'amanhã' : parseDateKey(day).toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' }), ok ? `parabéns nos Rascunhos do Outlook${prep ? ' de ' + prep : ''}` : '', c.phone, c.email].filter(Boolean).join(' · '),
+            when: d === 0 ? 'Hoje' : d === 1 ? 'Amanhã' : `Em ${d} dias`, today: d === 0, act: d <= 1 && c.email && !ok ? { a: 'bday', label: 'Escrever parabéns' } : null };
         });
+    }
+
+    // Parabéns por email: rascunho no Outlook de quem gere o cliente (dono do projeto mais recente, ou da última
+    // proposta; sem nenhum, de quem carrega no botão), com a assinatura dessa pessoa. Revê-se e envia-se no Outlook.
+    const BDAY_MAIL = {
+      pt: '{saudacao}\n\nHoje é um dia especial e não o queríamos deixar passar sem lhe dar os parabéns.\n\nDesejamos-lhe um excelente dia, na companhia de quem mais gosta, e um novo ano cheio de saúde, alegria e bons projetos.\n\nUm abraço de toda a equipa NOVA,',
+      en: '{saudacao}\n\nToday is a special day and we did not want to let it pass without wishing you a very happy birthday.\n\nWe hope you have a wonderful day with the people you love, and a year ahead full of health, joy and good projects.\n\nWarm regards from all of us at NOVA,'
+    };
+    let mockBdayMails = {};
+    async function clientMailOwner(clientId) {
+      if (devMode) return MOCK_MEMBER;
+      const [pj, pr] = await Promise.all([
+        supabase.from('projects').select('owner_id, pm_id').eq('client_id', clientId).is('archived_at', null).order('created_at', { ascending: false }).limit(1),
+        supabase.from('fee_proposals').select('owner_id, created_by').eq('client_id', clientId).order('created_at', { ascending: false }).limit(1)]);
+      const a = pj.data?.[0] || {}, b = pr.data?.[0] || {};
+      const id = a.owner_id || a.pm_id || b.owner_id || b.created_by;
+      const m = id ? (await supabase.from('team_members').select('id, name, email, role').eq('id', id).eq('active', true).maybeSingle()).data : null;
+      return m || await getCurrentMember();
+    }
+    let bdayBusy = false;
+    async function openBdayMail(clientId, onDone) {
+      if (bdayBusy) return;
+      bdayBusy = true;
+      try {
+        const c = devMode ? MOCK_CLIENT_ROWS.find(x => x.id === clientId) : (await supabase.from('clients').select('id, name, email, language').eq('id', clientId).maybeSingle()).data;
+        if (!c) throw new Error('cliente não encontrado');
+        if (!c.email) throw new Error(`${c.name} não tem email na ficha. Escreve-o lá e volta a tentar.`);
+        showToast('A preparar os parabéns…');
+        const en = c.language === 'en', owner = await clientMailOwner(c.id), firsts = mailFirsts(c.name, en);
+        const text = BDAY_MAIL[en ? 'en' : 'pt'].replace('{saudacao}', en ? (firsts ? `Dear ${firsts},` : 'Hello,') : (firsts ? `Olá ${firsts},` : 'Olá,'));
+        const html = ppMailHtml(text, await memberSignature(owner || {}).catch(() => ''));
+        const subject = en ? `Happy birthday${firsts ? ', ' + firsts : ''}!` : `Parabéns${firsts ? ', ' + firsts : ''}!`;
+        const r = devMode ? { data: { ok: true, webLink: 'about:blank', mine: true } }
+          : await supabase.functions.invoke('ms365-mail', { body: { action: 'note_draft', kind: 'bday', client_id: c.id, member_id: owner?.id || null, to: [c.email], subject, html } });
+        const res = r.data || {};
+        if (r.error || !res.ok) throw new Error(res.error === 'permission' ? `o Office 365 recusou criar o email na caixa ${res.mailbox || ''}` : (res.error || r.error?.message || 'erro desconhecido'));
+        if (devMode) { mockBdayMails[c.id] = { year: new Date().getFullYear(), by: owner?.id, at: new Date().toISOString() }; window.__lastBday = { to: [c.email], subject, html, owner: owner?.name }; }
+        showToast(res.mine ? 'Os parabéns estão nos teus Rascunhos do Outlook: revê e carrega em Enviar.' : `Os parabéns ficaram nos Rascunhos do Outlook de ${owner?.name || 'quem gere o cliente'}, prontos a rever e enviar.`,
+          { ms: 10000, undo: res.mine && res.webLink && res.webLink !== 'about:blank' ? () => window.open(res.webLink, '_blank') : null, undoLabel: 'Abrir na web' });
+        onDone && onDone();
+      } catch (err) { showToast('Não foi possível preparar os parabéns: ' + err.message, { type: 'error', ms: 12000 }); }
+      finally { bdayBusy = false; }
     }
 
     async function renderToday() {
@@ -17567,6 +17639,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         steps: ['As regras estão em [[Definições]] → **Lembretes de pagamento**: dias (15 e 30), a partir de que data, e o **IBAN** que vai no email.', 'O email sai em português ou inglês (língua do cliente) com o número, a data, o valor em dívida (se já pagou uma parte, só o que falta) e o IBAN. O responsável do projeto vai em cópia oculta e recebe as respostas.', 'Em cada projeto, [[Dados]] → **Project manager do cliente** → escolhe se os lembretes vão ao **cliente**, ao **PM** ou aos **dois**.', 'Na véspera, a [[Hoje]] avisa «Amanhã sai um lembrete…»: toca para **travar** (ex.: há um acordo de pagamento).', 'Na própria fatura há **Não enviar lembretes de pagamento**.', 'Para os emails saírem é preciso o envio de email ligado (o mesmo do NPS).'],
         kw: 'lembrete lembretes pagamento fatura faturas cobranca cobrar divida email automatico cliente pronto pagamento iban atraso pagamento',
         tour: [{ go: 'settings:payrem', sel: '#settings-payrem-container', text: 'As regras dos lembretes de pagamento.' }] },
+      { id: 'parabens', cat: 'clients', ctx: ['client', 'home'],
+        q: 'dou os parabéns a um cliente no dia de anos',
+        a: 'A Hoje avisa 7 dias antes e no dia. Na véspera e no dia aparece «Escrever parabéns»: o email fica nos Rascunhos do Outlook de quem gere o cliente, com a assinatura dessa pessoa, pronto a rever e enviar.',
+        steps: ['Escreve a data de **Aniversário** na ficha do cliente (o ano é opcional) e confirma que tem **email**.', 'A [[Hoje]] avisa 7 dias antes. Na véspera e no próprio dia, o aviso mostra [[Escrever parabéns]] (também está na ficha do cliente, ao lado do aniversário).', 'O email vai para os **Rascunhos do Outlook** de quem gere o cliente: o responsável do projeto mais recente ou, sem projeto, de quem fez a última proposta. Sem nenhum, fica nos teus. Leva a assinatura dessa pessoa e sai na língua do cliente.', 'Abre o Outlook, revê e carrega em **Enviar**. O aviso passa a dizer de quem são os Rascunhos onde ficou.'],
+        kw: 'aniversario anos parabens felicitacao cliente email outlook rascunho data nascimento' },
       { id: 'pm-cliente', cat: 'clients', ctx: ['detail', 'client'],
         q: 'registo o project manager do cliente num projeto',
         a: 'Abre o projeto → Dados → Project manager do cliente → Escolher. Os PMs ficam guardados na ficha do cliente e servem para todos os projetos dele.',
@@ -17760,8 +17837,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { id: 'pipeline', cat: 'opps', ctx: ['pipeline', 'proposal', 'home'], first: 3,
         q: 'acompanho o pipeline de propostas (follow-up, versões, perdidas)',
         a: 'Clientes → Pipeline: propostas por estado, valor em aberto e ponderado, taxa de sucesso. A Hoje avisa os follow-ups e as validades; à segunda, o Daybreak mostra o resumo.',
-        steps: ['Em [[Pipeline]] as propostas estão por estado: **Rascunho → Enviada → Em negociação → Adjudicada / Perdida**. Em cima, o valor em aberto, o ponderado (valor × probabilidade), o adjudicado no ano, a taxa de sucesso e os dias até à decisão.', 'Na proposta, toca em [[Marcar como enviada]]: a app marca o **follow-up para daqui a 7 dias** e avisa-te na Hoje nesse dia. Também avisa 5 dias antes de acabar a validade.', 'O cliente pediu alterações? Toca em [[Nova versão]]: passa a **V2** com o mesmo CST e a V1 fica no histórico.', 'Não avançou? [[Perdida]] e escolhe o motivo — ajuda a perceber onde perdemos.', 'No primeiro dia útil de cada semana, o **Daybreak** mostra o resumo do pipeline e as propostas paradas.', 'O **custo de aquisição por cliente** soma as horas de Angariação (× custo/hora), as despesas de Representação, Marketing e Angariação e as comissões a angariadores das propostas adjudicadas, a dividir pelos clientes que já temos. Por baixo, quanto passa a valer se a próxima proposta for adjudicada. A comissão de cada proposta escreve-se no painel do Pipeline da proposta.'],
-        kw: 'pipeline propostas follow-up seguimento validade versao v2 perdida motivo taxa sucesso ponderado probabilidade negociacao daybreak segunda custo aquisicao cliente cac angariacao comissao angariador',
+        steps: ['Em [[Pipeline]] as propostas estão por estado: **Rascunho → Enviada → Em negociação → Adjudicada / Perdida**. Em cima, o valor em aberto, o ponderado (valor × probabilidade), o adjudicado no ano, a taxa de sucesso e os dias até à decisão.', 'Na proposta, toca em [[Marcar como enviada]]: a app marca o **follow-up para daqui a 7 dias** e avisa-te na Hoje nesse dia. Também avisa 5 dias antes de acabar a validade.', 'Falaste com o cliente? Toca em [[Follow-up feito]], na proposta ou no próprio aviso da Hoje: escreves o que ficou combinado e marcas o próximo follow-up (1 semana por omissão, ou **Sem próximo**). O aviso sai e o contacto fica no histórico da proposta.', 'O cliente pediu alterações? Toca em [[Nova versão]]: passa a **V2** com o mesmo CST e a V1 fica no histórico.', 'Não avançou? [[Perdida]] e escolhe o motivo — ajuda a perceber onde perdemos.', 'No primeiro dia útil de cada semana, o **Daybreak** mostra o resumo do pipeline e as propostas paradas.', 'O **custo de aquisição por cliente** soma as horas de Angariação (× custo/hora), as despesas de Representação, Marketing e Angariação e as comissões a angariadores das propostas adjudicadas, a dividir pelos clientes que já temos. Por baixo, quanto passa a valer se a próxima proposta for adjudicada. A comissão de cada proposta escreve-se no painel do Pipeline da proposta.'],
+        kw: 'pipeline propostas follow-up feito contacto cliente seguimento validade versao v2 perdida motivo taxa sucesso ponderado probabilidade negociacao daybreak segunda custo aquisicao cliente cac angariacao comissao angariador',
         tour: [{ go: 'nav:pipeline', sel: '.pp-kpis', text: 'O resumo do pipeline.' }] },
       { id: 'proposta-aceite', cat: 'opps', ctx: ['proposal'],
         q: 'passo uma proposta adjudicada a projeto',
@@ -23901,6 +23978,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const [d, cfg, modelData, hist, hc, lib, members, meM] = await Promise.all([loadOppsData(), loadProposalCfg(), loadPhaseModelData(), loadHoursHistory().catch(() => []),
           computeHourCost().catch(() => null), loadPropLib().catch(() => []), loadAllMembers().catch(() => []), getCurrentMember()]);
         const autoCph = hc?.total ? Math.round(hc.total * 100) / 100 : null;
+        members.forEach(m => { ataMemberNames[m.id] = m.name; });
         oppsCache = d;
         let pp = proposalId ? d.proposals.find(x => String(x.id) === String(proposalId)) : null;
         if (proposalId && !pp) { view.innerHTML = '<div class="error-box">Proposta não encontrada.</div>'; return; }
@@ -24255,10 +24333,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
                 <div><label class="field-label">Comissão (€)</label><input type="text" inputmode="decimal" class="form-input" data-pp="content.referral.value" data-n value="${escapeHtml(c.referral?.value ?? '')}" placeholder="0"></div>
               </div>
               ${S.cacInfo ? `<div class="field-hint" id="pp-cac-hint">${S.cacInfo}</div>` : ''}
+              ${(c.followups || []).length ? `<div class="pp-fus"><span>Follow-ups feitos</span>${c.followups.slice(-5).reverse().map(f => `<div class="pp-fu"><b>${escapeHtml(fmtDayMonth(f.on))}${ataMemberNames[f.by] ? ' · ' + escapeHtml(ataMemberNames[f.by]) : ''}</b>${f.note ? `<span>${escapeHtml(f.note)}</span>` : ''}</div>`).join('')}</div>` : ''}
               ${exp && PIPE_OPEN.includes(pp.status) && pp.status !== 'draft' ? `<div class="field-hint ${left < 0 ? 'warn-text' : ''}">${left < 0 ? 'Fora de validade desde ' + escapeHtml(fmtDayMonth(exp)) + ' — faz uma nova versão ou marca como perdida.' : 'Válida até ' + escapeHtml(fmtDayMonthYear(exp)) + (left <= 5 ? ` (${left} ${left === 1 ? 'dia' : 'dias'})` : '')}</div>` : ''}
               ${pp.status === 'declined' ? `<div class="field-hint">Perdida${pp.lost_reason ? ': ' + escapeHtml(optLabel(LOST_REASONS, pp.lost_reason)) : ''}${pp.lost_note ? ' — ' + escapeHtml(pp.lost_note) : ''}</div>` : ''}
               <div class="pp-actions">
                 ${pp.status === 'draft' ? '<button type="button" class="secondary-btn" data-pa="sent">Marcar como enviada</button>' : ''}
+                ${['sent', 'negotiation'].includes(pp.status) ? '<button type="button" class="secondary-btn" data-pa="fu">Follow-up feito</button>' : ''}
                 ${pp.status === 'sent' ? '<button type="button" class="secondary-btn" data-pa="negotiation">Em negociação</button>' : ''}
                 ${PIPE_OPEN.includes(pp.status) ? (pp.status !== 'draft' ? '<button type="button" class="secondary-btn" data-pa="version">Nova versão (V' + ((pp.version || 1) + 1) + ')</button>' : '') + '<button type="button" class="primary-btn" data-pa="accept">Adjudicada → criar projeto</button><button type="button" class="text-btn danger-text" data-pa="lost">Perdida</button>' : ''}
                 ${pp.status === 'declined' ? '<button type="button" class="secondary-btn" data-pa="reopen">Reabrir</button>' : ''}
@@ -24606,6 +24686,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               pp.content.mail = m; row.content = pp.content;
               if (justSent && !extra.status) ['status', 'sent_on', 'followup_on', 'probability'].forEach(k => { row[k] = cur.data[k]; pp[k] = cur.data[k]; });
             }
+            // follow-ups registados noutro sítio (ex.: na Hoje) enquanto esta proposta estava aberta
+            const fu = cur.data?.content?.followups || [];
+            if (fu.length > (pp.content.followups || []).length) {
+              pp.content.followups = fu; row.content = pp.content;
+              if (!('followup_on' in extra)) { row.followup_on = cur.data.followup_on; pp.followup_on = cur.data.followup_on; }
+            }
           }
           await dbUpdate('fee_proposals', pp.id, row, mockProposals);
         }
@@ -24657,6 +24743,55 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       showToast(`Proposta ${ppRef(r)} guardada como rascunho — continua no Pipeline quando quiseres`);
       if (currentViewState?.name === 'pipeline') { suppressNavPush = true; openPipelineModule(); }
     }
+    // «Follow-up feito»: regista o contacto (data, nota, quem) no histórico da proposta e marca o próximo
+    // follow-up (7 dias por omissão) ou nenhum. O aviso da Hoje sai logo.
+    async function openFollowupDone(id, onDone) {
+      let p;
+      try {
+        if (devMode) p = mockProposals.find(x => x.id === id);
+        else { const r = await supabase.from('fee_proposals').select('id, ref, number, version, client_name, title, status, followup_on, content').eq('id', id).maybeSingle(); if (r.error) throw r.error; p = r.data; }
+        if (!p) throw new Error('proposta não encontrada');
+      } catch (err) { showError('abrir a proposta', err); return; }
+      const today = dateKey(new Date());
+      const next0 = addDaysKey(today, 7);
+      openQuickModal(`Follow-up feito · ${ppRef(p)}`, `
+        <div class="field-hint" style="margin-top:0;">${escapeHtml(p.client_name || p.title || '')}</div>
+        <div class="form-grid">
+          <div><label class="field-label">Quando</label><input type="date" id="fd-on" class="form-input" value="${today}" max="${today}"></div>
+          <div><label class="field-label">Próximo follow-up</label><input type="date" id="fd-next" class="form-input" value="${next0}" min="${today}"></div>
+        </div>
+        <div class="op-chips" id="fd-chips" style="margin-top:var(--sp-2)">${[[3, '3 dias'], [7, '1 semana'], [14, '2 semanas'], [30, '1 mês'], [0, 'Sem próximo']].map(([n, l]) => `<button type="button" class="op-chip${n === 7 ? ' on' : ''}" data-days="${n}"><span>${l}</span></button>`).join('')}</div>
+        <label class="field-label">O que ficou combinado? (opcional)</label>
+        <textarea id="fd-note" class="form-input" rows="3" placeholder="ex.: está a comparar com outro atelier; decide até ao fim do mês"></textarea>
+        <button type="button" class="primary-btn" id="fd-go">Registar follow-up</button><div id="fd-msg" class="form-msg"></div>`);
+      const nextEl = document.getElementById('fd-next');
+      const chips = [...document.querySelectorAll('#fd-chips [data-days]')];
+      const mark = b => chips.forEach(x => x.classList.toggle('on', x === b));
+      chips.forEach(b => b.addEventListener('click', () => {
+        const n = Number(b.dataset.days);
+        nextEl.value = n ? addDaysKey(document.getElementById('fd-on').value || today, n) : '';
+        mark(b);
+      }));
+      nextEl.addEventListener('input', () => mark(nextEl.value ? null : chips.find(x => x.dataset.days === '0')));
+      document.getElementById('fd-go').addEventListener('click', async () => {
+        const on = document.getElementById('fd-on').value || today, next = nextEl.value || null;
+        if (on > today) return formError('fd-msg', 'O follow-up não pode ser no futuro.');
+        if (next && next < today) return formError('fd-msg', 'O próximo follow-up tem de ser de hoje em diante.');
+        const btn = document.getElementById('fd-go'); btn.disabled = true;
+        try {
+          const me = (await getCurrentMember())?.id ?? null;
+          // lê de novo, para não apagar o que outra pessoa gravou entretanto
+          const cur = devMode ? p : ((await supabase.from('fee_proposals').select('content').eq('id', id).maybeSingle()).data || p);
+          const content = { ...(cur.content || {}) };
+          content.followups = [...(content.followups || []), { on, note: document.getElementById('fd-note').value.trim() || null, by: me, next, at: new Date().toISOString() }];
+          await dbUpdate('fee_proposals', id, { content, followup_on: next, updated_at: new Date().toISOString() }, mockProposals);
+          if (proposalState?.pp?.id === id) { proposalState.pp.content.followups = content.followups; proposalState.pp.followup_on = next; }
+          closeQuickModal();
+          showToast(next ? `Follow-up registado · o próximo é a ${fmtDayMonth(next)}` : 'Follow-up registado · sem próximo marcado');
+          onDone && onDone();
+        } catch (err) { btn.disabled = false; formError('fd-msg', 'Não foi possível gravar: ' + err.message); }
+      });
+    }
     // Ações do pipeline: enviada, negociação, nova versão, adjudicada, perdida, reabrir, eliminar
     async function ppAction(a) {
       const S = proposalState, pp = S.pp, d = S.d;
@@ -24668,6 +24803,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         if (!r) return;
         if (plot && ['registered', 'analysis', 'presented'].includes(plot.status)) await dbUpdate('land_plots', plot.id, { status: 'proposal' }, mockPlots).catch(() => {});
         showToast('Marcada como enviada · follow-up daqui a 7 dias'); reopen(r.id);
+      } else if (a === 'fu') {
+        const r = await ppSave(); if (!r) return;
+        openFollowupDone(pp.id, () => reopen(pp.id));
       } else if (a === 'negotiation') {
         const r = await ppSave({ status: 'negotiation', probability: Math.max(Number(pp.probability) || 0, PIPE_PROB.negotiation) }); if (r) reopen(r.id);
       } else if (a === 'reopen') {
@@ -25335,13 +25473,17 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         return { b64, filename: fileTitle + '.pdf', pages: pages.length };
       } finally { fr.remove(); }
     }
+    // Primeiro nome para a saudação («Ana», «Ana e Rui»); empresas e famílias ficam sem nome
+    function mailFirsts(name, en) {
+      const firm = /\b(fam[ií]lia|family|lda|l\.da|s\.?a\.?|unipessoal|promotora|imobili|invest|constru|grupo|sociedade|munic[ií]pio|mission[aá]rios|associa[cç][aã]o|funda[cç][aã]o|company|ltd|holding|capital)\b/i.test(name || '');
+      return firm || !name ? '' : name.split(/\s+(?:e|and|&)\s+/i).map(x => x.trim().split(/\s+/)[0]).filter(Boolean).join(en ? ' and ' : ' e ');
+    }
     // Texto do email: simples, próximo, sem fórmulas feitas
     function ppMailDraft(pp, S) {
       const c = pp.content, en = pp.language === 'en', d = S.d;
       const client = d.clients.find(x => x.id === pp.client_id);
       const name = ppClientName(pp, d) || '';
-      const firm = /\b(fam[ií]lia|family|lda|l\.da|s\.?a\.?|unipessoal|promotora|imobili|invest|constru|grupo|sociedade|munic[ií]pio|mission[aá]rios|associa[cç][aã]o|funda[cç][aã]o|company|ltd|holding|capital)\b/i.test(name);
-      const firsts = firm || !name ? '' : name.split(/\s+(?:e|and|&)\s+/i).map(x => x.trim().split(/\s+/)[0]).filter(Boolean).join(en ? ' and ' : ' e ');
+      const firsts = mailFirsts(name, en);
       const h = new Date().getHours();
       const hello = en ? (firsts ? `Hello ${firsts},` : 'Hello,') : `${h < 13 ? 'Bom dia' : h < 20 ? 'Boa tarde' : 'Boa noite'}${firsts ? ' ' + firsts : ''},`;
       const where = [c.cover.place, c.cover.region].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).join(', ');
@@ -25370,8 +25512,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       return `<div style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#1E1C1B;line-height:1.45">${paras.map(p => `<p style="margin:0 0 12px">${escapeHtml(p).replace(/\n/g, '<br>')}</p>`).join('')}</div>${sig ? `<div style="margin-top:4px">${sig}</div>` : ''}`;
     }
     // A assinatura de quem envia, a mesma de Brandbook → Assinatura de email
-    async function ppMailSignature(S) {
-      const me = S.me || {};
+    const ppMailSignature = S => memberSignature(S.me || {});
+    async function memberSignature(me) {
       let saved = {};
       if (devMode) saved = mockSigs;
       else { const r = await supabase.from('app_settings').select('value').eq('key', 'email_signatures').maybeSingle(); saved = r.data?.value || {}; }
@@ -25491,7 +25633,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const exp = ppExpiry(p), left = exp ? diffDays(today, exp) : null;
         if (p.followup_on && p.followup_on <= today) {
           const late = diffDays(p.followup_on, today);
-          out.push({ kind: 'pipe', proposal: p.id, late: late >= 3, title: `Follow-up: ${ppRef(p)} · ${who(p)}`, sub: `${p.total ? fmtEUR(p.total) + ' · ' : ''}enviada ${p.sent_on ? 'há ' + diffDays(p.sent_on, today) + ' dias' : ''}${late ? ` · follow-up atrasado ${late} ${late === 1 ? 'dia' : 'dias'}` : ''}`, when: 'Abrir' });
+          out.push({ kind: 'pipe', proposal: p.id, late: late >= 3, title: `Follow-up: ${ppRef(p)} · ${who(p)}`, sub: `${p.total ? fmtEUR(p.total) + ' · ' : ''}enviada ${p.sent_on ? 'há ' + diffDays(p.sent_on, today) + ' dias' : ''}${late ? ` · follow-up atrasado ${late} ${late === 1 ? 'dia' : 'dias'}` : ''}`, when: late ? 'Atrasado' : 'Hoje', act: { a: 'fu', label: 'Feito' } });
         } else if (left != null && left <= 5) {
           out.push({ kind: 'pipe', proposal: p.id, late: left < 0, title: left < 0 ? `${ppRef(p)} está fora de validade` : `${ppRef(p)} expira ${left === 0 ? 'hoje' : left === 1 ? 'amanhã' : 'em ' + left + ' dias'}`, sub: `${who(p)} · faz uma nova versão ou marca como perdida`, when: 'Abrir' });
         }
