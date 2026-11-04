@@ -1093,6 +1093,18 @@
   .stage-dot.st-wip { background: var(--accent); } .stage-dot.st-done { background: #2F7D4F; } .stage-dot.st-interrupted { background: var(--danger); } .stage-dot.st-review { background: var(--warning); }
   /* Pausas na tabela de fases */
   .card-head-actions { display: inline-flex; gap: var(--sp-4); flex-wrap: wrap; justify-content: flex-end; }
+  /* Documentos da Câmara */
+  .cm-doc-count { font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--text-3); margin-left: var(--sp-1); }
+  .cm-doc-sort { margin-bottom: 0; }
+  .cm-doc-sort button { height: 24px; }
+  .cd-item { border: 1px solid var(--border); border-radius: var(--radius); padding: var(--sp-3); margin-top: var(--sp-3); display: grid; gap: var(--sp-2); }
+  .cd-item-top { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-2); min-width: 0; }
+  .cd-item-top b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-sm); }
+  .cd-size { font-size: var(--fs-sm); color: var(--text-2); }
+  .cd-was { color: var(--text-3); }
+  .cd-err { color: var(--danger); }
+  .cd-fields { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--sp-2); }
+  @media (max-width: 560px) { .cd-fields { grid-template-columns: 1fr 1fr; } .cd-fields [data-f="ref"] { grid-column: 1 / -1; } }
   tr.break-row > td { background: var(--surface-2); color: var(--text-2); }
   tr.break-row.active > td { background: var(--warning-soft); color: var(--text); }
   tr.break-row.done > td { opacity: .7; }
@@ -15604,6 +15616,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     async function renderCamaraPanel(project, box, deadlines, reopenTab, stages = []) {
       box.innerHTML = '<div class="gantt-wrap"><div class="detail-loading">A carregar…</div></div>';
       let followups = [], cred = null, log = [];
+      const docsP = loadCamaraDocs(project.id);   // ofícios e informações (não impede o resto se faltar a tabela)
       try {
         if (devMode) {
           followups = mockFollowups.filter(f => f.project_id === project.id);
@@ -15635,7 +15648,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const legal = camCfg ? computeCamaraDeadlines(project, stages, camCfg) : [];
       const nOficios = stages.filter(s => (['lic', 'pip'].includes(camaraKind(s.stage_types?.name)) && s.revision_kind === 'oficio') || camaraKind(s.stage_types?.name) === 'oficio').length;
 
+      const docsRes = await docsP;
+
       box.innerHTML = camaraDeadlinesHtml(legal, nOficios, dl) + `
+        <div class="gantt-wrap" id="cm-docs"></div>
+
         <div class="gantt-wrap">
           <div class="card-head"><h2>Processo camarário</h2><button type="button" class="text-btn" id="cm-edit">Editar</button></div>
           <div class="invoice-row"><span>Município</span><span>${escapeHtml(project.municipality || '—')}</span></div>
@@ -15669,6 +15686,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             : '<div class="gantt-empty">Sem registos. Sempre que falares com a câmara ou o processo mudar de estado, regista aqui um ponto de situação — fica o histórico do processo.</div>'}
         </div>`;
 
+      drawCamaraDocs(box.querySelector('#cm-docs'), project, docsRes, reopenTab);
       box.querySelectorAll('[data-cm-stage]').forEach(r => r.addEventListener('click', () =>
         openPhaseModal(r.dataset.cmStage, { onSaved: reopenTab, fromProject: true })));
       box.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', async () => {
@@ -15703,6 +15721,285 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       if (copyBtn) copyBtn.addEventListener('click', async () => {
         try { await navigator.clipboard.writeText((await revealPw()) ?? ''); showToast('Palavra-passe copiada'); }
         catch (err) { showToast('Não foi possível copiar: ' + err.message, { type: 'error' }); }
+      });
+    }
+
+    // ================= Documentos da Câmara (ofícios e informações camarárias) =================
+    // Ficheiros no bucket privado "camara-docs" (até 5 MB); a tabela municipal_documents guarda tipo, data e n.º.
+    // Antes de enviar, a app comprime cada ficheiro sem perder a leitura (ver camDocCompress).
+    const CAM_DOC_MAX = 5 * 1048576;
+    const CAM_DOC_KINDS = [['oficio', 'Ofício'], ['informacao', 'Informação'], ['outro', 'Outro']];
+    const camDocKindLabel = k => (CAM_DOC_KINDS.find(x => x[0] === k) || CAM_DOC_KINDS[2])[1];
+    const mockCamaraDocs = [];
+    let camDocSort = (() => { try { return localStorage.getItem('cam-doc-sort') || 'date'; } catch { return 'date'; } })();
+    const fmtFileSize = b => b == null ? '' : b < 1048576 ? Math.max(1, Math.round(b / 1024)) + ' KB' : (b / 1048576).toLocaleString('pt-PT', { maximumFractionDigits: 1 }) + ' MB';
+
+    async function loadCamaraDocs(projectId) {
+      if (devMode) return { docs: mockCamaraDocs.filter(d => d.project_id === projectId), error: null };
+      const r = await supabase.from('municipal_documents').select('*').eq('project_id', projectId);
+      return { docs: r.data || [], error: r.error || null };
+    }
+
+    function drawCamaraDocs(box, project, res, reopenTab) {
+      if (!box) return;
+      if (res.error) {
+        box.innerHTML = `<div class="card-head"><h2>Ofícios e informações</h2></div>
+          <div class="gantt-empty">Ainda não é possível guardar documentos: corre camara_documentos.sql no Supabase.</div>`;
+        return;
+      }
+      const docs = [...res.docs];
+      const coll = new Intl.Collator('pt-PT', { numeric: true, sensitivity: 'base' });
+      if (camDocSort === 'name') docs.sort((a, b) => coll.compare(a.title || '', b.title || '') || String(b.doc_date || '').localeCompare(String(a.doc_date || '')));
+      else docs.sort((a, b) => String(b.doc_date || '0000').localeCompare(String(a.doc_date || '0000')) || String(b.created_at || '').localeCompare(String(a.created_at || '')));
+      const fmtD = k => parseDateKey(k).toLocaleDateString('pt-PT', { day: 'numeric', month: 'short', year: 'numeric' });
+      box.innerHTML = `
+        <div class="card-head"><h2>Ofícios e informações${docs.length ? ` <span class="cm-doc-count">${docs.length}</span>` : ''}</h2>
+          <span class="card-head-actions">
+            ${docs.length > 1 ? `<span class="segmented cm-doc-sort" role="group" aria-label="Ordenar">
+              <button type="button" data-cm-sort="date" class="${camDocSort === 'date' ? 'active' : ''}">Data</button>
+              <button type="button" data-cm-sort="name" class="${camDocSort === 'name' ? 'active' : ''}">Nome</button></span>` : ''}
+            <button type="button" class="text-btn" id="cm-add-doc">+ Documento</button>
+          </span></div>
+        ${docs.length ? docs.map(d => `
+          <div class="invoice-row click-row cm-doc" data-cm-doc="${escapeHtml(d.id)}">
+            <span><b>${escapeHtml(d.title)}</b><br><small>${escapeHtml([camDocKindLabel(d.kind), d.ref_number ? 'n.º ' + d.ref_number : null,
+              d.doc_date ? fmtD(d.doc_date) : 'sem data', /pdf/.test(d.mime || '') ? 'PDF' : 'Imagem', fmtFileSize(d.size_bytes)].filter(Boolean).join(' · '))}</small></span>
+            <span><button type="button" class="text-btn" data-cm-doc-open="${escapeHtml(d.id)}">Abrir</button></span>
+          </div>`).join('')
+          : '<div class="gantt-empty">Sem documentos. Carrega aqui os ofícios e as informações da Câmara (PDF ou fotografia): ficam por ordem, junto do processo.</div>'}`;
+      box.querySelectorAll('[data-cm-sort]').forEach(b => b.addEventListener('click', () => {
+        camDocSort = b.dataset.cmSort; try { localStorage.setItem('cam-doc-sort', camDocSort); } catch { /* sem armazenamento */ }
+        drawCamaraDocs(box, project, res, reopenTab);
+      }));
+      box.querySelector('#cm-add-doc').addEventListener('click', () => openCamaraDocModal(project, null, reopenTab));
+      box.querySelectorAll('[data-cm-doc-open]').forEach(b => b.addEventListener('click', e => {
+        e.stopPropagation(); openCamaraDoc(res.docs.find(d => String(d.id) === b.dataset.cmDocOpen));
+      }));
+      box.querySelectorAll('[data-cm-doc]').forEach(r => r.addEventListener('click', () =>
+        openCamaraDocModal(project, res.docs.find(d => String(d.id) === r.dataset.cmDoc), reopenTab)));
+    }
+
+    async function openCamaraDoc(d) {
+      if (!d) return;
+      if (devMode) { window.open(d.url, '_blank'); return; }
+      const w = window.open('', '_blank');   // abre já (senão o browser bloqueia a janela)
+      try {
+        const r = await supabase.storage.from('camara-docs').createSignedUrl(d.path, 3600);
+        if (r.error) throw r.error;
+        if (w) w.location.href = r.data.signedUrl; else window.location.href = r.data.signedUrl;
+      } catch (err) { w?.close(); showError('abrir o documento', err); }
+    }
+
+    // ---------- Compressão antes de enviar ----------
+    const camCanvasJpeg = (cv, q) => new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error('não foi possível comprimir')), 'image/jpeg', q));
+    // Imagem (fotografia ou digitalização): até 3000 px no lado maior (≈ 250 dpi numa folha A4, o texto lê-se bem);
+    // só baixa mais se não couber nos 5 MB. Se o original já for mais leve, fica o original.
+    async function camDocCompressImage(file) {
+      let bmp;
+      try { bmp = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
+      catch {
+        // (HEIC do iPhone: o Safari abre-o como <img> mas nem sempre com createImageBitmap)
+        const url = URL.createObjectURL(file);
+        try { bmp = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = url; }); }
+        catch { throw new Error('esta imagem não abre neste browser (usa JPG, PNG ou PDF)'); }
+        finally { setTimeout(() => URL.revokeObjectURL(url), 1000); }
+      }
+      let out = null;
+      for (const [maxPx, q] of [[3000, 0.85], [3000, 0.75], [2400, 0.72], [2000, 0.68], [1600, 0.62]]) {
+        const k = Math.min(1, maxPx / Math.max(bmp.width, bmp.height));
+        const cv = document.createElement('canvas'); cv.width = Math.round(bmp.width * k); cv.height = Math.round(bmp.height * k);
+        const g = cv.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, cv.width, cv.height); g.drawImage(bmp, 0, 0, cv.width, cv.height);
+        out = await camCanvasJpeg(cv, q); cv.width = cv.height = 0;
+        if (out.size <= CAM_DOC_MAX) break;
+      }
+      bmp.close?.();
+      if (/^image\/(jpeg|png|webp)$/.test(file.type) && file.size <= CAM_DOC_MAX && file.size <= out.size) return { blob: file, type: file.type, kept: true };
+      if (out.size > CAM_DOC_MAX) throw new Error('mesmo comprimida, a imagem passa dos 5 MB');
+      return { blob: out, type: 'image/jpeg' };
+    }
+    // PDF: se tiver texto (PDF digital) e couber nos 5 MB, fica como está (o texto continua pesquisável).
+    // Digitalizações (só imagem) e PDFs grandes: cada página é redesenhada a 200 dpi em JPEG, e só baixa
+    // (150 → 120 → 100 dpi) se não couber. Fica a versão mais leve.
+    async function camDocCompressPdf(file, onStep) {
+      const buf = await file.arrayBuffer();
+      const pdfjs = await loadPdfJs();
+      let doc;
+      try { doc = await pdfjs.getDocument({ data: new Uint8Array(buf.slice(0)) }).promise; }
+      catch (e) { throw new Error(/password/i.test(e?.name || e?.message || '') ? 'o PDF tem palavra-passe' : 'o PDF não abre'); }
+      let chars = 0;
+      for (let p = 1; p <= Math.min(doc.numPages, 3); p++) chars += (await (await doc.getPage(p)).getTextContent()).items.reduce((n, i) => n + String(i.str || '').trim().length, 0);
+      const hasText = chars >= 50;
+      if (hasText && file.size <= CAM_DOC_MAX) { doc.destroy(); return { blob: file, type: 'application/pdf', kept: true }; }
+      await ppLoadScript(JSPDF_URL);
+      const { jsPDF } = window.jspdf;
+      let best = null;
+      for (const [dpi, q] of [[200, 0.8], [150, 0.75], [120, 0.7], [100, 0.62]]) {
+        let pdf = null, total = 0, over = false;
+        for (let p = 1; p <= doc.numPages; p++) {
+          onStep && onStep(`A comprimir… pág. ${p}/${doc.numPages}`);
+          const page = await doc.getPage(p);
+          const vp0 = page.getViewport({ scale: 1 });   // em pontos (1/72")
+          const scale = Math.min(dpi / 72, 3400 / Math.max(vp0.width, vp0.height));
+          const vp = page.getViewport({ scale });
+          const cv = document.createElement('canvas'); cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
+          const g = cv.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, cv.width, cv.height);
+          await page.render({ canvasContext: g, viewport: vp }).promise;
+          const jpg = new Uint8Array(await (await camCanvasJpeg(cv, q)).arrayBuffer());
+          cv.width = cv.height = 0; page.cleanup();
+          total += jpg.length;
+          if (total > CAM_DOC_MAX) { over = true; break; }
+          const fmt = [vp0.width, vp0.height], orient = vp0.width > vp0.height ? 'l' : 'p';
+          if (!pdf) pdf = new jsPDF({ unit: 'pt', format: fmt, orientation: orient, compress: true });
+          else pdf.addPage(fmt, orient);
+          pdf.addImage(jpg, 'JPEG', 0, 0, vp0.width, vp0.height, undefined, 'NONE');
+        }
+        if (over) continue;
+        best = pdf.output('blob');
+        if (best.size <= CAM_DOC_MAX) break;
+        best = null;
+      }
+      doc.destroy();
+      // digitalização que já era leve: se a versão nova não ganhar, fica a original
+      if (file.size <= CAM_DOC_MAX && (!best || file.size <= best.size)) return { blob: file, type: 'application/pdf', kept: true };
+      if (!best) throw new Error('mesmo comprimido, o PDF passa dos 5 MB: divide-o em partes');
+      return { blob: best, type: 'application/pdf', textLost: hasText };
+    }
+    async function camDocCompress(file, onStep) {
+      const isPdf = /pdf/i.test(file.type) || /\.pdf$/i.test(file.name);
+      if (isPdf) return camDocCompressPdf(file, onStep);
+      if (/^image\//.test(file.type) || /\.(jpe?g|png|webp|heic|heif)$/i.test(file.name)) return camDocCompressImage(file);
+      throw new Error('só PDF ou imagem (JPG, PNG)');
+    }
+    // Do nome do ficheiro: título, data (2025-03-14, 14-03-2025, 20250314) e tipo
+    function camDocGuess(name) {
+      const base = name.replace(/\.[a-z0-9]{2,5}$/i, '');
+      let date = null, m;
+      if ((m = base.match(/(20\d{2})[-_.]?(\d{2})[-_.]?(\d{2})/))) date = `${m[1]}-${m[2]}-${m[3]}`;
+      else if ((m = base.match(/(\d{2})[-_.](\d{2})[-_.](20\d{2})/))) date = `${m[3]}-${m[2]}-${m[1]}`;
+      if (date && isNaN(new Date(date + 'T00:00:00'))) date = null;
+      if (date && (Number(date.slice(5, 7)) > 12 || Number(date.slice(8, 10)) > 31)) date = null;
+      return { title: base.replace(/[_]+/g, ' ').replace(/\s+/g, ' ').trim() || 'Documento', date, kind: /informa/i.test(base) ? 'informacao' : /of[ií]cio/i.test(base) ? 'oficio' : 'oficio' };
+    }
+
+    function openCamaraDocModal(project, doc, onSaved) {
+      const kindSel = (id, cur) => `<select id="${id}" class="form-input">${CAM_DOC_KINDS.map(([k, l]) => `<option value="${k}"${k === cur ? ' selected' : ''}>${l}</option>`).join('')}</select>`;
+      if (doc) {
+        openQuickModal('Documento da Câmara', `
+          <label class="field-label" style="margin-top:0;">Título</label>
+          <input type="text" id="cd-title" class="form-input" value="${escapeHtml(doc.title || '')}">
+          <div class="form-grid">
+            <div><label class="field-label">Tipo</label>${kindSel('cd-kind', doc.kind)}</div>
+            <div><label class="field-label">Data do documento</label><input type="date" id="cd-date" class="form-input" value="${escapeHtml(doc.doc_date || '')}"></div>
+          </div>
+          <label class="field-label">N.º</label>
+          <input type="text" id="cd-ref" class="form-input" placeholder="ex: 1234/DGU/2025" value="${escapeHtml(doc.ref_number || '')}">
+          <div class="field-hint">${escapeHtml([doc.file_name, fmtFileSize(doc.size_bytes), doc.original_bytes && doc.original_bytes > doc.size_bytes ? 'era ' + fmtFileSize(doc.original_bytes) : null, ataMemberNames[doc.created_by] ? 'carregado por ' + ataMemberNames[doc.created_by] : null].filter(Boolean).join(' · '))}</div>
+          <button type="button" id="cd-save" class="primary-btn">Guardar</button>
+          <button type="button" id="cd-open" class="secondary-btn">Abrir documento</button>
+          <button type="button" id="cd-del" class="secondary-btn danger-btn">Eliminar</button>
+          <div id="cd-msg" class="form-msg"></div>`);
+        document.getElementById('cd-open').addEventListener('click', () => openCamaraDoc(doc));
+        document.getElementById('cd-save').addEventListener('click', async () => {
+          const title = document.getElementById('cd-title').value.trim();
+          if (!title) return formError('cd-msg', 'Escreve o título.');
+          const patch = { title, kind: document.getElementById('cd-kind').value, doc_date: document.getElementById('cd-date').value || null, ref_number: valOrNull(document.getElementById('cd-ref').value.trim()) };
+          try { await dbUpdate('municipal_documents', doc.id, patch, mockCamaraDocs); closeQuickModal(); showToast('Documento guardado'); onSaved && onSaved(); }
+          catch (err) { formError('cd-msg', 'Não foi possível guardar: ' + err.message); }
+        });
+        document.getElementById('cd-del').addEventListener('click', async () => {
+          if (!window.confirm(`Eliminar «${doc.title}»? O ficheiro é apagado e não se pode recuperar.`)) return;
+          try {
+            await dbDelete('municipal_documents', doc.id, mockCamaraDocs);
+            if (!devMode) await supabase.storage.from('camara-docs').remove([doc.path]).catch(() => {});
+            closeQuickModal(); showToast('Documento eliminado'); onSaved && onSaved();
+          } catch (err) { formError('cd-msg', 'Não foi possível eliminar: ' + err.message); }
+        });
+        return;
+      }
+
+      openQuickModal('Carregar documentos da Câmara', `
+        <label class="field-label" style="margin-top:0;" for="cd-files">Ficheiros</label>
+        <input type="file" id="cd-files" class="form-input" accept="application/pdf,.pdf,image/jpeg,image/png,image/webp,image/heic,.heic" multiple>
+        <div class="field-hint">PDF ou fotografia, um ou vários de uma vez. Antes de enviar, a app comprime cada ficheiro para no máximo 5 MB, mantendo o texto legível. Os PDF com texto que já cabem nos 5 MB ficam como estão.</div>
+        <div id="cd-list"></div>
+        <button type="button" id="cd-save" class="primary-btn" disabled>Guardar</button>
+        <div id="cd-msg" class="form-msg"></div>`);
+      const items = [];
+      const list = document.getElementById('cd-list'), btn = document.getElementById('cd-save');
+      const sizeTxt = it => it.error ? `<span class="cd-err">${escapeHtml(it.error)}</span>`
+        : !it.res ? escapeHtml(it.step || 'A comprimir…')
+        : it.res.kept ? `${fmtFileSize(it.file.size)} · já estava leve, fica como está`
+        : `${fmtFileSize(it.res.blob.size)} <span class="cd-was">(era ${fmtFileSize(it.file.size)})</span>${it.res.textLost ? ' · o texto passa a imagem: lê-se, mas deixa de se poder pesquisar' : ''}`;
+      const refresh = () => {
+        const ready = items.filter(it => !it.removed);
+        btn.disabled = !ready.length || ready.some(it => !it.res && !it.error) || ready.every(it => it.error);
+        quickModalDirty = ready.length > 0;
+      };
+      const draw = () => {
+        list.innerHTML = items.map((it, i) => it.removed ? '' : `
+          <div class="cd-item" data-i="${i}">
+            <div class="cd-item-top"><b>${escapeHtml(it.file.name)}</b><button type="button" class="ck-x" data-del aria-label="Tirar ${escapeHtml(it.file.name)}">×</button></div>
+            <div class="cd-size" data-size>${sizeTxt(it)}</div>
+            ${it.error ? '' : `<input type="text" class="form-input" data-f="title" aria-label="Título" placeholder="Título" value="${escapeHtml(it.title)}">
+            <div class="cd-fields">
+              <select class="form-input" data-f="kind" aria-label="Tipo">${CAM_DOC_KINDS.map(([k, l]) => `<option value="${k}"${k === it.kind ? ' selected' : ''}>${l}</option>`).join('')}</select>
+              <input type="date" class="form-input" data-f="date" aria-label="Data do documento" value="${escapeHtml(it.date || '')}">
+              <input type="text" class="form-input" data-f="ref" aria-label="N.º" placeholder="N.º" value="${escapeHtml(it.ref || '')}">
+            </div>`}
+          </div>`).join('');
+        refresh();
+      };
+      const setSize = it => { const el = list.querySelector(`[data-i="${items.indexOf(it)}"] [data-size]`); if (el) el.innerHTML = sizeTxt(it); };
+      let queue = Promise.resolve();
+      document.getElementById('cd-files').addEventListener('change', e => {
+        const files = [...e.target.files]; e.target.value = '';
+        if (files.length > 1) document.getElementById('quick-modal').classList.add('qm-wide');
+        files.forEach(file => {
+          const g = camDocGuess(file.name);
+          const it = { file, title: g.title, date: g.date, kind: g.kind, ref: '', res: null, error: null, step: null };
+          items.push(it);
+          // um de cada vez (as páginas dos PDF ocupam memória)
+          queue = queue.then(async () => {
+            if (it.removed) return;
+            try { it.res = await camDocCompress(file, s => { it.step = s; setSize(it); }); }
+            catch (err) { it.error = 'Não dá para carregar: ' + err.message; draw(); return; }
+            setSize(it); refresh();
+          });
+        });
+        draw();
+      });
+      list.addEventListener('input', e => { const r = e.target.closest('[data-i]'); if (r && e.target.dataset.f) items[r.dataset.i][e.target.dataset.f] = e.target.value; });
+      list.addEventListener('change', e => { const r = e.target.closest('[data-i]'); if (r && e.target.dataset.f) items[r.dataset.i][e.target.dataset.f] = e.target.value; });
+      list.addEventListener('click', e => { const r = e.target.closest('[data-i]'); if (r && e.target.closest('[data-del]')) { items[r.dataset.i].removed = true; draw(); } });
+      btn.addEventListener('click', async () => {
+        const todo = items.filter(it => !it.removed && it.res && !it.error && !it.saved);
+        if (todo.some(it => !String(it.title || '').trim())) return formError('cd-msg', 'Cada documento precisa de um título.');
+        btn.disabled = true;
+        const me = (await getCurrentMember())?.id ?? null;
+        let done = 0;
+        try {
+          for (const it of todo) {
+            btn.textContent = todo.length > 1 ? `A guardar ${done + 1}/${todo.length}…` : 'A guardar…';
+            const ext = it.res.type === 'application/pdf' ? 'pdf' : it.res.type === 'image/png' ? 'png' : it.res.type === 'image/webp' ? 'webp' : 'jpg';
+            const path = `${project.id}/${crypto.randomUUID?.() ?? Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10)}.${ext}`;
+            const row = { project_id: project.id, kind: it.kind, title: it.title.trim(), ref_number: valOrNull(String(it.ref || '').trim()), doc_date: it.date || null,
+              path, file_name: it.file.name, mime: it.res.type, size_bytes: it.res.blob.size, original_bytes: it.file.size, created_by: me };
+            if (devMode) { mockCamaraDocs.push({ id: 'cd-' + Date.now() + done, ...row, created_at: new Date().toISOString(), url: URL.createObjectURL(it.res.blob) }); }
+            else {
+              const up = await supabase.storage.from('camara-docs').upload(path, it.res.blob, { contentType: it.res.type, upsert: false });
+              if (up.error) throw up.error;
+              // se o registo falhar, o ficheiro que já subiu é apagado (não fica perdido no armazenamento)
+              try { await dbInsert('municipal_documents', row); }
+              catch (err) { await supabase.storage.from('camara-docs').remove([path]).catch(() => {}); throw err; }
+            }
+            it.saved = true; done++;
+          }
+          closeQuickModal(); showToast(done === 1 ? 'Documento guardado' : `${done} documentos guardados`); onSaved && onSaved();
+        } catch (err) {
+          btn.disabled = false; btn.textContent = 'Guardar';
+          formError('cd-msg', `${done ? `${done} guardado${done > 1 ? 's' : ''}; ` : ''}não foi possível guardar «${todo[done]?.title || ''}»: ${err.message}`);
+          if (done) onSaved && (quickModalCloseHook = onSaved);
+        }
       });
     }
 
