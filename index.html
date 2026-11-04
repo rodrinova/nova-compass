@@ -1104,6 +1104,35 @@
   .cd-was { color: var(--text-3); }
   .cd-err { color: var(--danger); }
   .cd-fields { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--sp-2); }
+  .cm-doc-acts { display: inline-flex; gap: var(--sp-3); align-items: center; white-space: nowrap; }
+  .cm-doc-busy { font-size: var(--fs-sm); color: var(--text-3); }
+  .cm-ai-warn { background: var(--warning-soft, rgba(209,154,31,.12)); border-radius: var(--radius); padding: var(--sp-2-5) var(--sp-3); font-size: var(--fs-sm); margin: var(--sp-2) 0; }
+  .cm-ai-state { font-size: var(--fs-sm); color: var(--text-2); margin: var(--sp-2) 0; min-height: 1.2em; }
+  .cm-ai { font-size: var(--fs-sm); line-height: 1.5; }
+  .cm-ai h3 { font-size: var(--fs-sm); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: .06em; color: var(--text-3); margin: var(--sp-5) 0 var(--sp-2); }
+  .cm-ai p { margin: 0 0 var(--sp-1-5); }
+  .cm-ai-head { display: grid; gap: 2px; margin-bottom: var(--sp-2); }
+  .cm-ai-head b { font-size: var(--fs-md, 15px); } .cm-ai-head small { color: var(--text-3); }
+  .cm-ai-kind { justify-self: start; font-size: 11px; font-weight: var(--fw-semibold); color: var(--accent); background: var(--accent-soft, var(--surface-2)); border-radius: 99px; padding: 2px 10px; }
+  .cm-ai-sum { font-size: var(--fs-md, 15px); color: var(--text); }
+  .cm-ai-deadline { background: var(--warning-soft, rgba(209,154,31,.12)); border-radius: var(--radius); padding: var(--sp-2-5) var(--sp-3); margin: var(--sp-3) 0; display: grid; gap: 2px; }
+  .cm-ai-deadline > span { font-size: 11px; font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: .06em; color: var(--text-2); }
+  .cm-ai-deadline small { color: var(--text-2); }
+  .cm-ai-item { border: 1px solid var(--border); border-radius: var(--radius); padding: var(--sp-3); margin-bottom: var(--sp-2); }
+  .cm-ai-item-h { display: flex; align-items: baseline; gap: var(--sp-2); margin-bottom: var(--sp-1); }
+  .cm-ai-n { flex: 0 0 auto; width: 20px; height: 20px; border-radius: 50%; background: var(--surface-2); display: inline-grid; place-items: center; font-size: 11px; font-weight: var(--fw-semibold); }
+  .cm-ai-who { margin-left: auto; font-size: 11px; color: var(--text-2); border: 1px solid var(--border); border-radius: 99px; padding: 1px 8px; white-space: nowrap; }
+  .cm-ai-why span, .cm-ai-do span { font-weight: var(--fw-semibold); color: var(--text-2); margin-right: 4px; }
+  .cm-ai-do { color: var(--text); }
+  .cm-ai-warnrow { border-left: 3px solid var(--danger); padding-left: var(--sp-3); margin-bottom: var(--sp-2); }
+  .cm-ai-list { margin: 0; padding-left: 18px; }
+  .cm-srcs { display: flex; flex-wrap: wrap; gap: 4px 6px; margin-top: var(--sp-1-5); align-items: baseline; }
+  .cm-src { border: 1px solid var(--border); background: var(--surface-2); color: var(--text-2); border-radius: 99px; padding: 2px 9px; font: inherit; font-size: 11.5px; cursor: pointer; text-align: left; }
+  .cm-src:hover { color: var(--text); border-color: var(--text-3); }
+  .cm-src b { color: var(--accent); margin-right: 2px; }
+  .cm-quote { font-size: 11.5px; color: var(--text-3); font-style: italic; }
+  .cm-ai-docs { margin-top: var(--sp-4); } .cm-ai-docs summary { cursor: pointer; color: var(--text-2); font-weight: var(--fw-semibold); }
+  .cm-ai-docs .cm-src { display: block; width: 100%; border-radius: var(--r-sm); margin-top: 4px; }
   @media (max-width: 560px) { .cd-fields { grid-template-columns: 1fr 1fr; } .cd-fields [data-f="ref"] { grid-column: 1 / -1; } }
   tr.break-row > td { background: var(--surface-2); color: var(--text-2); }
   tr.break-row.active > td { background: var(--warning-soft); color: var(--text); }
@@ -15728,8 +15757,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     // Ficheiros no bucket privado "camara-docs" (até 5 MB); a tabela municipal_documents guarda tipo, data e n.º.
     // Antes de enviar, a app comprime cada ficheiro sem perder a leitura (ver camDocCompress).
     const CAM_DOC_MAX = 5 * 1048576;
-    const CAM_DOC_KINDS = [['oficio', 'Ofício'], ['informacao', 'Informação'], ['outro', 'Outro']];
-    const camDocKindLabel = k => (CAM_DOC_KINDS.find(x => x[0] === k) || CAM_DOC_KINDS[2])[1];
+    const CAM_DOC_KINDS = [['oficio', 'Ofício'], ['informacao', 'Informação'], ['memoria', 'Memória descritiva'], ['parecer', 'Parecer'], ['outro', 'Outro']];
+    const CAM_DOC_ANALYSABLE = ['oficio', 'informacao', 'parecer'];
+    const camDocKindLabel = k => (CAM_DOC_KINDS.find(x => x[0] === k) || CAM_DOC_KINDS.at(-1))[1];
     const mockCamaraDocs = [];
     let camDocSort = (() => { try { return localStorage.getItem('cam-doc-sort') || 'date'; } catch { return 'date'; } })();
     const fmtFileSize = b => b == null ? '' : b < 1048576 ? Math.max(1, Math.round(b / 1024)) + ' KB' : (b / 1048576).toLocaleString('pt-PT', { maximumFractionDigits: 1 }) + ' MB';
@@ -15743,7 +15773,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     function drawCamaraDocs(box, project, res, reopenTab) {
       if (!box) return;
       if (res.error) {
-        box.innerHTML = `<div class="card-head"><h2>Ofícios e informações</h2></div>
+        box.innerHTML = `<div class="card-head"><h2>Documentos do processo</h2></div>
           <div class="gantt-empty">Ainda não é possível guardar documentos: corre camara_documentos.sql no Supabase.</div>`;
         return;
       }
@@ -15753,7 +15783,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       else docs.sort((a, b) => String(b.doc_date || '0000').localeCompare(String(a.doc_date || '0000')) || String(b.created_at || '').localeCompare(String(a.created_at || '')));
       const fmtD = k => parseDateKey(k).toLocaleDateString('pt-PT', { day: 'numeric', month: 'short', year: 'numeric' });
       box.innerHTML = `
-        <div class="card-head"><h2>Ofícios e informações${docs.length ? ` <span class="cm-doc-count">${docs.length}</span>` : ''}</h2>
+        <div class="card-head"><h2>Documentos do processo${docs.length ? ` <span class="cm-doc-count">${docs.length}</span>` : ''}</h2>
           <span class="card-head-actions">
             ${docs.length > 1 ? `<span class="segmented cm-doc-sort" role="group" aria-label="Ordenar">
               <button type="button" data-cm-sort="date" class="${camDocSort === 'date' ? 'active' : ''}">Data</button>
@@ -15764,29 +15794,40 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <div class="invoice-row click-row cm-doc" data-cm-doc="${escapeHtml(d.id)}">
             <span><b>${escapeHtml(d.title)}</b><br><small>${escapeHtml([camDocKindLabel(d.kind), d.ref_number ? 'n.º ' + d.ref_number : null,
               d.doc_date ? fmtD(d.doc_date) : 'sem data', /pdf/.test(d.mime || '') ? 'PDF' : 'Imagem', fmtFileSize(d.size_bytes)].filter(Boolean).join(' · '))}</small></span>
-            <span><button type="button" class="text-btn" data-cm-doc-open="${escapeHtml(d.id)}">Abrir</button></span>
+            <span class="cm-doc-acts">${CAM_DOC_ANALYSABLE.includes(d.kind) ? (d.analysis_status === 'a_correr' && camDocRunning(d)
+                ? '<span class="cm-doc-busy">A analisar…</span>'
+                : `<button type="button" class="text-btn" data-cm-doc-ai="${escapeHtml(d.id)}">${d.analysis ? 'Ver análise' : 'Analisar'}</button>`) : ''}
+              <button type="button" class="text-btn" data-cm-doc-open="${escapeHtml(d.id)}">Abrir</button></span>
           </div>`).join('')
-          : '<div class="gantt-empty">Sem documentos. Carrega aqui os ofícios e as informações da Câmara (PDF ou fotografia): ficam por ordem, junto do processo.</div>'}`;
+          : '<div class="gantt-empty">Sem documentos. Carrega aqui a memória descritiva, os ofícios e as informações da Câmara (PDF ou fotografia): ficam por ordem, junto do processo, e a IA usa-os para explicar cada ofício.</div>'}`;
       box.querySelectorAll('[data-cm-sort]').forEach(b => b.addEventListener('click', () => {
         camDocSort = b.dataset.cmSort; try { localStorage.setItem('cam-doc-sort', camDocSort); } catch { /* sem armazenamento */ }
         drawCamaraDocs(box, project, res, reopenTab);
       }));
       box.querySelector('#cm-add-doc').addEventListener('click', () => openCamaraDocModal(project, null, reopenTab));
+      // uma análise a correr no servidor: volta a ler daqui a pouco
+      if (docs.some(camDocRunning)) setTimeout(async () => { if (box.isConnected) drawCamaraDocs(box, project, await loadCamaraDocs(project.id), reopenTab); }, 8000);
       box.querySelectorAll('[data-cm-doc-open]').forEach(b => b.addEventListener('click', e => {
         e.stopPropagation(); openCamaraDoc(res.docs.find(d => String(d.id) === b.dataset.cmDocOpen));
+      }));
+      box.querySelectorAll('[data-cm-doc-ai]').forEach(b => b.addEventListener('click', e => {
+        e.stopPropagation();
+        const d = res.docs.find(x => String(x.id) === b.dataset.cmDocAi);
+        if (d?.analysis) openCamaraAnalysis(project, d, res.docs, reopenTab); else analyseCamaraDoc(project, d, reopenTab);
       }));
       box.querySelectorAll('[data-cm-doc]').forEach(r => r.addEventListener('click', () =>
         openCamaraDocModal(project, res.docs.find(d => String(d.id) === r.dataset.cmDoc), reopenTab)));
     }
 
-    async function openCamaraDoc(d) {
+    async function openCamaraDoc(d, page = null) {
       if (!d) return;
-      if (devMode) { window.open(d.url, '_blank'); return; }
+      const pg = page && /pdf/.test(d.mime || '') ? '#page=' + page : '';
+      if (devMode) { window.open(d.url + pg, '_blank'); return; }
       const w = window.open('', '_blank');   // abre já (senão o browser bloqueia a janela)
       try {
         const r = await supabase.storage.from('camara-docs').createSignedUrl(d.path, 3600);
         if (r.error) throw r.error;
-        if (w) w.location.href = r.data.signedUrl; else window.location.href = r.data.signedUrl;
+        if (w) w.location.href = r.data.signedUrl + pg; else window.location.href = r.data.signedUrl + pg;
       } catch (err) { w?.close(); showError('abrir o documento', err); }
     }
 
@@ -15878,7 +15919,275 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       else if ((m = base.match(/(\d{2})[-_.](\d{2})[-_.](20\d{2})/))) date = `${m[3]}-${m[2]}-${m[1]}`;
       if (date && isNaN(new Date(date + 'T00:00:00'))) date = null;
       if (date && (Number(date.slice(5, 7)) > 12 || Number(date.slice(8, 10)) > 31)) date = null;
-      return { title: base.replace(/[_]+/g, ' ').replace(/\s+/g, ' ').trim() || 'Documento', date, kind: /informa/i.test(base) ? 'informacao' : /of[ií]cio/i.test(base) ? 'oficio' : 'oficio' };
+      return { title: base.replace(/[_]+/g, ' ').replace(/\s+/g, ' ').trim() || 'Documento', date, kind: /mem[oó]ria/i.test(base) ? 'memoria' : /parecer/i.test(base) ? 'parecer' : /informa/i.test(base) ? 'informacao' : 'oficio' };
+    }
+
+    // ---------- Análise do ofício pela IA (função camara-ai) ----------
+    // A IA lê o documento e todo o histórico carregado (memória descritiva, ofícios, informações, pareceres) e explica
+    // o que é pedido, com a fonte (documento e página) de cada ponto. Corre no servidor; a app consulta o documento.
+    const camDocRunning = d => d.analysis_status === 'a_correr' && d.analysis_started_at && Date.now() - new Date(d.analysis_started_at).getTime() < 4 * 60000;
+    const camAiErrText = c => ({ no_key: 'A IA ainda não está ligada: falta a chave do Gemini no Supabase.', limit: 'Chegou-se ao limite gratuito do Gemini. Tenta daqui a um minuto (ou amanhã, se for o limite diário).',
+      busy: 'O Gemini está sobrecarregado neste momento (do lado do Google). Tenta daqui a um minuto.', timeout: 'A análise passou do tempo máximo do servidor. Tenta outra vez: os documentos já enviados ficam em memória e a segunda vez é mais rápida.' })[c] || null;
+    function camMockAnalysis(doc, docs) {
+      const list = [...docs].sort((a, b) => String(a.doc_date || '9999').localeCompare(String(b.doc_date || '9999')));
+      const ref = d => 'D' + (list.indexOf(d) + 1), t = ref(doc), mem = list.find(d => d.kind === 'memoria');
+      return { resumo: 'A Câmara pede elementos em falta para continuar a apreciar o pedido de licenciamento: correções na memória descritiva e uma ficha de acessibilidades.',
+        natureza: 'Pedido de elementos / aperfeiçoamento', prazo: { texto: '15 dias úteis a contar da notificação', data: '', fontes: [{ doc: t, local: 'pág. 1, último parágrafo', citacao: 'no prazo de 15 dias úteis' }] },
+        pedidos: [
+          { titulo: 'Corrigir a área de construção na memória descritiva', o_que_pede: 'A área indicada na memória não coincide com a do quadro sinóptico.', porque: 'A memória refere 1.240 m² e o quadro 1.262 m².', o_que_fazer: 'Rever a medição e corrigir a memória e o quadro.', quem: 'NOVA', fontes: [{ doc: t, local: 'pág. 1, ponto 1' }, ...(mem ? [{ doc: ref(mem), local: 'pág. 3, quadro', citacao: 'área bruta de construção 1.240 m²' }] : [])] },
+          { titulo: 'Ficha de acessibilidades', o_que_pede: 'Juntar a ficha que demonstra o cumprimento das regras de acessibilidade.', porque: 'É obrigatória em edifícios de habitação coletiva (DL 163/2006).', o_que_fazer: 'Preencher a ficha e as peças desenhadas de apoio.', quem: 'NOVA', fontes: [{ doc: t, local: 'pág. 2, ponto 2' }] }],
+        historico: { texto: 'É o primeiro pedido de elementos neste processo.', fontes: [{ doc: t, local: 'pág. 1' }] },
+        atencao: [{ texto: 'Se não houver resposta no prazo, o pedido pode ser rejeitado.', fontes: [{ doc: t, local: 'pág. 2, ponto 4' }] }],
+        duvidas: ['O ofício não indica a data de notificação: confirma-a na plataforma da Câmara.'],
+        docs: list.map(d => ({ ref: ref(d), id: d.id, title: d.title, kind: d.kind, date: d.doc_date, number: d.ref_number })), target: t };
+    }
+    async function analyseCamaraDoc(project, doc, onSaved) {
+      if (!doc) return;
+      const docs = (await loadCamaraDocs(project.id)).docs;
+      const others = docs.filter(d => d.id !== doc.id);
+      openQuickModal('Analisar com IA', `
+        <p style="margin-top:0">A IA vai ler <b>${escapeHtml(doc.title)}</b> e ${others.length ? `os outros ${others.length} documento${others.length > 1 ? 's' : ''} do processo` : 'mais nenhum documento (só este está carregado)'}, e explicar o que está a ser pedido, com a fonte de cada ponto.</p>
+        ${!docs.some(d => d.kind === 'memoria') ? '<div class="cm-ai-warn">Ainda não há <b>memória descritiva</b> carregada neste projeto. Sem ela, a IA não consegue ligar os pedidos ao que está no projeto. Podes carregá-la antes (tipo «Memória descritiva»).</div>' : ''}
+        <div class="field-hint">Leva normalmente entre 30 segundos e 2 minutos. Podes fechar esta janela: a análise continua e fica guardada no documento.</div>
+        <div id="cai-state" class="cm-ai-state" aria-live="polite"></div>
+        <button type="button" id="cai-go" class="primary-btn">Analisar</button>`);
+      document.getElementById('cai-go').addEventListener('click', async e => {
+        const btn = e.currentTarget, st = document.getElementById('cai-state');
+        btn.disabled = true; btn.textContent = 'A analisar…';
+        const t0 = Date.now(), tick = setInterval(() => { if (st.isConnected) st.textContent = `A ler os documentos e a preparar a explicação… ${Math.round((Date.now() - t0) / 1000)} s`; }, 1000);
+        try {
+          let fresh;
+          if (devMode) {
+            await new Promise(r => setTimeout(r, 700));
+            Object.assign(doc, { analysis: camMockAnalysis(doc, docs), analysis_status: 'ok', analysis_at: new Date().toISOString(), analysis_model: 'teste' });
+            const m = mockCamaraDocs.find(x => x.id === doc.id); if (m) Object.assign(m, doc);
+            fresh = doc;
+          } else {
+            const me = (await getCurrentMember())?.id ?? null;
+            const r = await supabase.functions.invoke('camara-ai', { body: { action: 'analyse_start', document_id: doc.id, member_id: me } });
+            const ej = r.error ? await r.error.context?.json?.().catch(() => null) : null;
+            const err = r.error ? ej?.error || r.error.message : r.data?.error;
+            if (err) throw new Error(camAiErrText(err) || err);
+            while (Date.now() - t0 < 4 * 60000) {
+              await new Promise(res => setTimeout(res, 4000));
+              const q = await supabase.from('municipal_documents').select('*').eq('id', doc.id).maybeSingle();
+              if (q.error) throw q.error;
+              if (q.data && q.data.analysis_status !== 'a_correr') { fresh = q.data; break; }
+            }
+            if (!fresh) throw new Error('A análise está a demorar demasiado. Volta a abrir o separador Câmara daqui a pouco.');
+            if (fresh.analysis_status === 'erro') throw new Error(camAiErrText(fresh.analysis_error) || fresh.analysis_error || 'A análise falhou');
+            Object.assign(doc, fresh);
+          }
+          clearInterval(tick);
+          onSaved && onSaved();
+          openCamaraAnalysis(project, fresh, docs, onSaved);
+        } catch (err) {
+          clearInterval(tick);
+          if (btn.isConnected) { btn.disabled = false; btn.textContent = 'Tentar outra vez'; st.textContent = ''; formErrorEl(st, 'Não foi possível analisar: ' + err.message); }
+          else showError('analisar o documento', err);
+        }
+      });
+    }
+    function formErrorEl(el, msg) { el.textContent = msg; el.className = 'form-msg error'; }
+
+    // Fontes: "D2 · pág. 3, ponto 1" → botão que abre o documento nessa página
+    function camSrcHtml(fontes, a) {
+      return (fontes || []).filter(f => f && f.doc).map(f => {
+        const d = (a.docs || []).find(x => x.ref === String(f.doc).replace(/[\[\]\s]/g, ''));
+        const page = (String(f.local || '').match(/p[áa]g(?:ina)?\.?\s*(\d+)/i) || [])[1];
+        const name = d ? `${camDocKindLabel(d.kind)}${d.number ? ' ' + d.number : ''}${d.date ? ' · ' + fmtDayMonthYear(d.date) : ''}` : f.doc;
+        return `<button type="button" class="cm-src" data-src-doc="${escapeHtml(d?.id || '')}" data-src-page="${escapeHtml(page || '')}" title="${escapeHtml((d?.title || '') + (f.citacao ? ' — «' + f.citacao + '»' : ''))}">
+          <b>${escapeHtml(f.doc)}</b> ${escapeHtml(name)}${f.local ? ' · ' + escapeHtml(f.local) : ''}</button>${f.citacao ? `<q class="cm-quote">${escapeHtml(f.citacao)}</q>` : ''}`;
+      }).join('');
+    }
+    function openCamaraAnalysis(project, doc, docs, onSaved) {
+      const a = doc.analysis || {}, e = escapeHtml;
+      const srcBlock = f => { const h = camSrcHtml(f, a); return h ? `<div class="cm-srcs">${h}</div>` : ''; };
+      openQuickModal('Análise do documento', `
+        <div class="cm-ai">
+          <div class="cm-ai-head"><span class="cm-ai-kind">${e(a.natureza || camDocKindLabel(doc.kind))}</span><b>${e(doc.title)}</b>
+            <small>${e([doc.ref_number ? 'n.º ' + doc.ref_number : null, doc.doc_date ? fmtDayMonthYear(doc.doc_date) : null].filter(Boolean).join(' · '))}</small></div>
+          <p class="cm-ai-sum">${e(a.resumo || '')}</p>
+          ${a.prazo?.texto ? `<div class="cm-ai-deadline"><span>Prazo</span><b>${e(a.prazo.texto)}</b>${a.prazo.data ? `<small>até ${e(fmtDayMonthYear(a.prazo.data))}</small>` : ''}${srcBlock(a.prazo.fontes)}</div>` : ''}
+          <h3>O que é pedido</h3>
+          ${(a.pedidos || []).map((x, i) => `<div class="cm-ai-item">
+            <div class="cm-ai-item-h"><span class="cm-ai-n">${i + 1}</span><b>${e(x.titulo)}</b>${x.quem ? `<span class="cm-ai-who">${e(x.quem)}</span>` : ''}</div>
+            <p>${e(x.o_que_pede || '')}</p>
+            ${x.porque ? `<p class="cm-ai-why"><span>Porquê</span> ${e(x.porque)}</p>` : ''}
+            ${x.o_que_fazer ? `<p class="cm-ai-do"><span>O que fazer</span> ${e(x.o_que_fazer)}</p>` : ''}
+            ${srcBlock(x.fontes)}</div>`).join('') || '<p class="field-hint">A IA não identificou pedidos concretos.</p>'}
+          ${a.historico?.texto ? `<h3>Ligação ao histórico</h3><p>${e(a.historico.texto)}</p>${srcBlock(a.historico.fontes)}` : ''}
+          ${(a.atencao || []).length ? `<h3>Atenção</h3>${a.atencao.map(x => `<div class="cm-ai-warnrow"><p>${e(x.texto)}</p>${srcBlock(x.fontes)}</div>`).join('')}` : ''}
+          ${(a.duvidas || []).length ? `<h3>Por confirmar</h3><ul class="cm-ai-list">${a.duvidas.map(x => `<li>${e(x)}</li>`).join('')}</ul>` : ''}
+          <details class="cm-ai-docs"><summary>Documentos consultados (${(a.docs || []).length})</summary>
+            ${(a.docs || []).map(d => `<button type="button" class="cm-src" data-src-doc="${e(d.id)}"><b>${e(d.ref)}</b> ${e(camDocKindLabel(d.kind))} · ${e(d.title)}${d.date ? ' · ' + e(fmtDayMonthYear(d.date)) : ''}${d.ref === a.target ? ' · <i>analisado</i>' : ''}</button>`).join('')}</details>
+          <p class="field-hint">Escrito pela IA${doc.analysis_at ? ' a ' + e(fmtDateTime(doc.analysis_at)) : ''}. Confirma sempre no documento original: toca numa fonte para o abrir nessa página.</p>
+        </div>
+        <button type="button" id="cai-report" class="primary-btn">${doc.client_report ? 'Abrir o relatório para o cliente' : 'Relatório para o cliente'}</button>
+        <button type="button" id="cai-again" class="secondary-btn">Analisar de novo</button>`);
+      document.getElementById('quick-modal').classList.add('qm-wide');
+      const qb = document.getElementById('quick-modal-body');
+      qb.querySelectorAll('[data-src-doc]').forEach(b => b.addEventListener('click', () => {
+        const d = docs.find(x => String(x.id) === b.dataset.srcDoc);
+        if (!d) return showToast('Esse documento já não está no processo.', { type: 'error' });
+        openCamaraDoc(d, b.dataset.srcPage ? Number(b.dataset.srcPage) : null);
+      }));
+      document.getElementById('cai-again').addEventListener('click', () => analyseCamaraDoc(project, doc, onSaved));
+      document.getElementById('cai-report').addEventListener('click', () => { closeQuickModal(); openCamaraReport(project, doc, docs, onSaved); });
+    }
+
+    // ---------- Relatório para o cliente (editável; exporta em PDF com a formatação NOVA) ----------
+    const CAM_REP_CSS = `
+      .crp section ul { margin: 4px 0 0; padding-left: 18px; }
+      .crp .step { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 7px 0; border-bottom: 1px solid #EEEDE9; break-inside: avoid; }
+      .crp .step:last-child { border-bottom: 0; }
+      .crp .step small { grid-column: 1 / -1; color: #736D66; font-size: 8pt; }
+      .crp .step .who { font-size: 8pt; font-weight: 600; color: #714D79; white-space: nowrap; }
+      .crp .ped { padding: 8px 0; border-bottom: 1px solid #EEEDE9; break-inside: avoid; } .crp .ped:last-child { border-bottom: 0; }
+      .crp .ped b { display: block; font-size: 9.5pt; margin-bottom: 2px; }
+      .crp .deadline { background: #FBF0D9; border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; font-weight: 600; break-inside: avoid; }
+      .crp .deadline span { display: block; font-size: 7.5pt; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #7A5A12; margin-bottom: 2px; }
+      .crp dl { margin: 0; } .crp dt { font-weight: 600; margin-top: 6px; } .crp dd { margin: 0 0 4px; color: #3D3A37; }
+      .crp .lead { font-size: 10.5pt; line-height: 1.55; }
+      .crp .del { float: right; border: 0; background: none; color: #A29C95; cursor: pointer; font-size: 12pt; line-height: 1; padding: 0 2px; }
+      .crp .add { border: 1px dashed #C9B3CE; background: none; color: #714D79; border-radius: 8px; font: inherit; font-size: 8.5pt; padding: 4px 10px; margin-top: 6px; cursor: pointer; }
+      @media print { .crp .del, .crp .add { display: none; } }`;
+    function camReportHtml(project, doc, R, o = {}) {
+      const e = escapeHtml, ed = !!o.edit, a = doc.analysis || {};
+      const T = (k, v, tag = 'div', cls = 'txt', ph = '') => ed ? `<${tag} class="${cls}" contenteditable="true" data-k="${e(k)}" data-ph="${e(ph || 'clica para escrever')}">${e(v || '')}</${tag}>` : (String(v || '').trim() ? `<${tag} class="${cls}">${e(v)}</${tag}>` : '');
+      const has = v => ed || String(v || '').trim();
+      const del = (list, i) => ed ? `<button type="button" class="del" data-del="${list}.${i}" title="Tirar este ponto" aria-label="Tirar">×</button>` : '';
+      const add = list => ed ? `<button type="button" class="add" data-add="${list}">+ acrescentar</button>` : '';
+      let n = 0; const h2 = t => `<h2><span>${String(++n).padStart(2, '0')}</span>${e(t)}</h2>`;
+      const peds = (R.pedidos || []).filter(x => has(x.titulo) || has(x.explicacao));
+      const steps = (R.proximos_passos || []).filter(x => has(x.passo));
+      const cli = (R.do_cliente || []).filter(has);
+      const glo = (R.glossario || []).filter(x => has(x.termo));
+      const logo = new URL('assets/nova-logo-white-cropped.png', location.href).href;
+      const docLine = [camDocKindLabel(doc.kind), doc.ref_number ? 'n.º ' + doc.ref_number : null, doc.doc_date ? 'de ' + fmtDayMonthYear(doc.doc_date) : null].filter(Boolean).join(' ');
+      const body = `${ed ? '<div class="edhint">Clica em qualquer texto com contorno para o corrigir. Grava sozinho. Apaga o texto ou toca em × para tirar um ponto.</div>' : ''}
+        <div class="capa"><header><div class="brand"><img src="${e(logo)}" alt="NOVA"><span class="ii">Processo camarário</span></div><div class="meta">NOVA Associates<br>${e(frToday())}</div></header>
+          <div class="eyebrow">Explicação para o cliente</div>
+          ${ed ? `<h1 contenteditable="true" data-k="titulo" data-ph="Título">${e(R.titulo || '')}</h1>` : `<h1>${e(R.titulo || 'O que a Câmara pediu')}</h1>`}
+          <div class="loc">${e([project.name, project.address, project.municipality].filter(Boolean).join(' · '))}</div>
+          <div class="pdm">Documento explicado: <b>${e(docLine)}</b>${project.municipal_process_code ? ` · Processo n.º ${e(project.municipal_process_code)}` : ''}</div></div>
+        <div class="fr crp">
+          <section>${T('introducao', R.introducao, 'div', 'txt lead', 'Que documento chegou, de quem e quando')}
+            ${has(R.prazo) ? `<div class="deadline"><span>Prazo</span>${T('prazo', R.prazo, 'div', '', 'Prazo para responder')}</div>` : ''}</section>
+          ${has(R.situacao) ? `<section>${h2('Em que ponto está o processo')}${T('situacao', R.situacao)}</section>` : ''}
+          ${peds.length || ed ? `<section>${h2('O que a Câmara pede')}${(R.pedidos || []).map((x, i) => !(has(x.titulo) || has(x.explicacao)) ? '' : `<div class="ped">${del('pedidos', i)}${T(`pedidos.${i}.titulo`, x.titulo, 'b', '', 'Ponto')}${T(`pedidos.${i}.explicacao`, x.explicacao)}</div>`).join('')}${add('pedidos')}</section>` : ''}
+          ${steps.length || ed ? `<section>${h2('Próximos passos')}${(R.proximos_passos || []).map((x, i) => !has(x.passo) ? '' : `<div class="step">${T(`proximos_passos.${i}.passo`, x.passo, 'span', '', 'O que se faz')}${ed || x.quem ? `<span class="who">${del('proximos_passos', i)}${T(`proximos_passos.${i}.quem`, x.quem, 'span', '', 'quem')}</span>` : '<span></span>'}${ed || x.quando ? `<small>${T(`proximos_passos.${i}.quando`, x.quando, 'span', '', 'quando')}</small>` : ''}</div>`).join('')}${add('proximos_passos')}</section>` : ''}
+          ${cli.length || ed ? `<section>${h2('O que precisamos de si')}<ul>${(R.do_cliente || []).map((x, i) => !has(x) ? '' : `<li>${del('do_cliente', i)}${T(`do_cliente.${i}`, x, 'span', '', 'O que o cliente deve fazer ou enviar')}</li>`).join('')}</ul>${add('do_cliente')}</section>` : ''}
+          ${glo.length || ed ? `<section>${h2('Palavras que convém conhecer')}<dl>${(R.glossario || []).map((x, i) => !has(x.termo) ? '' : `<dt>${del('glossario', i)}${T(`glossario.${i}.termo`, x.termo, 'span', '', 'Termo')}</dt><dd>${T(`glossario.${i}.significado`, x.significado, 'span', '', 'O que significa')}</dd>`).join('')}</dl>${add('glossario')}</section>` : ''}
+          ${has(R.fecho) ? `<section>${T('fecho', R.fecho, 'div', 'txt', 'Fecho')}</section>` : ''}
+          ${(a.docs || []).length ? `<p class="note">Este relatório baseia-se em: ${e((a.docs || []).map(d => [camDocKindLabel(d.kind), d.number ? 'n.º ' + d.number : null, d.date ? fmtDayMonthYear(d.date) : null].filter(Boolean).join(' ')).join('; '))}.</p>` : ''}
+        </div>
+        <footer><span>Explicação do processo camarário · ${e(frToday())}</span><span>NOVA Associates</span></footer>`;
+      return frDocHtml(`${project.name} — Explicação para o cliente — NOVA`, body, { ...o, css: CAM_REP_CSS });
+    }
+    function camMockReport(doc) {
+      const a = doc.analysis || {};
+      return { titulo: 'O que a Câmara pediu e o que vamos fazer', introducao: `Recebemos da Câmara um ${camDocKindLabel(doc.kind).toLowerCase()} sobre o seu projeto. Explicamos aqui, de forma simples, o que pedem e o que vamos fazer.`,
+        situacao: 'O pedido de licença está a ser analisado pela Câmara. Antes de decidir, a Câmara pediu alguns elementos. É uma fase normal do processo.',
+        pedidos: (a.pedidos || []).map(x => ({ titulo: x.titulo, explicacao: x.o_que_pede })), proximos_passos: [{ passo: 'Preparar e entregar os elementos pedidos', quem: 'NOVA', quando: 'nos próximos 10 dias' }],
+        prazo: a.prazo?.texto || '', do_cliente: [], glossario: [{ termo: 'Memória descritiva', significado: 'O texto que descreve e justifica o projeto.' }], fecho: 'Ficamos ao dispor para qualquer dúvida.' };
+    }
+    async function openCamaraReport(project, doc, docs, onSaved) {
+      let R = doc.client_report;
+      if (!R) {
+        openQuickModal('Relatório para o cliente', `<p style="margin-top:0">A IA vai escrever, a partir da análise, um relatório para o cliente em linguagem simples. Depois podes editar tudo antes de exportar.</p>
+          <div id="crp-state" class="cm-ai-state" aria-live="polite"></div><button type="button" id="crp-go" class="primary-btn">Escrever o relatório</button>`);
+        document.getElementById('crp-go').addEventListener('click', async e => {
+          const btn = e.currentTarget, st = document.getElementById('crp-state');
+          btn.disabled = true; btn.textContent = 'A escrever…'; st.textContent = 'Leva normalmente 20 a 40 segundos.';
+          try { R = await camWriteReport(doc); closeQuickModal(); openCamaraReport(project, doc, docs, onSaved); }
+          catch (err) { btn.disabled = false; btn.textContent = 'Tentar outra vez'; formErrorEl(st, 'Não foi possível escrever o relatório: ' + err.message); }
+        });
+        return;
+      }
+      document.querySelector('.frv')?.remove();
+      let dirty = false, timer = null;
+      const ov = document.createElement('div');
+      ov.className = 'frv'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Relatório para o cliente');
+      document.body.appendChild(ov); document.body.style.overflow = 'hidden';
+      const onKey = ev => { if (ev.key === 'Escape' && document.getElementById('quick-modal').style.display !== 'flex') close(); };
+      const close = async () => { clearTimeout(timer); if (dirty) await flush(); ov.remove(); document.body.style.overflow = ''; document.removeEventListener('keydown', onKey); };
+      document.addEventListener('keydown', onKey);
+      async function flush() {
+        if (!dirty) return; dirty = false;
+        const lab = ov.querySelector('#crp-save'); if (lab) lab.textContent = 'a gravar…';
+        try {
+          await dbUpdate('municipal_documents', doc.id, { client_report: R, client_report_at: new Date().toISOString() }, mockCamaraDocs);
+          doc.client_report = R; if (lab?.isConnected) lab.textContent = 'gravado';
+        } catch (err) { dirty = true; if (lab?.isConnected) lab.textContent = 'não gravou'; showError('gravar o relatório', err); }
+      }
+      const setAt = (path, val) => { const ks = path.split('.'); let o = R; ks.slice(0, -1).forEach((k, i) => { o[k] = o[k] ?? (/^\d+$/.test(ks[i + 1]) ? [] : {}); o = o[k]; }); o[ks.at(-1)] = val; };
+      const EMPTY = { pedidos: { titulo: '', explicacao: '' }, proximos_passos: { passo: '', quem: '', quando: '' }, do_cliente: '', glossario: { termo: '', significado: '' } };
+      function paint() {
+        const y = ov.querySelector('#crp-doc')?.contentWindow?.scrollY || 0;
+        ov.innerHTML = `
+          <div class="frv-bar">
+            <button type="button" class="ck-x frv-x" id="crp-x" aria-label="Fechar">×</button>
+            <div class="frv-t"><b>Relatório para o cliente</b><span class="muted" id="crp-save" aria-live="polite"></span></div>
+            <div class="frv-a">
+              ${R._original ? '<button type="button" class="text-btn" id="crp-reset">Repor o texto da IA</button>' : ''}
+              <button type="button" class="secondary-btn" id="crp-rewrite">Escrever de novo</button>
+              <button type="button" class="primary-btn" id="crp-pdf">Exportar PDF</button>
+            </div>
+          </div>
+          <iframe class="frv-doc" id="crp-doc" title="Relatório para o cliente"></iframe>`;
+        const fr = ov.querySelector('#crp-doc');
+        fr.srcdoc = camReportHtml(project, doc, R, { edit: true });
+        fr.addEventListener('load', () => {
+          const d = fr.contentDocument; if (!d) return;
+          fr.contentWindow.scrollTo(0, y);
+          d.addEventListener('input', ev => {
+            const k = ev.target.closest('[data-k]')?.dataset.k; if (!k) return;
+            setAt(k, ev.target.innerText.replace(/ /g, ' ').replace(/\n$/, ''));
+            dirty = true; const lab = ov.querySelector('#crp-save'); if (lab) lab.textContent = 'por gravar…';
+            clearTimeout(timer); timer = setTimeout(flush, 900);
+          });
+          // (Enter num título ou numa linha curta não abre parágrafos novos)
+          d.addEventListener('keydown', ev => { if (ev.key === 'Enter' && ev.target.closest?.('h1, b[data-k], span[data-k]')) ev.preventDefault(); });
+          d.addEventListener('click', async ev => {
+            const dl = ev.target.closest('[data-del]'), ad = ev.target.closest('[data-add]');
+            if (dl) { const [list, i] = dl.dataset.del.split('.'); R[list].splice(Number(i), 1); dirty = true; await flush(); paint(); }
+            if (ad) { const list = ad.dataset.add; R[list] = R[list] || []; R[list].push(JSON.parse(JSON.stringify(EMPTY[list]))); dirty = true; await flush(); paint(); }
+          });
+        }, { once: true });
+        ov.querySelector('#crp-x').addEventListener('click', close);
+        ov.querySelector('#crp-reset')?.addEventListener('click', async () => {
+          const before = JSON.parse(JSON.stringify(R));
+          R = { ...JSON.parse(JSON.stringify(R._original)), _original: R._original }; dirty = true; await flush(); paint();
+          showToast('Texto da IA reposto', { ms: 8000, undo: async () => { R = before; dirty = true; await flush(); paint(); } });
+        });
+        ov.querySelector('#crp-rewrite').addEventListener('click', async e => {
+          if (!window.confirm('Escrever o relatório de novo? As tuas alterações perdem-se.')) return;
+          const b = e.currentTarget; b.disabled = true; b.textContent = 'A escrever…';
+          try { R = await camWriteReport(doc); paint(); showToast('Relatório escrito de novo'); }
+          catch (err) { b.disabled = false; b.textContent = 'Escrever de novo'; showError('escrever o relatório', err); }
+        });
+        ov.querySelector('#crp-pdf').addEventListener('click', async () => {
+          const w = window.open('', '_blank');
+          if (!w) { showToast('O navegador bloqueou a janela. Permite janelas deste site e tenta outra vez.', { type: 'error', ms: 7000 }); return; }
+          clearTimeout(timer); await flush();
+          w.document.open(); w.document.write(camReportHtml(project, doc, R)); w.document.close(); kDocBack(w);
+        });
+      }
+      paint();
+    }
+    async function camWriteReport(doc) {
+      let R;
+      if (devMode) { await new Promise(r => setTimeout(r, 500)); R = camMockReport(doc); R._original = JSON.parse(JSON.stringify(R)); await dbUpdate('municipal_documents', doc.id, { client_report: R }, mockCamaraDocs); }
+      else {
+        const r = await supabase.functions.invoke('camara-ai', { body: { action: 'client_report', document_id: doc.id } });
+        const ej = r.error ? await r.error.context?.json?.().catch(() => null) : null;
+        const err = r.error ? ej?.error || r.error.message : r.data?.error;
+        if (err) throw new Error(camAiErrText(err) || err);
+        R = r.data.report;
+      }
+      doc.client_report = R; doc.client_report_at = new Date().toISOString();
+      return R;
     }
 
     function openCamaraDocModal(project, doc, onSaved) {
@@ -15977,6 +16286,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         btn.disabled = true;
         const me = (await getCurrentMember())?.id ?? null;
         let done = 0;
+        const saved = [];
         try {
           for (const it of todo) {
             btn.textContent = todo.length > 1 ? `A guardar ${done + 1}/${todo.length}…` : 'A guardar…';
@@ -15984,17 +16294,21 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             const path = `${project.id}/${crypto.randomUUID?.() ?? Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10)}.${ext}`;
             const row = { project_id: project.id, kind: it.kind, title: it.title.trim(), ref_number: valOrNull(String(it.ref || '').trim()), doc_date: it.date || null,
               path, file_name: it.file.name, mime: it.res.type, size_bytes: it.res.blob.size, original_bytes: it.file.size, created_by: me };
-            if (devMode) { mockCamaraDocs.push({ id: 'cd-' + Date.now() + done, ...row, created_at: new Date().toISOString(), url: URL.createObjectURL(it.res.blob) }); }
+            if (devMode) { const o = { id: 'cd-' + Date.now() + done, ...row, created_at: new Date().toISOString(), url: URL.createObjectURL(it.res.blob) }; mockCamaraDocs.push(o); saved.push(o); }
             else {
               const up = await supabase.storage.from('camara-docs').upload(path, it.res.blob, { contentType: it.res.type, upsert: false });
               if (up.error) throw up.error;
               // se o registo falhar, o ficheiro que já subiu é apagado (não fica perdido no armazenamento)
-              try { await dbInsert('municipal_documents', row); }
+              try { saved.push(await dbInsert('municipal_documents', row)); }
               catch (err) { await supabase.storage.from('camara-docs').remove([path]).catch(() => {}); throw err; }
             }
             it.saved = true; done++;
           }
-          closeQuickModal(); showToast(done === 1 ? 'Documento guardado' : `${done} documentos guardados`); onSaved && onSaved();
+          closeQuickModal(); onSaved && onSaved();
+          // um ofício novo: oferece logo a análise
+          const toAnalyse = saved.filter(d => CAM_DOC_ANALYSABLE.includes(d.kind)).sort((a, b) => String(b.doc_date || '').localeCompare(String(a.doc_date || ''))).slice(0, 1)[0];
+          showToast(done === 1 ? 'Documento guardado' : `${done} documentos guardados`, toAnalyse
+            ? { ms: 12000, undoLabel: 'Analisar', undo: () => analyseCamaraDoc(project, toAnalyse, onSaved) } : {});
         } catch (err) {
           btn.disabled = false; btn.textContent = 'Guardar';
           formError('cd-msg', `${done ? `${done} guardado${done > 1 ? 's' : ''}; ` : ''}não foi possível guardar «${todo[done]?.title || ''}»: ${err.message}`);
