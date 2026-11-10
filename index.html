@@ -3152,6 +3152,9 @@
     .fab-btn.fab-away { transform: translateY(calc(100% + 24px)); opacity: 0; pointer-events: none; }
   }
   /* ---- Ponto e placar (página Hoje) ---- */
+  .af-srow { margin-top: var(--sp-2); }
+  .af-sout { display: flex; align-items: center; gap: var(--sp-1); }
+  .af-sout .form-input { flex: 1; }
   #today-punch:not([hidden]) { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 0; padding: 0; overflow: hidden; }
   #today-punch > .punch, #today-punch > .board { padding: var(--sp-4) var(--sp-5); min-width: 0; }
   #today-punch > .board { border-left: 1px solid var(--border); background: var(--surface-2); }
@@ -4670,6 +4673,20 @@
   @media (hover: hover) and (pointer: fine) { .mqt-table tr .mqt-grip { opacity: .35; } .mqt-table tr:hover .mqt-grip, .mqt-table .mqt-grip:focus-visible { opacity: 1; } }
   .g-kc { display: flex; align-items: center; gap: 2px; }
   .g-kc .mqt-grip { margin: 0; flex: none; }
+  .mqt-fold { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 26px; margin: -3px 2px -3px -4px; padding: 0; border: 0; border-radius: var(--r-sm); background: none; color: var(--text-3); cursor: pointer; vertical-align: middle; }
+  .mqt-fold svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transform: rotate(90deg); transition: transform 160ms cubic-bezier(.23, 1, .32, 1); }
+  .mqt-fold[aria-expanded="false"] svg { transform: none; }
+  .mqt-fold:hover, .mqt-fold:focus-visible { color: var(--text); background: var(--surface-2); }
+  .mqt-fold-sp { flex: none; width: 22px; margin: 0 2px 0 -4px; }
+  tr.fold-h { display: none; }
+  .mqt-grid.searching tr.fold-h:not([hidden]) { display: table-row; }
+  .mqt-ch[data-foldrow] { cursor: pointer; }
+  .mqt-foldall { display: inline-flex; gap: var(--sp-3); margin-right: var(--sp-3); }
+  .mqt-foldall .text-btn { font-size: var(--fs-sm); }
+  .mqt-libbar .mqt-foldall { margin: 0 var(--sp-2); }
+  .mqt-removed summary { cursor: pointer; font-weight: var(--fw-semibold); }
+  .mqt-removed[open] summary { margin-bottom: var(--sp-2); }
+  @media (prefers-reduced-motion: reduce) { .mqt-fold svg { transition: none; } }
   @media (prefers-reduced-motion: reduce) { .mqt-table tbody tr, .mqt-grid tbody tr { transition: none; } }
   .mqt-table .bl { color: var(--text-2); }
   .mqt-table .qt { font-weight: var(--fw-semibold); }
@@ -12369,10 +12386,28 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       }
       const lateIn = minsBetween(row.check_in, atTime(day, startHm));
       const late = lateIn > tol ? lateIn : 0;
-      const earlyOut = row.check_out ? minsBetween(atTime(day, s.end), row.check_out) : 0;
-      const early = earlyOut > tol ? earlyOut : 0;
-      return { state: late || early ? 'late' : agreed ? 'agreed' : 'on', late, early, open: !row.check_out, agreed };
+      // saída devida: quem chega mais cedo pode sair mais cedo (entrada + duração do horário); quem chega tarde
+      // paga o atraso e a hora a que sai vai só para o banco de horas (sem "saída antes da hora")
+      // com sessões extra (ex.: pausa para almoço), conta o tempo todo do dia contra o tempo devido
+      const due = attDue(row, day, s, tol);
+      const closed = row.check_out && !attSessions(row).some(x => !x.out);
+      const short = closed && due ? minsBetween(due, row.check_in) - (minsBetween(row.check_out, row.check_in) + attSessionMins(row)) : 0;
+      const early = short > tol ? short : 0;
+      return { state: late || early ? 'late' : agreed ? 'agreed' : 'on', late, early, open: !row.check_out, agreed, due };
     }
+    // Hora de saída devida (null quando a pessoa chegou atrasada: aí a saída só conta para o banco de horas)
+    function attDue(row, day, s, tol) {
+      if (!row?.check_in) return null;
+      const agreed = attAgreed(row), st = atTime(day, s.start), en = atTime(day, s.end);
+      if (agreed) return en;
+      const lateIn = minsBetween(row.check_in, st);
+      if (lateIn > tol) return null;
+      const ci = new Date(row.check_in);
+      return ci < st ? new Date(ci.getTime() + (en - st)) : en;
+    }
+    // Sessões extra do dia (ex.: voltar depois de almoço): [{ in, out }]
+    const attSessions = row => Array.isArray(row?.sessions) ? row.sessions.filter(x => x && x.in) : [];
+    const attSessionMins = row => attSessions(row).reduce((t, x) => t + (x.out ? Math.max(0, minsBetween(x.out, x.in)) : 0), 0);
     const attAgreed = row => row?.late_until && (row.kind || 'office') === 'office' ? String(row.late_until).slice(0, 5) : null;
     // Banco de horas de uma pessoa: tempo das chegadas combinadas (em dívida) contra o tempo que ficou depois da saída.
     // O que fica além da tolerância conta todo; dias de folga e fora não entram.
@@ -12388,7 +12423,13 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           else if (r.day > today || (r.day === today && now < plan)) planned += Math.max(0, minsBetween(plan, st));
           else owed += Math.max(0, minsBetween(plan, st));
         }
-        if (r.check_in && r.check_out) { const x = minsBetween(r.check_out, atTime(r.day, s.end)); if (x > tol) extra += x; }
+        if (r.check_in && r.check_out) {
+          // sessões extra (depois de almoço…) somam ao tempo do dia
+          const due = attDue(r, r.day, s, tol), more = attSessionMins(r);
+          // chegou atrasado: a hora de saída conta toda para o banco (a mais ou a menos face à saída do horário)
+          if (!due) { const x = minsBetween(r.check_out, atTime(r.day, s.end)) + more; if (x > tol) extra += x; else if (x < -tol) owed += -x; }
+          else { const x = minsBetween(r.check_out, r.check_in) + more - minsBetween(due, r.check_in); if (x > tol) extra += x; }
+        }
       });
       return { owed, extra, planned, balance: extra - owed };
     }
@@ -12474,11 +12515,17 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         } else {
           const startT = atTime(today, s.start), endT = atTime(today, s.end);
           const total = Math.max(1, minsBetween(endT, startT));
-          const done = row.check_out ? minsBetween(row.check_out, row.check_in) : Math.max(0, minsBetween(now, row.check_in));
-          main = `<div class="punch-state ${st.late || st.early ? 'late' : 'ok'}"><b>${row.check_out ? `Hoje: ${hhmm(row.check_in)} → ${hhmm(row.check_out)}` : `Entraste às ${hhmm(row.check_in)}`}${row.edited ? ' <i title="Hora corrigida à mão">✎</i>' : ''}</b>
-              <span>${st.late ? `${fmtMin(st.late)} de atraso${st.agreed ? ` (combinado às ${escapeHtml(st.agreed)})` : ''}` : st.agreed ? `chegada combinada às ${escapeHtml(st.agreed)} ✓` : 'entrada a horas'}${st.early ? ` · saíste ${fmtMin(st.early)} mais cedo` : st.late || st.agreed ? '' : ' ✓'}</span></div>
-            <div class="punch-day"><div class="punch-bar">${progressSpans(done, total, '')}</div><small>${fmtHours(done / 60)} de ${fmtHours(total / 60, 0)}${done - total >= 3 ? ` · <b class="hours-over">+${escapeHtml(fmtHours((done - total) / 60))}</b>` : ''}${row.check_out ? '' : ` · saída às ${escapeHtml(s.end)}`}</small></div>
-            ${row.check_out ? '<button type="button" class="text-btn" data-punch="fix">Corrigir</button>' : `<button type="button" class="secondary-btn punch-leave" data-punch="leave">Fechar o tasco</button><button type="button" class="text-btn" data-punch="fix">Corrigir</button>`}`;
+          const sess = attSessions(row), openS = sess.find(x => !x.out);
+          const sessMins = sess.reduce((t, x) => t + Math.max(0, minsBetween(x.out || now, x.in)), 0);
+          const done = (row.check_out ? minsBetween(row.check_out, row.check_in) : Math.max(0, minsBetween(now, row.check_in))) + sessMins;
+          const dueTxt = st.due ? hhmm(st.due) : null;
+          const sessTxt = sess.map(x => ` · ${hhmm(x.in)} → ${x.out ? hhmm(x.out) : 'agora'}`).join('');
+          main = `<div class="punch-state ${st.late || st.early ? 'late' : 'ok'}"><b>${row.check_out ? `Hoje: ${hhmm(row.check_in)} → ${hhmm(row.check_out)}${sessTxt}` : `Entraste às ${hhmm(row.check_in)}`}${row.edited ? ' <i title="Hora corrigida à mão">✎</i>' : ''}</b>
+              <span>${st.late ? `${fmtMin(st.late)} de atraso${st.agreed ? ` (combinado às ${escapeHtml(st.agreed)})` : ''}` : st.agreed ? `chegada combinada às ${escapeHtml(st.agreed)} ✓` : 'entrada a horas'}${st.early ? (sess.length ? ` · faltaram ${fmtMin(st.early)}` : ` · saíste ${fmtMin(st.early)} antes das ${escapeHtml(dueTxt)}`) : st.late || st.agreed ? '' : ' ✓'}${openS ? ` · de volta desde as ${escapeHtml(hhmm(openS.in))}` : sess.length ? ` · +${escapeHtml(fmtMin(attSessionMins(row)))} de sessão extra` : ''}</span></div>
+            <div class="punch-day"><div class="punch-bar">${progressSpans(done, total, '')}</div><small>${fmtHours(done / 60)} de ${fmtHours(total / 60, 0)}${done - total >= 3 ? ` · <b class="hours-over">+${escapeHtml(fmtHours((done - total) / 60))}</b>` : ''}${row.check_out ? '' : dueTxt ? ` · saída às ${escapeHtml(dueTxt)}${dueTxt !== s.end ? ' (chegaste mais cedo)' : ''}` : ` · a saída conta para o banco de horas (face às ${escapeHtml(s.end)})`}</small></div>
+            ${!row.check_out ? `<button type="button" class="secondary-btn punch-leave" data-punch="leave">Fechar o tasco</button><button type="button" class="text-btn" data-punch="fix">Corrigir</button>`
+              : openS ? `<button type="button" class="secondary-btn punch-leave" data-punch="leave2">Fechar outra vez</button><button type="button" class="text-btn" data-punch="fix">Corrigir</button>`
+              : `<button type="button" class="text-btn" data-punch="again">Voltei ao trabalho</button><button type="button" class="text-btn" data-punch="fix">Corrigir</button>`}`;
         }
         // Ontem sem saída
         const yRow = rows.filter(r => r.member_id === me && r.day < today && r.kind === 'office' && r.check_in && !r.check_out).sort((a, b) => b.day.localeCompare(a.day))[0];
@@ -12512,7 +12559,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             <div class="punch-main">${main}</div>${forgot}
             <div class="punch-bank">
               ${upcoming.filter(u => u.day > today).map(u => `<div class="pb-plan"><i class="pd pd-planned"></i><span>${escapeHtml(fmtDayMonth(u.day))}: chegas às <b>${escapeHtml(attAgreed(u))}</b> (combinado)</span><button type="button" class="text-btn" data-punch="later" data-day="${u.day}">Mudar</button></div>`).join('')}
-              <div class="pb-row"><span title="Tempo das chegadas combinadas, a compensar ficando depois da saída (${escapeHtml(s.end)}) noutros dias">Banco de horas: <b class="${bank.balance < 0 ? 'warn-text' : ''}">${bank.balance || bank.owed ? escapeHtml(fmtBank(bank.balance)) : '0 min'}</b>${bank.balance < 0 ? ' por compensar' : ''}${bank.planned ? ` <small>· ${escapeHtml(fmtMin(bank.planned))} combinados para os próximos dias</small>` : ''}</span>
+              <div class="pb-row"><span title="Chegadas combinadas (em dívida) contra o tempo depois da saída devida e as sessões extra. Quem chega atrasado: a saída conta a mais ou a menos face às ${escapeHtml(s.end)}.">Banco de horas: <b class="${bank.balance < 0 ? 'warn-text' : ''}">${bank.balance || bank.owed ? escapeHtml(fmtBank(bank.balance)) : '0 min'}</b>${bank.balance < 0 ? ' por compensar' : ''}${bank.planned ? ` <small>· ${escapeHtml(fmtMin(bank.planned))} combinados para os próximos dias</small>` : ''}</span>
                 <button type="button" class="text-btn" data-punch="later" data-day="${now < atTime(today, s.start) ? today : ''}">Vou chegar mais tarde</button></div>
             </div>${meetHtml ? `<div class="punch-meets"><div class="section-label" style="margin:12px 0 4px">Reuniões agora</div>${meetHtml}</div>` : ''}
           </div>
@@ -12558,6 +12605,18 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           // Fecho do dia do Daybreak; depois, a verificação das horas registadas
           openDbkClose(me, day, () => checkDayHours(me, day, row.check_in, nowIso));
           return;
+        } else if (kind === 'again') {
+          // nova sessão (ex.: depois de almoço): conta toda para o banco de horas
+          const sessions = [...attSessions(row), { in: nowIso, out: null }];
+          await saveAttendance({ member_id: me, day, kind: 'office', check_in: row.check_in, check_out: row.check_out, sessions, edited: row.edited || false });
+          showToast('De volta! O tempo desta sessão vai para o banco de horas.');
+        } else if (kind === 'leave2') {
+          const sessions = attSessions(row).map(x => x.out ? x : { ...x, out: nowIso });
+          await saveAttendance({ member_id: me, day, kind: 'office', check_in: row.check_in, check_out: row.check_out, sessions, edited: row.edited || false });
+          showToast('Tasco fechado outra vez. Até amanhã! 🍷');
+          renderAttendance(me);
+          checkDayHours(me, day, row.check_in, row.check_out, sessions);
+          return;
         } else if (kind === 'out' || kind === 'off' || kind === 'fix') {
           return openAttFix(kind, me, cfg, day, row);
         } else if (kind === 'later') {
@@ -12567,9 +12626,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       } catch (err) { showToast('Não foi possível registar: ' + err.message, { type: 'error' }); }
     }
     // Ao sair: as horas registadas no dia batem com o tempo entre a entrada e a saída? Se não, pede para completar
-    async function checkDayHours(me, day, checkIn, checkOut) {
+    async function checkDayHours(me, day, checkIn, checkOut, sessions = []) {
       if (!checkIn || !checkOut) return;
-      const present = (new Date(checkOut) - new Date(checkIn)) / 3600000;
+      const present = ((new Date(checkOut) - new Date(checkIn)) + sessions.reduce((t, x) => t + (x.in && x.out ? Math.max(0, new Date(x.out) - new Date(x.in)) : 0), 0)) / 3600000;
       if (!(present >= 1)) return;
       let entries;
       try {
@@ -12587,7 +12646,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const short = gap > 0;
       openQuickModal(short ? 'Antes de fechar o tasco…' : 'Horas a mais?', `
         <div class="hours-check">
-          <div><span>Estiveste cá</span><b>${escapeHtml(h(present))}</b><small>${escapeHtml(hhmm(checkIn))} → ${escapeHtml(hhmm(checkOut))}</small></div>
+          <div><span>Estiveste cá</span><b>${escapeHtml(h(present))}</b><small>${escapeHtml(hhmm(checkIn))} → ${escapeHtml(hhmm(checkOut))}${sessions.filter(x => x.in && x.out).map(x => ` · ${escapeHtml(hhmm(x.in))} → ${escapeHtml(hhmm(x.out))}`).join('')}</small></div>
           <div><span>Registaste</span><b class="${short ? 'warn-text' : ''}">${escapeHtml(h(logged))}</b><small>em ${escapeHtml(fmtDayMonth(day))}</small></div>
         </div>
         <p class="field-hint" style="margin:12px 0 0;">${short
@@ -12608,28 +12667,56 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <div><label class="field-label" for="af-in">Entrada</label><input type="time" id="af-in" class="form-input" value="${escapeHtml(t(row.check_in))}"></div>
           <div><label class="field-label" for="af-out">Saída</label><input type="time" id="af-out" class="form-input" value="${escapeHtml(t(row.check_out))}"></div>
         </div>
+        <div id="af-sess"${k === 'office' ? '' : ' hidden'}></div>
+        <button type="button" class="text-btn" id="af-sess-add"${k === 'office' ? '' : ' hidden'}>+ Outra sessão (ex.: depois de almoço)</button>
         <label class="field-label" for="af-note">Nota <span style="font-weight:var(--fw-regular);color:var(--text-2)">(${k === 'out' ? 'ex.: obra Felgueira, Câmara de Gaia' : 'opcional'})</span></label>
         <input type="text" id="af-note" class="form-input" maxlength="120" value="${escapeHtml(row.note || '')}">
         <div class="field-hint" id="af-hint">${k === 'out' ? 'Dias fora (obra, Câmara, cliente) contam como a horas.' : k === 'off' ? 'Folgas e férias não contam para o placar.' : 'Horas postas à mão ficam assinaladas com ✎ no placar.'}</div>
         <button type="button" class="primary-btn" id="af-save">Guardar</button>
         <div id="af-msg" class="form-msg"></div>`);
       let cur = k;
+      // sessões extra: contam todas para o banco de horas
+      let sess = attSessions(row).map(x => ({ in: t(x.in), out: t(x.out) }));
+      const drawSess = () => {
+        document.getElementById('af-sess').innerHTML = sess.map((x, i) => `<div class="form-grid af-srow">
+            <div><label class="field-label" for="af-si${i}">Voltei às</label><input type="time" id="af-si${i}" class="form-input" data-si="${i}" value="${escapeHtml(x.in)}"></div>
+            <div><label class="field-label" for="af-so${i}">Saí às</label><div class="af-sout"><input type="time" id="af-so${i}" class="form-input" data-so="${i}" value="${escapeHtml(x.out)}"><button type="button" class="op-spec-del" data-sdel="${i}" aria-label="Tirar esta sessão">×</button></div></div>
+          </div>`).join('') + (sess.length ? '<div class="field-hint" style="margin-top:4px">As sessões extra contam todas para o banco de horas.</div>' : '');
+        document.querySelectorAll('#af-sess [data-si]').forEach(i => i.addEventListener('input', () => { sess[Number(i.dataset.si)].in = i.value; }));
+        document.querySelectorAll('#af-sess [data-so]').forEach(i => i.addEventListener('input', () => { sess[Number(i.dataset.so)].out = i.value; }));
+        document.querySelectorAll('#af-sess [data-sdel]').forEach(b => b.addEventListener('click', () => { sess.splice(Number(b.dataset.sdel), 1); drawSess(); }));
+      };
+      drawSess();
+      document.getElementById('af-sess-add').addEventListener('click', () => { sess.push({ in: '', out: '' }); drawSess(); document.getElementById(`af-si${sess.length - 1}`)?.focus(); });
       document.querySelectorAll('#af-kind [data-k]').forEach(b => b.addEventListener('click', () => {
         cur = b.dataset.k;
         document.querySelectorAll('#af-kind [data-k]').forEach(x => x.classList.toggle('active', x === b));
         document.getElementById('af-times').hidden = cur !== 'office';
+        document.getElementById('af-sess').hidden = cur !== 'office'; document.getElementById('af-sess-add').hidden = cur !== 'office';
         document.getElementById('af-hint').textContent = cur === 'out' ? 'Dias fora (obra, Câmara, cliente) contam como a horas.' : cur === 'off' ? 'Folgas e férias não contam para o placar.' : 'Horas postas à mão ficam assinaladas com ✎ no placar.';
       }));
       document.getElementById('af-save').addEventListener('click', async () => {
         const note = valOrNull(document.getElementById('af-note').value.trim());
-        let next = { member_id: me, day, kind: cur, note, check_in: null, check_out: null, edited: false };
+        let next = { member_id: me, day, kind: cur, note, check_in: null, check_out: null, sessions: [], edited: false };
         if (cur === 'office') {
           const vi = document.getElementById('af-in').value, vo = document.getElementById('af-out').value;
           if (!vi) return formError('af-msg', 'Indica a hora de entrada.');
           if (vo && vo <= vi) return formError('af-msg', 'A saída tem de ser depois da entrada.');
           const ci = atTime(day, vi).toISOString(), co = vo ? atTime(day, vo).toISOString() : null;
-          const changed = t(row.check_in) !== vi || (vo && t(row.check_out) !== vo);
-          next = { ...next, check_in: ci, check_out: co, edited: !!(row.edited || changed) };
+          const ss = sess.filter(x => x.in || x.out);
+          if (ss.length && !vo) return formError('af-msg', 'Para ter outra sessão, indica primeiro a saída da manhã.');
+          let last = vo;
+          for (const x of ss) {
+            if (!x.in) return formError('af-msg', 'Indica a que horas voltaste.');
+            if (x.in < last) return formError('af-msg', `Cada sessão começa depois da anterior acabar (${last}).`);
+            if (x.out && x.out <= x.in) return formError('af-msg', 'A saída de cada sessão tem de ser depois da volta.');
+            if (!x.out && x !== ss[ss.length - 1]) return formError('af-msg', 'Só a última sessão pode ficar sem saída.');
+            last = x.out || x.in;
+          }
+          const sessions = ss.map(x => ({ in: atTime(day, x.in).toISOString(), out: x.out ? atTime(day, x.out).toISOString() : null }));
+          const before = JSON.stringify(attSessions(row).map(x => [t(x.in), t(x.out)])), after = JSON.stringify(ss.map(x => [x.in, x.out || '']));
+          const changed = t(row.check_in) !== vi || (vo && t(row.check_out) !== vo) || before !== after;
+          next = { ...next, check_in: ci, check_out: co, sessions, edited: !!(row.edited || changed) };
         }
         try { await saveAttendance(next); closeQuickModal(); showToast('Registado'); renderAttendance(me); }
         catch (err) { formError('af-msg', 'Não foi possível guardar: ' + err.message); }
@@ -18238,8 +18325,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { id: 'ponto', cat: 'horas', ctx: ['home'],
         q: 'marco a entrada e a saída (ponto)',
         a: 'Na página Hoje, cartão Ponto: «Cheguei» ao chegar e «Fechar o tasco» ao sair. Dias fora e folgas também se marcam lá.',
-        steps: ['Ao chegar, abre [[Hoje]] e toca em [[Cheguei]]. O horário é das 8h às 14h, com 5 minutos de tolerância.', 'Ao sair, toca em [[Fechar o tasco]].', 'Dia em obra, na Câmara ou no cliente? Toca em **Hoje estou fora** e escreve onde: conta como a horas.', 'Folga ou férias? Toca em **Folga / férias**: esse dia não conta.', 'Esqueceste-te de marcar? Toca em [[Corrigir]] e põe a hora certa. Fica assinalado com ✎.'],
-        kw: 'ponto entrada saida chegar cheguei sair picar pontualidade horario presenca atraso reuniao',
+        steps: ['Ao chegar, abre [[Hoje]] e toca em [[Cheguei]]. O horário e a tolerância estão no topo do cartão Ponto.', 'Ao sair, toca em [[Fechar o tasco]]. Se chegaste mais cedo, podes sair mais cedo: a saída devida é a entrada + as horas do horário (o cartão mostra a hora). Se chegaste atrasado, o atraso conta e a hora a que sais vai para o **banco de horas** (a mais ou a menos face à saída do horário).', 'Voltaste a pegar no trabalho (ex.: depois de almoço)? Toca em [[Voltei ao trabalho]] e, no fim, em [[Fechar outra vez]]. O tempo dessa sessão vai para o banco de horas. Em [[Corrigir]] também podes acrescentar ou acertar sessões.', 'Dia em obra, na Câmara ou no cliente? Toca em **Hoje estou fora** e escreve onde: conta como a horas.', 'Folga ou férias? Toca em **Folga / férias**: esse dia não conta.', 'Esqueceste-te de marcar? Toca em [[Corrigir]] e põe a hora certa. Fica assinalado com ✎.'],
+        kw: 'ponto entrada saida chegar cheguei sair picar pontualidade horario presenca atraso reuniao sessao almoco voltei tarde mais cedo',
         tour: [{ go: 'nav:home', sel: '#today-punch .punch, #today-punch', text: 'Toca em «Cheguei» ao chegar e em «Fechar o tasco» ao sair.' }] },
       { id: 'assinatura', cat: 'start', ctx: ['brand'],
         q: 'crio a minha assinatura de email do Outlook',
@@ -18296,8 +18383,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { id: 'mqt-studio', cat: 'proj', ctx: ['mqt', 'detail'],
         q: 'faço o MQT a partir do Revit e emito revisões',
         a: 'MQT Studio: cada projeto tem o seu MQT (abre-se antes das tabelas, em «+ Novo MQT» ou no ⋯ da ficha do projeto). As tabelas do Revit (.txt) montam os artigos pelos keynotes. Os descritivos vêm da biblioteca e podem ajustar-se em cada projeto. Fechas R00, R01…: novos a azul, revistos a verde, retirados a vermelho e rasurados.',
-        steps: ['**MQT Studio → + Novo MQT** e escolhe o projeto (ou, na ficha do projeto, **⋯ → MQT**).', 'No Revit, cada tipo tem o **Keynote** da biblioteca (ex.: PRD 01a = bloco térmico 250 mm). Exporta as tabelas (Ficheiro → Exportar → Relatórios → Tabela) e toca em **Carregar tabelas**.', 'Toca num artigo ou subartigo para **ajustar o descritivo neste projeto** (a biblioteca não muda) ou repor o standard.', 'Quando estiver pronto, **Fechar R00**: a numeração fica fixa. Nas revisões seguintes (R01, R02…) aparecem os novos (azul), revistos (verde) e retirados (vermelho, rasurados — desaparecem na revisão seguinte), com a nota em itálico.', 'A biblioteca global é uma tabela em **MQT Studio → Biblioteca de keynotes**: escreve nas células (grava sozinho); na linha **+ keynote** escreve PRD 05 para um elemento ou PRD 05d para um subartigo; também podes colar linhas do Excel.', 'Exporta o **Excel** (um por bloco); as propostas dos empreiteiros entram em **Preços** e alimentam a estimativa.'],
-        kw: 'mqt mapa quantidades trabalhos medicoes revit lt keynote notas chave tabelas schedules revisao r00 r01 revisoes descritivo override texto proprio biblioteca subartigo artigo novo revisto retirado estimativa empreiteiro proposta concurso bloco',
+        steps: ['**MQT Studio → + Novo MQT** e escolhe o projeto (ou, na ficha do projeto, **⋯ → MQT**).', 'No Revit, cada tipo tem o **Keynote** da biblioteca (ex.: PRD 01a = bloco térmico 250 mm). Exporta as tabelas (Ficheiro → Exportar → Relatórios → Tabela) e toca em **Carregar tabelas**.', 'Toca num artigo ou subartigo para **ajustar o descritivo neste projeto** (a biblioteca não muda) ou repor o standard. Os descritivos que não ajustaste seguem sempre a biblioteca: o que mudares lá aparece em todos os MQT (as revisões já fechadas não mudam).', 'Para tirar um artigo deste projeto, toca nele → **Tirar do MQT** (no artigo com subartigos: **Tirar o artigo do MQT**). Os que vêm do Revit ficam em **Retirados deste MQT**, no fundo, e não voltam mesmo que estejam nas tabelas — até tocares em **Repor**.', 'A seta ao lado de cada capítulo e de cada artigo recolhe-o ou abre-o; **Fechar tudo** / **Abrir tudo** no topo. Fica lembrado neste computador. O mesmo na biblioteca de keynotes.', 'Quando estiver pronto, **Fechar R00**: a numeração fica fixa. Nas revisões seguintes (R01, R02…) aparecem os novos (azul), revistos (verde) e retirados (vermelho, rasurados — desaparecem na revisão seguinte), com a nota em itálico.', 'A biblioteca global é uma tabela em **MQT Studio → Biblioteca de keynotes**: escreve nas células (grava sozinho); na linha **+ keynote** escreve PRD 05 para um elemento ou PRD 05d para um subartigo; também podes colar linhas do Excel.', 'Exporta o **Excel** (um por bloco); as propostas dos empreiteiros entram em **Preços** e alimentam a estimativa.'],
+        kw: 'mqt mapa quantidades trabalhos medicoes revit lt keynote notas chave tabelas schedules revisao r00 r01 revisoes descritivo override texto proprio biblioteca subartigo eliminar apagar tirar retirar repor recolher fechar abrir expandir colapsar artigo novo revisto retirado estimativa empreiteiro proposta concurso bloco',
         tour: [{ go: 'nav:mqt', sel: '#mqt-htabs', text: 'MQT de todos os projetos, preços dos empreiteiros e a biblioteca de keynotes.' }] },
       { id: 'trabalhos-a-mais', cat: 'money', ctx: ['detail', 'home'],
         q: 'cobro um trabalho a mais pedido pelo cliente',
@@ -18355,7 +18442,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { id: 'jarra', cat: 'horas', ctx: ['home', 'finance:time'],
         q: 'funciona o placar, os copos e o jantar de deboche',
         a: 'Cada minuto de atraso vai para a jarra de quem se atrasou. À sexta, quem tem mais minutos paga os copos; no fim do mês, o pior paga o jantar de deboche.',
-        steps: ['No cartão **Placar da semana** (página [[Hoje]]) vês os dias de cada um: verde a horas, amarelo atrasado, cinzento fora ou folga.', 'Vão para a jarra: os **minutos de atraso** à entrada (além da tolerância), as **saídas antes da hora** e as **chegadas tarde às reuniões**.', 'Cada 10 minutos na jarra vale um 🍺.', 'À sexta, a app diz quem **paga os copos** da semana. 🏆 marca quem chegou sempre a horas.', 'No fim do mês, quem tiver mais minutos no mês (a partir de 30) paga o 🍽️ **jantar de deboche**. A barra mostra quem vai à frente.', 'O histórico de cada pessoa está em [[Mission Control]] → **Tempo** → **Pontualidade**.'],
+        steps: ['No cartão **Placar da semana** (página [[Hoje]]) vês os dias de cada um: verde a horas, amarelo atrasado, cinzento fora ou folga.', 'Vão para a jarra: os **minutos de atraso** à entrada (além da tolerância), as **saídas antes da hora** (a hora devida é a entrada + as horas do horário: quem chega mais cedo pode sair mais cedo) e as **chegadas tarde às reuniões**.', 'Cada 10 minutos na jarra vale um 🍺.', 'À sexta, a app diz quem **paga os copos** da semana. 🏆 marca quem chegou sempre a horas.', 'No fim do mês, quem tiver mais minutos no mês (a partir de 30) paga o 🍽️ **jantar de deboche**. A barra mostra quem vai à frente.', 'O histórico de cada pessoa está em [[Mission Control]] → **Tempo** → **Pontualidade**.'],
         kw: 'placar jarra copos copo cerveja jantar deboche ranking pontualidade atrasos quem paga competicao semana mes',
         tour: [{ go: 'nav:home', sel: '#today-punch .board, #today-punch', text: 'O placar da semana: copos à sexta, jantar de deboche no fim do mês.' }] },
       { id: 'horas-nf', cat: 'horas', ctx: ['horas'],
@@ -29100,8 +29187,11 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         if (!c.error && !c.count) { const r = await supabase.from('mqt_checks').insert(d.checks); if (r.error) throw r.error; }
       }
     }
+    // A biblioteca relê-se ao fim de 30 s: as alterações feitas por outra pessoa (ou noutro separador) chegam aos
+    // descritivos dos MQT dos projetos — os que não foram editados no projeto seguem sempre a biblioteca.
+    let mqtLibAt = 0;
     async function mqtLoadLib(force = false) {
-      if (mqtLibCache && !force) return mqtLibCache;
+      if (mqtLibCache && !force && Date.now() - mqtLibAt < 30000) return mqtLibCache;
       let lib;
       if (devMode) {
         if (!MOCK_MQT.chapters.length) await mqtSeedLibrary();
@@ -29127,7 +29217,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       lib.elByCode = {}; lib.elements.forEach(e => { lib.elByCode[e.code.toUpperCase()] = e; });
       lib.varsOf = {}; lib.variants.slice().sort((a, b) => (a.sort_order - b.sort_order) || mqtKeyCmp(a.letter, b.letter)).forEach(v => { (lib.varsOf[v.element_code.toUpperCase()] ||= []).push(v); });
       lib.chByCode = {}; lib.chapters.forEach(c => { lib.chByCode[c.code] = c; });
-      mqtLibCache = lib;
+      mqtLibCache = lib; mqtLibAt = Date.now();
       return lib;
     }
 
@@ -29390,7 +29480,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         const row = h.closest('tr'), sibs = siblingsOf(row), from = sibs.findIndex(g => g.includes(row));
         if (from < 0 || sibs.length < 2) return;
         e.preventDefault(); e.stopPropagation(); h.setPointerCapture(e.pointerId);
-        const box = g => { const a = g[0].getBoundingClientRect(), b = g[g.length - 1].getBoundingClientRect(); return { top: a.top, bottom: b.bottom }; };
+        // linhas recolhidas não ocupam espaço: mede só as que se veem
+        const box = g => { const v = g.filter(r => r.getClientRects().length); const gg = v.length ? v : g; const a = gg[0].getBoundingClientRect(), b = gg[gg.length - 1].getBoundingClientRect(); return { top: a.top, bottom: b.bottom }; };
         const R = sibs.map(box), hgt = R[from].bottom - R[from].top, y0 = e.clientY;
         sibs[from].forEach(r => r.classList.add('row-dragging')); document.body.classList.add('is-row-dragging');
         let to = from;
@@ -29541,9 +29632,13 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         if (!el || !qb) return;
         const qs = Object.entries(qb).filter(([, q]) => Number(q) > 0);
         // sem quantidade: fica no MQT "a considerar" (reserva o keynote; em todos os blocos)
-        if (!qs.length) { const it = items[(mqtFull(el.code, pk.letter)).toUpperCase()] || add(el, pk.letter, '', '', 0, 'manual', ''); it.reserved = true; return; }
-        qs.forEach(([b, q]) => { add(el, pk.letter, '', b, Number(q), 'manual', ''); if (b) blocksSet.add(b); });
+        if (!qs.length) { const it = items[(mqtFull(el.code, pk.letter)).toUpperCase()] || add(el, pk.letter, '', '', 0, 'manual', ''); it.reserved = true; it.byHand = true; return; }
+        qs.forEach(([b, q]) => { add(el, pk.letter, '', b, Number(q), 'manual', '').byHand = true; if (b) blocksSet.add(b); });
       });
+      // tirados deste MQT (chave do subartigo, ou "@CÓDIGO" para o artigo todo): não entram, mesmo que voltem nas
+      // tabelas do Revit; o que se acrescenta à mão volta a entrar
+      const removed = cfg.removed || {};
+      Object.keys(items).forEach(k => { const it = items[k]; if (!it.byHand && (removed[k] || removed['@' + it.el.code.toUpperCase()])) delete items[k]; });
       const blocks = [...blocksSet].sort((a, b) => a.localeCompare(b, 'pt', { numeric: true }));
       const hasCommon = Object.values(items).some(it => it.qb[''] > 0);
       issues.reserved = Object.values(items).filter(it => it.reserved && !Object.values(it.qb).some(q => q > 0)).map(it => it.full);
@@ -29805,7 +29900,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         body = (viewRev ? `<div class="mqt-banner">A ver a revisão <b>${mqtRevLabel(viewRev.rev)}</b>, fechada a ${escapeHtml(new Date(viewRev.created_at).toLocaleDateString('pt-PT'))}${viewRev.note ? ' · ' + escapeHtml(viewRev.note) : ''}. É uma fotografia: não muda. <button type="button" class="text-btn" id="mqt-rev-back">Voltar ao MQT em curso</button></div>` : '')
           + (!viewRev && !latest ? mqtEmptyHtml(true) : '')
           + (keys.length > 1 ? `<div class="segmented mqt-blocks" id="mqt-blocks">${keys.map(b => `<button type="button" data-mblock="${escapeHtml(b)}" class="${b === bk ? 'active' : ''}">${escapeHtml(mqtBlockLabel(b))}</button>`).join('')}</div>` : '')
-          + mqtLinesHtml(lines, stats, { editable: !viewRev, reorder: !viewRev && !lastRev, revN, block: keys.length > 1 ? bk : null, counts: !viewRev && lastRev ? cnt : null, allTotal: keys.length > 1 ? keys.reduce((t, k) => t + mqtLinesTotal(src[k], stats).total, 0) : null });
+          + mqtLinesHtml(lines, stats, { editable: !viewRev, reorder: !viewRev && !lastRev, revN, block: keys.length > 1 ? bk : null, counts: !viewRev && lastRev ? cnt : null, allTotal: keys.length > 1 ? keys.reduce((t, k) => t + mqtLinesTotal(src[k], stats).total, 0) : null })
+          + (!viewRev ? mqtRemovedHtml(cfg) : '');
         box.__mqtExport = { src, keys, revN, draft: !viewRev };
       } else if (mqtTab === 'check') body = mqtCheckHtml(lib, mq, ck, cfg);
       else body = mqtRevsHtml(revs, runs, nextN, cnt);
@@ -29855,6 +29951,12 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
           try { await mqtSaveCfg(mqtProjectId, { ord }); renderMqt(); } catch (e) { showError('guardar a ordem', e); }
         } });
       }
+      box.querySelectorAll('[data-mqt-restore]').forEach(b => b.addEventListener('click', async () => {
+        const removed = JSON.parse(JSON.stringify(cfg.removed || {})); delete removed[b.dataset.mqtRestore];
+        try { await mqtSaveCfg(mqtProjectId, { removed }); showToast('Reposto no MQT'); renderMqt(); } catch (e) { showError('repor', e); }
+      }));
+      const mtable = box.querySelector('.mqt-table');
+      if (mtable) mqtAttachFold(mtable, 'p:' + mqtProjectId, box.querySelectorAll('.mqt-sum [data-fold-all]'));
       box.querySelectorAll('[data-mqt-na]').forEach(b => b.addEventListener('click', () => mqtToggleNa(cfg, b.dataset.mqtNa, b.dataset.on === '1')));
       box.querySelectorAll('[data-mqt-addcode]').forEach(b => b.addEventListener('click', () => openMqtManualModal(lib, cfg, mq, b.dataset.mqtAddcode)));
       box.querySelectorAll('[data-mqt-spec]').forEach(b => b.addEventListener('click', () => { const code = b.dataset.mqtSpec.toUpperCase(); const it = Object.values(mq.items).find(i => i.el.code.toUpperCase() === code && i.qty > 0); if (!it) return; if (mqtHasSubs(lib, it.el)) openMqtArtModal(lib, cfg, mq, code); else openMqtItemModal(lib, cfg, mq, it, stats); }));
@@ -29863,6 +29965,41 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       box.querySelectorAll('[data-mqt-rev-view]').forEach(b => b.addEventListener('click', () => { mqtViewRev = b.dataset.mqtRevView; mqtTab = 'mqt'; mqtBlock = null; renderMqt(); window.scrollTo(0, 0); }));
       box.querySelectorAll('[data-mqt-rev-xls]').forEach(b => b.addEventListener('click', () => { const r = revs.find(x => x.id === b.dataset.mqtRevXls); const keys = Object.keys(r.blocks || {}).sort(); mqtExportFiles(project, { src: r.blocks || {}, keys, revN: r.rev, draft: false }, null); }));
       document.getElementById('mqt-close-rev2')?.addEventListener('click', () => openMqtCloseRev(lib, mq, cfg, lastRev, nextN));
+    }
+    // Retirados deste MQT (com Repor)
+    function mqtRemovedHtml(cfg) {
+      const list = Object.entries(cfg.removed || {});
+      if (!list.length) return '';
+      return `<details class="gantt-wrap mqt-removed"><summary>Retirados deste MQT <span class="muted">(${list.length})</span></summary>
+          ${list.sort((a, b) => String(a[1]?.label || a[0]).localeCompare(String(b[1]?.label || b[0]), 'pt', { numeric: true })).map(([k, v]) => `<div class="invoice-row"><span><b>${escapeHtml(v?.label || k.replace(/^@/, ''))}</b>${k.startsWith('@') ? ' <span class="muted">· artigo inteiro</span>' : ''}${v?.at ? `<small class="muted"> · desde ${escapeHtml(fmtDayMonth(v.at))}</small>` : ''}</span><button type="button" class="text-btn" data-mqt-restore="${escapeHtml(k)}">Repor</button></div>`).join('')}
+          <div class="field-hint">Não entram neste projeto, mesmo que voltem nas tabelas do Revit. A biblioteca não muda.</div>
+        </details>`;
+    }
+    // ---------- Recolher / abrir capítulos e artigos (fica lembrado neste browser) ----------
+    // Linhas: data-fc = capítulo a que pertencem, data-fe = artigo (para os subartigos / variantes); botões data-fold="c:…" / "e:…"
+    const MQT_CHEV = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5"/></svg>';
+    const mqtFoldBtn = (key, what) => `<button type="button" class="mqt-fold" data-fold="${escapeHtml(key)}" aria-expanded="true" aria-label="Recolher ou abrir ${escapeHtml(what)}">${MQT_CHEV}</button>`;
+    const mqtFoldGet = scope => { try { return new Set(JSON.parse(localStorage.getItem('mqt-fold:' + scope) || '[]')); } catch (_) { return new Set(); } };
+    const mqtFoldPut = (scope, set) => { try { localStorage.setItem('mqt-fold:' + scope, JSON.stringify([...set])); } catch (_) { /* sem armazenamento: fica só nesta visita */ } };
+    function mqtAttachFold(table, scope, allBtns = []) {
+      const F = mqtFoldGet(scope);
+      const apply = () => {
+        table.querySelectorAll('tr[data-fc], tr[data-fe]').forEach(tr => tr.classList.toggle('fold-h', !!((tr.dataset.fc && F.has('c:' + tr.dataset.fc)) || (tr.dataset.fe && F.has('e:' + tr.dataset.fe)))));
+        table.querySelectorAll('[data-fold]').forEach(b => { const open = !F.has(b.dataset.fold); b.setAttribute('aria-expanded', String(open)); b.closest('tr')?.classList.toggle('folded', !open); });
+      };
+      const toggle = k => { if (F.has(k)) F.delete(k); else F.add(k); mqtFoldPut(scope, F); apply(); };
+      // fase de captura: o toque na seta (ou no capítulo do MQT) não abre o artigo
+      table.addEventListener('click', e => {
+        const b = e.target.closest('[data-fold]');
+        if (b) { e.stopPropagation(); toggle(b.dataset.fold); return; }
+        const ch = e.target.closest('tr[data-foldrow]');
+        if (ch && !e.target.closest('input, textarea, select, button')) { e.stopPropagation(); toggle(ch.dataset.foldrow); }
+      }, true);
+      allBtns.forEach(btn => btn.addEventListener('click', () => {
+        if (btn.dataset.foldAll === '1') table.querySelectorAll('[data-fold^="c:"]').forEach(x => F.add(x.dataset.fold)); else F.clear();
+        mqtFoldPut(scope, F); apply();
+      }));
+      apply();
     }
     function mqtEmptyHtml(inline) {
       return `<div class="gantt-wrap mqt-empty">
@@ -29896,10 +30033,11 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       const rows = lines.map(l => {
         const cls = l.st ? ` st-${l.st}` : '';
         const grip = l.st !== 'del' && reorder ? `<button type="button" class="mqt-grip" aria-label="Mover ${escapeHtml(l.full || mqtCodeDisp(l.code))} (↑ ↓)" title="Arrastar para mudar a ordem">${MQT_GRIP}</button>` : '';
-        const dk = l.t === 'ch' ? '' : ` data-ch="${escapeHtml(l.ch || '')}" data-el="${escapeHtml(String(l.code || '').toUpperCase())}" data-lv="${l.t === 'art' ? 'a' : l.lvl === 2 ? 's' : 'i'}" data-k="${escapeHtml(l.key)}"`;
+        const EL = String(l.code || '').toUpperCase();
+        const dk = l.t === 'ch' ? '' : ` data-ch="${escapeHtml(l.ch || '')}" data-el="${escapeHtml(EL)}" data-lv="${l.t === 'art' ? 'a' : l.lvl === 2 ? 's' : 'i'}" data-k="${escapeHtml(l.key)}" data-fc="${escapeHtml(l.ch || '')}"${l.t === 'item' && l.lvl === 2 ? ` data-fe="${escapeHtml(EL)}"` : ''}`;
         const head = (code, nm) => `<span class="kn"><b class="kc">${escapeHtml(code)}</b>${nm ? `<span class="nm">${escapeHtml(nm)}</span>` : ''}${tags(l)}</span>`;
-        if (l.t === 'ch') return `<tr class="mqt-ch${cls}"><td class="art">${escapeHtml(l.num)}</td><td colspan="4">${escapeHtml(l.text)}</td><td class="num tt">${chSub[l.num] ? escapeHtml(fmtEUR(chSub[l.num])) : ''}</td></tr>`;
-        if (l.t === 'art') return `<tr class="mqt-it mqt-art${cls}${l.miss ? ' miss' : ''}"${dk}${editable && l.st !== 'del' ? ` data-mqt-art="${escapeHtml(l.key)}" tabindex="0"` : ''}><td class="art">${grip}${escapeHtml(l.num)}</td><td class="ds" colspan="5">${head(mqtCodeDisp(l.code), l.nm)}<span class="tx">${md(l.text)}</span>${notes(l)}</td></tr>`;
+        if (l.t === 'ch') return `<tr class="mqt-ch${cls}" data-foldrow="c:${escapeHtml(l.key)}"><td class="art">${mqtFoldBtn('c:' + l.key, 'o capítulo ' + l.text)}${escapeHtml(l.num)}</td><td colspan="4">${escapeHtml(l.text)}</td><td class="num tt">${chSub[l.num] ? escapeHtml(fmtEUR(chSub[l.num])) : ''}</td></tr>`;
+        if (l.t === 'art') return `<tr class="mqt-it mqt-art${cls}${l.miss ? ' miss' : ''}"${dk}${editable && l.st !== 'del' ? ` data-mqt-art="${escapeHtml(l.key)}" tabindex="0"` : ''}><td class="art">${mqtFoldBtn('e:' + EL, 'os subartigos de ' + mqtCodeDisp(l.code))}${grip}${escapeHtml(l.num)}</td><td class="ds" colspan="5">${head(mqtCodeDisp(l.code), l.nm)}<span class="tx">${md(l.text)}</span>${notes(l)}</td></tr>`;
         const st = l.st === 'del' ? null : stats[String(l.full).toUpperCase()];
         const val = st ? Math.round(st.med * l.q * 100) / 100 : null;
         return `<tr class="mqt-it ${l.lvl === 2 ? 'mqt-sub' : 'mqt-art mqt-one'}${cls}${l.miss ? ' miss' : ''}"${dk}${editable && l.st !== 'del' ? ` data-mqt-item="${escapeHtml(l.key)}" tabindex="0"` : ''}>
@@ -29912,7 +30050,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         </tr>`;
       }).join('');
       const nArts = lines.filter(l => (l.t === 'art' || (l.t === 'item' && l.lvl === 1)) && l.st !== 'del').length;
-      return `<div class="gantt-wrap mqt-sum"><span>${block != null ? `<b>${escapeHtml(mqtBlockLabel(block))}</b> · ` : ''}<b>${nArts}</b> artigos, <b>${tt.n}</b> com quantidade${counts ? ` · <span class="c-new">${counts.new} novos</span> · <span class="c-rev">${counts.rev} revistos</span> · <span class="c-del">${counts.del} retirados</span> desde a última revisão` : ''}</span><span>Estimativa <b>${tt.total ? escapeHtml(fmtEUR(tt.total)) : '—'}</b><small>${tt.covered} de ${tt.n} com preço de referência${allTotal ? ` · todos os blocos ${escapeHtml(fmtEUR(allTotal))}` : ''}</small></span></div>
+      return `<div class="gantt-wrap mqt-sum"><span><span class="mqt-foldall"><button type="button" class="text-btn" data-fold-all="1">Fechar tudo</button><button type="button" class="text-btn" data-fold-all="0">Abrir tudo</button></span>${block != null ? `<b>${escapeHtml(mqtBlockLabel(block))}</b> · ` : ''}<b>${nArts}</b> artigos, <b>${tt.n}</b> com quantidade${counts ? ` · <span class="c-new">${counts.new} novos</span> · <span class="c-rev">${counts.rev} revistos</span> · <span class="c-del">${counts.del} retirados</span> desde a última revisão` : ''}</span><span>Estimativa <b>${tt.total ? escapeHtml(fmtEUR(tt.total)) : '—'}</b><small>${tt.covered} de ${tt.n} com preço de referência${allTotal ? ` · todos os blocos ${escapeHtml(fmtEUR(allTotal))}` : ''}</small></span></div>
         <div class="gantt-wrap mqt-wrap"><table class="mqt-table">
           <thead><tr><th>Art.</th><th>Designação</th><th>Un.</th><th class="num">Quant.</th><th class="num">P. ref.</th><th class="num">Estimativa</th></tr></thead>
           <tbody>${rows}</tbody>
@@ -30020,19 +30158,19 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       lib.chapters.forEach(ch => {
         const els = lib.elements.filter(e => e.chapter_code === ch.code).sort((a, b) => a.sort_order - b.sort_order || mqtKeyCmp(a.code, b.code));
         rows.push(`<tr class="g-ch" data-kind="ch" data-id="${escapeHtml(ch.id)}" data-ch="${escapeHtml(ch.code)}" data-s="${escapeHtml(ch.code + ' ' + ch.name)}">
-          <td><input class="g-in g-code" data-f="code" value="${escapeHtml(ch.code)}" aria-label="Código do capítulo"></td>
+          <td><span class="g-kc">${mqtFoldBtn('c:' + ch.code, 'o capítulo ' + ch.name)}<input class="g-in g-code" data-f="code" value="${escapeHtml(ch.code)}" aria-label="Código do capítulo"></span></td>
           <td colspan="4"><input class="g-in g-chname" data-f="name" value="${escapeHtml(ch.name)}" aria-label="Capítulo"></td>
           <td class="g-act">${els.length ? '' : `<button type="button" class="g-del" data-del aria-label="Apagar capítulo" title="Apagar capítulo">×</button>`}</td></tr>`);
         els.forEach(e => {
           const vs = lib.varsOf[e.code.toUpperCase()] || [];
-          rows.push(`<tr class="g-el${e.active === false ? ' off' : ''}" data-kind="el" data-id="${escapeHtml(e.id)}" data-ch="${escapeHtml(ch.code)}" data-s="${escapeHtml([e.code, mqtCodeDisp(e.code), e.name, e.text, vs.map(v => mqtFull(e.code, v.letter) + ' ' + v.label).join(' ')].join(' '))}">
-            <td><span class="g-kc"><button type="button" class="mqt-grip" aria-label="Mover ${escapeHtml(mqtCodeDisp(e.code))} (↑ ↓)" title="Arrastar: muda a ordem em todos os projetos">${MQT_GRIP}</button><input class="g-in g-code" data-f="code" value="${escapeHtml(mqtCodeDisp(e.code))}" aria-label="Keynote"></span></td>
+          rows.push(`<tr class="g-el${e.active === false ? ' off' : ''}" data-kind="el" data-id="${escapeHtml(e.id)}" data-ch="${escapeHtml(ch.code)}" data-fc="${escapeHtml(ch.code)}" data-s="${escapeHtml([e.code, mqtCodeDisp(e.code), e.name, e.text, vs.map(v => mqtFull(e.code, v.letter) + ' ' + v.label).join(' ')].join(' '))}">
+            <td><span class="g-kc">${vs.length ? mqtFoldBtn('e:' + e.code.toUpperCase(), 'os subtipos de ' + mqtCodeDisp(e.code)) : '<span class="mqt-fold-sp"></span>'}<button type="button" class="mqt-grip" aria-label="Mover ${escapeHtml(mqtCodeDisp(e.code))} (↑ ↓)" title="Arrastar: muda a ordem em todos os projetos">${MQT_GRIP}</button><input class="g-in g-code" data-f="code" value="${escapeHtml(mqtCodeDisp(e.code))}" aria-label="Keynote"></span></td>
             <td><input class="g-in g-name" data-f="name" value="${escapeHtml(e.name)}" aria-label="Designação"></td>
             <td><select class="g-in" data-f="unit" aria-label="Unidade">${unitOpts(e.unit)}</select></td>
             <td><textarea class="g-in g-text" data-f="text" rows="1" aria-label="Descritivo do artigo" placeholder="Descritivo do artigo — {var} = subartigo; {marca}, {cor}… completam-se no projeto">${escapeHtml(e.text)}</textarea></td>
             <td><select class="g-in g-src" data-f="qty_source" aria-label="Medição">${srcOpts(e.qty_source)}</select></td>
             <td class="g-act"><button type="button" class="g-add" data-addvar="${escapeHtml(e.code)}" aria-label="Acrescentar subtipo" title="Acrescentar subtipo (Ctrl+Enter)">+</button><button type="button" class="g-more" data-more aria-label="Mais opções" title="Perdas, categoria do Revit, cálculo…">⋯</button><button type="button" class="g-del" data-del aria-label="Apagar elemento" title="Apagar elemento e subartigos">×</button></td></tr>`);
-          vs.forEach(v => rows.push(`<tr class="g-var" data-kind="var" data-id="${escapeHtml(v.id)}" data-el="${escapeHtml(e.code)}" data-ch="${escapeHtml(ch.code)}" data-s="${escapeHtml([e.code + '.' + v.letter, e.name, v.label, v.text].join(' '))}">
+          vs.forEach(v => rows.push(`<tr class="g-var" data-kind="var" data-id="${escapeHtml(v.id)}" data-el="${escapeHtml(e.code)}" data-ch="${escapeHtml(ch.code)}" data-fc="${escapeHtml(ch.code)}" data-fe="${escapeHtml(e.code.toUpperCase())}" data-s="${escapeHtml([e.code + '.' + v.letter, e.name, v.label, v.text].join(' '))}">
             <td><span class="g-kc"><button type="button" class="mqt-grip" aria-label="Mover ${escapeHtml(mqtFull(e.code, v.letter))} (↑ ↓)" title="Arrastar: muda a ordem em todos os projetos">${MQT_GRIP}</button><span class="g-pre">${escapeHtml(mqtCodeDisp(e.code))}</span><input class="g-in g-suf" data-f="letter" value="${escapeHtml(mqtSufDisp(v.letter))}" aria-label="Sufixo do subartigo"></span></td>
             <td><input class="g-in g-label" data-f="label" value="${escapeHtml(v.label)}" aria-label="Subartigo"></td>
             <td class="g-inh">${escapeHtml(e.unit)}</td>
@@ -30040,7 +30178,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
             <td></td>
             <td class="g-act"><button type="button" class="g-add" data-addvar="${escapeHtml(e.code)}" aria-label="Acrescentar subtipo" title="Acrescentar subtipo (Ctrl+Enter)">+</button><button type="button" class="g-del" data-del aria-label="Apagar subartigo" title="Apagar subartigo">×</button></td></tr>`));
         });
-        rows.push(`<tr class="g-new" data-kind="new" data-ch="${escapeHtml(ch.code)}">
+        rows.push(`<tr class="g-new" data-kind="new" data-ch="${escapeHtml(ch.code)}" data-fc="${escapeHtml(ch.code)}">
           <td><input class="g-in g-code" data-f="code" placeholder="+ keynote" aria-label="Novo keynote em ${escapeHtml(ch.name)}"></td>
           <td><input class="g-in" data-f="name" placeholder="designação"></td>
           <td><select class="g-in" data-f="unit">${unitOpts('m²')}</select></td>
@@ -30048,7 +30186,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
           <td></td><td></td></tr>`);
       });
       rows.push(`<tr class="g-newch" data-kind="newch"><td><input class="g-in g-code" data-f="code" placeholder="+ cap." aria-label="Código do novo capítulo"></td><td colspan="4"><input class="g-in" data-f="name" placeholder="nome do novo capítulo · Enter cria"></td><td></td></tr>`);
-      return `<div class="mqt-libbar"><input type="text" id="mqt-lib-search" class="search-input op-search" placeholder="Procurar keynote, designação ou texto…" autocomplete="off"><span class="mqt-saved" id="mqt-saved" aria-live="polite"></span></div>
+      return `<div class="mqt-libbar"><input type="text" id="mqt-lib-search" class="search-input op-search" placeholder="Procurar keynote, designação ou texto…" autocomplete="off"><span class="mqt-foldall"><button type="button" class="text-btn" data-fold-all="1">Fechar tudo</button><button type="button" class="text-btn" data-fold-all="0">Abrir tudo</button></span><span class="mqt-saved" id="mqt-saved" aria-live="polite"></span></div>
         <div class="field-hint" style="margin:0 0 10px">Escreve nas células — grava sozinho. Para criar, escreve o keynote na linha <b>+ keynote</b> do capítulo: <b>PRD 05</b> cria um elemento, <b>PRD 05d</b> cria o subartigo d. Podes colar várias linhas do Excel (Keynote, Designação, Un., Descritivo). Enter e ↑ ↓ mudam de linha. <b>+</b> (ou Ctrl+Enter) numa linha acrescenta um subtipo por baixo — ex.: outra espessura. Vários campos por subtipo (ex.: espessura e cor): no descritivo usa <b>{var}</b> e <b>{cor}</b>; no subtipo escreve <b>60 mm | branca</b>.</div>
         <div class="gantt-wrap mqt-gridwrap"><table class="mqt-grid">
           <colgroup><col style="width:150px"><col style="width:260px"><col style="width:74px"><col><col style="width:150px"><col style="width:84px"></colgroup>
@@ -30328,7 +30466,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         ev.preventDefault();
         const col = inp.closest('td').cellIndex;
         let r = tr;
-        do { r = dir > 0 ? r.nextElementSibling : r.previousElementSibling; } while (r && (r.hidden || !r.cells[col]?.querySelector('.g-in')));
+        do { r = dir > 0 ? r.nextElementSibling : r.previousElementSibling; } while (r && (r.hidden || (r.classList.contains('fold-h') && !grid.classList.contains('searching')) || !r.cells[col]?.querySelector('.g-in')));
         if (!r) return;
         if (inp.dataset.f && tr.dataset.kind !== 'new') inp.dispatchEvent(new Event('change'));
         const t = r.cells[col].querySelector('.g-in'); t.focus(); if (t.select && t.tagName === 'INPUT') t.select();
@@ -30337,9 +30475,11 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       document.getElementById('mqt-ck-new')?.addEventListener('click', () => openMqtCheckModal(lib, null));
       document.getElementById('mqt-kn-export')?.addEventListener('click', () => mqtExportKeynotes(lib));
       document.getElementById('mqt-lib-reseed')?.addEventListener('click', async () => { try { await mqtSeedLibrary({ checks: true }); showToast('Biblioteca de referência reposta (só o que faltava)'); rerender(); } catch (e) { showError('repor a biblioteca', e); } });
+      mqtAttachFold(grid, 'lib', box.querySelectorAll('.mqt-libbar [data-fold-all]'));
       const ls = document.getElementById('mqt-lib-search');
       ls.addEventListener('input', () => {
         const q = normTxt(ls.value);
+        grid.classList.toggle('searching', !!q);
         const rows = [...grid.querySelectorAll('tbody tr')];
         if (!q) { rows.forEach(r => { r.hidden = false; }); return; }
         const hitEl = new Set(), hitCh = new Set();
@@ -30430,7 +30570,14 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         ${mqtOwnTextHtml(own ? mqtFillFields(own, sp, []) : std, std, !!own)}
         ${fields.length ? `<label class="field-label">Completar o texto</label>${fields.map(f => `<input type="text" class="form-input mqt-spec-in" data-f="${escapeHtml(f)}" placeholder="${escapeHtml(f)}" value="${escapeHtml(sp[f] || '')}" style="margin-bottom:6px">`).join('')}` : ''}
         <div id="mqt-it-msg" class="form-msg"></div>
-        <button type="button" class="primary-btn" id="mqt-it-save">Guardar</button>`);
+        <div class="mqt-modal-acts"><button type="button" class="secondary-btn danger-text" id="mqt-art-del">Tirar o artigo do MQT</button><button type="button" class="primary-btn" id="mqt-it-save">Guardar</button></div>`);
+      document.getElementById('mqt-art-del').addEventListener('click', async () => {
+        const its = Object.values(mq.items).filter(x => x.el.code.toUpperCase() === EL);
+        const n = its.length;
+        if (n > 1 && !confirm(`Tirar ${mqtCodeDisp(el.code)} · ${el.name} e os ${n} subartigos deste MQT?`)) return;
+        try { await mqtRemove(cfg, its, `${mqtCodeDisp(el.code)} · ${el.name}`, its.some(x => x.source !== 'manual') ? '@' + EL : null); closeQuickModal(); }
+        catch (e) { formError('mqt-it-msg', e.message); }
+      });
       let reset = false;
       document.getElementById('mqt-own-reset')?.addEventListener('click', () => { reset = true; document.getElementById('mqt-own').value = std; showToast('Descritivo standard reposto — falta guardar'); });
       document.getElementById('mqt-it-save').addEventListener('click', async () => {
@@ -30467,7 +30614,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         ${derived && vars.length ? `<label class="field-label" for="mqt-dv">Variante</label><select id="mqt-dv" class="form-input">${vars.map(v => `<option value="${escapeHtml(v.letter.toUpperCase())}"${v.letter.toUpperCase() === it.letter ? ' selected' : ''}>${escapeHtml(v.letter + ' · ' + v.label)}</option>`).join('')}<option value="off">Não entra neste projeto</option></select>` : derived ? `<label class="mqt-chk"><input type="checkbox" id="mqt-doff"> Não entra neste projeto</label>` : ''}
         ${man ? `<label class="field-label">Quantidade (${escapeHtml(el.unit)})</label>${mq.cols.map(b => `<div class="mqt-qrow"><span>${escapeHtml(mqtMulti(mq) ? mqtBlockLabel(b) : 'Quantidade')}</span><input type="text" inputmode="decimal" class="form-input mqt-man-in" data-b="${escapeHtml(b)}" value="${man[b] != null ? escapeHtml(String(man[b]).replace('.', ',')) : ''}"></div>`).join('')}` : ''}
         <div id="mqt-it-msg" class="form-msg"></div>
-        <div class="mqt-modal-acts">${man ? '<button type="button" class="secondary-btn" id="mqt-it-del">Tirar do MQT</button>' : ''}<button type="button" class="primary-btn" id="mqt-it-save">Guardar</button></div>`);
+        <div class="mqt-modal-acts"><button type="button" class="secondary-btn danger-text" id="mqt-it-del">Tirar do MQT</button><button type="button" class="primary-btn" id="mqt-it-save">Guardar</button></div>`);
       let reset = false;
       document.getElementById('mqt-own-reset')?.addEventListener('click', () => { reset = true; document.getElementById('mqt-own').value = std; showToast('Descritivo standard reposto — falta guardar'); });
       document.getElementById('mqt-it-save').addEventListener('click', async () => {
@@ -30492,9 +30639,20 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         } catch (e) { formError('mqt-it-msg', 'Não foi possível guardar: ' + e.message); }
       });
       document.getElementById('mqt-it-del')?.addEventListener('click', async () => {
-        try { const manual = JSON.parse(JSON.stringify(cfg.manual || {})); delete manual[it.full]; delete manual[it.full.toUpperCase()]; await mqtSaveCfg(mqtProjectId, { manual }); closeQuickModal(); showToast('Tirado do MQT'); renderMqt(); }
+        const label = [it.full + (it.typeKey ? ' · ' + it.typeKey : ''), it.variant ? mqtVarLabel(it.variant) : el.name].filter(Boolean).join(' · ');
+        try { await mqtRemove(cfg, [it], label, it.source === 'manual' ? null : it.key); closeQuickModal(); }
         catch (e) { formError('mqt-it-msg', e.message); }
       });
+    }
+    // Tirar do MQT deste projeto: os à mão apagam-se; os do Revit (e calculados) ficam em «Retirados», com Repor
+    async function mqtRemove(cfg, its, label, removeKey) {
+      const before = { manual: cfg.manual || {}, removed: cfg.removed || {} };
+      const manual = JSON.parse(JSON.stringify(before.manual)), removed = JSON.parse(JSON.stringify(before.removed));
+      its.forEach(it => { delete manual[it.full]; delete manual[it.full.toUpperCase()]; });
+      if (removeKey) removed[removeKey] = { at: dateKey(new Date()), label };
+      await mqtSaveCfg(mqtProjectId, { manual, removed });
+      showToast(`${label} tirado do MQT`, { undo: async () => { try { await mqtSaveCfg(mqtProjectId, before); renderMqt(); } catch (e) { showError('repor', e); } } });
+      renderMqt();
     }
     // Acrescentar artigo à mão (estaleiro, especialidades, peitoris…)
     function mqtKeyOptions(lib, filter = () => true) {
