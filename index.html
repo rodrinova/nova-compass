@@ -14579,7 +14579,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           if (s.plan_start && s.work_time_days) { s.start_date = s.plan_start; s.end_date = addWorkdays(s.plan_start, s.work_time_days); }
         });
       }
-      const payload = stages.map(({ id, stage_types, plan_start, plan_end, plan_auto_end, ...rest }) => rest);
+      // (os campos plan_* são do cálculo do plano, não colunas da tabela: um a mais faz recusar o pedido inteiro)
+      const payload = stages.map(({ id, stage_types, ...rest }) => Object.fromEntries(Object.entries(rest).filter(([k]) => !k.startsWith('plan_'))));
       if (devMode) return payload.length;
       const r = await supabase.from('project_stages').insert(payload);
       if (r.error) throw r.error;
