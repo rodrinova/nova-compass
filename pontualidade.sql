@@ -95,3 +95,7 @@ revoke all on function private.attendance_late_guard() from public, anon, authen
 drop trigger if exists attendance_late_guard on public.attendance;
 create trigger attendance_late_guard before insert or update on public.attendance
   for each row execute function private.attendance_late_guard();
+
+-- ---------- Sessões extra do dia (ex.: voltar depois de almoço) ----------
+-- [{ "in": timestamptz, "out": timestamptz | null }]. Contam todas para o banco de horas.
+alter table public.attendance add column if not exists sessions jsonb not null default '[]'::jsonb;

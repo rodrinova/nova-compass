@@ -121,6 +121,8 @@ end $$;
 alter table public.mqt_project add column if not exists texts jsonb not null default '{}';
 alter table public.mqt_project add column if not exists created_at timestamptz not null default now();
 alter table public.mqt_project add column if not exists created_by uuid references public.team_members(id) on delete set null;
+-- removed: artigos do Revit tirados deste MQT { "PRD 01A": { at, label }, "@PRD01": artigo inteiro }; não entram mesmo que voltem nas tabelas
+alter table public.mqt_project add column if not exists removed jsonb not null default '{}';
 -- Revisões emitidas (R00, R01…): fotografia fixa de cada bloco, numeração fixa dos artigos e contagens
 create table if not exists public.mqt_revisions (
   id uuid primary key default gen_random_uuid(),
