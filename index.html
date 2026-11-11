@@ -11263,7 +11263,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     }
 
     // Projeto e fase a partir da descrição (código do projeto + nome da fase)
-    function matchInvoice(desc, base) {
+    // Etiquetas «letras + número» (ATARQ.9, ATARQ 09, ADIT.02 → atarq9, adit2), para ligar a fatura à fase com a mesma etiqueta
+    const invLabelKeys = t => [...normTxt(t || '').matchAll(/([a-z]{2,})[\s.\-_/]*0*(\d{1,3})(?!\d)/g)].map(m => m[1] + m[2]);
+    function matchInvoice(desc, base, pending = []) {
       const d = normTxt(desc);
       const project = base.projects
         .filter(p => p.code && new RegExp(`(^|[^\\d])${normTxt(String(p.code)).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^\\d]|$)`).test(d))
@@ -11271,8 +11273,14 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       if (!project) return { project: null, stage: null };
       const stages = base.stages.filter(s => s.project_id === project.id).sort((a, b) => (a.stage_order ?? 0) - (b.stage_order ?? 0));
       const named = stages.filter(s => s.stage_types?.name && d.includes(normTxt(s.stage_types.name)));
-      const invoiced = id => base.invoices.filter(i => i.stage_id === id && i.status !== 'cancelled').reduce((t, i) => t + Number(i.amount || 0), 0);
-      const stage = named.find(s => invoiced(s.id) < stageBudget(s, project) - 0.5) || named[0] || null;
+      // a fase com a mesma etiqueta da fatura (ex.: «ATARQ.9» → fase ATARQ 09) ganha
+      const keys = new Set(invLabelKeys(desc));
+      const byLabel = keys.size ? stages.filter(s => s.revision_label && invLabelKeys(s.revision_label).some(k => keys.has(k))) : [];
+      if (byLabel.length === 1) return { project, stage: byLabel[0] };
+      // conta também as faturas deste mesmo ficheiro já ligadas a fases (senão iam todas para a primeira com saldo)
+      const invoiced = id => [...base.invoices, ...pending].filter(i => i.stage_id === id && i.status !== 'cancelled').reduce((t, i) => t + Number(i.amount || 0), 0);
+      const pool = byLabel.length ? byLabel : named;
+      const stage = pool.find(s => invoiced(s.id) < stageBudget(s, project) - 0.5) || pool[0] || null;
       return { project, stage };
     }
 
@@ -11313,7 +11321,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         let project_id = null, stage_id = null;
         const orig = credit && d.references.map(r => refInfo[r] || byExt[r]).find(Boolean);
         if (orig) { project_id = orig.project_id; stage_id = orig.stage_id; }
-        else { const m = matchInvoice(d.description, base); project_id = m.project?.id ?? null; stage_id = m.stage?.id ?? null; }
+        else { const m = matchInvoice(d.description, base, plan.inserts); project_id = m.project?.id ?? null; stage_id = m.stage?.id ?? null; }
         if (!project_id) plan.unmatched++;
         refInfo[d.ref] = { project_id, stage_id };
         plan.inserts.push({ ...row, project_id, stage_id, amount_paid: row.amount_paid ?? 0, payment_date: row.payment_date ?? null });
