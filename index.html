@@ -4679,6 +4679,7 @@
   .mqt-fold:hover, .mqt-fold:focus-visible { color: var(--text); background: var(--surface-2); }
   .mqt-fold-sp { flex: none; width: 22px; margin: 0 2px 0 -4px; }
   tr.fold-h { display: none; }
+  .mqt-drop-line { position: absolute; z-index: 30; height: 3px; margin-top: -1px; border-radius: 2px; background: var(--accent); box-shadow: 0 0 0 2px var(--surface); pointer-events: none; display: none; }
   .mqt-grid.searching tr.fold-h:not([hidden]) { display: table-row; }
   .mqt-ch[data-foldrow] { cursor: pointer; }
   .mqt-foldall { display: inline-flex; gap: var(--sp-3); margin-right: var(--sp-3); }
@@ -18383,8 +18384,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { id: 'mqt-studio', cat: 'proj', ctx: ['mqt', 'detail'],
         q: 'faço o MQT a partir do Revit e emito revisões',
         a: 'MQT Studio: cada projeto tem o seu MQT (abre-se antes das tabelas, em «+ Novo MQT» ou no ⋯ da ficha do projeto). As tabelas do Revit (.txt) montam os artigos pelos keynotes. Os descritivos vêm da biblioteca e podem ajustar-se em cada projeto. Fechas R00, R01…: novos a azul, revistos a verde, retirados a vermelho e rasurados.',
-        steps: ['**MQT Studio → + Novo MQT** e escolhe o projeto (ou, na ficha do projeto, **⋯ → MQT**).', 'No Revit, cada tipo tem o **Keynote** da biblioteca (ex.: PRD 01a = bloco térmico 250 mm). Exporta as tabelas (Ficheiro → Exportar → Relatórios → Tabela) e toca em **Carregar tabelas**.', 'Toca num artigo ou subartigo para **ajustar o descritivo neste projeto** (a biblioteca não muda) ou repor o standard. Os descritivos que não ajustaste seguem sempre a biblioteca: o que mudares lá aparece em todos os MQT (as revisões já fechadas não mudam).', 'Para tirar um artigo deste projeto, toca nele → **Tirar do MQT** (no artigo com subartigos: **Tirar o artigo do MQT**). Os que vêm do Revit ficam em **Retirados deste MQT**, no fundo, e não voltam mesmo que estejam nas tabelas — até tocares em **Repor**.', 'A seta ao lado de cada capítulo e de cada artigo recolhe-o ou abre-o; **Fechar tudo** / **Abrir tudo** no topo. Fica lembrado neste computador. O mesmo na biblioteca de keynotes.', 'Quando estiver pronto, **Fechar R00**: a numeração fica fixa. Nas revisões seguintes (R01, R02…) aparecem os novos (azul), revistos (verde) e retirados (vermelho, rasurados — desaparecem na revisão seguinte), com a nota em itálico.', 'A biblioteca global é uma tabela em **MQT Studio → Biblioteca de keynotes**: escreve nas células (grava sozinho); na linha **+ keynote** escreve PRD 05 para um elemento ou PRD 05d para um subartigo; também podes colar linhas do Excel.', 'Exporta o **Excel** (um por bloco); as propostas dos empreiteiros entram em **Preços** e alimentam a estimativa.'],
-        kw: 'mqt mapa quantidades trabalhos medicoes revit lt keynote notas chave tabelas schedules revisao r00 r01 revisoes descritivo override texto proprio biblioteca subartigo eliminar apagar tirar retirar repor recolher fechar abrir expandir colapsar artigo novo revisto retirado estimativa empreiteiro proposta concurso bloco',
+        steps: ['**MQT Studio → + Novo MQT** e escolhe o projeto (ou, na ficha do projeto, **⋯ → MQT**).', 'No Revit, cada tipo tem o **Keynote** da biblioteca (ex.: PRD 01a = bloco térmico 250 mm). Exporta as tabelas (Ficheiro → Exportar → Relatórios → Tabela) e toca em **Carregar tabelas**.', 'Toca num artigo ou subartigo para **ajustar o descritivo neste projeto** (a biblioteca não muda) ou repor o standard. Os descritivos que não ajustaste seguem sempre a biblioteca: o que mudares lá aparece em todos os MQT (as revisões já fechadas não mudam).', 'Para tirar um artigo deste projeto, toca nele → **Tirar do MQT** (no artigo com subartigos: **Tirar o artigo do MQT**). Os que vêm do Revit ficam em **Retirados deste MQT**, no fundo, e não voltam mesmo que estejam nas tabelas — até tocares em **Repor**.', 'A seta ao lado de cada capítulo e de cada artigo recolhe-o ou abre-o; **Fechar tudo** / **Abrir tudo** no topo. Fica lembrado neste computador. O mesmo na biblioteca de keynotes.', 'Quando estiver pronto, **Fechar R00**: a numeração fica fixa. Nas revisões seguintes (R01, R02…) aparecem os novos (azul), revistos (verde) e retirados (vermelho, rasurados — desaparecem na revisão seguinte), com a nota em itálico.', 'A biblioteca global é uma tabela em **MQT Studio → Biblioteca de keynotes**: escreve nas células (grava sozinho); na linha **+ keynote** escreve PRD 05 para um elemento ou PRD 05d para um subartigo; também podes colar linhas do Excel.', 'Para mudar um elemento de ordem ou de capítulo, arrasta-o pelos pontinhos (ou ↑ ↓ no teclado). Os keynotes renumeram-se sozinhos — quem muda de capítulo passa para o prefixo desse capítulo (ex.: DEM 03 → PRD 07) — e a mudança chega a todos os MQT dos projetos, com a numeração dos artigos (até à R00; depois fica fixa). No Revit, volta a carregar o ficheiro de keynotes e acerta os tipos.', 'Exporta o **Excel** (um por bloco); as propostas dos empreiteiros entram em **Preços** e alimentam a estimativa.'],
+        kw: 'mqt mapa quantidades trabalhos medicoes revit lt keynote notas chave tabelas schedules revisao r00 r01 revisoes descritivo override texto proprio biblioteca subartigo eliminar apagar tirar retirar repor recolher arrastar mover capitulo renumerar codigo keynote ordem fechar abrir expandir colapsar artigo novo revisto retirado estimativa empreiteiro proposta concurso bloco',
         tour: [{ go: 'nav:mqt', sel: '#mqt-htabs', text: 'MQT de todos os projetos, preços dos empreiteiros e a biblioteca de keynotes.' }] },
       { id: 'trabalhos-a-mais', cat: 'money', ctx: ['detail', 'home'],
         q: 'cobro um trabalho a mais pedido pelo cliente',
@@ -29195,7 +29196,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       let lib;
       if (devMode) {
         if (!MOCK_MQT.chapters.length) await mqtSeedLibrary();
-        lib = { chapters: MOCK_MQT.chapters.slice(), elements: MOCK_MQT.elements.slice(), variants: MOCK_MQT.variants.slice(), checks: MOCK_MQT.checks.slice() };
+        lib = { chapters: MOCK_MQT.chapters.slice(), elements: MOCK_MQT.elements.slice(), variants: MOCK_MQT.variants.slice(), checks: MOCK_MQT.checks.slice(), renames: (MOCK_MQT.renames || []).slice() };
       } else {
         const get = t => supabase.from(t).select('*').order('sort_order').then(r => { if (r.error) throw r.error; return r.data || []; });
         let [chapters, elements, variants, checks] = await Promise.all(['mqt_chapters', 'mqt_elements', 'mqt_variants', 'mqt_checks'].map(get));
@@ -29211,6 +29212,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         }
         if (!chapters.length) { await mqtSeedLibrary(); [chapters, elements, variants, checks] = await Promise.all(['mqt_chapters', 'mqt_elements', 'mqt_variants', 'mqt_checks'].map(get)); }
         lib = { chapters, elements, variants, checks };
+        const rn = await supabase.from('app_settings').select('value').eq('key', 'mqt_renames').maybeSingle();
+        lib.renames = Array.isArray(rn.data?.value) ? rn.data.value : [];
       }
       lib.elements.forEach(e => { if (e.unit === 'm') e.unit = 'ml'; });
       lib.chapters.sort((a, b) => a.code.localeCompare(b.code));
@@ -29562,7 +29565,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
     function mqtAllLines(lib, mq, cfg, prevRev, revN) {
       const out = {};
       mqtBlockKeys(mq).forEach(k => {
-        const prev = prevRev ? { lines: prevRev.blocks?.[k] || [], numbering: prevRev.numbering?.[k] || null } : null;
+        let prev = prevRev ? { lines: prevRev.blocks?.[k] || [], numbering: prevRev.numbering?.[k] || null } : null;
+        if (prev) prev = mqtTranslatePrev(prev, lib.renames, prevRev.created_at);
         out[k] = mqtBuildLines(lib, mq, cfg, mqtBlockArg(k), prev && (prev.lines.length || prev.numbering) ? prev : (prevRev ? { lines: [], numbering: null } : null), revN);
       });
       // blocos que existiam na revisão anterior e deixaram de existir: tudo retirado
@@ -29966,6 +29970,166 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       box.querySelectorAll('[data-mqt-rev-xls]').forEach(b => b.addEventListener('click', () => { const r = revs.find(x => x.id === b.dataset.mqtRevXls); const keys = Object.keys(r.blocks || {}).sort(); mqtExportFiles(project, { src: r.blocks || {}, keys, revN: r.rev, draft: false }, null); }));
       document.getElementById('mqt-close-rev2')?.addEventListener('click', () => openMqtCloseRev(lib, mq, cfg, lastRev, nextN));
     }
+    // ---------- Keynotes: renumerar ao mudar de sítio e propagar a mudança ----------
+    // Cada capítulo tem blocos por família (prefixo: PRD, REVe…). Ao mudar a ordem ou de capítulo, cada bloco afetado fica
+    // seguido a partir do número mais baixo que já tinha (PRD01, PRD02…; os blocos noutros capítulos não mexem).
+    // Quem entra num capítulo onde a sua família não existe passa para a família do vizinho onde foi largado.
+    const MQT_NUM_RE = /^([A-Za-z]+)(\d+)$/;
+    function mqtRenumber(lib, lists, moved) {
+      const fam = c => (String(c).match(MQT_NUM_RE) || [])[1] || null;
+      const num = c => Number((String(c).match(MQT_NUM_RE) || [])[2]);
+      const wid = c => ((String(c).match(MQT_NUM_RE) || [])[2] || '00').length;
+      if (moved && moved.from !== moved.to) {
+        const L = lists[moved.to], i = L.indexOf(moved.el), f0 = fam(moved.el.code);
+        if (f0 && !L.some(x => x !== moved.el && fam(x.code) === f0)) {
+          const nb = [...L.slice(0, i).reverse(), ...L.slice(i + 1)].find(x => fam(x.code));
+          if (nb) moved.fam = fam(nb.code);
+        }
+      }
+      const out = new Map();
+      Object.entries(lists).forEach(([ch, L]) => {
+        const groups = {};
+        L.forEach(e => { const f = (moved && e === moved.el && moved.fam) || fam(e.code); if (f) (groups[f] ||= []).push(e); });
+        Object.entries(groups).forEach(([f, arr]) => {
+          // o bloco começa onde já começava neste capítulo (antes da mudança); família nova no capítulo: fica como está
+          const before = lib.elements.filter(x => x.chapter_code === ch && !(moved && x === moved.el && moved.from !== ch) && fam(x.code) === f).map(x => x.code);
+          if (!before.length) return;
+          const start = Math.min(...before.map(num)), w = wid(before[0]);
+          arr.forEach((e, k) => out.set(e, f + String(start + k).padStart(w, '0')));
+        });
+      });
+      const taken = new Set(lib.elements.filter(x => !out.has(x)).map(x => x.code.toUpperCase())), seen = new Set();
+      let conflict = null;
+      out.forEach(c => { const u = c.toUpperCase(); if (taken.has(u) || seen.has(u)) conflict ||= c; seen.add(u); });
+      const map = {}; out.forEach((c, e) => { if (c !== e.code) map[e.code] = c; });
+      return { map, conflict };
+    }
+    // Troca o código do elemento numa chave guardada, mantendo a forma: "PRD01", "PRD 01A", "PRD 01a|tipo", "@PRD01", "PRD01.B"…
+    // U = { CÓDIGO ANTIGO EM MAIÚSCULAS: código novo } (todos ao mesmo tempo: dá para trocar dois entre si)
+    function mqtRemapKey(k, U) {
+      if (k == null || typeof k !== 'string') return k;
+      const m = k.match(/^(@?)([^|]*)(\|.*)?$/); if (!m) return k;
+      const c = m[2], comp = c.replace(/\s+/g, '').toUpperCase();
+      for (const oc of Object.keys(U).sort((a, b) => b.length - a.length)) {
+        if (!comp.startsWith(oc)) continue;
+        const rest = comp.slice(oc.length);
+        if (rest && !/^[A-Z]+$/.test(rest) && !rest.startsWith('.')) continue;
+        let i = 0, n = 0; while (i < c.length && n < oc.length) { if (!/\s/.test(c[i])) n++; i++; }
+        const pre = c.slice(0, i), nw = U[oc];
+        let np = /\s/.test(pre) ? mqtCodeDisp(nw) : nw;
+        if (pre === pre.toUpperCase()) np = np.toUpperCase();
+        return m[1] + np + c.slice(i) + (m[3] || '');
+      }
+      return k;
+    }
+    const mqtRemapObj = (o, U, vals = false) => o && typeof o === 'object' && !Array.isArray(o) ? Object.fromEntries(Object.entries(o).map(([k, v]) => [mqtRemapKey(k, U), vals && Array.isArray(v) ? v.map(x => mqtRemapKey(x, U)) : v])) : o;
+    // Renomeia keynotes na biblioteca e em tudo o que os usa: MQT dos projetos (textos, campos, à mão, ordem, retirados),
+    // tabelas do Revit já carregadas, preços e regras. As revisões fechadas não mudam (a comparação traduz os códigos).
+    async function mqtApplyRenames(lib, map) {
+      const olds = Object.keys(map).filter(o => map[o] && map[o] !== o); if (!olds.length) return;
+      const U = Object.fromEntries(olds.map(o => [o.toUpperCase(), map[o]]));
+      const now = new Date().toISOString();
+      const els = olds.map(o => [lib.elements.find(x => x.code === o), o, map[o]]).filter(x => x[0]);
+      // 1) elementos: primeiro um código provisório (para dois poderem trocar entre si); as variantes seguem por cascata
+      for (const [e] of els) await dbUpdate('mqt_elements', e.id, { code: 'zz~' + String(e.id).slice(0, 8), updated_at: now }, MOCK_MQT.elements);
+      for (const [e, , n] of els) await dbUpdate('mqt_elements', e.id, { code: n, updated_at: now }, MOCK_MQT.elements);
+      els.forEach(([e, o, n]) => { e.code = n; });
+      new Set([...lib.variants, ...(devMode ? MOCK_MQT.variants : [])]).forEach(v => { const n = U[String(v.element_code).toUpperCase()]; if (n) v.element_code = n; });
+      // 2) MQT dos projetos
+      const projs = devMode ? MOCK_MQT.project : ((await supabase.from('mqt_project').select('project_id, manual, specs, texts, ord, removed')).data || []);
+      for (const pr of projs) {
+        const specs = mqtRemapObj(pr.specs || {}, U); if (specs.__derived) specs.__derived = mqtRemapObj(specs.__derived, U);
+        const ord = pr.ord ? { ...pr.ord, arts: Object.fromEntries(Object.entries(pr.ord.arts || {}).map(([ch, l]) => [ch, (l || []).map(x => mqtRemapKey(x, U))])), subs: mqtRemapObj(pr.ord.subs || {}, U, true) } : (pr.ord ?? null);
+        const patch = { manual: mqtRemapObj(pr.manual || {}, U), texts: mqtRemapObj(pr.texts || {}, U), specs, ord, removed: mqtRemapObj(pr.removed || {}, U) };
+        if (JSON.stringify(patch) === JSON.stringify({ manual: pr.manual || {}, texts: pr.texts || {}, specs: pr.specs || {}, ord: pr.ord ?? null, removed: pr.removed || {} })) continue;
+        if (devMode) Object.assign(pr, patch);
+        else { const r = await supabase.from('mqt_project').update({ ...patch, updated_at: now }).eq('project_id', pr.project_id); if (r.error) throw r.error; }
+      }
+      // 3) tabelas do Revit já carregadas (para não ficarem com keynotes que já não existem)
+      const runs = devMode ? MOCK_MQT.runs : ((await supabase.from('mqt_runs').select('id, rows')).data || []);
+      for (const run of runs) {
+        let ch = false;
+        const rows = (run.rows || []).map(r => { const k = mqtRemapKey(r.k, U); if (k !== r.k) { ch = true; return { ...r, k }; } return r; });
+        if (!ch) continue;
+        if (devMode) run.rows = rows; else { const r = await supabase.from('mqt_runs').update({ rows }).eq('id', run.id); if (r.error) throw r.error; }
+        delete mqtRunRowsCache[run.id];
+      }
+      // 4) preços e regras
+      const prices = devMode ? MOCK_MQT.prices : ((await selectAll(() => supabase.from('mqt_prices').select('id, keynote').order('id'))).data || []);
+      for (const x of prices) { const k = mqtRemapKey(x.keynote, U); if (k !== x.keynote) await dbUpdate('mqt_prices', x.id, { keynote: k }, MOCK_MQT.prices); }
+      for (const c of lib.checks) {
+        const codes = (c.codes || []).map(x => mqtRemapKey(x, U)), ifc = (c.if_codes || []).map(x => mqtRemapKey(x, U));
+        if (codes.join() !== (c.codes || []).join() || ifc.join() !== (c.if_codes || []).join()) { await dbUpdate('mqt_checks', c.id, { codes, if_codes: ifc }, MOCK_MQT.checks); c.codes = codes; c.if_codes = ifc; }
+      }
+      // 5) registo (para comparar com as revisões já fechadas)
+      const log = [...(lib.renames || []), { at: now, map }].slice(-200);
+      if (devMode) MOCK_MQT.renames = log;
+      else { const r = await supabase.from('app_settings').upsert({ key: 'mqt_renames', value: log, updated_at: now }); if (r.error) throw r.error; }
+      lib.renames = log;
+      mqtLibCache = null;
+    }
+    // Revisão fechada antes de uma renumeração: traduz as chaves para os códigos de hoje (só para comparar)
+    function mqtTranslatePrev(prev, renames, since) {
+      const maps = (renames || []).filter(r => r.at > since).map(r => Object.fromEntries(Object.entries(r.map || {}).map(([o, n]) => [o.toUpperCase(), n])));
+      if (!prev || !maps.length) return prev;
+      const tr = k => maps.reduce((x, U) => mqtRemapKey(x, U), k);
+      const num = prev.numbering ? { ...prev.numbering, art: Object.fromEntries(Object.entries(prev.numbering.art || {}).map(([k, v]) => [tr(k).toUpperCase(), v])), sub: Object.fromEntries(Object.entries(prev.numbering.sub || {}).map(([k, v]) => [tr(k), v])) } : prev.numbering;
+      return { lines: (prev.lines || []).map(l => l.t === 'ch' ? l : { ...l, key: l.t === 'art' ? tr(l.key).toUpperCase() : tr(l.key), code: tr(l.code) }), numbering: num };
+    }
+    // Arrastar elementos da biblioteca, também para outro capítulo: a linha segue o dedo e uma barra mostra onde fica.
+    // Teclado: ↑ ↓ nos pontinhos (no limite do capítulo passa para o capítulo ao lado).
+    function mqtElDrag(tb, lib, onMove) {
+      const vis = r => r.getClientRects().length > 0;
+      const groupOf = row => { const g = [row]; for (let n = row.nextElementSibling; n && n.dataset.kind === 'var'; n = n.nextElementSibling) g.push(n); return g; };
+      tb.addEventListener('keydown', e => {
+        const h = e.target.closest('.g-el .mqt-grip'); if (!h || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+        e.preventDefault();
+        const row = h.closest('tr'), ch = row.dataset.ch, up = e.key === 'ArrowUp';
+        const els = [...tb.querySelectorAll('tr.g-el')].filter(r => r.dataset.ch === ch);
+        const i = els.indexOf(row), chs = lib.chapters.map(c => c.code), ci = chs.indexOf(ch);
+        if (up && i > 0) onMove(row.dataset.id, ch, els[i - 1].dataset.id);
+        else if (!up && i < els.length - 1) onMove(row.dataset.id, ch, els[i + 2]?.dataset.id || null);
+        else if (up && ci > 0) onMove(row.dataset.id, chs[ci - 1], null);
+        else if (!up && ci < chs.length - 1) { const nx = [...tb.querySelectorAll('tr.g-el')].find(r => r.dataset.ch === chs[ci + 1]); onMove(row.dataset.id, chs[ci + 1], nx?.dataset.id || null); }
+      });
+      tb.addEventListener('pointerdown', e => {
+        const h = e.target.closest('.mqt-grip'); if (!h || e.button > 0) return;
+        const row = h.closest('tr'); if (row.dataset.kind !== 'el') return;
+        e.preventDefault(); e.stopPropagation(); h.setPointerCapture(e.pointerId);
+        const g = groupOf(row), y0 = e.clientY;
+        g.forEach(r => r.classList.add('row-dragging')); document.body.classList.add('is-row-dragging');
+        const line = document.createElement('div'); line.className = 'mqt-drop-line'; document.body.appendChild(line);
+        const tbl = tb.closest('table').getBoundingClientRect();
+        // onde fica: antes do primeiro elemento (ou fim de capítulo) cujo meio está abaixo do ponteiro
+        const cands = [...tb.querySelectorAll('tr.g-el, tr.g-new, tr.g-ch, tr.g-newch')].filter(r => !g.includes(r) && vis(r)).map(r => ({ r, b: r.getBoundingClientRect() }));
+        let target = null;
+        const pick = y => {
+          let lastCh = null;
+          for (const c of cands) {
+            const k = c.r.dataset.kind;
+            if (y < c.b.top + c.b.height / 2) {
+              if (k === 'el') return { ch: c.r.dataset.ch, before: c.r.dataset.id, y: c.b.top };
+              if (k === 'new') return { ch: c.r.dataset.ch, before: null, y: c.b.top };
+              return lastCh ? { ch: lastCh, before: null, y: c.b.top } : null;   // capítulo de cima (mesmo recolhido): fica no fim
+            }
+            if (k === 'ch') lastCh = c.r.dataset.ch;
+          }
+          return null;
+        };
+        const move = ev => {
+          const dy = ev.clientY - y0; g.forEach(r => { r.style.transform = `translateY(${dy}px)`; });
+          target = pick(ev.clientY);
+          if (target) { line.style.display = 'block'; line.style.left = (tbl.left + window.scrollX) + 'px'; line.style.width = tbl.width + 'px'; line.style.top = (target.y + window.scrollY) + 'px'; }
+          else line.style.display = 'none';
+        };
+        const up = () => {
+          h.removeEventListener('pointermove', move); h.removeEventListener('pointerup', up); h.removeEventListener('pointercancel', up);
+          g.forEach(r => { r.style.transform = ''; r.classList.remove('row-dragging'); }); document.body.classList.remove('is-row-dragging'); line.remove();
+          if (target) onMove(row.dataset.id, target.ch, target.before);
+        };
+        h.addEventListener('pointermove', move); h.addEventListener('pointerup', up); h.addEventListener('pointercancel', up);
+      });
+    }
     // Retirados deste MQT (com Repor)
     function mqtRemovedHtml(cfg) {
       const list = Object.entries(cfg.removed || {});
@@ -30164,7 +30328,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         els.forEach(e => {
           const vs = lib.varsOf[e.code.toUpperCase()] || [];
           rows.push(`<tr class="g-el${e.active === false ? ' off' : ''}" data-kind="el" data-id="${escapeHtml(e.id)}" data-ch="${escapeHtml(ch.code)}" data-fc="${escapeHtml(ch.code)}" data-s="${escapeHtml([e.code, mqtCodeDisp(e.code), e.name, e.text, vs.map(v => mqtFull(e.code, v.letter) + ' ' + v.label).join(' ')].join(' '))}">
-            <td><span class="g-kc">${vs.length ? mqtFoldBtn('e:' + e.code.toUpperCase(), 'os subtipos de ' + mqtCodeDisp(e.code)) : '<span class="mqt-fold-sp"></span>'}<button type="button" class="mqt-grip" aria-label="Mover ${escapeHtml(mqtCodeDisp(e.code))} (↑ ↓)" title="Arrastar: muda a ordem em todos os projetos">${MQT_GRIP}</button><input class="g-in g-code" data-f="code" value="${escapeHtml(mqtCodeDisp(e.code))}" aria-label="Keynote"></span></td>
+            <td><span class="g-kc">${vs.length ? mqtFoldBtn('e:' + e.code.toUpperCase(), 'os subtipos de ' + mqtCodeDisp(e.code)) : '<span class="mqt-fold-sp"></span>'}<button type="button" class="mqt-grip" aria-label="Mover ${escapeHtml(mqtCodeDisp(e.code))} (↑ ↓)" title="Arrastar (também para outro capítulo): renumera os keynotes, em todos os projetos">${MQT_GRIP}</button><input class="g-in g-code" data-f="code" value="${escapeHtml(mqtCodeDisp(e.code))}" aria-label="Keynote"></span></td>
             <td><input class="g-in g-name" data-f="name" value="${escapeHtml(e.name)}" aria-label="Designação"></td>
             <td><select class="g-in" data-f="unit" aria-label="Unidade">${unitOpts(e.unit)}</select></td>
             <td><textarea class="g-in g-text" data-f="text" rows="1" aria-label="Descritivo do artigo" placeholder="Descritivo do artigo — {var} = subartigo; {marca}, {cor}… completam-se no projeto">${escapeHtml(e.text)}</textarea></td>
@@ -30187,7 +30351,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       });
       rows.push(`<tr class="g-newch" data-kind="newch"><td><input class="g-in g-code" data-f="code" placeholder="+ cap." aria-label="Código do novo capítulo"></td><td colspan="4"><input class="g-in" data-f="name" placeholder="nome do novo capítulo · Enter cria"></td><td></td></tr>`);
       return `<div class="mqt-libbar"><input type="text" id="mqt-lib-search" class="search-input op-search" placeholder="Procurar keynote, designação ou texto…" autocomplete="off"><span class="mqt-foldall"><button type="button" class="text-btn" data-fold-all="1">Fechar tudo</button><button type="button" class="text-btn" data-fold-all="0">Abrir tudo</button></span><span class="mqt-saved" id="mqt-saved" aria-live="polite"></span></div>
-        <div class="field-hint" style="margin:0 0 10px">Escreve nas células — grava sozinho. Para criar, escreve o keynote na linha <b>+ keynote</b> do capítulo: <b>PRD 05</b> cria um elemento, <b>PRD 05d</b> cria o subartigo d. Podes colar várias linhas do Excel (Keynote, Designação, Un., Descritivo). Enter e ↑ ↓ mudam de linha. <b>+</b> (ou Ctrl+Enter) numa linha acrescenta um subtipo por baixo — ex.: outra espessura. Vários campos por subtipo (ex.: espessura e cor): no descritivo usa <b>{var}</b> e <b>{cor}</b>; no subtipo escreve <b>60 mm | branca</b>.</div>
+        <div class="field-hint" style="margin:0 0 10px">Escreve nas células — grava sozinho. Para criar, escreve o keynote na linha <b>+ keynote</b> do capítulo: <b>PRD 05</b> cria um elemento, <b>PRD 05d</b> cria o subartigo d. Podes colar várias linhas do Excel (Keynote, Designação, Un., Descritivo). Enter e ↑ ↓ mudam de linha. Arrasta um elemento pelos pontinhos para mudar a ordem ou de capítulo: os keynotes renumeram-se sozinhos (ex.: DEM 03 largado nas alvenarias passa a PRD) e mudam também nos MQT dos projetos — depois, atualiza o ficheiro de keynotes no Revit. <b>+</b> (ou Ctrl+Enter) numa linha acrescenta um subtipo por baixo — ex.: outra espessura. Vários campos por subtipo (ex.: espessura e cor): no descritivo usa <b>{var}</b> e <b>{cor}</b>; no subtipo escreve <b>60 mm | branca</b>.</div>
         <div class="gantt-wrap mqt-gridwrap"><table class="mqt-grid">
           <colgroup><col style="width:150px"><col style="width:260px"><col style="width:74px"><col><col style="width:150px"><col style="width:84px"></colgroup>
           <thead><tr><th>Keynote</th><th>Designação</th><th>Un.</th><th>Descritivo</th><th>Medição</th><th></th></tr></thead>
@@ -30239,11 +30403,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       if (gtb) rowDrag(gtb, {
         handle: '.mqt-grip',
         groupOf: row => { if (row.dataset.kind !== 'el') return [row]; const g = [row]; for (let r = row.nextElementSibling; r && r.dataset.kind === 'var'; r = r.nextElementSibling) g.push(r); return g; },
-        siblingsOf: row => {
-          const all = [...gtb.querySelectorAll('tr')];
-          if (row.dataset.kind === 'var') return all.filter(r => r.dataset.kind === 'var' && r.dataset.el === row.dataset.el).map(r => [r]);
-          return all.filter(r => r.dataset.kind === 'el' && r.dataset.ch === row.dataset.ch).map(r => { const g = [r]; for (let n = r.nextElementSibling; n && n.dataset.kind === 'var'; n = n.nextElementSibling) g.push(n); return g; });
-        },
+        // elementos: arrastam-se com mqtElDrag (também para outro capítulo); aqui só os subtipos
+        siblingsOf: row => row.dataset.kind === 'var' ? [...gtb.querySelectorAll('tr')].filter(r => r.dataset.kind === 'var' && r.dataset.el === row.dataset.el).map(r => [r]) : [],
         onDrop: async groups => {
           try {
             if (groups[0][0].dataset.kind === 'var') await persistOrder('mqt_variants', groups.map(g => varById(g[0].dataset.id)).filter(Boolean), MOCK_MQT.variants);
@@ -30252,6 +30413,29 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
           } catch (e2) { showError('mudar a ordem', e2); }
         }
       });
+      // mudar um elemento de sítio (mesmo capítulo ou outro): grava a ordem e renumera os keynotes dos blocos afetados
+      const moveEl = async (id, toCh, beforeId) => {
+        const e = elById(id); if (!e) return;
+        const fromCh = e.chapter_code;
+        const listOf = ch => lib.elements.filter(x => x.chapter_code === ch && x !== e).sort(elOrder);
+        const to = listOf(toCh), i = beforeId ? to.findIndex(x => x.id === beforeId) : -1;
+        to.splice(i < 0 ? to.length : i, 0, e);
+        if (fromCh === toCh && lib.elements.filter(x => x.chapter_code === toCh).sort(elOrder).map(x => x.id).join() === to.map(x => x.id).join()) return;
+        const lists = { [toCh]: to }; if (fromCh !== toCh) lists[fromCh] = listOf(fromCh);
+        const plan = mqtRenumber(lib, lists, { el: e, from: fromCh, to: toCh });
+        try {
+          if (fromCh !== toCh) { await dbUpdate('mqt_elements', e.id, { chapter_code: toCh, updated_at: new Date().toISOString() }, MOCK_MQT.elements); e.chapter_code = toCh; }
+          await persistOrder('mqt_elements', to, MOCK_MQT.elements);
+          const n = Object.keys(plan.map).length;
+          if (!plan.conflict && n) await mqtApplyRenames(lib, plan.map);
+          const list = Object.entries(plan.map).map(([a, b]) => `${mqtCodeDisp(a)} → ${mqtCodeDisp(b)}`);
+          if (plan.conflict) showToast(`Mudou de sítio, mas os keynotes ficaram como estavam: ${mqtCodeDisp(plan.conflict)} já existe noutro capítulo. Muda-o à mão.`, { type: 'error', ms: 8000 });
+          else if (n) showToast(`Keynotes renumerados${n > 4 ? ` (${n})` : ''}: ${list.slice(0, 4).join(', ')}${n > 4 ? '…' : ''}. Também nos MQT dos projetos. No Revit, atualiza o ficheiro de keynotes e os tipos.`, { ms: 9000 });
+          else saved(fromCh === toCh ? 'Ordem guardada' : 'Mudou de capítulo');
+          await rerender(`tr[data-id="${CSS.escape(e.id)}"] .mqt-grip`);
+        } catch (e2) { showError('mudar o elemento de sítio', e2); rerender(); }
+      };
+      if (gtb) mqtElDrag(gtb, lib, moveEl);
       // auto-altura dos descritivos (encolhem quando não estão a ser editados)
       const grow = t => { t.style.height = 'auto'; t.style.height = (t.scrollHeight + 2) + 'px'; };
       // barra para inserir campos variáveis no descritivo ({var}, {cor}…) onde está o cursor
@@ -30304,11 +30488,11 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
             }
             if (f === 'name' && !v) { inp.value = e.name; return; }
             const old = e.code;
+            // keynote novo: muda também nos MQT dos projetos, tabelas carregadas, preços e regras
+            if (f === 'code') { await mqtApplyRenames(lib, { [old]: v }); saved('Guardado'); showToast(`Keynote ${mqtCodeDisp(old)} → ${mqtCodeDisp(v)}, também nos MQT dos projetos. No Revit, os tipos com ${mqtCodeDisp(old)} também têm de mudar.`, { ms: 6000 }); rerender(); return; }
             await dbUpdate('mqt_elements', e.id, { [f]: v, updated_at: new Date().toISOString() }, MOCK_MQT.elements);
-            if (devMode && f === 'code') MOCK_MQT.variants.filter(x => x.element_code === old).forEach(x => { x.element_code = v; });
             e[f] = v; saved('Guardado');
-            if (f === 'code') { showToast(`Keynote ${mqtCodeDisp(old)} → ${mqtCodeDisp(v)}. No Revit, os tipos com ${mqtCodeDisp(old)} também têm de mudar.`, { ms: 5000 }); rerender(); }
-            else if (f === 'unit') tr.parentNode.querySelectorAll(`tr.g-var[data-el="${CSS.escape(e.code)}"] .g-inh`).forEach(td => { td.textContent = v; });
+            if (f === 'unit') tr.parentNode.querySelectorAll(`tr.g-var[data-el="${CSS.escape(e.code)}"] .g-inh`).forEach(td => { td.textContent = v; });
             return;
           }
           if (kind === 'var') {
