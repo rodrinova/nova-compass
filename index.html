@@ -1999,6 +1999,11 @@
   .file-drop { display: flex; flex-direction: column; align-items: center; gap: var(--sp-0-5); padding: var(--sp-6) var(--sp-3); border: 1.5px dashed var(--border-strong); border-radius: var(--r-lg); cursor: pointer; text-align: center; margin-bottom: var(--sp-2); }
   .file-drop b { color: var(--accent); font-size: var(--fs-md); } .file-drop span { font-size: var(--fs-sm); color: var(--text-3); }
   .file-drop.over { background: var(--accent-soft); border-color: var(--accent); }
+  .saft-doubts { display: flex; flex-direction: column; gap: var(--sp-2); margin: var(--sp-3) 0; padding: var(--sp-3); border-radius: var(--r-md); background: var(--warning-soft); }
+  .saft-doubt { display: grid; grid-template-columns: 1fr minmax(180px, 46%); gap: var(--sp-2); align-items: center; font-size: var(--fs-sm); }
+  .saft-doubt small { display: block; color: var(--text-2); }
+  .saft-doubt .form-input { margin: 0; }
+  @media (max-width: 560px) { .saft-doubt { grid-template-columns: 1fr; } }
   .saft-summary { margin-top: var(--sp-3); padding: var(--sp-3); border-radius: var(--r-md); border: 1px solid var(--border); background: var(--surface-2); font-size: var(--fs-md); }
   .saft-summary > div b { display: block; } .saft-summary > div span { font-size: var(--fs-sm); color: var(--text-2); }
   .saft-summary ul { margin: var(--sp-2) 0 0; padding-left: var(--sp-5); }
@@ -11271,7 +11276,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         .filter(p => p.code && new RegExp(`(^|[^\\d])${normTxt(String(p.code)).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^\\d]|$)`).test(d))
         .sort((a, b) => String(b.code).length - String(a.code).length)[0] || null;
       if (!project) return { project: null, stage: null };
-      const stages = base.stages.filter(s => s.project_id === project.id).sort((a, b) => (a.stage_order ?? 0) - (b.stage_order ?? 0));
+      const stages = base.stages.filter(s => s.project_id === project.id && !s.excluded_from_invoicing).sort((a, b) => (a.stage_order ?? 0) - (b.stage_order ?? 0));
       const named = stages.filter(s => s.stage_types?.name && d.includes(normTxt(s.stage_types.name)));
       // a fase com a mesma etiqueta da fatura (ex.: «ATARQ.9» → fase ATARQ 09) ganha
       const keys = new Set(invLabelKeys(desc));
@@ -11281,7 +11286,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const invoiced = id => [...base.invoices, ...pending].filter(i => i.stage_id === id && i.status !== 'cancelled').reduce((t, i) => t + Number(i.amount || 0), 0);
       const pool = byLabel.length ? byLabel : named;
       const stage = pool.find(s => invoiced(s.id) < stageBudget(s, project) - 0.5) || pool[0] || null;
-      return { project, stage };
+      // dúvida (pergunta-se antes de importar): várias fases possíveis, nenhuma, ou a etiqueta da fatura sem fase igual
+      const doubt = !stage || pool.length > 1 || (keys.size > 0 && !byLabel.length && stages.some(s => s.revision_label && invLabelKeys(s.revision_label).length));
+      return { project, stage, doubt };
     }
 
     const SETTLED_ON_ISSUE = t => t === 'FR' || t === 'FS' || t === 'NC';
@@ -11321,10 +11328,13 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         let project_id = null, stage_id = null;
         const orig = credit && d.references.map(r => refInfo[r] || byExt[r]).find(Boolean);
         if (orig) { project_id = orig.project_id; stage_id = orig.stage_id; }
-        else { const m = matchInvoice(d.description, base, plan.inserts); project_id = m.project?.id ?? null; stage_id = m.stage?.id ?? null; }
+        let doubt = false;
+        if (!orig) { const m = matchInvoice(d.description, base, plan.inserts); project_id = m.project?.id ?? null; stage_id = m.stage?.id ?? null; doubt = !!(project_id && m.doubt); }
         if (!project_id) plan.unmatched++;
         refInfo[d.ref] = { project_id, stage_id };
-        plan.inserts.push({ ...row, project_id, stage_id, amount_paid: row.amount_paid ?? 0, payment_date: row.payment_date ?? null });
+        const ins = { ...row, project_id, stage_id, amount_paid: row.amount_paid ?? 0, payment_date: row.payment_date ?? null };
+        plan.inserts.push(ins);
+        if (doubt) (plan.doubts ||= []).push(ins);
       }
       // Recibos: uma linha por fatura paga (a fatura pode estar noutro ficheiro já importado)
       saft.payments.forEach(p => p.lines.forEach(l => {
@@ -11443,9 +11453,17 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
                 ${plan.orphanPayments ? `<li class="saft-warn">${plan.orphanPayments} pagamento(s) de faturas que ainda não estão na app (de outro ano?). Importa também esse ficheiro e depois volta a importar este.</li>` : ''}
               </ul>
             </div>
+            ${(plan.doubts || []).length ? `<div class="saft-doubts"><b>Em que fase entra cada uma?</b><span class="field-hint" style="margin:0">A app não tem a certeza: confirma a sugestão ou escolhe a fase.</span>
+              ${plan.doubts.map((x, k) => { const pr = base.projects.find(p => p.id === x.project_id); const sts = base.stages.filter(st => st.project_id === x.project_id && !st.excluded_from_invoicing).sort((a, b) => (a.stage_order ?? 0) - (b.stage_order ?? 0));
+                return `<div class="saft-doubt"><div><b>${escapeHtml(x.invoice_number || '')}</b> · ${escapeHtml(fmtEUR(Number(x.amount) || 0))} · ${escapeHtml([pr?.code, pr?.name].filter(Boolean).join(' '))}<small>${escapeHtml(x.description || '')}</small></div>
+                  <select class="form-input" data-doubt="${k}" aria-label="Fase da fatura ${escapeHtml(x.invoice_number || '')}"><option value="">— Escolher a fase —</option>${sts.map(st => { const v = base.invoices.filter(i => i.stage_id === st.id && i.status !== 'cancelled').length; return `<option value="${escapeHtml(st.id)}"${st.id === x.stage_id ? ' selected' : ''}>${escapeHtml([st.stage_types?.name, st.revision_label].filter(Boolean).join(' · '))}${st.id === x.stage_id ? ' (sugestão)' : ''}${v ? ` · ${v} fatura${v > 1 ? 's' : ''}` : ''}</option>`; }).join('')}<option value="-">Deixar por associar</option></select></div>`; }).join('')}</div>` : ''}
             <button type="button" class="primary-btn" id="saft-go">${plan.inserts.length || real ? 'Importar' : 'Atualizar pagamentos'}</button>`;
           const go = document.getElementById('saft-go');
           if (go) go.addEventListener('click', async () => {
+            const sels = [...prev.querySelectorAll('[data-doubt]')];
+            const miss = sels.find(x => !x.value);
+            if (miss) { miss.focus(); formError('saft-msg', 'Escolhe a fase de cada fatura em dúvida (ou «Deixar por associar»).'); return; }
+            sels.forEach(x => { plan.doubts[Number(x.dataset.doubt)].stage_id = x.value === '-' ? null : x.value; });
             go.disabled = true; go.textContent = 'A importar…';
             try {
               const r = await applyImportPlan(plan, saft, file.name);
