@@ -4838,6 +4838,21 @@
   .mqt-file { border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--sp-2) var(--sp-3); }
   .mqt-file b { display: block; font-size: var(--fs-md); }
   .mqt-file small { display: block; font-size: var(--fs-xs); color: var(--text-2); }
+  .mqt-file .text-btn { margin-top: 4px; font-size: var(--fs-sm); }
+  .mqt-cm-wrap { overflow: auto; max-height: 46vh; border: 1px solid var(--border); border-radius: var(--r-md); margin: var(--sp-2) 0; }
+  .mqt-cm { border-collapse: collapse; font-size: var(--fs-xs); font-variant-numeric: tabular-nums; min-width: 100%; }
+  .mqt-cm th { position: sticky; top: 0; z-index: 1; background: var(--surface-2); padding: 6px; border-bottom: 1px solid var(--border-strong); text-align: left; vertical-align: bottom; }
+  .mqt-cm th select { width: 100%; min-width: 118px; font-size: var(--fs-xs); padding: 5px 6px; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--surface); color: var(--text); }
+  .mqt-cm th select.on { border-color: var(--accent); background: var(--accent-soft); font-weight: var(--fw-semibold); }
+  .mqt-cm td { padding: 4px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; max-width: 260px; overflow: hidden; text-overflow: ellipsis; color: var(--text-2); }
+  .mqt-cm td.n { color: var(--text-3); width: 1%; text-align: right; cursor: pointer; }
+  .mqt-cm tr.hd td { background: var(--warning-soft); color: var(--text); font-weight: var(--fw-semibold); }
+  .mqt-cm tr.skip td { opacity: .45; }
+  .mqt-cm td.on { color: var(--text); background: var(--accent-soft); }
+  .mqt-cm-row { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); align-items: center; font-size: var(--fs-sm); }
+  .mqt-cm-row select { width: auto; margin: 0; }
+  .mqt-cm-res { font-size: var(--fs-sm); color: var(--text-2); margin: var(--sp-1) 0 var(--sp-2); }
+  .mqt-cm-res b { color: var(--text); }
   .mqt-file small.warn { color: var(--warning); }
   .mqt-imp-sum { display: flex; gap: var(--sp-4); flex-wrap: wrap; margin-top: var(--sp-3); font-size: var(--fs-sm); color: var(--text-2); }
   .mqt-imp-sum b { color: var(--text); font-size: var(--fs-lg); }
@@ -29301,16 +29316,16 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
     }
     const mqtNormHead = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\(.*?\)/g, '').replace(/[^a-z0-9]/g, '');
     const MQT_HEADS = {
-      k: ['keynote', 'notachave', 'notadechave', 'chavedenota', 'keynotes', 'codigomqt', 'mqt'],
+      k: ['keynote', 'notachave', 'notadechave', 'chavedenota', 'keynotes', 'codigomqt', 'mqt', 'codigo', 'codigos', 'cod'],
       tm: ['typemark', 'marcadetipo', 'marcatipo', 'marcadotipo'],
       t: ['type', 'tipo', 'familyandtype', 'familiaetipo', 'familiaytipo', 'family', 'familia'],
       c: ['category', 'categoria'],
-      l: ['level', 'nivel', 'baselevel', 'nivelbase', 'baseconstraint', 'restricaodebase', 'restricaobase', 'referencelevel', 'niveldereferencia'],
+      l: ['level', 'nivel', 'piso', 'pisos', 'andar', 'baselevel', 'nivelbase', 'baseconstraint', 'restricaodebase', 'restricaobase', 'referencelevel', 'niveldereferencia'],
       b: ['bloco', 'block', 'edificio', 'building'],
-      a: ['area'],
+      a: ['area', 'areas'],
       v: ['volume'],
       len: ['length', 'comprimento'],
-      n: ['count', 'contagem', 'quantidade', 'qty', 'quantity'],
+      n: ['count', 'contagem', 'quantidade', 'qty', 'quantity', 'qtd', 'qt', 'quant', 'unidades'],
       p: ['perimeter', 'perimetro'],
       w: ['width', 'largura', 'roughwidth', 'larguraembruto'],
       h: ['height', 'altura', 'roughheight', 'alturaembruto']
@@ -29341,37 +29356,130 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       if (field === 'v') { if (u.startsWith('mm')) v /= 1e9; else if (u.startsWith('cm')) v /= 1e6; }
       return v;
     }
-    // Lê uma tabela (.txt do Revit, .csv) → { rows, cols, warnings, title }
-    function mqtParseSchedule(text, fileName = '') {
+    // Lê uma tabela (.txt do Revit, .csv) → { rows, cols, warnings, title, cells, hi, needsMap }
+    // map = { hi: linha dos cabeçalhos (-1 = sem cabeçalhos), cols: { k: índice, a: índice… } } — dito à mão no visualizador
+    const MQT_MAP_FIELDS = [['k', 'Keynote / código'], ['a', 'Área'], ['n', 'Quantidade / contagem'], ['len', 'Comprimento'], ['v', 'Volume'], ['p', 'Perímetro'], ['w', 'Largura'], ['h', 'Altura'], ['t', 'Tipo'], ['tm', 'Marca de tipo'], ['c', 'Categoria'], ['l', 'Piso / nível'], ['b', 'Bloco']];
+    const mqtSigOf = r => (r || []).map(mqtNormHead).join('|');
+    function mqtParseSchedule(text, fileName = '', map = null) {
       const lines = String(text).replace(/\r\n?/g, '\n').split('\n');
-      const sample = lines.slice(0, 6).join('\n');
+      const sample = lines.slice(0, 12).join('\n');
       const sep = (sample.match(/\t/g) || []).length ? '\t' : (sample.match(/;/g) || []).length >= (sample.match(/,/g) || []).length ? ';' : ',';
       const cells = lines.map(l => mqtSplitLine(l, sep));
-      let hi = cells.findIndex(r => r.some(c => mqtHeadKey(c) === 'k'));
+      while (cells.length && !cells[cells.length - 1].some(c => c)) cells.pop();
       const warnings = [];
-      if (hi < 0) return { rows: [], cols: {}, warnings: ['Não encontrei a coluna Keynote. Acrescenta o campo "Keynote" à tabela no Revit.'], title: fileName };
-      const head = cells[hi], cols = {}, headUnit = {};
-      head.forEach((h, i) => { const k = mqtHeadKey(h); if (k && cols[k] == null) { cols[k] = i; const mu = String(h).match(/\((mm|cm|m)[²³23]?\)/i); if (mu) headUnit[k] = mu[1]; } });
-      const title = cells.slice(0, hi).map(r => r.filter(Boolean).join(' ')).filter(Boolean)[0] || fileName.replace(/\.[^.]+$/, '');
+      let hi, cols = {};
+      if (map) { hi = map.hi; cols = { ...map.cols }; }
+      else {
+        hi = cells.findIndex(r => r.some(c => mqtHeadKey(c) === 'k'));
+        if (hi >= 0) cells[hi].forEach((h, i) => { const k = mqtHeadKey(h); if (k && cols[k] == null) cols[k] = i; });
+      }
+      const headUnit = {};
+      if (hi >= 0) Object.entries(cols).forEach(([k, i]) => { const mu = String(cells[hi]?.[i] || '').match(/\((mm|cm|m)[²³23]?\)/i); if (mu) headUnit[k] = mu[1]; });
+      const title = cells.slice(0, Math.max(0, hi)).map(r => r.filter(Boolean).join(' ')).filter(Boolean)[0] || fileName.replace(/\.[^.]+$/, '');
+      const base = { cells, hi, sep, title };
+      if (cols.k == null) return { ...base, rows: [], cols, warnings: ['Não encontrei a coluna do keynote. Diz-me onde está cada coisa.'], needsMap: true };
+      const numF = ['a', 'v', 'len', 'n', 'p', 'w', 'h'].filter(f => cols[f] != null);
       const rows = [];
       for (let i = hi + 1; i < cells.length; i++) {
         const r = cells[i];
         if (!r.some(c => c)) continue;
-        if (r.every((c, j) => !c || j === cols.k) && !r[cols.k]) continue;
-        // linhas de totais / cabeçalhos de grupo do Revit
         const first = r.find(c => c) || '';
         if (/^(grand total|total geral|total|totais)\b/i.test(first) && (!r[cols.k] || r[cols.k] === first)) continue;
-        if (r.filter(c => c).length === 1 && !r[cols.k] && cols.a == null) continue;
         const g = k => cols[k] == null ? '' : (r[cols[k]] || '');
         const o = { k: g('k'), t: g('t'), tm: g('tm'), c: g('c') || title, l: g('l'), b: g('b') };
-        ['a', 'v', 'len', 'n', 'p', 'w', 'h'].forEach(f => { if (cols[f] != null) { const v = mqtNum(r[cols[f]], f, headUnit[f]); if (v != null) o[f] = Math.round(v * 10000) / 10000; } });
+        numF.forEach(f => { const v = mqtNum(r[cols[f]], f, headUnit[f]); if (v != null) o[f] = Math.round(v * 10000) / 10000; });
+        // subtotais (só números, sem keynote nem tipo) e cabeçalhos de grupo (só o keynote, sem números)
+        if (!o.k && !o.t) continue;
+        if (numF.length && numF.every(f => o[f] == null)) continue;
         if (cols.n == null) o.n = 1;
-        if (!o.k && !o.t && ['a', 'v', 'len', 'p'].every(f => o[f] == null)) continue;
         rows.push(o);
       }
       const lenVals = rows.map(r => r.len).filter(v => v != null).sort((a, b) => a - b);
       if (lenVals.length && lenVals[Math.floor(lenVals.length / 2)] > 200) warnings.push('Os comprimentos parecem estar em mm sem unidade: ativa "Mostrar símbolo de unidade" no Revit.');
-      return { rows, cols, warnings, title };
+      const needsMap = !numF.length || !rows.length;
+      if (!numF.length) warnings.push('Não encontrei a coluna das quantidades (área, comprimento, contagem…).');
+      else if (!rows.length) warnings.push('Não encontrei linhas com keynote e quantidade.');
+      return { ...base, rows, cols, warnings, needsMap };
+    }
+    // Visualizador: a tabela em colunas, para dizer onde está cada coisa; a escolha fica guardada para a próxima tabela igual
+    function openMqtColMapper(p, lib, onDone, onBack) {
+      const cells = p.cells || [];
+      const nCols = Math.max(1, ...cells.slice(0, 200).map(r => r.length));
+      let hi = p.hi ?? -1, cols = { ...(p.cols || {}) };
+      // palpite pelo conteúdo: a coluna com mais keynotes da biblioteca; números com casas decimais → área
+      const isKey = c => { const pk = c && mqtParseKey(c, lib); return !!(pk && !pk.bad && lib.elByCode[pk.code]); };
+      if (cols.k == null) {
+        let best = -1, bn = 0;
+        for (let c = 0; c < nCols; c++) { const n = cells.filter(r => isKey(r[c])).length; if (n > bn) { bn = n; best = c; } }
+        if (best >= 0) cols.k = best;
+      }
+      if (hi < 0) hi = cells.findIndex(r => r.filter(c => c && !/^[\d.,\s-]+$/.test(c)).length >= 2 && !r.some(isKey));
+      // cabeçalhos conhecidos nessa linha; senão, pelos números: com casas decimais → área, inteiros → quantidade
+      if (hi >= 0) cells[hi].forEach((h, i) => { const k = mqtHeadKey(h); if (k && cols[k] == null && !Object.values(cols).includes(i)) cols[k] = i; });
+      if (!['a', 'v', 'len', 'n', 'p'].some(f => cols[f] != null) && cols.k != null) {
+        const data = cells.filter(r => isKey(r[cols.k]));
+        for (let c = 0; c < nCols; c++) {
+          if (Object.values(cols).includes(c)) continue;
+          const vals = data.map(r => r[c]).filter(v => v && /^-?[\d\s.,]+(\s*m[²2³3]?)?$/.test(v));
+          if (vals.length < Math.max(1, data.length / 3)) continue;
+          if (vals.some(v => /[.,]\d/.test(v))) { if (cols.a == null) cols.a = c; } else if (cols.n == null) cols.n = c;
+        }
+      }
+      const show = cells.slice(0, 60);
+      const draw = () => {
+        const res = mqtParseSchedule(cells.map(r => r.join('\t')).join('\n'), p.name, { hi, cols });
+        const used = new Set(Object.values(cols));
+        const fieldOf = c => Object.keys(cols).find(k => cols[k] === c) || '';
+        document.getElementById('mqt-cm-box').innerHTML = `
+          <div class="mqt-cm-wrap"><table class="mqt-cm"><thead><tr><th></th>${Array.from({ length: nCols }, (_, c) => `<th><select data-cm-col="${c}" class="${fieldOf(c) ? 'on' : ''}" aria-label="Coluna ${c + 1}"><option value="">— ignorar —</option>${MQT_MAP_FIELDS.map(([k, l]) => `<option value="${k}"${fieldOf(c) === k ? ' selected' : ''}>${escapeHtml(l)}</option>`).join('')}</select></th>`).join('')}</tr></thead>
+            <tbody>${show.map((r, i) => `<tr class="${i === hi ? 'hd' : i < hi ? 'skip' : ''}"><td class="n" data-cm-hd="${i}" title="Cabeçalhos nesta linha">${i + 1}</td>${Array.from({ length: nCols }, (_, c) => `<td class="${used.has(c) && i > hi ? 'on' : ''}">${escapeHtml(r[c] || '')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
+          <div class="mqt-cm-res">${res.rows.length ? `Leio <b>${res.rows.length}</b> linhas, <b>${res.rows.filter(x => mqtParseKey(x.k, lib)).length}</b> com keynote da biblioteca${res.rows.some(x => x.a != null) ? ` · área total <b>${escapeHtml(fmtNum(Math.round(res.rows.reduce((t, x) => t + (x.a || 0), 0) * 100) / 100))} m²</b>` : ''}.` : 'Ainda não leio nenhuma linha: escolhe pelo menos o <b>Keynote</b> e uma quantidade (ex.: <b>Área</b>).'}</div>`;
+        document.querySelectorAll('[data-cm-col]').forEach(sel => sel.addEventListener('change', () => {
+          const c = Number(sel.dataset.cmCol), k = sel.value;
+          Object.keys(cols).forEach(x => { if (cols[x] === c) delete cols[x]; });
+          if (k) cols[k] = c;
+          draw();
+        }));
+        document.querySelectorAll('[data-cm-hd]').forEach(td => td.addEventListener('click', () => { const i = Number(td.dataset.cmHd); hi = hi === i ? -1 : i; document.getElementById('mqt-cm-hi').value = String(hi); draw(); }));
+        document.getElementById('mqt-cm-ok').disabled = !res.rows.length;
+      };
+      openQuickModal(`Ler a tabela · ${p.title || p.name}`, `
+        <div class="field-hint" style="margin-top:0">Não consegui ler esta tabela sozinho. Em cima de cada coluna diz o que é: pelo menos o <b>Keynote</b> e uma quantidade (<b>Área</b>, <b>Comprimento</b>, <b>Quantidade</b>…). As linhas de totais e os títulos de grupo ficam de fora sozinhos.</div>
+        <div class="mqt-cm-row"><label for="mqt-cm-hi">Cabeçalhos na linha</label><select id="mqt-cm-hi" class="form-input"><option value="-1">sem cabeçalhos</option>${show.slice(0, 20).map((_, i) => `<option value="${i}"${i === hi ? ' selected' : ''}>${i + 1}</option>`).join('')}</select><span class="muted">(ou toca no número da linha)</span></div>
+        <div id="mqt-cm-box"></div>
+        <div class="mqt-modal-acts">${onBack ? '<button type="button" class="secondary-btn" id="mqt-cm-back">Voltar</button>' : ''}<button type="button" class="primary-btn" id="mqt-cm-ok">Usar e lembrar</button></div>`);
+      document.getElementById('mqt-cm-hi').addEventListener('change', e => { hi = Number(e.target.value); draw(); });
+      document.getElementById('mqt-cm-back')?.addEventListener('click', () => onBack());
+      document.getElementById('mqt-cm-ok').addEventListener('click', async () => {
+        const res = mqtParseSchedule(cells.map(r => r.join('\t')).join('\n'), p.name, { hi, cols });
+        if (!res.rows.length) return;
+        // lembrar para as próximas tabelas com os mesmos cabeçalhos (para toda a equipa)
+        try { if (hi >= 0) await mqtSaveColMap(mqtSigOf(cells[hi]), { hi_sig: true, cols }); } catch (e) { console.warn(e); }
+        onDone({ ...p, ...res, warnings: res.warnings, mapped: true });
+      });
+      draw();
+    }
+    let mqtColMapsCache = null, mockColMaps = {};
+    async function mqtLoadColMaps() {
+      if (mqtColMapsCache) return mqtColMapsCache;
+      if (devMode) return (mqtColMapsCache = mockColMaps);
+      const r = await supabase.from('app_settings').select('value').eq('key', 'mqt_colmaps').maybeSingle();
+      return (mqtColMapsCache = r.data?.value || {});
+    }
+    async function mqtSaveColMap(sig, m) {
+      const all = { ...(await mqtLoadColMaps()), [sig]: { cols: m.cols, at: new Date().toISOString() } };
+      if (devMode) mockColMaps = all;
+      else { const r = await supabase.from('app_settings').upsert({ key: 'mqt_colmaps', value: all, updated_at: new Date().toISOString() }); if (r.error) throw r.error; }
+      mqtColMapsCache = all;
+    }
+    // Tabela com cabeçalhos já vistos e explicados antes: usa o mapa guardado
+    function mqtParseWithMaps(text, name, maps) {
+      const auto = mqtParseSchedule(text, name);
+      if (!auto.needsMap) return auto;
+      const i = auto.cells.slice(0, 30).findIndex(r => r.some(c => c) && maps[mqtSigOf(r)]);
+      if (i < 0) return auto;
+      const res = mqtParseSchedule(text, name, { hi: i, cols: maps[mqtSigOf(auto.cells[i])].cols });
+      return res.rows.length ? { ...res, mapped: true } : auto;
     }
 
     // ---------- Montar o MQT ----------
@@ -30705,35 +30813,44 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
     }
     // ---------- Carregar tabelas ----------
     async function mqtImportFiles(files, lib, runs, cfg) {
+      const maps = await mqtLoadColMaps().catch(() => ({}));
       const parsed = [];
       for (const f of files) {
-        try { const text = mqtDecode(await f.arrayBuffer()); parsed.push({ name: f.name, ...mqtParseSchedule(text, f.name) }); }
-        catch (e) { parsed.push({ name: f.name, rows: [], cols: {}, warnings: ['Não consegui ler: ' + e.message] }); }
+        try { const text = mqtDecode(await f.arrayBuffer()); parsed.push({ name: f.name, ...mqtParseWithMaps(text, f.name, maps) }); }
+        catch (e) { parsed.push({ name: f.name, rows: [], cols: {}, cells: [], warnings: ['Não consegui ler: ' + e.message] }); }
       }
-      const rows = parsed.flatMap(p => p.rows);
-      const keyed = rows.filter(r => mqtParseKey(r.k)).length;
-      const mq = mqtCompute(lib, rows, {});
       const next = (runs[0]?.version || 0) + 1;
-      openQuickModal(`Carregar tabelas · carregamento ${next}`, `
-        <div class="mqt-files">${parsed.map(p => `<div class="mqt-file"><b>${escapeHtml(p.title || p.name)}</b><small>${escapeHtml(p.name)} · ${p.rows.length} linhas · ${Object.keys(p.cols).map(k => k === 'k' ? 'Keynote' : k === 't' ? 'Tipo' : k === 'tm' ? 'Marca de tipo' : k === 'l' ? 'Nível' : k === 'b' ? 'Bloco' : k === 'c' ? 'Categoria' : MQT_FIELD_LABEL[k] || k).join(', ') || '—'}</small>${p.warnings.map(w => `<small class="warn">${escapeHtml(w)}</small>`).join('')}</div>`).join('')}</div>
-        <div class="mqt-imp-sum"><span><b>${rows.length}</b> elementos</span><span><b>${keyed}</b> com keynote</span><span><b>${Object.keys(mq.items).length}</b> artigos</span>${mq.blocks.length > 1 ? `<span><b>${mq.blocks.length}</b> blocos</span>` : ''}</div>
-        <label class="field-label" for="mqt-run-label">Nota <span class="muted">(opcional)</span></label>
-        <input type="text" id="mqt-run-label" class="form-input" maxlength="80" placeholder="ex.: depois da revisão da cozinha">
-        <div class="field-hint">O MQT em curso passa a usar estas tabelas. As revisões já fechadas não mudam.</div>
-        <div id="mqt-imp-msg" class="form-msg"></div>
-        <button type="button" class="primary-btn" id="mqt-imp-save"${rows.length ? '' : ' disabled'}>Guardar</button>`);
-      document.getElementById('mqt-imp-save').addEventListener('click', async () => {
-        const btn = document.getElementById('mqt-imp-save'); btn.disabled = true;
-        try {
-          const me = await getCurrentMember();
-          if (!cfg?.exists) await mqtSaveCfg(mqtProjectId, {});
-          const row = { project_id: mqtProjectId, version: next, label: document.getElementById('mqt-run-label').value.trim() || null, files: parsed.map(p => ({ name: p.name, title: p.title, rows: p.rows.length })), rows, created_by: me?.id || null, created_at: new Date().toISOString() };
-          if (devMode) MOCK_MQT.runs.push({ id: 'mrun-' + Date.now(), ...row });
-          else { const r = await supabase.from('mqt_runs').insert(row); if (r.error) throw r.error; }
-          closeQuickModal(); haptic(); showToast('Tabelas carregadas');
-          mqtTab = 'mqt'; mqtViewRev = null; renderMqt();
-        } catch (e) { btn.disabled = false; formError('mqt-imp-msg', 'Não foi possível guardar: ' + e.message); }
-      });
+      const colsTxt = p => Object.keys(p.cols || {}).map(k => k === 'k' ? 'Keynote' : k === 't' ? 'Tipo' : k === 'tm' ? 'Marca de tipo' : k === 'l' ? 'Nível' : k === 'b' ? 'Bloco' : k === 'c' ? 'Categoria' : MQT_FIELD_LABEL[k] || k).join(', ') || '—';
+      const show = () => {
+        const rows = parsed.flatMap(p => p.rows);
+        const keyed = rows.filter(r => mqtParseKey(r.k)).length;
+        const mq = mqtCompute(lib, rows, {});
+        openQuickModal(`Carregar tabelas · carregamento ${next}`, `
+          <div class="mqt-files">${parsed.map((p, i) => `<div class="mqt-file"><b>${escapeHtml(p.title || p.name)}</b><small>${escapeHtml(p.name)} · ${p.rows.length} linhas · ${escapeHtml(colsTxt(p))}${p.mapped ? ' · colunas indicadas à mão' : ''}</small>${p.rows.length ? '' : p.warnings.map(w => `<small class="warn">${escapeHtml(w)}</small>`).join('')}${(p.cells || []).length ? `<button type="button" class="text-btn" data-cm-open="${i}">${p.rows.length ? 'Ver as colunas' : 'Dizer onde está cada coisa'}</button>` : ''}</div>`).join('')}</div>
+          <div class="mqt-imp-sum"><span><b>${rows.length}</b> elementos</span><span><b>${keyed}</b> com keynote</span><span><b>${Object.keys(mq.items).length}</b> artigos</span>${mq.blocks.length > 1 ? `<span><b>${mq.blocks.length}</b> blocos</span>` : ''}</div>
+          <label class="field-label" for="mqt-run-label">Nota <span class="muted">(opcional)</span></label>
+          <input type="text" id="mqt-run-label" class="form-input" maxlength="80" placeholder="ex.: depois da revisão da cozinha">
+          <div class="field-hint">O MQT em curso passa a usar estas tabelas. As revisões já fechadas não mudam.</div>
+          <div id="mqt-imp-msg" class="form-msg"></div>
+          <button type="button" class="primary-btn" id="mqt-imp-save"${rows.length ? '' : ' disabled'}>Guardar</button>`);
+        document.querySelectorAll('[data-cm-open]').forEach(b => b.addEventListener('click', () => mapIt(Number(b.dataset.cmOpen))));
+        document.getElementById('mqt-imp-save').addEventListener('click', async () => {
+          const btn = document.getElementById('mqt-imp-save'); btn.disabled = true;
+          try {
+            const me = await getCurrentMember();
+            if (!cfg?.exists) await mqtSaveCfg(mqtProjectId, {});
+            const row = { project_id: mqtProjectId, version: next, label: document.getElementById('mqt-run-label').value.trim() || null, files: parsed.map(p => ({ name: p.name, title: p.title, rows: p.rows.length })), rows, created_by: me?.id || null, created_at: new Date().toISOString() };
+            if (devMode) MOCK_MQT.runs.push({ id: 'mrun-' + Date.now(), ...row });
+            else { const r = await supabase.from('mqt_runs').insert(row); if (r.error) throw r.error; }
+            closeQuickModal(); haptic(); showToast('Tabelas carregadas');
+            mqtTab = 'mqt'; mqtViewRev = null; renderMqt();
+          } catch (e) { btn.disabled = false; formError('mqt-imp-msg', 'Não foi possível guardar: ' + e.message); }
+        });
+      };
+      const mapIt = i => openMqtColMapper(parsed[i], lib, res => { parsed[i] = res; const nx = parsed.findIndex(p => !p.rows.length && (p.cells || []).length); if (nx >= 0 && nx !== i) mapIt(nx); else show(); }, show);
+      // não conseguiu ler sozinho: abre logo o visualizador da primeira tabela nessa situação
+      const first = parsed.findIndex(p => !p.rows.length && (p.cells || []).length);
+      if (first >= 0) mapIt(first); else show();
     }
     async function mqtDeleteRun(run) {
       if (!run || !confirm(`Apagar a versão ${run.version}? As tabelas desta versão deixam de estar guardadas.`)) return;
