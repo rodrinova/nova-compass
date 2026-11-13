@@ -179,6 +179,7 @@ alter table public.investors
   add column if not exists max_land_revenue numeric,  -- % do terreno na receita
   add column if not exists max_land_cost numeric,     -- % do terreno no custo global
   add column if not exists max_land_unit numeric;     -- € de terreno por fração
+alter table public.investors add column if not exists max_land_price numeric;   -- preço máximo do terreno (€)
 create unique index if not exists investors_client_uniq on public.investors (client_id) where client_id is not null;
 -- Investidores antigos sem ficha de cliente: cria a ficha e liga
 do $$ declare r record; cid uuid; begin

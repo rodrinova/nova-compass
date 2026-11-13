@@ -20182,6 +20182,17 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         if (got < want) cap = Math.min(cap, got < want * 0.75 ? 55 : 64);
         add(15, got >= want ? 1 : got / want, got >= want ? `yield bruto ${pct(got, 1)} ≥ ${pct(want, 1)}` : `yield bruto ${pct(got, 1)} abaixo de ${pct(want, 1)}`, 'min_yield', pct(got, 1));
       } else if ((inv.min_roi != null || inv.min_yield != null) && !hasFeas) pitch.push('faz a rentabilidade para confirmar se dá o que ele pede');
+      // Preço máximo do terreno (€): acima disso, a oportunidade não chega a «Bom» (muito acima, fica «Fraco»)
+      if (inv.max_land_price != null && inv.max_land_price !== '' && Number(inv.max_land_price) > 0 && Number(p.asking_price) > 0) {
+        const max = Number(inv.max_land_price), got = Number(p.asking_price);
+        if (got <= max) add(10, 1, `terreno a ${fmtEURM(got)} ≤ ${fmtEURM(max)} que aceita`, 'max_land_price', fmtEURM(got));
+        else {
+          const over = (got - max) / max;
+          add(10, 1 - over / 0.5, `terreno a ${fmtEURM(got)} — só procura até ${fmtEURM(max)}`, 'max_land_price', fmtEURM(got));
+          cap = Math.min(cap, over > 0.25 ? 49 : 64);
+          pitch.push(`o terreno teria de baixar para ${fmtEURM(max)} (pedem ${fmtEURM(got)}) — argumento para negociar`);
+        }
+      }
       // Rácios do terreno: o máximo que o investidor aceita (o mesmo cálculo da viabilidade)
       const R = IND ? { abc: c.ind?.ratios?.landPerM2, cost: c.costGlobal ? (Number(p.asking_price) || 0) / c.costGlobal : null } : c.ratios || {}, price = Number(p.asking_price) || 0;
       [['max_land_abc', R.abc, 1, v => fmtEURM(v) + '/m²', 'terreno por m² de construção', true],
@@ -20542,6 +20553,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       ['fractions', 'Frações', i => fmtRangeN(i.fractions_min, i.fractions_max, '').trim() || null],
       ['min_roi', 'ROI', i => i.min_roi != null ? '≥ ' + fmtNum(i.min_roi) + '%' : null],
       ['min_yield', 'Yield bruto', i => i.min_yield != null ? '≥ ' + fmtNum(i.min_yield) + '%' : null],
+      ['max_land_price', 'Preço do terreno', i => i.max_land_price != null ? '≤ ' + fmtEURM(i.max_land_price) : null],
       ['max_land_abc', 'Terreno / m² constr.', i => i.max_land_abc != null ? '≤ ' + fmtEURM(i.max_land_abc) + '/m²' : null],
       ['max_land_revenue', 'Terreno / receita', i => i.max_land_revenue != null ? '≤ ' + fmtNum(i.max_land_revenue) + '%' : null],
       ['max_land_cost', 'Terreno / custo global', i => i.max_land_cost != null ? '≤ ' + fmtNum(i.max_land_cost) + '%' : null],
@@ -24257,6 +24269,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         <input type="text" id="iv-tags" class="form-input" placeholder="separadas por vírgulas: reabilitação, comércio, vista mar, ARU" value="${escapeHtml((x.tags || []).join(', '))}">
         <div class="section-label op-form-sec">Rácios do terreno — máximos que aceita</div>
         <div class="form-grid">
+          <div><label class="field-label">Preço máximo do terreno (€)</label><input type="text" inputmode="decimal" id="iv-r-price" class="form-input" placeholder="ex.: 1000000" value="${v('max_land_price')}"></div>
           <div><label class="field-label">Terreno / m² de construção (€/m²)</label><input type="text" inputmode="decimal" id="iv-r-abc" class="form-input" placeholder="ex.: 400" value="${v('max_land_abc')}"></div>
           <div><label class="field-label">Terreno / receita (%)</label><input type="text" inputmode="decimal" id="iv-r-rev" class="form-input" placeholder="ex.: 20" value="${v('max_land_revenue')}"></div>
           <div><label class="field-label">Terreno / custo global (%)</label><input type="text" inputmode="decimal" id="iv-r-cost" class="form-input" placeholder="ex.: 30" value="${v('max_land_cost')}"></div>
@@ -24284,10 +24297,10 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         zones: g('iv-zones').split(/[,;]/).map(s => s.trim()).filter(Boolean),
         approved_pref: g('iv-approved'), notes: valOrNull(g('iv-notes')),
         strategy: g('iv-strategy'), segment: g('iv-segment') || null, min_roi: numOrNull(g('iv-roi')), min_yield: numOrNull(g('iv-yield')),
-        max_land_abc: numOrNull(g('iv-r-abc')), max_land_revenue: numOrNull(g('iv-r-rev')), max_land_cost: numOrNull(g('iv-r-cost')), max_land_unit: numOrNull(g('iv-r-unit')),
+        max_land_price: numOrNull(String(g('iv-r-price')).replace(/\s/g, '')), max_land_abc: numOrNull(g('iv-r-abc')), max_land_revenue: numOrNull(g('iv-r-rev')), max_land_cost: numOrNull(g('iv-r-cost')), max_land_unit: numOrNull(g('iv-r-unit')),
         tags: g('iv-tags').split(/[,;]/).map(t => t.trim()).filter(Boolean)
       };
-      if ([row.fractions_min, row.fractions_max, row.invest_min, row.invest_max, row.min_roi, row.min_yield, row.max_land_abc, row.max_land_revenue, row.max_land_cost, row.max_land_unit].some(n => Number.isNaN(n))) return { error: 'Há um número inválido.' };
+      if ([row.fractions_min, row.fractions_max, row.invest_min, row.invest_max, row.min_roi, row.min_yield, row.max_land_price, row.max_land_abc, row.max_land_revenue, row.max_land_cost, row.max_land_unit].some(n => Number.isNaN(n))) return { error: 'Há um número inválido.' };
       if (row.invest_min != null && row.invest_max != null && row.invest_max < row.invest_min) return { error: 'O investimento máximo é menor que o mínimo.' };
       return { row };
     }
