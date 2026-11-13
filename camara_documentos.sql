@@ -55,3 +55,7 @@ create policy "camara docs insert" on storage.objects for insert to authenticate
   with check (bucket_id = 'camara-docs' and private.is_team_member());
 create policy "camara docs delete" on storage.objects for delete to authenticated
   using (bucket_id = 'camara-docs' and private.is_team_member());
+
+-- Tipo «Outro» com nome próprio e descritivo / notas da equipa em cada documento
+alter table public.municipal_documents add column if not exists kind_other text;   -- ex.: 'Auto de vistoria'
+alter table public.municipal_documents add column if not exists notes text;        -- comentários, erros…

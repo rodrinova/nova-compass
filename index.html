@@ -801,6 +801,8 @@
   .pp-fu { display: flex; flex-direction: column; gap: 1px; padding-left: 10px; border-left: 2px solid var(--border); }
   .pp-fu b { font-weight: var(--fw-semibold); color: var(--text); }
   .pp-fu span { color: var(--text-2); white-space: pre-wrap; }
+  .cst-warn { background: var(--warning-soft); border-radius: var(--r-md); padding: var(--sp-2) var(--sp-3); margin: var(--sp-2) 0; font-size: var(--fs-sm); }
+  .pp-cst { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-2); font-size: var(--fs-sm); font-weight: var(--fw-semibold); margin: -4px 0 var(--sp-2); font-variant-numeric: tabular-nums; }
   .pp-versions { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin-top: var(--sp-2); font-size: var(--fs-xs); color: var(--text-2); }
   .pp-sec { padding: 0; margin-bottom: var(--sp-2); }
   .pp-sec > summary { list-style: none; cursor: pointer; padding: var(--sp-3) var(--sp-4); font-weight: var(--fw-semibold); display: flex; align-items: center; gap: 10px; }
@@ -3402,6 +3404,9 @@
     .cm-legal .cm-when small { order: -1; }
   }
   .cm-legal small { display: block; color: var(--text-3); font-size: var(--fs-xs); margin-top: var(--sp-0-5); }
+  .cm-defer { display: block; width: auto; margin: 6px 0 0 auto; min-height: 30px; padding: 4px 12px; font-size: var(--fs-sm); white-space: nowrap; }
+  .cm-defer-list { margin: var(--sp-3) 0; padding-left: 18px; display: grid; gap: 4px; font-size: var(--fs-sm); color: var(--text-2); }
+  .cm-doc-note { color: var(--text-2); white-space: pre-wrap; }
   .cm-legal small.cm-tacit { color: var(--danger); font-weight: var(--fw-semibold); }
   .cm-legal small.cm-warn { color: var(--warning); font-weight: var(--fw-semibold); }
   .cm-legal small.cm-note { color: var(--text-2); font-style: italic; }
@@ -4727,6 +4732,12 @@
   .mqt-tag { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: var(--r-full); background: var(--accent-soft); color: var(--accent); font-size: 11px; font-weight: var(--fw-semibold); vertical-align: 1px; }
   .mqt-tag.res { background: var(--surface-3); color: var(--text-2); }
   .mqt-legend { display: flex; gap: var(--sp-4); flex-wrap: wrap; font-size: var(--fs-xs); color: var(--text-3); margin: var(--sp-1) 0 var(--sp-2); }
+  .mqt-banner.warn { background: var(--warning-soft); display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; }
+  .mqt-fill-art { border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--sp-3); margin-top: var(--sp-2); display: grid; gap: var(--sp-2); }
+  .mqt-fill-art small { color: var(--text-2); line-height: 1.45; }
+  .mqt-fill-art mark { background: var(--warning-soft); color: var(--warning); border-radius: 3px; padding: 0 2px; }
+  .mqt-fill-row { display: grid; grid-template-columns: minmax(90px, 30%) 1fr; gap: var(--sp-2); align-items: center; font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
+  .mqt-fill-row .form-input { margin: 0; }
   .mqt-banner { background: var(--accent-soft); border-radius: var(--r-lg); padding: var(--sp-2-5) var(--sp-4); margin-bottom: var(--sp-3); font-size: var(--fs-md); }
   .mqt-back { flex-shrink: 0; }
   .mqt-ptitle { flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; }
@@ -5835,7 +5846,7 @@
               .order('delivery_date')
           ]);
           if (invRes.error) throw invRes.error;
-          // Faturas de fases excluídas das contas da NOVA não entram no total
+          // Faturas de fases que não se faturam não entram no total
           const monthInvoices = invRes.data || [];
           const invStageIds = [...new Set(monthInvoices.map(i => i.stage_id).filter(Boolean))];
           let excludedIds = new Set();
@@ -7713,7 +7724,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         document.getElementById('detail-code').textContent = project.code ?? '—';
         document.getElementById('detail-client').textContent = clienteNome;
 
-        // --- Fases excluídas das contas da NOVA (escolhidas a dedo; não confundir com fases concluídas) ---
+        // --- Fases que não se faturam (sem honorários: ex. resposta a um ofício); não confundir com fases concluídas ---
         // Faturas e horas dessas fases, e o seu valor, saem de todos os totais abaixo.
         const excludedStages = stages.filter(s => s.excluded_from_invoicing);
         const excludedStageIds = new Set(excludedStages.map(s => s.id));
@@ -7792,7 +7803,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             if (item.kind === 'stage') {
               const s = item.data;
               const marcaExcluida = s.excluded_from_invoicing
-                ? ' <span title="Fora das contas da NOVA" style="opacity:.45;">✕</span>'
+                ? ' <span title="Não se fatura" style="opacity:.45;">✕</span>'
                 : '';
               return `<div class="gantt-label-cell"><span class="gantt-label-text">${escapeHtml(s.stage_types?.name ?? 'Fase')}${s.revision_label ? ' · ' + escapeHtml(s.revision_label) : ''}${marcaExcluida}</span></div>`;
             }
@@ -7942,7 +7953,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
                   const invoiceCell = notBilled && !isInvoiced
                     ? `<span class="invoice-status neutral" title="Respostas a ofício não se faturam">Não se fatura</span>`
                     : isExcluded
-                    ? `<span class="invoice-status neutral" title="Fase excluída: não conta para os totais">Fora das contas</span>`
+                    ? `<span class="invoice-status neutral" title="Fase sem honorários: não conta para os totais a faturar">Não se fatura</span>`
                     : isInvoiced
                       ? `<span class="invoice-status paid">Faturada · ${fmtEUR(inv.amount)}</span>`
                       : `<span class="invoice-status ${shouldFlag ? 'pending' : 'neutral'}">Por faturar</span>`;
@@ -8181,7 +8192,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               <b class="fin-hero-value num ${hero.cls}">${fmtEUR(hero.value)}</b>
               <span class="fin-hero-sub">${escapeHtml(hero.sub)}</span>
               ${pct != null ? `<div class="fin-hero-bar" title="${pct}% dos honorários faturados"><span style="width:${pct}%"></span></div><span class="fin-hero-sub">${pct}% dos honorários faturados</span>` : ''}
-              ${valorExcluido > 0 ? `<span class="fin-hero-note">Sem ${excludedStages.length} fase${excludedStages.length > 1 ? 's' : ''} fora das contas (${fmtEUR(valorExcluido)})</span>` : ''}
+              ${valorExcluido > 0 ? `<span class="fin-hero-note">Sem ${excludedStages.length} fase${excludedStages.length > 1 ? 's' : ''} que não se fatura${excludedStages.length > 1 ? 'm' : ''} (${fmtEUR(valorExcluido)})</span>` : ''}
             </div>`;
           })()}
           <div class="stat-grid fin-trio">
@@ -8479,7 +8490,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             <option value="">A carregar...</option>
           </select>
           <div id="revision-camara"></div>
-          <label class="check-row" id="rv-nobill-wrap"><input type="checkbox" id="rv-nobill"> Não é para faturar (fica fora das contas da NOVA)</label>
+          <label class="check-row" id="rv-nobill-wrap"><input type="checkbox" id="rv-nobill"> Não se fatura (fase sem honorários, ex.: resposta a um ofício)</label>
           <div id="revision-cause"><label class="field-label">Porquê esta revisão?</label>
             <label class="check-row"><input type="radio" name="rv-cause" value="cliente"> Pedido do cliente</label>
             <label class="check-row"><input type="radio" name="rv-cause" value="nova"> Retrabalho nosso (erro, omissão, melhoria interna)</label>
@@ -8559,7 +8570,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           if (vt && vt.previousElementSibling) vt.previousElementSibling.hidden = noVal;
         };
         typeSel.addEventListener('change', () => { drawRevCamara(); syncNoBill(); });
-        // Fase que não é para faturar: sem valor nem motivo, fica fora das contas da NOVA
+        // Fase que não se fatura: sem valor nem motivo
         const syncNoBill = () => {
           const nb = document.getElementById('rv-nobill').checked;
           const isOf = camBox.querySelector('[name="rv-kind"]:checked')?.value === 'oficio';
@@ -13430,7 +13441,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         .map(i => ({ i, due: invGross(i, rate) * (1 - Number(i.amount_paid || 0) / Number(i.amount)), age: diffDays(i.issue_date, today) }));
       const toReceive = open.reduce((t, o) => t + o.due, 0);
       const over60 = open.filter(o => o.age > 60);
-      // Carteira: honorários de projetos ativos (sem fases fora das contas) − faturado
+      // Carteira: honorários de projetos ativos (sem as fases que não se faturam) − faturado
       const budget = (s, p) => s.fixed_value != null ? Number(s.fixed_value) : (s.percentage != null && p.commission_value != null ? Number(p.commission_value) * Number(s.percentage) / 100 : 0);
       let backlog = 0;
       b.projects.filter(p => !p.archived_at && Number(p.commission_value) > 0).forEach(p => {
@@ -15913,6 +15924,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       drawCamaraDocs(box.querySelector('#cm-docs'), project, docsRes, reopenTab);
       box.querySelectorAll('[data-cm-stage]').forEach(r => r.addEventListener('click', () =>
         openPhaseModal(r.dataset.cmStage, { onSaved: reopenTab, fromProject: true })));
+      box.querySelectorAll('[data-cm-defer]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); openCamaraDeferred(project, b.dataset.cmDefer, stages, reopenTab); }));
       box.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', async () => {
         try { await navigator.clipboard.writeText(b.dataset.copy); showToast('Copiado'); } catch { showToast('Não foi possível copiar', { type: 'error' }); }
       }));
@@ -15955,6 +15967,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     const CAM_DOC_KINDS = [['oficio', 'Ofício'], ['informacao', 'Informação'], ['memoria', 'Memória descritiva'], ['parecer', 'Parecer'], ['outro', 'Outro']];
     const CAM_DOC_ANALYSABLE = ['oficio', 'informacao', 'parecer'];
     const camDocKindLabel = k => (CAM_DOC_KINDS.find(x => x[0] === k) || CAM_DOC_KINDS.at(-1))[1];
+    // tipo «Outro» com nome próprio (ex.: Auto de vistoria)
+    const camDocKind = d => d?.kind === 'outro' && d.kind_other ? d.kind_other : camDocKindLabel(d?.kind);
     const mockCamaraDocs = [];
     let camDocSort = (() => { try { return localStorage.getItem('cam-doc-sort') || 'date'; } catch { return 'date'; } })();
     const fmtFileSize = b => b == null ? '' : b < 1048576 ? Math.max(1, Math.round(b / 1024)) + ' KB' : (b / 1048576).toLocaleString('pt-PT', { maximumFractionDigits: 1 }) + ' MB';
@@ -15987,8 +16001,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           </span></div>
         ${docs.length ? docs.map(d => `
           <div class="invoice-row click-row cm-doc" data-cm-doc="${escapeHtml(d.id)}">
-            <span><b>${escapeHtml(d.title)}</b><br><small>${escapeHtml([camDocKindLabel(d.kind), d.ref_number ? 'n.º ' + d.ref_number : null,
-              d.doc_date ? fmtD(d.doc_date) : 'sem data', /pdf/.test(d.mime || '') ? 'PDF' : 'Imagem', fmtFileSize(d.size_bytes)].filter(Boolean).join(' · '))}</small></span>
+            <span><b>${escapeHtml(d.title)}</b><br><small>${escapeHtml([camDocKind(d), d.ref_number ? 'n.º ' + d.ref_number : null,
+              d.doc_date ? fmtD(d.doc_date) : 'sem data', /pdf/.test(d.mime || '') ? 'PDF' : 'Imagem', fmtFileSize(d.size_bytes)].filter(Boolean).join(' · '))}</small>${d.notes ? `<br><small class="cm-doc-note">${escapeHtml(d.notes)}</small>` : ''}</span>
             <span class="cm-doc-acts">${CAM_DOC_ANALYSABLE.includes(d.kind) ? (d.analysis_status === 'a_correr' && camDocRunning(d)
                 ? '<span class="cm-doc-busy">A analisar…</span>'
                 : `<button type="button" class="text-btn" data-cm-doc-ai="${escapeHtml(d.id)}">${d.analysis ? 'Ver análise' : 'Analisar'}</button>`) : ''}
@@ -16259,7 +16273,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const cli = (R.do_cliente || []).filter(has);
       const glo = (R.glossario || []).filter(x => has(x.termo));
       const logo = new URL('assets/nova-logo-white-cropped.png', location.href).href;
-      const docLine = [camDocKindLabel(doc.kind), doc.ref_number ? 'n.º ' + doc.ref_number : null, doc.doc_date ? 'de ' + fmtDayMonthYear(doc.doc_date) : null].filter(Boolean).join(' ');
+      const docLine = [camDocKind(doc), doc.ref_number ? 'n.º ' + doc.ref_number : null, doc.doc_date ? 'de ' + fmtDayMonthYear(doc.doc_date) : null].filter(Boolean).join(' ');
       const body = `${ed ? '<div class="edhint">Clica em qualquer texto com contorno para o corrigir. Grava sozinho. Apaga o texto ou toca em × para tirar um ponto.</div>' : ''}
         <div class="capa"><header><div class="brand"><img src="${e(logo)}" alt="NOVA"><span class="ii">Processo camarário</span></div><div class="meta">NOVA Associates<br>${e(frToday())}</div></header>
           <div class="eyebrow">Explicação para o cliente</div>
@@ -16395,18 +16409,25 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             <div><label class="field-label">Tipo</label>${kindSel('cd-kind', doc.kind)}</div>
             <div><label class="field-label">Data do documento</label><input type="date" id="cd-date" class="form-input" value="${escapeHtml(doc.doc_date || '')}"></div>
           </div>
+          <div id="cd-other-wrap"${doc.kind === 'outro' ? '' : ' hidden'}><label class="field-label" for="cd-other">Que documento é?</label>
+            <input type="text" id="cd-other" class="form-input" maxlength="80" placeholder="ex.: Auto de vistoria, Notificação, Requerimento" value="${escapeHtml(doc.kind_other || '')}"></div>
           <label class="field-label">N.º</label>
           <input type="text" id="cd-ref" class="form-input" placeholder="ex: 1234/DGU/2025" value="${escapeHtml(doc.ref_number || '')}">
+          <label class="field-label" for="cd-notes">Descritivo / notas <span class="muted">(opcional)</span></label>
+          <textarea id="cd-notes" class="form-input" rows="3" placeholder="Comentários, erros a corrigir, o que falta…">${escapeHtml(doc.notes || '')}</textarea>
           <div class="field-hint">${escapeHtml([doc.file_name, fmtFileSize(doc.size_bytes), doc.original_bytes && doc.original_bytes > doc.size_bytes ? 'era ' + fmtFileSize(doc.original_bytes) : null, ataMemberNames[doc.created_by] ? 'carregado por ' + ataMemberNames[doc.created_by] : null].filter(Boolean).join(' · '))}</div>
           <button type="button" id="cd-save" class="primary-btn">Guardar</button>
           <button type="button" id="cd-open" class="secondary-btn">Abrir documento</button>
           <button type="button" id="cd-del" class="secondary-btn danger-btn">Eliminar</button>
           <div id="cd-msg" class="form-msg"></div>`);
         document.getElementById('cd-open').addEventListener('click', () => openCamaraDoc(doc));
+        document.getElementById('cd-kind').addEventListener('change', e => { const o = e.target.value === 'outro'; document.getElementById('cd-other-wrap').hidden = !o; if (o) document.getElementById('cd-other').focus(); });
         document.getElementById('cd-save').addEventListener('click', async () => {
           const title = document.getElementById('cd-title').value.trim();
           if (!title) return formError('cd-msg', 'Escreve o título.');
-          const patch = { title, kind: document.getElementById('cd-kind').value, doc_date: document.getElementById('cd-date').value || null, ref_number: valOrNull(document.getElementById('cd-ref').value.trim()) };
+          const kind = document.getElementById('cd-kind').value;
+          const patch = { title, kind, kind_other: kind === 'outro' ? valOrNull(document.getElementById('cd-other').value.trim()) : null, doc_date: document.getElementById('cd-date').value || null,
+            ref_number: valOrNull(document.getElementById('cd-ref').value.trim()), notes: valOrNull(document.getElementById('cd-notes').value.trim()) };
           try { await dbUpdate('municipal_documents', doc.id, patch, mockCamaraDocs); closeQuickModal(); showToast('Documento guardado'); onSaved && onSaved(); }
           catch (err) { formError('cd-msg', 'Não foi possível guardar: ' + err.message); }
         });
@@ -16449,7 +16470,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               <select class="form-input" data-f="kind" aria-label="Tipo">${CAM_DOC_KINDS.map(([k, l]) => `<option value="${k}"${k === it.kind ? ' selected' : ''}>${l}</option>`).join('')}</select>
               <input type="date" class="form-input" data-f="date" aria-label="Data do documento" value="${escapeHtml(it.date || '')}">
               <input type="text" class="form-input" data-f="ref" aria-label="N.º" placeholder="N.º" value="${escapeHtml(it.ref || '')}">
-            </div>`}
+            </div>
+            <input type="text" class="form-input" data-f="other" aria-label="Que documento é?" placeholder="Que documento é? (ex.: Auto de vistoria)" maxlength="80" value="${escapeHtml(it.other || '')}"${it.kind === 'outro' ? '' : ' hidden'}>
+            <input type="text" class="form-input" data-f="notes" aria-label="Descritivo / notas" placeholder="Descritivo / notas (opcional)" value="${escapeHtml(it.notes || '')}">`}
           </div>`).join('');
         refresh();
       };
@@ -16473,7 +16496,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         draw();
       });
       list.addEventListener('input', e => { const r = e.target.closest('[data-i]'); if (r && e.target.dataset.f) items[r.dataset.i][e.target.dataset.f] = e.target.value; });
-      list.addEventListener('change', e => { const r = e.target.closest('[data-i]'); if (r && e.target.dataset.f) items[r.dataset.i][e.target.dataset.f] = e.target.value; });
+      list.addEventListener('change', e => { const r = e.target.closest('[data-i]'); if (r && e.target.dataset.f) { items[r.dataset.i][e.target.dataset.f] = e.target.value; if (e.target.dataset.f === 'kind') { const o = r.querySelector('[data-f="other"]'); o.hidden = e.target.value !== 'outro'; if (!o.hidden) o.focus(); } } });
       list.addEventListener('click', e => { const r = e.target.closest('[data-i]'); if (r && e.target.closest('[data-del]')) { items[r.dataset.i].removed = true; draw(); } });
       btn.addEventListener('click', async () => {
         const todo = items.filter(it => !it.removed && it.res && !it.error && !it.saved);
@@ -16487,7 +16510,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             btn.textContent = todo.length > 1 ? `A guardar ${done + 1}/${todo.length}…` : 'A guardar…';
             const ext = it.res.type === 'application/pdf' ? 'pdf' : it.res.type === 'image/png' ? 'png' : it.res.type === 'image/webp' ? 'webp' : 'jpg';
             const path = `${project.id}/${crypto.randomUUID?.() ?? Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10)}.${ext}`;
-            const row = { project_id: project.id, kind: it.kind, title: it.title.trim(), ref_number: valOrNull(String(it.ref || '').trim()), doc_date: it.date || null,
+            const row = { project_id: project.id, kind: it.kind, kind_other: it.kind === 'outro' ? valOrNull(String(it.other || '').trim()) : null, notes: valOrNull(String(it.notes || '').trim()),
+              title: it.title.trim(), ref_number: valOrNull(String(it.ref || '').trim()), doc_date: it.date || null,
               path, file_name: it.file.name, mime: it.res.type, size_bytes: it.res.blob.size, original_bytes: it.file.size, created_by: me };
             if (devMode) { const o = { id: 'cd-' + Date.now() + done, ...row, created_at: new Date().toISOString(), url: URL.createObjectURL(it.res.blob) }; mockCamaraDocs.push(o); saved.push(o); }
             else {
@@ -17285,6 +17309,49 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       });
       return out;
     }
+    // prazos que esperam por uma decisão da Câmara sobre a fase (fecham com a data do deferimento)
+    const CAM_DECISION_KEYS = /^(pip$|pip_(?!validade)|old_pip_|lic_|old_lic_|deliberacao)/;
+    // «A Câmara deferiu»: fecha a decisão desta fase (e das outras entregas do mesmo tipo), termina as pausas
+    // «à espera da Câmara» do projeto e regista o ponto de situação
+    function openCamaraDeferred(project, stageId, stages, onSaved) {
+      const st = stages.find(x => String(x.id) === String(stageId)); if (!st) return;
+      const today = dateKey(new Date()), kind = camaraKind(st.stage_types?.name);
+      const same = stages.filter(x => camaraKind(x.stage_types?.name) === kind && x.delivery_date && !x.approval_date);
+      openQuickModal('A Câmara deferiu', `
+        <div class="field-hint" style="margin-top:0"><b>${escapeHtml(phaseName(st))}</b> · ${escapeHtml(project.name || '')}</div>
+        <label class="field-label" for="df-date">Data do deferimento</label>
+        <input type="date" id="df-date" class="form-input" value="${today}" max="${today}">
+        <label class="field-label" for="df-note">Nota <span class="muted">(opcional)</span></label>
+        <input type="text" id="df-note" class="form-input" maxlength="200" placeholder="ex.: despacho de 12/11, n.º do alvará…">
+        <ul class="cm-defer-list"><li>O prazo de decisão da Câmara fica <b>decidido</b>${same.length > 1 ? ` (nas ${same.length} entregas deste tipo)` : ''} e o aviso de prazo ultrapassado desaparece.</li>
+          <li>As <b>pausas «à espera da Câmara»</b> deste projeto terminam nessa data.</li>
+          <li>Fica um ponto de situação <b>Deferido</b> no histórico.</li></ul>
+        <button type="button" class="primary-btn" id="df-save">Confirmar deferimento</button><div id="df-msg" class="form-msg"></div>`);
+      document.getElementById('df-save').addEventListener('click', async () => {
+        const date = document.getElementById('df-date').value;
+        if (!date || date > today) return formError('df-msg', 'Indica a data do deferimento (até hoje).');
+        const btn = document.getElementById('df-save'); btn.disabled = true;
+        try {
+          const me = (await getCurrentMember())?.id ?? null;
+          const mockSt = window.__mockCamStages || MOCK_STAGES;
+          for (const x of same.filter(x => x.delivery_date <= date || x.id === st.id)) {
+            const patch = { approval_date: date, ...(x.status === 'review' ? { status: 'done', waiting_on: null } : {}) };
+            await dbUpdate('project_stages', x.id, patch, mockSt); Object.assign(x, patch);
+          }
+          // pausas à espera da Câmara ainda abertas (ou com fim depois desta data)
+          let nB = 0;
+          if (devMode) MOCK_BREAKS.filter(b => b.project_id === project.id && b.type === 'municipality' && b.start_date <= date && (!b.end_date || b.end_date > date)).forEach(b => { b.end_date = date; nB++; });
+          else {
+            const r = await supabase.from('project_breaks').update({ end_date: date }).eq('project_id', project.id).eq('type', 'municipality').lte('start_date', date).or(`end_date.is.null,end_date.gt.${date}`).select('id');
+            if (r.error) throw r.error; nB = (r.data || []).length;
+          }
+          await dbInsert('municipal_followups', { project_id: project.id, followup_date: date, status: 'Deferido', notes: [phaseName(st), document.getElementById('df-note').value.trim()].filter(Boolean).join(' — '), created_by: me }, mockFollowups);
+          closeQuickModal();
+          showToast(`Deferimento registado${nB ? ` · ${nB} pausa${nB > 1 ? 's' : ''} terminada${nB > 1 ? 's' : ''}` : ''}`);
+          onSaved && onSaved();
+        } catch (err) { btn.disabled = false; formError('df-msg', 'Não foi possível registar: ' + err.message); }
+      });
+    }
     function camaraStateText(d) {
       if (d.state === 'done') return d.who === 'camara' ? 'Decidido' : 'Cumprido';
       if (d.state === 'none') return '—';
@@ -17303,7 +17370,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <span><b>${escapeHtml(d.label)}</b><br><small>${escapeHtml(phaseName(d.stage))}${d.start ? ' · desde ' + escapeHtml(fmtDayMonthYear(d.start)) : ''}${d.due ? ' · até ' + escapeHtml(fmtDayMonthYear(d.due)) : ''}${d.rule?.hint ? ' · ' + escapeHtml(d.rule.hint) : ''}${d.regime === 'antigo' ? ' · regime anterior a 1/10/2026' : ''}</small>
             ${d.state === 'late' && d.who === 'camara' ? '<small class="cm-tacit">Prazo ultrapassado: possível deferimento tácito — confirmar com a Câmara/jurista</small>' : ''}
             ${d.warn ? `<small class="cm-warn">${escapeHtml(d.warn)}</small>` : ''}${d.note ? `<small class="cm-note">${escapeHtml(d.note)}</small>` : ''}</span>
-          <span class="cm-when ${d.state === 'late' ? 'late' : d.state === 'soon' ? 'soon' : d.state === 'done' ? 'ok' : ''}">${escapeHtml(camaraStateText(d))}<small>${d.who === 'camara' ? 'Câmara' : 'NOVA'}</small></span>
+          <span class="cm-when ${d.state === 'late' ? 'late' : d.state === 'soon' ? 'soon' : d.state === 'done' ? 'ok' : ''}">${escapeHtml(camaraStateText(d))}<small>${d.who === 'camara' ? 'Câmara' : 'NOVA'}</small>
+            ${d.who === 'camara' && d.state !== 'done' && CAM_DECISION_KEYS.test(d.key) ? `<button type="button" class="secondary-btn cm-defer" data-cm-defer="${escapeHtml(d.stage.id)}">A Câmara deferiu</button>` : ''}</span>
         </div>`;
       const manualRow = m => {
         const left = diffDays(today, m.event_date);
@@ -18294,11 +18362,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         kw: 'revisao oficio aditamento alteracoes cliente retrabalho nova revisao r01 r02 pip novo correcoes',
         tour: [{ go: 'project:fases', sel: '#add-revision-btn', text: 'Toca aqui para abrir uma revisão.' }] },
       { id: 'fase-nao-faturar', cat: 'proj', ctx: ['detail:fases'],
-        q: 'crio uma fase que não é para faturar (ex.: Licença / Alvará de Obra)',
-        a: 'Fases → + Nova fase ou revisão → marca «Não é para faturar». Não pede valor nem motivo e fica fora das contas da NOVA.',
-        steps: ['Abre o projeto → [[Fases]] → [[+ Nova fase ou revisão]].', 'Escolhe o **Tipo de fase** (ex.: **Licença / Alvará de Obra**).', 'Marca **Não é para faturar**: o valor e o motivo deixam de ser pedidos.', 'Indica as datas, se quiseres, e toca em [[Adicionar fase]].', 'Numa fase que já existe: abre a fase → **Mais opções** → **Fora das contas da NOVA**.'],
-        kw: 'fase nao faturar sem faturacao gratuita fora das contas alvara licenca obra nova fase sem valor',
-        tour: [{ go: 'project:fases', sel: '#add-revision-btn', text: 'Toca aqui e marca «Não é para faturar».' }] },
+        q: 'crio uma fase que não se fatura (ex.: Licença / Alvará de Obra)',
+        a: 'Fases → + Nova fase ou revisão → marca «Não se fatura». Não pede valor nem motivo: é uma fase sem honorários (as horas contam na mesma).',
+        steps: ['Abre o projeto → [[Fases]] → [[+ Nova fase ou revisão]].', 'Escolhe o **Tipo de fase** (ex.: **Licença / Alvará de Obra**).', 'Marca **Não se fatura**: o valor e o motivo deixam de ser pedidos.', 'Indica as datas, se quiseres, e toca em [[Adicionar fase]].', 'Numa fase que já existe: abre a fase → **Mais opções** → **Fora das contas da NOVA**.'],
+        kw: 'fase nao faturar nao se fatura sem faturacao gratuita sem honorarios oficio alvara licenca obra nova fase sem valor',
+        tour: [{ go: 'project:fases', sel: '#add-revision-btn', text: 'Toca aqui e marca «Não se fatura».' }] },
       { id: 'pausa', cat: 'proj', ctx: ['detail:fases'],
         q: 'registo que o projeto está parado (à espera do cliente ou da Câmara)',
         a: 'Fases → + Pausa. As fases seguintes esperam e os prazos andam para a frente até terminares a pausa.',
@@ -25355,6 +25423,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             <div class="gantt-wrap pp-dupes" id="pp-dupes" hidden></div>
             ${pp.id ? `<div class="gantt-wrap pp-pipe">
               <div class="card-head"><h2>Pipeline</h2>${pill(pp.status)}</div>
+              <div class="pp-cst"><span>${escapeHtml(ppRef(pp) || 'Sem CST')}</span><button type="button" class="text-btn" data-pa="cst">Mudar o CST</button></div>
               <div class="form-grid pp-pipe-grid">
                 <div><label class="field-label">Probabilidade (%)</label><input type="text" inputmode="numeric" class="form-input" data-pp="probability" data-n value="${escapeHtml(pp.probability ?? '')}" placeholder="${PIPE_PROB[pp.status] ?? ''}"></div>
                 <div><label class="field-label">Follow-up</label><input type="date" class="form-input" data-pp="followup_on" value="${escapeHtml(pp.followup_on || '')}"></div>
@@ -25371,7 +25440,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
                 ${pp.status === 'draft' ? '<button type="button" class="secondary-btn" data-pa="sent">Marcar como enviada</button>' : ''}
                 ${['sent', 'negotiation'].includes(pp.status) ? '<button type="button" class="secondary-btn" data-pa="fu">Follow-up feito</button>' : ''}
                 ${pp.status === 'sent' ? '<button type="button" class="secondary-btn" data-pa="negotiation">Em negociação</button>' : ''}
-                ${PIPE_OPEN.includes(pp.status) ? (pp.status !== 'draft' ? '<button type="button" class="secondary-btn" data-pa="version">Nova versão (V' + ((pp.version || 1) + 1) + ')</button>' : '') + '<button type="button" class="primary-btn" data-pa="accept">Adjudicada → criar projeto</button><button type="button" class="text-btn danger-text" data-pa="lost">Perdida</button>' : ''}
+                ${PIPE_OPEN.includes(pp.status) ? '<button type="button" class="secondary-btn" data-pa="version">Nova versão (V' + (Math.max(pp.version || 1, ...versions.map(v => v.version || 1)) + 1) + ')</button><button type="button" class="primary-btn" data-pa="accept">Adjudicada → criar projeto</button><button type="button" class="text-btn danger-text" data-pa="lost">Perdida</button>' : ''}
                 ${pp.status === 'declined' ? '<button type="button" class="secondary-btn" data-pa="reopen">Reabrir</button>' : ''}
                 ${!['accepted'].includes(pp.status) ? '<button type="button" class="text-btn danger-text" data-pa="delete">Eliminar</button>' : ''}
               </div>
@@ -25823,6 +25892,65 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         } catch (err) { btn.disabled = false; formError('fd-msg', 'Não foi possível gravar: ' + err.message); }
       });
     }
+    // Mudar o CST (número e versão) à mão. Avisa das sobreposições: o mesmo número noutra proposta (outro cliente ou
+    // título) ou numa oportunidade; o mesmo número e versão já existentes não se podem repetir.
+    function openCstEdit(pp, d, plot, onDone) {
+      openQuickModal('Mudar o CST', `
+        <div class="form-grid">
+          <div><label class="field-label" style="margin-top:0" for="cst-n">Número</label><input type="text" inputmode="numeric" id="cst-n" class="form-input" value="${escapeHtml(pp.number ?? '')}" placeholder="ex.: 26059"></div>
+          <div><label class="field-label" style="margin-top:0" for="cst-v">Versão</label><input type="text" inputmode="numeric" id="cst-v" class="form-input" value="${escapeHtml(pp.version || 1)}"></div>
+        </div>
+        <div class="field-hint" id="cst-hint"></div>
+        <div id="cst-warn"></div>
+        <button type="button" class="primary-btn" id="cst-save">Guardar</button><div id="cst-msg" class="form-msg"></div>`);
+      const nEl = document.getElementById('cst-n'), vEl = document.getElementById('cst-v');
+      const who = x => [ppClientName(x, d) || x.client_name, x.title].filter(Boolean).join(' · ') || 'sem título';
+      const family = x => x.id === pp.id || (pp.number && x.number === pp.number);
+      let state = { ok: false };
+      const check = () => {
+        const n = Number(String(nEl.value).replace(/\s/g, '')), v = Number(vEl.value);
+        const warn = document.getElementById('cst-warn'), hint = document.getElementById('cst-hint');
+        warn.innerHTML = ''; state = { ok: false };
+        if (!Number.isInteger(n) || n <= 0) { hint.textContent = 'Escreve o número do CST (só algarismos).'; return; }
+        if (!Number.isInteger(v) || v < 1) { hint.textContent = 'A versão começa em 1.'; return; }
+        hint.textContent = `Fica ${cstLabel(n, v)}.`;
+        const others = d.proposals.filter(x => x.id !== pp.id && Number(x.number) === n);
+        const exact = others.find(x => (x.version || 1) === v);
+        const foreign = others.filter(x => !family(x));
+        const plots = d.plots.filter(x => Number(x.cst) === n && x.id !== pp.plot_id);
+        const msgs = [];
+        if (exact) msgs.push(`<div class="error-box">Já existe a <b>${escapeHtml(cstLabel(n, v))}</b> (${escapeHtml(who(exact))} · ${escapeHtml(optLabel(PROP_STATUSES, exact.status))}). Escolhe outra versão ou outro número.</div>`);
+        else {
+          if (foreign.length) msgs.push(`<div class="cst-warn">O CST <b>${n}</b> já é usado por ${foreign.length === 1 ? 'outra proposta' : foreign.length + ' outras propostas'}: ${foreign.slice(0, 3).map(x => `${escapeHtml(ppRef(x))} — ${escapeHtml(who(x))}`).join('; ')}. Se guardares, esta passa a ser mais uma versão desse CST.</div>`);
+          if (plots.length) msgs.push(`<div class="cst-warn">O CST <b>${n}</b> está também na oportunidade «${escapeHtml(plots[0].name || '')}».</div>`);
+        }
+        const moves = n !== Number(pp.number) && pp.number ? d.proposals.filter(x => x.id !== pp.id && x.number === pp.number) : [];
+        if (moves.length) msgs.push(`<label class="check-row"><input type="checkbox" id="cst-all" checked> Mudar também ${moves.length === 1 ? 'a outra versão' : 'as outras ' + moves.length + ' versões'} deste CST (${moves.map(x => 'V' + (x.version || 1)).join(', ')})</label>`);
+        if (plot && n !== Number(plot.cst)) msgs.push(`<label class="check-row"><input type="checkbox" id="cst-plot" checked> Mudar também o CST da oportunidade «${escapeHtml(plot.name || '')}»</label>`);
+        warn.innerHTML = msgs.join('');
+        state = { ok: !exact, n, v, moves, needConfirm: foreign.length > 0 || plots.length > 0 };
+      };
+      nEl.addEventListener('input', check); vEl.addEventListener('input', check); check();
+      document.getElementById('cst-save').addEventListener('click', async () => {
+        check();
+        if (!state.ok) return formError('cst-msg', 'Corrige o número ou a versão.');
+        const { n, v, moves } = state;
+        if (n === Number(pp.number) && v === (pp.version || 1)) { closeQuickModal(); return; }
+        if (state.needConfirm && !confirm(`O CST ${n} já está em uso noutro sítio. Guardar mesmo assim?`)) return;
+        const all = document.getElementById('cst-all')?.checked, withPlot = document.getElementById('cst-plot')?.checked;
+        // as outras versões que mudam de número não podem chocar com versões que já existam no destino
+        if (all && moves.some(x => d.proposals.some(y => y.id !== x.id && y.id !== pp.id && Number(y.number) === n && (y.version || 1) === (x.version || 1)))) return formError('cst-msg', `No CST ${n} já existem versões com os mesmos números. Muda esta proposta sozinha.`);
+        const btn = document.getElementById('cst-save'); btn.disabled = true;
+        try {
+          await dbUpdate('fee_proposals', pp.id, { number: n, version: v, ref: cstLabel(n, v), updated_at: new Date().toISOString() }, mockProposals);
+          if (all) for (const x of moves) { await dbUpdate('fee_proposals', x.id, { number: n, ref: cstLabel(n, x.version || 1) }, mockProposals); x.number = n; x.ref = cstLabel(n, x.version || 1); }
+          if (withPlot && plot) { await dbUpdate('land_plots', plot.id, { cst: n }, mockPlots); plot.cst = n; }
+          Object.assign(pp, { number: n, version: v, ref: cstLabel(n, v) });
+          const i = d.proposals.findIndex(x => x.id === pp.id); if (i >= 0) Object.assign(d.proposals[i], { number: n, version: v, ref: cstLabel(n, v) });
+          closeQuickModal(); showToast(`Passou a ${cstLabel(n, v)}`); onDone && onDone();
+        } catch (err) { btn.disabled = false; formError('cst-msg', 'Não foi possível guardar: ' + err.message); }
+      });
+    }
     // Ações do pipeline: enviada, negociação, nova versão, adjudicada, perdida, reabrir, eliminar
     async function ppAction(a) {
       const S = proposalState, pp = S.pp, d = S.d;
@@ -25834,6 +25962,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         if (!r) return;
         if (plot && ['registered', 'analysis', 'presented'].includes(plot.status)) await dbUpdate('land_plots', plot.id, { status: 'proposal' }, mockPlots).catch(() => {});
         showToast('Marcada como enviada · follow-up daqui a 7 dias'); reopen(r.id);
+      } else if (a === 'cst') {
+        const r = await ppSave(); if (!r) return;
+        openCstEdit(pp, d, plot, () => reopen(pp.id));
       } else if (a === 'fu') {
         const r = await ppSave(); if (!r) return;
         openFollowupDone(pp.id, () => reopen(pp.id));
@@ -30040,7 +30171,9 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         const lines = src[bk] || [];
         const revN = viewRev ? viewRev.rev : nextN;
         acts = `<button type="button" class="secondary-btn toolbar-btn" id="mqt-xls">Excel ${viewRev ? mqtRevLabel(viewRev.rev) : 'para concurso'}${keys.length > 1 ? ` (${keys.length} ficheiros)` : ''}</button><button type="button" class="secondary-btn toolbar-btn" id="mqt-xls-est">Excel com estimativa</button>${viewRev ? '' : `<button type="button" class="text-btn" id="mqt-add-manual">+ Artigo à mão</button><button type="button" class="primary-btn toolbar-btn" id="mqt-close-rev">Fechar ${mqtRevLabel(nextN)}</button>`}`;
-        body = (viewRev ? `<div class="mqt-banner">A ver a revisão <b>${mqtRevLabel(viewRev.rev)}</b>, fechada a ${escapeHtml(new Date(viewRev.created_at).toLocaleDateString('pt-PT'))}${viewRev.note ? ' · ' + escapeHtml(viewRev.note) : ''}. É uma fotografia: não muda. <button type="button" class="text-btn" id="mqt-rev-back">Voltar ao MQT em curso</button></div>` : '')
+        const missN = mq.issues.missing.reduce((t, m) => t + m.fields.length, 0);
+        body = (!viewRev && missN ? `<div class="mqt-banner warn"><span><b>${mq.issues.missing.length} ${mq.issues.missing.length === 1 ? 'artigo tem' : 'artigos têm'} campos por preencher</b> (${missN} ${missN === 1 ? 'campo' : 'campos'}). A revisão só se fecha com tudo preenchido.</span><button type="button" class="primary-btn toolbar-btn" id="mqt-fill">Preencher agora</button></div>` : '')
+          + (viewRev ? `<div class="mqt-banner">A ver a revisão <b>${mqtRevLabel(viewRev.rev)}</b>, fechada a ${escapeHtml(new Date(viewRev.created_at).toLocaleDateString('pt-PT'))}${viewRev.note ? ' · ' + escapeHtml(viewRev.note) : ''}. É uma fotografia: não muda. <button type="button" class="text-btn" id="mqt-rev-back">Voltar ao MQT em curso</button></div>` : '')
           + (!viewRev && !latest ? mqtEmptyHtml(true) : '')
           + (keys.length > 1 ? `<div class="segmented mqt-blocks" id="mqt-blocks">${keys.map(b => `<button type="button" data-mblock="${escapeHtml(b)}" class="${b === bk ? 'active' : ''}">${escapeHtml(mqtBlockLabel(b))}</button>`).join('')}</div>` : '')
           + mqtLinesHtml(lines, stats, { editable: !viewRev, reorder: !viewRev && !lastRev, revN, block: keys.length > 1 ? bk : null, counts: !viewRev && lastRev ? cnt : null, allTotal: keys.length > 1 ? keys.reduce((t, k) => t + mqtLinesTotal(src[k], stats).total, 0) : null })
@@ -30073,7 +30206,10 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       document.getElementById('mqt-xls-est')?.addEventListener('click', () => mqtExportFiles(project, ex, stats));
       box.querySelectorAll('[data-mblock]').forEach(b => b.addEventListener('click', () => { mqtBlock = b.dataset.mblock; renderMqt(); }));
       document.getElementById('mqt-add-manual')?.addEventListener('click', () => openMqtManualModal(lib, cfg, mq, null));
-      document.getElementById('mqt-close-rev')?.addEventListener('click', () => openMqtCloseRev(lib, mq, cfg, lastRev, nextN));
+      // nada fica por preencher: com campos variáveis em falta, primeiro pede-os
+      const closeRev = () => mq.issues.missing.length ? openMqtFillFields(lib, cfg, mq, 'Antes de fechar a revisão, preenche os campos que faltam.') : openMqtCloseRev(lib, mq, cfg, lastRev, nextN);
+      document.getElementById('mqt-fill')?.addEventListener('click', () => openMqtFillFields(lib, cfg, mq));
+      document.getElementById('mqt-close-rev')?.addEventListener('click', closeRev);
       document.getElementById('mqt-rev-back')?.addEventListener('click', () => { mqtViewRev = null; renderMqt(); });
       box.querySelectorAll('[data-mqt-item]').forEach(r => r.addEventListener('click', () => { const it = mq.items[r.dataset.mqtItem]; if (it) openMqtItemModal(lib, cfg, mq, it, stats); }));
       box.querySelectorAll('[data-mqt-art]').forEach(r => r.addEventListener('click', () => openMqtArtModal(lib, cfg, mq, r.dataset.mqtArt)));
@@ -30107,7 +30243,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       box.querySelectorAll('[data-mqt-run-cmp]').forEach(b => b.addEventListener('click', () => openMqtCompare(lib, cfg, runs, b.dataset.mqtRunCmp)));
       box.querySelectorAll('[data-mqt-rev-view]').forEach(b => b.addEventListener('click', () => { mqtViewRev = b.dataset.mqtRevView; mqtTab = 'mqt'; mqtBlock = null; renderMqt(); window.scrollTo(0, 0); }));
       box.querySelectorAll('[data-mqt-rev-xls]').forEach(b => b.addEventListener('click', () => { const r = revs.find(x => x.id === b.dataset.mqtRevXls); const keys = Object.keys(r.blocks || {}).sort(); mqtExportFiles(project, { src: r.blocks || {}, keys, revN: r.rev, draft: false }, null); }));
-      document.getElementById('mqt-close-rev2')?.addEventListener('click', () => openMqtCloseRev(lib, mq, cfg, lastRev, nextN));
+      document.getElementById('mqt-close-rev2')?.addEventListener('click', closeRev);
     }
     // ---------- Keynotes: renumerar ao mudar de sítio e propagar a mudança ----------
     // Cada capítulo tem blocos por família (prefixo: PRD, REVe…). Ao mudar a ordem ou de capítulo, cada bloco afetado fica
@@ -30583,7 +30719,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       const known = () => { const s = ['var', 'cor', 'marca', 'acabamento', 'dimensões']; lib.elements.forEach(e => mqtPhNames(e.text).forEach(n => { if (!s.some(x => x.toLowerCase() === n.toLowerCase())) s.push(n); })); return s; };
       const placeBar = t => { const r = t.getBoundingClientRect(); bar.style.left = Math.max(8, Math.min(r.left + window.scrollX, window.scrollX + document.documentElement.clientWidth - bar.offsetWidth - 8)) + 'px'; bar.style.top = (r.bottom + window.scrollY + 4) + 'px'; };
       const showBar = t => {
-        bar.innerHTML = `<span>Inserir campo:</span>${known().map(n => `<button type="button" data-ph="${escapeHtml(n)}" title="${n.toLowerCase() === 'var' ? 'Valor principal do subtipo (ex.: espessura)' : 'Campo variável: preenche-se no subtipo (60 mm | branca) ou em cada projeto'}">{${escapeHtml(n)}}</button>`).join('')}<button type="button" class="new" data-ph-new>+ outro…</button>`;
+        bar.innerHTML = `<button type="button" data-ph-new title="Fica no descritivo como {nome}. Em cada projeto, a app pede o valor antes de fechar a revisão.">+ Campo variável</button><span>preenche-se em cada projeto (ex.: cor, marca, acabamento)</span>`;
         bar.__t = t; bar.hidden = false; placeBar(t);
       };
       bar.onmousedown = ev => {
@@ -30591,7 +30727,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         ev.preventDefault();
         const t = bar.__t; if (!t) return;
         let name = b.dataset.ph;
-        if (b.hasAttribute('data-ph-new')) { name = (prompt('Nome do campo variável (ex.: acabamento, cor do caixilho)', '') || '').replace(/[{}]/g, '').trim(); if (!name) { t.focus(); return; } }
+        if (b.hasAttribute('data-ph-new')) { name = (prompt('Nome do campo variável (ex.: cor, marca, acabamento). Em cada projeto, a app pede este valor.', '') || '').replace(/[{}]/g, '').trim(); if (!name) { t.focus(); return; } }
         const s = t.selectionStart ?? t.value.length, e2 = t.selectionEnd ?? s;
         const before = t.value.slice(0, s), sp = before && !/\s$/.test(before) ? ' ' : '';
         t.focus(); t.setRangeText(`${sp}{${name}}`, s, e2, 'end'); t.dispatchEvent(new Event('input'));
@@ -30986,6 +31122,39 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       showToast(`${label} tirado do MQT`, { undo: async () => { try { await mqtSaveCfg(mqtProjectId, before); renderMqt(); } catch (e) { showError('repor', e); } } });
       renderMqt();
     }
+    // Campos variáveis ainda sem valor num artigo (descritivo do artigo + o do subartigo, se tiver texto próprio)
+    function mqtArticleFields(lib, el, specs, letter) {
+      const EL = el.code.toUpperCase(), out = [];
+      const add = l => l.forEach(f => { if (!out.includes(f)) out.push(f); });
+      if (mqtHasSubs(lib, el)) {
+        add(mqtArticleText(el, specs, lib).missing);
+        const v = (lib.varsOf[EL] || []).find(x => x.letter.toUpperCase() === String(letter || '').toUpperCase());
+        if (v) add(mqtSubText(lib, { el, variant: v, full: mqtFull(el.code, v.letter), extra: '' }, specs).missing);
+      } else add(mqtDescribe(lib, el, letter, specs).missing);
+      return out.filter(f => f !== '(conforme subartigo)');
+    }
+    // Campos variáveis por preencher em todo o MQT do projeto: um formulário só, artigo a artigo
+    function openMqtFillFields(lib, cfg, mq, lead = '', only = null) {
+      const list = mq.issues.missing.filter(m => !only || only.includes(m.key.toUpperCase()));
+      if (!list.length) return;
+      const sp = cfg.specs || {};
+      openQuickModal(list.length === 1 ? `Completar ${mqtCodeDisp(list[0].key)}` : 'Campos por preencher', `
+        <div class="field-hint" style="margin-top:0">${lead ? `<b>${escapeHtml(lead)}</b> ` : ''}Cada artigo tem partes do descritivo que mudam de projeto para projeto. Escreve o valor de cada uma para este projeto.</div>
+        ${list.map(m => { const el = lib.elByCode[m.key.toUpperCase()]; const txt = el ? mqtArticleText(el, sp, lib).text : '';
+          return `<div class="mqt-fill-art"><b>${escapeHtml(mqtCodeDisp(m.key))} · ${escapeHtml(el?.name || '')}</b><small>${escapeHtml(txt).replace(/\[([^\]]+)\]/g, '<mark>[$1]</mark>')}</small>
+            ${m.fields.map(f => `<label class="mqt-fill-row"><span>${escapeHtml(f)}</span><input type="text" class="form-input mqt-fill-in" data-el="${escapeHtml(m.key.toUpperCase())}" data-f="${escapeHtml(f)}" value="${escapeHtml(sp[m.key.toUpperCase()]?.[f] || '')}" placeholder="${escapeHtml(f)} neste projeto"></label>`).join('')}</div>`; }).join('')}
+        <div id="mqt-fill-msg" class="form-msg"></div>
+        <button type="button" class="primary-btn" id="mqt-fill-save">Guardar</button>`);
+      if (list.length > 2) document.getElementById('quick-modal').classList.add('qm-wide');
+      setTimeout(() => document.querySelector('.mqt-fill-in')?.focus(), 60);
+      document.getElementById('mqt-fill-save').addEventListener('click', async () => {
+        const specs = JSON.parse(JSON.stringify(cfg.specs || {}));
+        let left = 0;
+        document.querySelectorAll('.mqt-fill-in').forEach(i => { const v = i.value.trim(), o = specs[i.dataset.el] ||= {}; if (v) o[i.dataset.f] = v; else { delete o[i.dataset.f]; left++; } });
+        try { await mqtSaveCfg(mqtProjectId, { specs }); closeQuickModal(); showToast(left ? `Guardado · ${left === 1 ? 'falta 1 campo' : 'faltam ' + left + ' campos'}` : 'Guardado · tudo preenchido'); renderMqt(); }
+        catch (e) { formError('mqt-fill-msg', 'Não foi possível guardar: ' + e.message); }
+      });
+    }
     // Acrescentar artigo à mão (estaleiro, especialidades, peitoris…)
     function mqtKeyOptions(lib, filter = () => true) {
       return lib.chapters.map(ch => ({ ch, list: lib.elements.filter(e => e.chapter_code === ch.code && e.active !== false && filter(e)).sort((a, b) => a.sort_order - b.sort_order).flatMap(e => { const vs = lib.varsOf[e.code.toUpperCase()] || []; return vs.length ? vs.map(v => [mqtFull(e.code, v.letter), `${mqtFull(e.code, v.letter)} · ${e.name} — ${mqtVarLabel(v)} (${e.unit})`]) : [[e.code, `${e.code} · ${e.name} (${e.unit})`]]; }) })).filter(g => g.list.length);
@@ -31054,7 +31223,17 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         if (!o) { formError('mqt-man-msg', 'Escolhe o artigo (escreve e carrega em Enter).'); return; }
         const q = {}; document.querySelectorAll('.mqt-man-in').forEach(i => { const v = numOrNull(i.value.replace(/\s/g, '')); if (v) q[i.dataset.b] = v; });
         // sem quantidade: fica "a considerar" (reserva o keynote)
-        try { const manual = JSON.parse(JSON.stringify(cfg.manual || {})); manual[o.k] = q; await mqtSaveCfg(mqtProjectId, { manual }); closeQuickModal(); showToast(Object.keys(q).length ? 'Artigo acrescentado' : 'Artigo acrescentado — a considerar, sem quantidade'); renderMqt(); }
+        try {
+          const manual = JSON.parse(JSON.stringify(cfg.manual || {})); manual[o.k] = q; await mqtSaveCfg(mqtProjectId, { manual }); closeQuickModal(); showToast(Object.keys(q).length ? 'Artigo acrescentado' : 'Artigo acrescentado — a considerar, sem quantidade');
+          await renderMqt();
+          // o artigo tem campos variáveis (cor, marca…): pede-os logo
+          const pk = mqtParseKey(o.k, lib), el = pk && lib.elByCode[pk.code];
+          if (el) {
+            const cfg2 = { ...cfg, manual };
+            const m = mqtArticleFields(lib, el, cfg2.specs || {}, pk.letter);
+            if (m.length) openMqtFillFields(lib, cfg2, { issues: { missing: [{ key: el.code, fields: m }] } }, 'Este artigo tem campos para completar neste projeto.');
+          }
+        }
         catch (e) { formError('mqt-man-msg', 'Não foi possível guardar: ' + e.message); }
       });
     }
@@ -33374,7 +33553,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
               <input type="text" inputmode="decimal" id="ph-value" class="form-input" value="${escapeHtml(String((isFixed ? stage.fixed_value : stage.percentage) ?? '').replace('.', ','))}"></div>
           </div>
           <label class="check-row"><input type="checkbox" id="ph-ignores-breaks"${stage.ignores_breaks ? ' checked' : ''}> Não espera pelas pausas (o lead time continua a contar com o projeto em pausa)</label>
-          <label class="check-row"><input type="checkbox" id="ph-excluded"${stage.excluded_from_invoicing ? ' checked' : ''}> Fora das contas da NOVA (não entra nos totais)</label>
+          <label class="check-row"><input type="checkbox" id="ph-excluded"${stage.excluded_from_invoicing ? ' checked' : ''}> Não se fatura (fase sem honorários)</label>
           <button type="button" id="ph-delete" class="secondary-btn danger-btn">Eliminar fase</button>
         </details>
         <button type="button" id="ph-save" class="primary-btn">Guardar</button>
