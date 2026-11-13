@@ -11753,8 +11753,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           .sort((a, b) => a.date.localeCompare(b.date));
         const sub = subsetSum(own.slice(0, 16), A, e => Number(e.amount));
         if (sub) return { action: 'reimb', expenses: sub, member: who, reviewed: false, why: `reembolso a ${who.name} de ${sub.length} despesa${sub.length > 1 ? 's' : ''}` };
-        return { action: 'expense', category_id: catByName(base, 'Pessoal')?.id ?? null, reviewed: false, why: `transferência para ${who.name}` };
+        // transferência para alguém da equipa que não é reembolso de despesas: é o salário
+        return { action: 'expense', category_id: catByName(base, 'Pessoal')?.id ?? null, reviewed: true, why: `salário de ${who.name}` };
       }
+      // Coverflex: subsídio de alimentação em cartão (faz parte do pacote de compensação) → Pessoal
+      if (/cover\s?flex/.test(d))
+        return { action: 'expense', category_id: catByName(base, 'Pessoal')?.id ?? null, reviewed: true, why: 'subsídio de alimentação (Coverflex)' };
       if (/instituto registos|registos e notariado|\birn\b|camara municipal|\bc\.?m\.? /.test(d))
         return { action: 'expense', category_id: catByName(base, 'Impostos e taxas')?.id ?? null, reviewed: false, why: 'taxa — diz de que projeto' };
       return { action: 'expense', category_id: null, reviewed: false, why: 'por classificar' };
