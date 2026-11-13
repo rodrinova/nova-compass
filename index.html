@@ -11598,7 +11598,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           const dates = [], desc = [];
           l.items.forEach(i => {
             const s = i.s.trim();
-            if (i.x < cols.dx - 200 && /^\d{1,2}\.\d{2}$/.test(s) && dates.length < 2) dates.push(s);
+            // as duas datas (lançamento e valor) podem vir juntas no mesmo bocado de texto: "10.05 10.03"
+            if (i.x < cols.dx - 200 && /^\d{1,2}\.\d{2}(\s+\d{1,2}\.\d{2})?$/.test(s) && dates.length < 2) dates.push(...s.split(/\s+/).slice(0, 2 - dates.length));
             else if (i.x >= amountStart && /^-?[\d.,]+-?$/.test(s)) nums[col(i.x)].push(s);
             else desc.push(s);
           });
