@@ -723,6 +723,25 @@
   .ata-entry-body { display: none; font-size: var(--fs-md); line-height: 1.55; margin-top: var(--sp-2-5); overflow-wrap: break-word; cursor: text; }
   .ata-entry.expanded .ata-entry-body { display: block; }
   .ata-entry-body p { margin: 0 0 var(--sp-1-5); }
+  .ata-entry-line { font-size: var(--fs-sm); color: var(--text-2); line-height: 1.4; margin-top: var(--sp-1); overflow-wrap: break-word; }
+  .ata-entry.expanded .ata-entry-line { display: none; }
+  .ata-sum { margin: 0 0 var(--sp-4); padding: var(--sp-4); border-radius: var(--r-md); background: var(--accent-soft); cursor: auto; }
+  .ata-sum.wait { background: var(--surface-2, var(--bg)); }
+  .ata-sum-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--sp-1) var(--sp-3); margin-bottom: var(--sp-2); }
+  .ata-sum-tag { font-size: var(--fs-xs); font-weight: var(--fw-semibold); letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+  .ata-sum-meta, .ata-sum-note { font-size: var(--fs-xs); color: var(--text-2); }
+  .ata-sum p.ata-sum-note { margin: var(--sp-1) 0 var(--sp-2); }
+  .ata-sum p.ata-sum-lead { margin: 0; font-size: var(--fs-md); line-height: 1.55; }
+  .ata-sum h4 { margin: var(--sp-4) 0 var(--sp-1-5); font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--text); }
+  .ata-sum-list { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--sp-2); }
+  .ata-sum-list li { padding-left: var(--sp-3); border-left: 2px solid color-mix(in srgb, var(--accent) 35%, transparent); line-height: 1.45; }
+  .ata-sum-list li > span { display: block; }
+  .ata-sum-list small { display: flex; flex-wrap: wrap; gap: 0 var(--sp-3); margin-top: 2px; font-size: var(--fs-xs); color: var(--text-2); }
+  .ata-sum-list small b { font-weight: var(--fw-semibold); color: var(--text); }
+  .ata-sum-list small .t { font-variant-numeric: tabular-nums; color: var(--text-3); }
+  .ata-raw { margin-top: var(--sp-2); }
+  .ata-raw > summary { cursor: pointer; font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--accent); padding: var(--sp-1) 0; }
+  .ata-raw[open] > summary { margin-bottom: var(--sp-2); }
   .ata-entry-body p:last-child { margin-bottom: 0; }
   .ata-entry-body ul, .ata-entry-body ol { margin: 0 0 var(--sp-1-5); padding-left: var(--sp-5); }
   .ata-entry-body li { margin: var(--sp-0-5) 0; }
@@ -8013,8 +8032,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
               <span class="ata-entry-date">${escapeHtml(fmtDateShort(new Date(n.meeting_date + 'T00:00:00')))}</span>
             </div>
             ${n.milestone_id && marcoTitle[n.milestone_id] ? `<span class="ata-marco-tag">${escapeHtml(marcoTitle[n.milestone_id])}</span>` : ''}
+            ${ataSummaryLine(n) ? `<div class="ata-entry-line">${escapeHtml(ataSummaryLine(n))}</div>` : ''}
             ${ataMetaHtml(n)}
-            <div class="ata-entry-body">${renderAtaBody(n.body)}</div>
+            <div class="ata-entry-body">${ataBodyHtml(n)}</div>
             ${ataActionsHtml(n)}
           </div>`;
 
@@ -9077,6 +9097,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const ver = n.revision !== undefined && n.revision !== null;
       return `<div class="ata-entry-actions">
           <button type="button" class="text-btn" data-ata-pdf="${escapeHtml(n.id)}" title="Abre a ata pronta a imprimir ou guardar em PDF, com as imagens no fim">PDF</button>
+          ${String(n.body || '').length >= ATA_SUM_MIN ? `<button type="button" class="text-btn" data-ata-sum="${escapeHtml(n.id)}" title="O Gemini lê a ata e escreve as decisões, as opções de projeto, os próximos passos e quem sugeriu e aprovou">${ataHasSummary(n) ? 'Refazer resumo' : 'Resumir reunião'}</button>` : ''}
           ${ver ? `<button type="button" class="text-btn" data-ata-edit="${escapeHtml(n.id)}">Editar</button>` : ''}
           ${ver && n.revision > 0 ? `<button type="button" class="text-btn" data-ata-versions="${escapeHtml(n.id)}">Versões anteriores (${n.revision})</button>` : ''}
           ${n.project_id ? `<button type="button" class="text-btn" data-ata-co="${escapeHtml(n.id)}" title="Algo pedido nesta reunião que está fora do âmbito">+ Trabalho a mais</button>` : ''}
@@ -9092,6 +9113,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         ev.stopPropagation();
         exportAtaPdf(byId[btn.dataset.ataPdf]);
       }));
+      root.querySelectorAll('[data-ata-sum]').forEach(btn => btn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        ataSummarise(byId[btn.dataset.ataSum], btn, onChanged);
+      }));
+      // ler o resumo ou abrir a transcrição não recolhe a ata
+      root.querySelectorAll('[data-ata-sumbox], .ata-raw').forEach(el => el.addEventListener('click', ev => ev.stopPropagation()));
       root.querySelectorAll('[data-ata-versions]').forEach(btn => btn.addEventListener('click', (ev) => {
         ev.stopPropagation();
         openAtaVersionsModal(byId[btn.dataset.ataVersions]);
@@ -9102,6 +9129,79 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const sel = String(getSelection?.() || '').trim();
         openChangeOrderModal(n.project_id, { preset: { title: '', description: sel || `Pedido na reunião de ${fmtDayMonth(n.meeting_date)}${n.title ? ' (' + n.title + ')' : ''}.`, source: 'ata', source_id: n.id }, after: onChanged });
       }));
+    }
+
+    // ---------- Atas: resumo inteligente da reunião (Gemini, função meeting-ai; coluna meeting_notes.summary) ----------
+    // Escrito logo a seguir a cada transcrição do Teams: decisões, opções de projeto, caminhos de futuro e quem
+    // sugeriu, aprovou e concordou. A linha curta (summary.linha) vai para a Cronologia do projeto.
+    const ATA_SUM_MIN = 800;   // atas mais curtas do que isto não precisam de resumo
+    const ataHasSummary = n => !!(n && n.summary && !n.summary.erro && (n.summary.resumo || n.summary.linha));
+    const ataIsTranscript = n => /^Transcrição — /.test(n?.title || '');
+    const ataSummaryLine = n => ataHasSummary(n) ? String(n.summary.linha || '').trim() : '';
+    function ataSummaryHtml(n, { print = false } = {}) {
+      const s = n.summary || {}, e = escapeHtml;
+      if (!ataHasSummary(n)) {
+        if (print) return '';
+        if (n.summary_status === 'a_correr') return '<div class="ata-sum wait" data-ata-sumbox><span class="ata-sum-tag">Resumo da reunião</span><p class="ata-sum-note">A escrever o resumo… demora cerca de um minuto.</p></div>';
+        if (n.summary_status === 'erro') return `<div class="ata-sum wait" data-ata-sumbox><span class="ata-sum-tag">Resumo da reunião</span><p class="ata-sum-note">Ainda não foi possível escrever o resumo${s.erro ? ': ' + e(s.erro) : '.'}</p></div>`;
+        return '';
+      }
+      const who = x => [['Sugeriu', x.sugeriu], ['Aprovou', x.aprovou], ['Concordou', x.concordou], ['Objeções', x.discordou]]
+        .filter(([, v]) => v && String(v).trim()).map(([k, v]) => `<span>${k} <b>${e(String(v).trim())}</b></span>`)
+        .concat(x.momento ? [`<span class="t">aos ${e(String(x.momento).replace(/[\[\]]/g, ''))}</span>`] : []).join('');
+      const sec = (title, items, row) => items && items.length ? `<h4>${title}</h4><ul class="ata-sum-list">${items.map(row).join('')}</ul>` : '';
+      const small = parts => { const t = parts.filter(Boolean).join(''); return t ? `<small>${t}</small>` : ''; };
+      const stale = !print && n.updated_at && n.summary_at && new Date(n.updated_at) > new Date(n.summary_at);
+      return `<div class="ata-sum" data-ata-sumbox>
+          <div class="ata-sum-head"><span class="ata-sum-tag">Resumo da reunião</span><span class="ata-sum-meta">escrito pelo Gemini${n.summary_at ? ' a ' + e(fmtDayMonth(String(n.summary_at).slice(0, 10))) : ''} · confirma sempre ${ataIsTranscript(n) ? 'na transcrição' : 'no texto da ata'}</span></div>
+          ${stale ? '<p class="ata-sum-note">A ata foi editada depois deste resumo. Usa «Refazer resumo» para o atualizar.</p>' : ''}
+          ${s.resumo ? `<p class="ata-sum-lead">${e(s.resumo)}</p>` : ''}
+          ${sec('Decisões', s.decisoes, d => `<li><span>${e(d.texto)}</span>${small([who(d)])}</li>`)}
+          ${sec('Opções de projeto', s.opcoes, o => `<li><span><b>${e(o.tema)}:</b> ${e(o.opcao)}</span>${small([o.porque ? `<span>Porquê: ${e(o.porque)}</span>` : '', o.alternativas ? `<span>Posto de lado: ${e(o.alternativas)}</span>` : '', who(o)])}</li>`)}
+          ${sec('Caminhos de futuro', s.caminhos, c => `<li><span>${e(c.texto)}</span>${small([c.quem ? `<span>Fica com <b>${e(c.quem)}</b></span>` : ''])}</li>`)}
+          ${sec('Próximos passos', s.proximos, p => `<li><span>${e(p.texto)}</span>${small([p.quem ? `<span>Quem: <b>${e(p.quem)}</b></span>` : '', p.prazo ? `<span>Prazo: <b>${e(p.prazo)}</b></span>` : ''])}</li>`)}
+          ${sec('Por decidir', s.aberto, a => `<li><span>${e(a)}</span></li>`)}
+        </div>`;
+    }
+    // Corpo da ata na lista: com resumo, a transcrição fica recolhida por baixo (continua lá, inteira)
+    function ataBodyHtml(n) {
+      const sum = ataSummaryHtml(n);
+      if (ataHasSummary(n) && ataIsTranscript(n))
+        return `${sum}<details class="ata-raw"><summary>Transcrição completa</summary>${renderAtaBody(n.body)}</details>`;
+      return sum + renderAtaBody(n.body);
+    }
+    // Pede o resumo (ou refaz) e espera por ele: a função corre em segundo plano e escreve na ata
+    async function ataSummarise(n, btn, onChanged) {
+      const label = btn.textContent;
+      const fail = msg => { btn.disabled = false; btn.textContent = label; showToast(msg, { type: 'error', ms: 7000 }); };
+      btn.disabled = true; btn.textContent = 'A resumir…';
+      if (devMode) {
+        await new Promise(r => setTimeout(r, 600));
+        Object.assign(n, { summary_status: 'ok', summary_at: new Date().toISOString(), summary: { linha: 'Cliente aprovou a solução de fachada ventilada e pediu estudo de custos', resumo: 'Reunião para fechar a fachada. O cliente aprovou a solução ventilada proposta pela NOVA. Fica por estudar o impacto no orçamento.',
+          decisoes: [{ texto: 'Avançar com fachada ventilada em painel cerâmico.', sugeriu: 'Rute Castro', aprovou: 'Cliente', concordou: 'Nuno Rodrigues', momento: '12:40' }],
+          opcoes: [{ tema: 'Caixilharia', opcao: 'Alumínio com corte térmico', porque: 'manutenção mais simples', alternativas: 'madeira', sugeriu: 'Nuno Rodrigues', aprovou: 'Cliente' }],
+          caminhos: [{ texto: 'Estudar cobertura ajardinada na fase seguinte.', quem: 'NOVA' }], proximos: [{ texto: 'Enviar estimativa de custos da fachada.', quem: 'Rute Castro', prazo: 'até sexta' }], aberto: ['Cor final do painel.'] } });
+        showToast('Resumo pronto.', { type: 'success' }); onChanged && onChanged(); return;
+      }
+      const before = n.summary_at || null;
+      const r = await supabase.functions.invoke('meeting-ai', { body: { note_id: n.id } });
+      if (r.error || r.data?.error) return fail('Não foi possível pedir o resumo: ' + (r.data?.error || r.error.message));
+      showToast('O resumo está a ser escrito. Demora cerca de um minuto.', { ms: 5000 });
+      const t0 = Date.now();
+      while (Date.now() - t0 < 200000) {
+        await new Promise(res => setTimeout(res, 5000));
+        if (!btn.isConnected) return;   // a pessoa saiu da página: o resumo aparece quando voltar
+        const q = await supabase.from('meeting_notes').select('summary, summary_status, summary_at').eq('id', n.id).maybeSingle();
+        const row = q.data;
+        if (!row || row.summary_at === before || row.summary_status === 'a_correr') continue;
+        Object.assign(n, row);
+        if (row.summary_status === 'ok') showToast('Resumo pronto.', { type: 'success' });
+        else if (row.summary_status === 'curta') showToast('Esta ata tem pouco texto para resumir.', { ms: 6000 });
+        else showToast('Não foi possível escrever o resumo' + (row.summary?.erro ? ': ' + row.summary.erro : '.'), { type: 'error', ms: 8000 });
+        onChanged && onChanged();
+        return;
+      }
+      fail('O resumo está a demorar mais do que o costume. Volta a abrir a ata daqui a pouco.');
     }
 
     // ---------- Atas: imagens e esquissos (bucket "ata-files", tabela meeting_note_files) ----------
@@ -9353,6 +9453,16 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             h1 { font-size: 18pt; line-height: 1.2; margin: 4px 0 2px; font-weight: 600; letter-spacing: -0.01em; }
             .sub { color: #6B6660; font-size: 9.5pt; margin-bottom: 18px; }
             .body p { margin: 0 0 8px; } .body ul, .body ol { margin: 0 0 8px; padding-left: 20px; } .body li { margin: 2px 0; }
+            .ata-sum { margin: 0 0 20px; padding: 14px 16px; border: 1px solid #E4E3DE; border-radius: 10px; break-inside: auto; }
+            .ata-sum-head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 6px; }
+            .ata-sum-tag { font-size: 8pt; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #714D79; }
+            .ata-sum-meta { font-size: 7.5pt; color: #736D66; }
+            .ata-sum-lead { margin: 0 0 4px; }
+            .ata-sum h4 { font-size: 9.5pt; font-weight: 600; margin: 12px 0 4px; }
+            .ata-sum-list { margin: 0; padding-left: 18px; } .ata-sum-list li { margin: 0 0 5px; break-inside: avoid; }
+            .ata-sum-list small { display: block; font-size: 8.5pt; color: #6B6660; }
+            .ata-sum-list small span + span::before { content: ' · '; }
+            .ata-sum-list small b { color: #3A3835; font-weight: 600; }
             h2 { font-size: 11pt; font-weight: 600; margin: 24px 0 8px; padding-bottom: 6px; border-bottom: 2px solid #1B1A19; }
             .idx { margin: 0 0 8px; padding-left: 0; list-style: none; } .idx li { padding: 2px 0; }
             figure { margin: 0; page-break-before: always; break-before: page; padding-top: 4px; }
@@ -9366,6 +9476,8 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <div class="eyebrow">Ata de reunião${ver ? ' · ' + e(ver) : ''}</div>
           <h1>${e(n.title || 'Ata')}</h1>
           <div class="sub">${e([whereName, date].filter(Boolean).join(' · '))}</div>
+          ${ataSummaryHtml(n, { print: true })}
+          ${ataHasSummary(n) && ataIsTranscript(n) ? '<h2>Transcrição completa</h2>' : ''}
           <div class="body">${renderAtaBody(n.body)}</div>
           ${files.length ? `<h2>Anexos</h2><ol class="idx">${files.map((f, i) => `<li><b>Fig. ${i + 1}</b>${f.caption ? ' — ' + e(f.caption) : ''}</li>`).join('')}</ol>` : ''}
           <footer><span>${e(fileTitle)}</span><span>NOVA Compass</span></footer>
@@ -9836,8 +9948,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
             <span class="ata-entry-date">${fmtDateShort(new Date(n.meeting_date + 'T00:00:00'))}</span>
           </div>
           <div class="ata-entry-project${n.projectName || n.categoryName ? '' : ' warn-text'}">${escapeHtml(n.projectName ?? n.categoryName ?? 'Sem projeto nem categoria')}</div>
+          ${ataSummaryLine(n) ? `<div class="ata-entry-line">${escapeHtml(ataSummaryLine(n))}</div>` : ''}
           ${ataMetaHtml(n)}
-          <div class="ata-entry-body">${renderAtaBody(n.body)}</div>
+          <div class="ata-entry-body">${ataBodyHtml(n)}</div>
           ${ataActionsHtml(n)}
         </div>
       `).join('');
@@ -9868,7 +9981,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           const versionCols = (await atasHaveVersioning()) ? ', revision, created_by, created_at, updated_by, updated_at' : '';
           const res = await supabase
             .from('meeting_notes')
-            .select('id, project_id, category_id, milestone_id, title, body, meeting_date' + versionCols + ', projects(name), time_categories(name)')
+            .select('id, project_id, category_id, milestone_id, title, body, meeting_date, summary, summary_status, summary_at' + versionCols + ', projects(name), time_categories(name)')
             .order('meeting_date', { ascending: false });
           if (res.error) throw res.error;
           notes = (res.data || []).map(n => ({ ...n, projectName: n.projects?.name ?? null, categoryName: n.time_categories?.name ?? null }));
@@ -10640,7 +10753,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const t = marcoTypes[m.type_id];
         add(m.event_date, 'marco', 2, { kind: 'marco', title: m.title, sub: [t?.name, m.done ? 'feito' : ''].filter(Boolean).join(' · '), color: t?.color || 'var(--accent)', marcoId: m.id });
       });
-      notes.forEach(n => add(n.meeting_date, 'marco', 1, { kind: 'ata', title: n.title || 'Reunião', sub: 'Ata', color: 'var(--text-3)', noteId: n.id }));
+      notes.forEach(n => add(n.meeting_date, 'marco', 1, { kind: 'ata', title: (n.title || 'Reunião').replace(/^Transcrição — /, ''), sub: ataSummaryLine(n) || (ataIsTranscript(n) ? 'Transcrição da reunião' : 'Ata'), color: 'var(--text-3)', noteId: n.id }));
       // --- A seguir: marcos futuros e prazos por cumprir (os atrasados vão para Hoje) ---
       const future = [], overdue = [];
       const leftTxt = d => { const n = diffDays(today, d); return n === 0 ? 'hoje' : n > 0 ? `faltam ${days(n)}` : `há ${days(-n)}`; };
@@ -18391,6 +18504,12 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         steps: ['Toca em [[Novo]] → [[Nova ata de reunião]] (ou no projeto: [[Atas]] → [[+ Nova ata]]).', 'Escolhe o projeto (ou deixa sem projeto para reuniões internas), a data e um título.', 'Escreve as notas. Listas com «- » ou «1. » ficam formatadas.', 'Imagens ou esquissos: [[+ Acrescentar imagens]] (ou cola uma captura com Ctrl+V). Ficam numeradas Fig. 1, Fig. 2… — refere-te a elas no texto.', 'Grava. As versões anteriores ficam guardadas: dá para ver o que mudou.', 'Para arquivar no servidor: abre a ata → [[PDF]] → **Imprimir / guardar em PDF**. As imagens vão no fim, como anexos.', 'Todas as atas estão em [[Atas]], com pesquisa.'],
         kw: 'ata reuniao notas acta minuta registo reuniao pdf imprimir arquivo servidor imagens esquissos anexos figura',
         tour: [{ go: 'project:atas', sel: '#add-ata-btn', text: 'Toca aqui para escrever uma ata deste projeto.' }] },
+      { id: 'ata-resumo', cat: 'proj', ctx: ['detail:atas', 'atas', 'detail:marcos'],
+        q: 'vejo o resumo de uma reunião (decisões e quem aprovou)',
+        a: 'Depois de cada reunião Teams transcrita, o Gemini escreve o resumo sozinho: decisões, opções de projeto, caminhos de futuro, próximos passos e quem sugeriu, aprovou e concordou. Aparece no topo da ata e, numa linha, na Cronologia.',
+        steps: ['Abre o projeto → [[Atas]] e toca na reunião: o resumo está no topo; a transcrição inteira fica em **Transcrição completa**.', 'Na [[Cronologia]], por baixo de cada reunião, fica uma linha com o que ela mudou no projeto.', 'Numa ata escrita à mão, ou se o resumo precisar de ser refeito (ex.: depois de editares a ata), toca em [[Resumir reunião]] ou [[Refazer resumo]]. Demora cerca de um minuto.', 'O resumo é automático: confirma sempre na transcrição antes de o usar com o cliente.'],
+        kw: 'resumo reuniao transcricao teams gemini decisoes opcoes quem aprovou sugeriu concordou proximos passos inteligencia artificial ia',
+        tour: [{ go: 'project:atas', sel: '[data-dtab="atas"]', text: 'Nas atas, cada reunião transcrita tem o resumo no topo.' }] },
       { id: 'marco', cat: 'proj', ctx: ['detail:marcos', 'agenda'],
         q: 'marco uma reunião, visita ou entrega na agenda do projeto',
         a: 'Novo → Novo marco (ou no projeto → Cronologia → + Marco). Aparece na agenda e na página Hoje de quem escolheres.',
