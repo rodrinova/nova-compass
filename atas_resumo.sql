@@ -13,3 +13,14 @@ alter table meeting_notes add column if not exists summary        jsonb;
 alter table meeting_notes add column if not exists summary_status text;
 alter table meeting_notes add column if not exists summary_at     timestamptz;
 alter table meeting_notes add column if not exists summary_tries  integer not null default 0;
+
+-- Agendamento: 3 minutos depois de cada sincronização do Office 365 (que corre de 10 em 10 minutos), pede os resumos
+-- que faltam. Usa o mesmo pedido do agendamento 'ms365-sync' (office365.sql), só com outro endereço e corpo.
+do $$
+declare c text;
+begin
+  select replace(replace(command, '/functions/v1/ms365-sync', '/functions/v1/meeting-ai'), $b$'{}'::jsonb$b$, $b$'{"pending":true}'::jsonb$b$)
+    into c from cron.job where jobname = 'ms365-sync';
+  if c is null then raise notice 'Corre primeiro office365.sql'; return; end if;
+  perform cron.schedule('meeting-ai', '3-59/10 * * * *', c);
+end $$;
