@@ -104,6 +104,8 @@ create table if not exists public.meeting_transcripts (
   checked_at timestamptz,
   created_at timestamptz not null default now()
 );
+-- Transcrições já lidas de cada chamada (a sincronização volta à chamada durante 12 h à procura de mais)
+alter table public.meeting_transcripts add column if not exists transcript_ids text[];
 alter table public.meeting_transcripts enable row level security;
 do $$ begin
   if not exists (select 1 from pg_policies where tablename = 'meeting_transcripts' and policyname = 'Só a equipa') then

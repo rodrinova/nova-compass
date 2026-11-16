@@ -6227,7 +6227,7 @@
                 .select('id, project_id, stage_order, stage_types(name, break_immune), start_date, end_date, delivery_date, deadline_override, is_deadline_fixed, expected_lead_time_days, ignores_breaks, revision_label, status, percentage, fixed_value')
                 .in('project_id', projectIds)
                 .order('stage_order'),
-              supabase.from('project_breaks').select('project_id, start_date, end_date, after_stage_id').in('project_id', projectIds)
+              supabase.from('project_breaks').select('project_id, type, start_date, end_date, after_stage_id').in('project_id', projectIds)
             ]);
             if (stagesRes.error) throw stagesRes.error;
             stages = stagesRes.data || [];
@@ -7485,7 +7485,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           try {
             const [st, br] = await Promise.all([
               supabase.from('project_stages').select('id, project_id, stage_order, status, start_date, end_date, delivery_date, deadline_override, is_deadline_fixed, expected_lead_time_days, ignores_breaks, revision_label, stage_types(name, break_immune)'),
-              supabase.from('project_breaks').select('project_id, start_date, end_date, after_stage_id')
+              supabase.from('project_breaks').select('project_id, type, start_date, end_date, after_stage_id')
             ]);
             if (!st.error && !br.error) attachProjectPhases(res.data || [], st.data || [], br.data || []);
           } catch (e) { console.error('Fases na lista:', e); }
@@ -10653,8 +10653,9 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     // ainda por entregar e já fora de prazo, as seguintes deslizam até hoje. Entregas antecipadas não adiantam o plano.
     // Pausas entre fases (after_stage_id): as fases a seguir só começam depois de a pausa acabar
     // (aberta = hoje, por isso as datas andam para a frente até a fecharem). Uma fase com
-    // ignores_breaks (ou de um tipo imune) não espera. Pausas sem posição (antigas): os dias
-    // da pausa simplesmente não contam.
+    // ignores_breaks não espera. As fases de licenciamento (tipo imune: Licenciamento, PIP, Comunicação
+    // Prévia) não param com as pausas «à espera da Câmara» (é a própria Câmara a trabalhar), mas esperam pelas
+    // outras (ex.: à espera do cliente para poder submeter). Pausas sem posição (antigas): os dias da pausa não contam.
     function computeProjectPlan(project, stages, breaks = []) {
       const today = dateKey(new Date());
       const ordered = [...stages].sort((a, b) => (a.stage_order ?? 0) - (b.stage_order ?? 0));
@@ -10662,16 +10663,18 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       const placed = breaks.filter(b => b.start_date && b.after_stage_id && ids.has(String(b.after_stage_id)));
       const loose = breaks.filter(b => !placed.includes(b));
       let cursor = project?.awarding_date || null;
-      let floor = null;   // fim da última pausa já atravessada
+      let floor = null, floorHold = null;   // fim da última pausa já atravessada (todas / sem as da Câmara)
+      const camara = b => b.type === 'municipality';
       ordered.forEach(s => {
         s.plan_start = null; s.plan_end = null; s.plan_auto_end = null; s.plan_held = false;
         if (!isOffPlanStage(s)) {
-          const ignores = !!(s.ignores_breaks || s.stage_types?.break_immune);
+          const ignores = !!s.ignores_breaks, immune = !ignores && !!s.stage_types?.break_immune;
           const lead = Number(s.expected_lead_time_days) || 0;
           let start = cursor || s.start_date || null;
-          if (!ignores && floor && start && floor > start) { start = floor; s.plan_held = true; }
+          const fl = ignores ? null : immune ? floorHold : floor;
+          if (fl && start && fl > start) { start = fl; s.plan_held = true; }
           // Lead time original (calculado); uma alteração manual substitui-o e as fases seguintes acompanham
-          if (start && lead > 0) s.plan_auto_end = addWorkdays(start, lead, ignores ? [] : loose);
+          if (start && lead > 0) s.plan_auto_end = addWorkdays(start, lead, ignores ? [] : immune ? loose.filter(b => !camara(b)) : loose);
           const end = (s.is_deadline_fixed && s.deadline_override) ? s.deadline_override : s.plan_auto_end;
           if (end) {
             s.plan_start = start && start <= end ? start : end;
@@ -10685,6 +10688,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           const until = b.end_date || (today > b.start_date ? today : b.start_date);
           b.plan_until = until;
           if (!floor || until > floor) floor = until;
+          if (!camara(b) && (!floorHold || until > floorHold)) floorHold = until;
         });
       });
       return stages;
@@ -11001,7 +11005,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           const [st, br] = await Promise.all([
             supabase.from('project_stages')
               .select('id, project_id, stage_order, status, start_date, end_date, delivery_date, deadline_override, is_deadline_fixed, expected_lead_time_days, ignores_breaks, revision_label, base_stage, revision_kind, revision_cause, always_rework, stage_types(name, break_immune), projects(name, code, awarding_date, archived_at, owner_id)'),
-            supabase.from('project_breaks').select('project_id, start_date, end_date, after_stage_id')
+            supabase.from('project_breaks').select('project_id, type, start_date, end_date, after_stage_id')
           ]);
           if (st.error) throw st.error;
           const all = (st.data || []).filter(p => p.projects && !p.projects.archived_at);
@@ -12340,7 +12344,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         const [pr, st, br, tm] = await Promise.all([
           supabase.from('projects').select('id, name, code, awarding_date, archived_at, status'),
           supabase.from('project_stages').select('*, stage_types(name, break_immune)'),
-          supabase.from('project_breaks').select('project_id, start_date, end_date, after_stage_id'),
+          supabase.from('project_breaks').select('project_id, type, start_date, end_date, after_stage_id'),
           selectAll(() => supabase.from('time_entries').select('user_id, project_id, date, hours').gte('date', since).order('id'))
         ]);
         for (const r of [pr, st, br, tm]) if (r.error) throw r.error;
@@ -33601,7 +33605,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
           const [pr, sibs, brs] = await Promise.all([
             supabase.from('projects').select('id, name, commission_value, awarding_date').eq('id', stage.project_id).single(),
             supabase.from('project_stages').select('id, stage_order, status, start_date, end_date, deadline_override, is_deadline_fixed, expected_lead_time_days, ignores_breaks, stage_types(name, break_immune)').eq('project_id', stage.project_id),
-            supabase.from('project_breaks').select('start_date, end_date, after_stage_id').eq('project_id', stage.project_id)
+            supabase.from('project_breaks').select('type, start_date, end_date, after_stage_id').eq('project_id', stage.project_id)
           ]);
           project = pr.data || { id: stage.project_id, name: 'Projeto' };
           const list = computeProjectPlan(project, sibs.data || [], brs.data || []);
