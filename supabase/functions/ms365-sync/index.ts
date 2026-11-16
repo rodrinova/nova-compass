@@ -13,6 +13,9 @@
 //   3. TRANSCRIÇÕES: depois de cada reunião Teams organizada por alguém da equipa, lê a transcrição (se houve) e
 //      arquiva-a como ata do projeto ou da categoria do marco (reuniões do Outlook: projeto cujo código/nome está no
 //      assunto; senão fica por arquivar e a Hoje de quem organizou pede o projeto ou a categoria).
+//      Depois de arquivada, durante 12 h volta à chamada à procura de transcrições novas (a conversa continuou na mesma
+//      chamada): começadas à hora de outra reunião da app sem link Teams (ex.: a das 9h30 feita na chamada das 9h) vão
+//      para uma ata dessa reunião; senão, para uma ata «(continuação)». meeting_transcripts.transcript_ids guarda as já lidas.
 //      Precisa ainda das permissões OnlineMeetings.Read.All, OnlineMeetingTranscript.Read.All e User.Read.All e de uma
 //      Application Access Policy do Teams (ver Definições → Office 365). Sem elas, o calendário continua a funcionar.
 //   5. AUSÊNCIAS (férias, doença, faltas, formação): no calendário da própria pessoa, dia inteiro, como "Fora do
@@ -43,6 +46,7 @@ const GRAPH = "https://graph.microsoft.com/v1.0";
 const READ_BACK = 30, READ_AHEAD = 120, WRITE_BACK = 7, WRITE_AHEAD = 180, RADAR_DAYS = 7;
 const LOCK_KEY = "ms365_lock", LOCK_MS = 120e3;   // uma sincronização de cada vez (cron + "ao gravar" na app)
 const TRANSCRIPT_DAYS = 3, TRANSCRIPT_WAIT_H = 24;   // procura nos 3 dias seguintes; sem transcrição ao fim de 24 h, desiste
+const TRANSCRIPT_RECHECK_H = 12;   // depois de arquivada, durante 12 h volta a ver se a chamada teve mais transcrições
 
 const db = createClient(SB_URL, SB_SERVICE, { auth: { persistSession: false } });
 const cors = {
@@ -435,7 +439,7 @@ async function syncTranscripts(members: any[], links: any[]) {
     }
   }
   if (!cand.size) return res;
-  const seen = await db.from("meeting_transcripts").select("ical_uid, status, attempts").in("ical_uid", [...cand.keys()]);
+  const seen = await db.from("meeting_transcripts").select("ical_uid, status, attempts, note_id, transcript_ids").in("ical_uid", [...cand.keys()]);
   const prev = Object.fromEntries((seen.data || []).map((x: any) => [x.ical_uid, x]));
   const pr = await db.from("projects").select("id, name, code").is("archived_at", null);
   const norm = (x: string) => String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -443,18 +447,69 @@ async function syncTranscripts(members: any[], links: any[]) {
     const s = norm(subject);
     return (pr.data || []).find((p: any) => (p.code && s.includes(norm(p.code))) || (p.name && norm(p.name).length >= 4 && s.includes(norm(p.name))))?.id || null;
   };
+  // Reuniões da app sem link Teams próprio, nos dias das candidatas: se a chamada de outra reunião continuou e foi
+  // transcrita à hora delas (ex.: reunião das 9h30 feita na chamada das 9h), a transcrição vai para a ata delas.
+  const days = [...new Set([...cand.values()].map((c) => new Date(c.start_at).toLocaleDateString("sv-SE", { timeZone: TZ })))];
+  const nl = await db.from("project_milestones").select("id, project_id, category_id, title, event_date, start_time, end_time, all_day, teams_link, created_by")
+    .in("event_date", days).not("start_time", "is", null);
+  const noLink = (nl.data || []).filter((m: any) => !m.all_day && !m.teams_link).map((m: any) => {
+    const st = lisbonToUtc(m.event_date, String(m.start_time));
+    return { ...m, st: st.getTime(), en: (m.end_time ? lisbonToUtc(m.event_date, String(m.end_time)) : new Date(st.getTime() + 36e5)).getTime() };
+  });
+  const notesOf = [...new Set(Object.values(prev).map((x: any) => x.note_id).filter(Boolean))];
+  const nc = notesOf.length ? await db.from("meeting_notes").select("id, created_at, project_id, category_id").in("id", notesOf) : { data: [] };
+  const noteBy = Object.fromEntries((nc.data || []).map((n: any) => [n.id, n]));
+  // Transcrições (do Graph) → texto, falantes e intervalo
+  const readTr = async (uid: string, omId: string, list: any[]) => {
+    const parts: string[] = [], speakers = new Set<string>();
+    for (const t of list) {
+      const vtt = await g("GET", `/users/${uid}/onlineMeetings/${omId}/transcripts/${t.id}/content?$format=text/vtt`);
+      const x = vttToText(typeof vtt === "string" ? vtt : "");
+      if (x.text) parts.push(x.text);
+      x.speakers.forEach((s) => speakers.add(s));
+    }
+    return { parts, speakers };
+  };
+  const saveNote = async (o: { title: string; from: string; to: string; who: string; parts: string[]; speakers: Set<string>; place: Record<string, unknown>; by: string; note?: string }) => {
+    const head = [
+      "Transcrição automática da reunião Teams (sem edição).",
+      `${lisbon(o.from, { day: "numeric", month: "long", year: "numeric" })}, ${lisbon(o.from, { hour: "2-digit", minute: "2-digit" })}–${lisbon(o.to, { hour: "2-digit", minute: "2-digit" })} · organizada por ${o.who}`,
+      o.note || "",
+      o.speakers.size ? "Participantes que falaram: " + [...o.speakers].join(", ") : "",
+    ].filter(Boolean).join("\n");
+    const ins = await db.from("meeting_notes").insert({
+      title: `Transcrição — ${o.title}`, body: head + "\n\n" + (o.parts.join("\n\n— nova sessão —\n\n") || "(transcrição vazia)"),
+      meeting_date: new Date(o.from).toLocaleDateString("sv-SE", { timeZone: TZ }), ...o.place, created_by: o.by,
+    }).select("id").single();
+    if (ins.error) throw ins.error;
+    return ins.data.id as string;
+  };
   for (const c of cand.values()) {
     const p = prev[c.ical_uid];
-    if (p && (p.status === "done" || p.status === "none")) continue;
-    const row: any = { ical_uid: c.ical_uid, subject: c.subject, start_at: c.start_at, end_at: c.end_at, organizer_id: c.org.id,
-      attempts: (p?.attempts || 0) + 1, checked_at: nowIso, error: null };
+    if (p && p.status === "none") continue;
+    // Já arquivada: durante RECHECK_H horas volta a ver se a chamada teve mais transcrições (a conversa continuou)
+    const recheck = p?.status === "done";
+    if (recheck && now - new Date(c.end_at).getTime() > TRANSCRIPT_RECHECK_H * 36e5) continue;
+    const row: any = recheck ? { ical_uid: c.ical_uid, checked_at: nowIso }
+      : { ical_uid: c.ical_uid, subject: c.subject, start_at: c.start_at, end_at: c.end_at, organizer_id: c.org.id,
+        attempts: (p?.attempts || 0) + 1, checked_at: nowIso, error: null };
     const late = now - new Date(c.end_at).getTime() > TRANSCRIPT_WAIT_H * 36e5;
     try {
       const uid = await userId(c.org.email);
       const f = encodeURIComponent(`JoinWebUrl eq '${c.join_url}'`);
       const om = (await g("GET", `/users/${uid}/onlineMeetings?$filter=${f}`))?.value?.[0];
-      const tr = om ? ((await g("GET", `/users/${uid}/onlineMeetings/${om.id}/transcripts`))?.value || []) : [];
-      if (!tr.length) {
+      const all = om ? ((await g("GET", `/users/${uid}/onlineMeetings/${om.id}/transcripts`))?.value || []) : [];
+      const sorted = [...all].sort((a: any, b: any) => String(a.createdDateTime).localeCompare(String(b.createdDateTime)));
+      // as que já estão numa ata (registos antigos sem lista: as criadas antes da ata)
+      const known: string[] = p?.transcript_ids || (recheck && noteBy[p.note_id]
+        ? sorted.filter((t: any) => String(t.createdDateTime) < String(noteBy[p.note_id].created_at)).map((t: any) => t.id) : []);
+      // (uma transcrição ainda a decorrer, sem fim, fica para a próxima sincronização)
+      const fresh = sorted.filter((t: any) => !known.includes(t.id) && t.endDateTime !== null);
+      if (recheck) {
+        if (!p.transcript_ids) row.transcript_ids = known;
+        if (!fresh.length) { await db.from("meeting_transcripts").upsert(row); continue; }
+      }
+      if (!fresh.length) {
         // O que o Teams diz da reunião, para se perceber porque não há transcrição
         if (!om) row.diag = "Reunião não encontrada no Teams pelo link";
         else {
@@ -465,33 +520,50 @@ async function syncTranscripts(members: any[], links: any[]) {
         row.status = late ? "none" : "waiting";
         late ? res.none++ : res.waiting++;
       } else {
-        const parts = [], speakers = new Set<string>();
-        for (const t of [...tr].sort((a: any, b: any) => String(a.createdDateTime).localeCompare(String(b.createdDateTime)))) {
-          const vtt = await g("GET", `/users/${uid}/onlineMeetings/${om.id}/transcripts/${t.id}/content?$format=text/vtt`);
-          const x = vttToText(typeof vtt === "string" ? vtt : "");
-          if (x.text) parts.push(x.text);
-          x.speakers.forEach((s) => speakers.add(s));
+        // Cada transcrição nova vai para a ata da reunião a que pertence: começada depois do fim marcado e à hora de
+        // outra reunião da app sem link Teams → essa reunião; senão, esta (ou a continuação desta, se já foi arquivada)
+        const endMs = new Date(c.end_at).getTime(), startMs = new Date(c.start_at).getTime();
+        const target = (t: any) => {
+          const at = new Date(t.createdDateTime).getTime();
+          if (at < endMs - 10 * 6e4) return null;
+          const m = noLink.filter((x: any) => x.st > startMs && at >= x.st - 15 * 6e4 && at < x.en
+              && (x.created_by === c.org.id || (c.project_id && x.project_id === c.project_id)))
+            .sort((a: any, b: any) => Math.abs(a.st - at) - Math.abs(b.st - at))[0];
+          return m || null;
+        };
+        const groups = new Map<string, { m: any; list: any[] }>();
+        for (const t of fresh) {
+          const m = target(t), k = m ? m.id : "";
+          if (!groups.has(k)) groups.set(k, { m, list: [] });
+          groups.get(k)!.list.push(t);
         }
-        const head = [
-          "Transcrição automática da reunião Teams (sem edição).",
-          `${lisbon(c.start_at, { day: "numeric", month: "long", year: "numeric" })}, ${lisbon(c.start_at, { hour: "2-digit", minute: "2-digit" })}–${lisbon(c.end_at, { hour: "2-digit", minute: "2-digit" })} · organizada por ${c.organizer || c.org.name}`,
-          speakers.size ? "Participantes que falaram: " + [...speakers].join(", ") : "",
-        ].filter(Boolean).join("\n");
-        const ins = await db.from("meeting_notes").insert({
-          title: `Transcrição — ${c.subject || "Reunião Teams"}`, body: head + "\n\n" + (parts.join("\n\n— nova sessão —\n\n") || "(transcrição vazia)"),
-          meeting_date: new Date(c.start_at).toLocaleDateString("sv-SE", { timeZone: TZ }),
-          // a ata fica no projeto do marco, ou na categoria do marco; reuniões do Outlook: projeto pelo assunto
-          ...(() => { const pid = c.project_id || (c.category_id ? null : guessProject(c.subject)); return { project_id: pid, category_id: pid ? null : (c.category_id || null) }; })(),
-          milestone_id: c.milestone_id, created_by: c.org.id,
-        }).select("id").single();
-        if (ins.error) throw ins.error;
-        row.status = "done"; row.note_id = ins.data.id; res.saved++;
+        const mainPlace = (() => {
+          if (recheck && noteBy[p.note_id]) return { project_id: noteBy[p.note_id].project_id, category_id: noteBy[p.note_id].category_id, milestone_id: c.milestone_id };
+          const pid = c.project_id || (c.category_id ? null : guessProject(c.subject));
+          return { project_id: pid, category_id: pid ? null : (c.category_id || null), milestone_id: c.milestone_id };
+        })();
+        for (const [k, gr] of groups) {
+          const x = await readTr(uid, om.id, gr.list);
+          const from = gr.list[0].createdDateTime || c.start_at, to = gr.list[gr.list.length - 1].endDateTime || c.end_at;
+          if (k) {
+            const m = gr.m;
+            await saveNote({ title: m.title, from, to, who: c.organizer || c.org.name, parts: x.parts, speakers: x.speakers, by: c.org.id,
+              note: `Feita na chamada Teams de «${c.subject}».`, place: { project_id: m.project_id, category_id: m.project_id ? null : m.category_id, milestone_id: m.id } });
+          } else if (recheck) {
+            await saveNote({ title: `${c.subject || "Reunião Teams"} (continuação)`, from, to, who: c.organizer || c.org.name, parts: x.parts, speakers: x.speakers, by: c.org.id, place: mainPlace });
+          } else {
+            row.note_id = await saveNote({ title: c.subject || "Reunião Teams", from: c.start_at, to: c.end_at, who: c.organizer || c.org.name, parts: x.parts, speakers: x.speakers, by: c.org.id, place: mainPlace });
+          }
+          res.saved++;
+        }
+        if (!recheck) row.status = "done";
+        row.transcript_ids = [...known, ...fresh.map((t: any) => t.id)];
       }
     } catch (e: any) {
-      row.status = late ? "none" : "error"; row.error = e.message;
+      if (!recheck) { row.status = late ? "none" : "error"; row.error = e.message; }
       if (e.status === 403 || e.status === 401) {
         res.error = "Sem permissão para ler reuniões/transcrições: faltam as permissões no Entra ou a política do Teams (Definições → Office 365).";
-        await db.from("meeting_transcripts").upsert({ ...row, status: "error" });
+        await db.from("meeting_transcripts").upsert(recheck ? row : { ...row, status: "error" });
         break;
       }
       res.error = e.message;
