@@ -6566,7 +6566,11 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           <li>Voltar aqui e tocar em <b>Sincronizar agora</b>.</li>
         </ol>
         <div class="field-hint">Opcional, para limitar o acesso só às caixas da equipa: uma <i>Application Access Policy</i> no Exchange Online restrita a um grupo com Nuno, Rodrigo e Rute. Os segredos nunca são colados na app nem enviados por mensagem.</div>`}
-        <div id="ms-msg" class="form-msg"></div>`;
+        <div id="ms-msg" class="form-msg"></div>
+        <div class="section-label op-form-sec">A minha agenda noutras apps</div>
+        <div class="field-hint" style="margin-top:0;">Um link secreto só teu, para subscrever a tua agenda do Outlook/Teams noutra app (ex.: a NIKKI, em casa). Leva o título e a hora de cada evento; os privados vão como "Ocupado". Só leitura. Quem tiver o link vê a tua agenda: se o partilhares por engano, troca-o.</div>
+        <div id="ics-box"><button type="button" class="secondary-btn toolbar-btn" id="ics-show">Mostrar o meu link</button></div>`;
+      document.getElementById('ics-show').addEventListener('click', () => showIcsLink(false));
       document.getElementById('ms-sync').addEventListener('click', async () => {
         const b = document.getElementById('ms-sync'); b.disabled = true; b.textContent = 'A sincronizar…';
         try {
@@ -6578,6 +6582,19 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
           showToast('Sincronização feita'); loadMs365Settings();
         } catch (err) { formError('ms-msg', 'Não foi possível sincronizar: ' + err.message); b.disabled = false; b.textContent = 'Sincronizar agora'; }
       });
+    }
+    // O link secreto da agenda da pessoa (.ics, função agenda-ics) para subscrever noutras apps.
+    async function showIcsLink(renew) {
+      const box = document.getElementById('ics-box'); if (!box) return;
+      try {
+        const r = devMode ? { data: 'exemplo' } : await supabase.rpc('my_ics_token', { renew });
+        if (r.error) throw r.error;
+        const url = `${SUPABASE_URL}/functions/v1/agenda-ics?t=${r.data}`;
+        box.innerHTML = `<div class="ms-code" style="user-select:all;word-break:break-all;">${escapeHtml(url)}</div>
+          <div style="display:flex;gap:8px;margin-top:8px;"><button type="button" class="secondary-btn toolbar-btn" id="ics-copy">Copiar</button><button type="button" class="secondary-btn toolbar-btn" id="ics-renew">Trocar o link</button></div>`;
+        document.getElementById('ics-copy').addEventListener('click', async () => { try { await navigator.clipboard.writeText(url); showToast('Link copiado: cola-o na outra app'); } catch { showToast('Não foi possível copiar', { type: 'error' }); } });
+        document.getElementById('ics-renew').addEventListener('click', () => { showIcsLink(true).then(() => showToast('Link novo. O antigo deixou de funcionar.')); });
+      } catch (err) { box.innerHTML = `<div class="form-msg">${escapeHtml('Não foi possível obter o link: ' + (err.message || err))}</div>`; }
     }
     const settingsNarrow = window.matchMedia('(max-width: 759px)');
     function showSettingsSection(key) {
