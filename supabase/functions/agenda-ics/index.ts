@@ -1,6 +1,7 @@
 // A agenda de uma pessoa em .ics, para subscrever noutra app (ex.: a NIKKI): os marcos de que é responsável
 // (milestone_owners; reuniões, entregas…), as ausências (férias e justificadas) e, com o Office 365 ligado, os
-// eventos do Outlook/Teams (ms_events). GET /functions/v1/agenda-ics?t=<link secreto da pessoa> (public.ics_feeds, criado por my_ics_token).
+// eventos do Outlook/Teams: pelo link «Publicar calendário» que a pessoa colou (outlook_feeds, sem o Office 365
+// ligado) ou, com o Office 365 ligado, pela ms365-sync (ms_events). GET /functions/v1/agenda-ics?t=<link secreto da pessoa> (public.ics_feeds, criado por my_ics_token).
 // Só título e hora (os privados como «Ocupado»), de 60 dias para trás a 180 para a frente. Sem verificação de JWT:
 // a ligação é a chave (32 caracteres aleatórios; troca-se nas Definições → Office 365).
 import { createClient } from 'npm:@supabase/supabase-js@2.49.4';
@@ -49,6 +50,32 @@ Deno.serve(async (req) => {
       const end = e.end_at ? day(e.end_at) : day(new Date(Date.parse(e.start_at) + 86_400_000).toISOString());
       ev(e.ical_uid || e.id, title, [`DTSTART;VALUE=DATE:${day(e.start_at)}`, `DTEND;VALUE=DATE:${end}`]);
     } else ev(e.ical_uid || e.id, title, [`DTSTART:${utc(e.start_at)}`, `DTEND:${utc(e.end_at ?? new Date(Date.parse(e.start_at) + 3_600_000).toISOString())}`]);
+  }
+  // Outlook pelo link publicado (sem M365): passa cada evento só com o essencial (título, horas, repetições).
+  const { data: ol } = await db.from('outlook_feeds').select('url').eq('member_id', f.member_id).maybeSingle();
+  if (ol?.url && !(evs ?? []).length) {
+    try {
+      const r = await fetch(ol.url, { signal: AbortSignal.timeout(12_000), headers: { accept: 'text/calendar, */*' } });
+      const txt = r.ok ? (await r.text()).replace(/\r?\n[ \t]/g, '') : '';
+      if (/BEGIN:VCALENDAR/i.test(txt)) {
+        const tzs = [...txt.matchAll(/BEGIN:VTIMEZONE[\s\S]*?END:VTIMEZONE/g)].map((m) => m[0].split(/\r?\n/));
+        const at = lines.indexOf('END:VTIMEZONE') + 1;
+        lines.splice(at, 0, ...tzs.flat());
+        const KEEP = /^(UID|DTSTART|DTEND|DURATION|RRULE|RDATE|EXDATE|RECURRENCE-ID|SUMMARY|STATUS|TRANSP)[;:]/i;
+        for (const m of txt.matchAll(/BEGIN:VEVENT[\s\S]*?END:VEVENT/g)) {
+          const props = m[0].split(/\r?\n/).filter(Boolean);
+          const priv = props.some((l) => /^CLASS:(PRIVATE|CONFIDENTIAL)/i.test(l));
+          if (props.some((l) => /^STATUS:CANCELLED/i.test(l))) continue;
+          const start = props.find((l) => /^DTSTART/i.test(l));
+          const rec = props.some((l) => /^RRULE/i.test(l));
+          const dv = start?.split(':').pop()?.slice(0, 8) ?? '';
+          if (!rec && dv && (dv < fromD.replace(/-/g, '') || dv > toD.replace(/-/g, ''))) continue;
+          const body = props.filter((l) => KEEP.test(l)).map((l) => (/^SUMMARY/i.test(l) && priv ? 'SUMMARY:Ocupado' : /^UID/i.test(l) ? `UID:o-${l.slice(l.indexOf(':') + 1)}` : l));
+          if (!body.some((l) => /^SUMMARY/i.test(l))) body.push('SUMMARY:Ocupado');
+          lines.push('BEGIN:VEVENT', `DTSTAMP:${now}`, ...body, 'END:VEVENT');
+        }
+      }
+    } catch { /* o Outlook não respondeu: fica o resto */ }
   }
   lines.push('END:VCALENDAR');
   return new Response(lines.map(fold).join('\r\n') + '\r\n', { headers: { 'content-type': 'text/calendar; charset=utf-8', 'cache-control': 'no-store' } });

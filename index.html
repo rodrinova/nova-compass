@@ -6569,8 +6569,29 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
         <div id="ms-msg" class="form-msg"></div>
         <div class="section-label op-form-sec">A minha agenda noutras apps</div>
         <div class="field-hint" style="margin-top:0;">Um link secreto só teu, para subscrever a tua agenda do Outlook/Teams noutra app (ex.: a NIKKI, em casa). Leva o título e a hora de cada evento; os privados vão como "Ocupado". Só leitura. Quem tiver o link vê a tua agenda: se o partilhares por engano, troca-o.</div>
-        <div id="ics-box"><button type="button" class="secondary-btn toolbar-btn" id="ics-show">Mostrar o meu link</button></div>`;
+        <div id="ics-box"><button type="button" class="secondary-btn toolbar-btn" id="ics-show">Mostrar o meu link</button></div>
+        <div class="section-label op-form-sec">O meu Outlook nesse link (sem o Office 365)</div>
+        <div class="field-hint" style="margin-top:0;">Para as tuas reuniões do Outlook e do Teams irem também nesse link, sem administrador: no <b>Outlook na web</b> → <b>Definições</b> (roda dentada) → <b>Calendário</b> → <b>Calendários partilhados</b> → <b>Publicar um calendário</b>: escolhe <b>Calendário</b> e <b>Pode ver títulos e localizações</b> → <b>Publicar</b> → copia o link <b>ICS</b> e cola-o aqui. Os privados vão como "Ocupado".</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"><input type="url" id="ol-url" class="form-input" placeholder="https://outlook.office365.com/owa/calendar/…/calendar.ics" autocomplete="off" style="flex:1;min-width:220px;"><button type="button" class="secondary-btn toolbar-btn" id="ol-save">Guardar</button><button type="button" class="secondary-btn toolbar-btn" id="ol-clear" hidden>Tirar</button></div>
+        <div id="ol-msg" class="field-hint"></div>`;
       document.getElementById('ics-show').addEventListener('click', () => showIcsLink(false));
+      (async () => {
+        if (devMode) return;
+        const r = await supabase.rpc('my_outlook_ics_set'); const on = !!r.data;
+        document.getElementById('ol-msg').textContent = on ? 'O teu Outlook já vai no link (o endereço não se mostra: é secreto).' : '';
+        document.getElementById('ol-clear').hidden = !on;
+      })();
+      document.getElementById('ol-save').addEventListener('click', async () => {
+        const v = document.getElementById('ol-url').value.trim(); if (!v) return;
+        const r = devMode ? { data: true } : await supabase.rpc('set_my_outlook_ics', { link: v });
+        if (r.error) { document.getElementById('ol-msg').textContent = r.error.message; return; }
+        document.getElementById('ol-url').value = ''; document.getElementById('ol-clear').hidden = false;
+        document.getElementById('ol-msg').textContent = 'Guardado. As tuas reuniões do Outlook entram no link dentro de minutos.'; showToast('Outlook ligado ao teu link');
+      });
+      document.getElementById('ol-clear').addEventListener('click', async () => {
+        if (!devMode) await supabase.rpc('set_my_outlook_ics', { link: '' });
+        document.getElementById('ol-clear').hidden = true; document.getElementById('ol-msg').textContent = 'Tirado.';
+      });
       document.getElementById('ms-sync').addEventListener('click', async () => {
         const b = document.getElementById('ms-sync'); b.disabled = true; b.textContent = 'A sincronizar…';
         try {
