@@ -86,4 +86,31 @@ window.renderLogo = (kind, bg, w) => {
   else { const nh = w * .5, nw = nh * 353 / 382; D.monogram(g, w / 2 - nw / 2, w / 2 - nh / 2, nh, ink); }
   return true;
 };
+// Ícone (LinkedIn, app instalada no telemóvel, separador do browser): fundo preto e o N ameixa com um brilho discreto.
+// O N ocupa ~38 % da altura (respira; cabe na zona segura dos ícones «maskable» do Android).
+window.renderIcon = (w, { nh: nhF = .38, glow = 1, grainAmt = 2.2 } = {}) => {
+  const g = canvas(w, w);
+  g.fillStyle = '#050405'; g.fillRect(0, 0, w, w);
+  // luz muito baixa por trás do N, ligeiramente acima do centro
+  const halo = g.createRadialGradient(w * .5, w * .47, 0, w * .5, w * .5, w * .62);
+  halo.addColorStop(0, 'rgba(113,77,121,0.24)'); halo.addColorStop(.5, 'rgba(60,34,68,0.10)'); halo.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = halo; g.fillRect(0, 0, w, w);
+  // cantos mais escuros (vinheta)
+  const vig = g.createRadialGradient(w * .5, w * .5, w * .35, w * .5, w * .5, w * .75);
+  vig.addColorStop(0, 'rgba(0,0,0,0)'); vig.addColorStop(1, 'rgba(0,0,0,0.55)');
+  g.fillStyle = vig; g.fillRect(0, 0, w, w);
+  const nh = w * nhF, nw = nh * 353 / 382, x = w / 2 - nw / 2, y = w / 2 - nh / 2;
+  // N em ameixa, mais claro em cima: o gradiente fica nas unidades do desenho do N (0..353 × 13..395)
+  const ink = g.createLinearGradient(40, 13, 320, 395);
+  ink.addColorStop(0, '#BC9CC4'); ink.addColorStop(.55, '#8E619A'); ink.addColorStop(1, '#6C4478');
+  // brilho: duas passagens desfocadas (larga e próxima) e o N nítido por cima
+  if (glow) {
+    g.save(); g.shadowColor = 'rgba(128,80,145,0.60)'; g.shadowBlur = w * .16 * glow; D.monogram(g, x, y, nh, 'rgba(100,62,112,0.45)'); g.restore();
+    g.save(); g.shadowColor = 'rgba(160,110,178,0.40)'; g.shadowBlur = w * .055 * glow; D.monogram(g, x, y, nh, 'rgba(110,70,122,0.6)'); g.restore();
+    g.save(); g.shadowColor = 'rgba(200,160,214,0.22)'; g.shadowBlur = w * .014 * glow; D.monogram(g, x, y, nh, ink); g.restore();
+  }
+  D.monogram(g, x, y, nh, ink);
+  if (grainAmt) D.grain(g, w, w, grainAmt, 11);
+  return true;
+};
 </script></body></html>

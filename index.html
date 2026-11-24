@@ -10,6 +10,11 @@
 <meta name="apple-mobile-web-app-title" content="Compass">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>NOVA Compass</title>
+<!-- Ícone: o N ameixa com brilho no fundo preto (assets/brand/gerador/render-icons.js) -->
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   /* =====================================================================
@@ -4783,6 +4788,14 @@
   .btn-caret { display: inline-flex; align-items: center; gap: var(--sp-1-5); }
   .btn-caret svg { width: 14px; height: 14px; opacity: .8; }
   .mqt-how-link { font-size: var(--fs-sm); padding: 0; margin-left: var(--sp-1); }
+  .arm-sub { border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--sp-2-5) var(--sp-3) var(--sp-3); margin-bottom: var(--sp-2); background: var(--surface-2); }
+  .arm-sub-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sp-1-5); font-size: var(--fs-sm); }
+  .arm-sub-h .icon-x { border: 0; background: none; color: var(--text-2); font-size: 20px; line-height: 1; width: 28px; height: 28px; border-radius: var(--r-sm); cursor: pointer; }
+  .arm-sub-h .icon-x:hover { background: var(--surface-3); color: var(--danger); }
+  .arm-dims { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: var(--sp-2); margin-top: var(--sp-2); }
+  .arm-dims label { display: flex; flex-direction: column; gap: 2px; font-size: var(--fs-xs); color: var(--text-2); }
+  .arm-dims .form-input { margin: 0; }
+  .arm-libtxt { margin-top: var(--sp-3); } .arm-libtxt p { margin: var(--sp-1) 0; font-size: var(--fs-sm); color: var(--text-2); line-height: 1.5; }
   .pop-menu { position: fixed; z-index: 1300; min-width: 230px; max-width: calc(100vw - 16px); padding: var(--sp-1-5); background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: var(--shadow-lg); animation: popIn .14s ease-out; }
   .pop-menu button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; padding: var(--sp-2) var(--sp-2-5); border: 0; border-radius: var(--r-sm); background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
   .pop-menu button:hover, .pop-menu button:focus-visible { background: var(--surface-2); outline: none; }
@@ -28695,7 +28708,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       </article>`;
     function liPageHtml() {
       const k = LI_DESIGN;
-      const logos = [['n-escuro', 'N, fundo da marca', 'Recomendado. O mesmo fundo escuro das capas; o N lê-se bem no tamanho pequeno do feed.'], ['n-ameixa', 'N, fundo ameixa', 'Em cor plena, destaca-se mais na lista de empresas.'], ['palavra-escuro', 'NOVA, fundo da marca', 'A palavra inteira; lê-se bem na página, menos no feed.'], ['palavra-ameixa', 'NOVA, fundo ameixa', 'A palavra inteira, em cor.']];
+      const logos = [['n-escuro', 'N, fundo preto', 'Recomendado. O N ameixa com um brilho discreto, no preto; o mesmo ícone da app no telemóvel.'], ['n-ameixa', 'N, fundo ameixa', 'Em cor plena, destaca-se mais na lista de empresas.'], ['palavra-escuro', 'NOVA, fundo da marca', 'A palavra inteira; lê-se bem na página, menos no feed.'], ['palavra-ameixa', 'NOVA, fundo ameixa', 'A palavra inteira, em cor.']];
       return `
         <p class="br-lead">Tudo o que a página da NOVA no LinkedIn pede, nos tamanhos que o LinkedIn recomenda, com o fundo da marca.</p>
         <h3 class="li-h">Logótipo <small>800 × 800 · PNG (o LinkedIn pede pelo menos 400)</small></h3>
@@ -29618,7 +29631,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
     function mqtArmFix(e, lib) {
       if (!mqtIsArm(e.code)) return;
       const ch = mqtArmCh(lib); if (ch) e.chapter_code = ch;
-      e.unit = 'un'; e.qty_source = 'count';
+      e.unit = 'un'; e.qty_source = 'count'; e.split_by_type = true;
     }
     function mqtApplyCustom(lib, cfg) {
       lib.elements = lib.elements.filter(e => !e._custom);
@@ -29628,68 +29641,137 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         const C = String(code).toUpperCase();
         if (!c || lib.elByCode[C]) return;   // o da biblioteca prevalece (não se deixa criar o mesmo número)
         const e = { id: 'custom:' + C, code: C, chapter_code: ch, name: c.name || 'Armário', unit: 'un', qty_source: 'count', text: c.text || c.name || 'Armário',
-          waste_pct: 0, split_by_type: false, derive_from: [], active: true, sort_order: 90000 + (Number(C.replace(/\D/g, '')) || 0), _custom: true };
+          waste_pct: 0, split_by_type: true, derive_from: [], active: true, sort_order: 90000 + (Number(C.replace(/\D/g, '')) || 0), _custom: true };
         lib.elements.push(e); lib.elByCode[C] = e;
       });
       return lib;
     }
+    // Subartigos dos armários (mqt_project.arm_subs: { ARM01: [{ id, label, l, p, a, q: { bloco: unidades } }] }):
+    // o artigo (3.1) tem o descritivo geral; cada armário é um subartigo (3.1.1, 3.1.2…) com as dimensões e as unidades.
+    const mqtArmDim = v => { const n = numOrNull(String(v ?? '').replace(/\s/g, '')); return n ? fmtNum(n) : ''; };
+    function mqtArmSubText(sb) {
+      const d = [['L', sb.l], ['P', sb.p], ['A', sb.a]].filter(([, v]) => mqtArmDim(v)).map(([k, v]) => `${k} ${mqtArmDim(v)}`);
+      const dims = d.length ? `${d.join(' × ')} cm` : '';
+      return mqtCap([String(sb.label || '').trim(), dims].filter(Boolean).join(', ')) || 'Armário (dimensões por definir)';
+    }
     function openMqtArmModal(lib, cfg, mq, preset) {
       const custom = cfg.custom || {};
+      const libArms = lib.elements.filter(e => !e._custom && e.active !== false && mqtIsArm(e.code));
       const used = new Set([...lib.elements.filter(e => mqtIsArm(e.code)).map(e => e.code.toUpperCase()), ...Object.keys(custom).map(k => k.toUpperCase()),
         ...Object.values(mq.issues.unknown || {}).map(x => mqtArmCode(x.k)).filter(Boolean)]);
       let n = 1; while (used.has('ARM' + String(n).padStart(2, '0'))) n++;
-      const code0 = (preset && mqtArmCode(preset)) || 'ARM' + String(n).padStart(2, '0');
+      const freeCode = 'ARM' + String(n).padStart(2, '0');
+      const presetCode = preset && mqtArmCode(preset);
+      // armário da biblioteca (descritivo da biblioteca) ou só deste projeto (descritivo escrito aqui)
+      let code0 = presetCode || freeCode;
+      let isLib = !!(lib.elByCode[code0] && !lib.elByCode[code0]._custom);
       const ex = custom[code0] || null;
-      const fromRevit = Object.values(mq.issues.unknown || {}).filter(x => mqtArmCode(x.k) === code0).reduce((t, x) => t + x.n, 0)
-        + (mq.items ? Object.values(mq.items).filter(it => it.el.code.toUpperCase() === code0 && it.source === 'model').reduce((t, it) => t + it.qty, 0) : 0);
-      const bases = lib.elements.filter(e => !e._custom && e.active !== false && /^ARM/i.test(e.code));
-      const man = cfg.manual?.[code0] || cfg.manual?.[mqtFull(code0, '')] || {};
-      openQuickModal(ex ? `Armário ${mqtCodeDisp(code0)}` : 'Armário à mão', `
-        <div class="field-hint" style="margin-top:0">Armário só deste projeto, no capítulo <b>Carpintarias</b>, à unidade (<b>un</b>). Se o modelo do Revit tiver elementos com este keynote, cada um conta 1 un, além das que pões aqui.${bases.length ? ' Para usar um armário da biblioteca tal como está, usa «+ Artigo → Artigo da biblioteca».' : ''}</div>
-        <label class="field-label" for="arm-code">Keynote</label>
-        <input type="text" class="form-input" id="arm-code" value="${escapeHtml(mqtCodeDisp(code0))}" placeholder="ARM 01" autocomplete="off" style="max-width:160px">
-        ${fromRevit ? `<div class="field-hint">${fromRevit} no modelo do Revit com este keynote.</div>` : ''}
-        ${bases.length ? `<label class="field-label" for="arm-base">Partir do descritivo de</label>
-        <select class="form-input" id="arm-base"><option value="">— Texto livre —</option>${bases.map(e => `<option value="${escapeHtml(e.code)}"${ex?.from === e.code ? ' selected' : ''}>${escapeHtml(mqtCodeDisp(e.code) + ' · ' + e.name)}</option>`).join('')}</select>` : ''}
-        <label class="field-label" for="arm-text">Descritivo</label>
-        <textarea class="form-input" id="arm-text" rows="6" placeholder="Ex.: Fornecimento e montagem de roupeiro em MDF hidrófugo lacado a branco, com portas de abrir, varão e prateleiras, conforme desenho de pormenor.">${escapeHtml(ex?.text || '')}</textarea>
-        <label class="field-label">Unidades <span class="muted">(${fromRevit ? 'além das do Revit; ' : ''}opcional)</span></label>
-        ${mq.cols.map(b => `<div class="mqt-qrow"><span>${escapeHtml(mqtMulti(mq) ? mqtBlockLabel(b) : 'Unidades')}</span><input type="text" inputmode="decimal" class="form-input arm-q" data-b="${escapeHtml(b)}" placeholder="—" value="${man[b] ? escapeHtml(String(man[b])) : ''}"></div>`).join('')}
+      const blocks = mq.cols, multi = mqtMulti(mq);
+      // subartigos atuais (unidades antigas sem subartigo passam a um subartigo sem dimensões)
+      const subsOf = c => {
+        const list = JSON.parse(JSON.stringify(cfg.arm_subs?.[c] || []));
+        const old = cfg.manual?.[c] || cfg.manual?.[mqtFull(c, '')];
+        if (old && Object.values(old).some(q => Number(q) > 0) && !list.length) list.push({ id: 1, label: '', l: '', p: '', a: '', q: { ...old } });
+        return list;
+      };
+      let subs = subsOf(code0);
+      if (!subs.length) subs.push({ id: 1, label: '', l: '', p: '', a: '', q: {} });
+      const revitN = c => Object.values(mq.issues.unknown || {}).filter(x => mqtArmCode(x.k) === c).reduce((t, x) => t + x.n, 0)
+        + Object.values(mq.items || {}).filter(it => it.el.code.toUpperCase() === c && it.source === 'model').reduce((t, it) => t + it.qty, 0);
+      const subRow = (sb, i) => `<div class="arm-sub" data-i="${i}">
+          <div class="arm-sub-h"><b>Subartigo ${i + 1}</b><button type="button" class="icon-x arm-sub-del" aria-label="Retirar o subartigo ${i + 1}" title="Retirar">×</button></div>
+          <input type="text" class="form-input arm-in" data-f="label" placeholder="Designação (opcional) — ex.: Roupeiro do quarto 1" value="${escapeHtml(sb.label || '')}">
+          <div class="arm-dims">
+            ${[['l', 'Largura'], ['p', 'Profundidade'], ['a', 'Altura']].map(([f, t]) => `<label><span>${t}</span><input type="text" inputmode="decimal" class="form-input arm-in" data-f="${f}" placeholder="cm" value="${escapeHtml(sb[f] ?? '')}"></label>`).join('')}
+            ${blocks.map(b => `<label class="arm-q"><span>${escapeHtml(multi ? mqtBlockLabel(b) : 'Unidades')}</span><input type="text" inputmode="decimal" class="form-input arm-in" data-f="q" data-b="${escapeHtml(b)}" placeholder="un" value="${sb.q?.[b] ? escapeHtml(String(sb.q[b])) : ''}"></label>`).join('')}
+          </div>
+        </div>`;
+      const pickOpts = `<option value="">Novo armário, só deste projeto</option>${Object.keys(custom).filter(c => c !== code0 || !isLib).map(c => `<option value="${escapeHtml(c)}"${c === code0 && !isLib ? ' selected' : ''}>${escapeHtml(mqtCodeDisp(c))} · deste projeto</option>`).join('')}${libArms.map(e => `<option value="${escapeHtml(e.code.toUpperCase())}"${isLib && e.code.toUpperCase() === code0 ? ' selected' : ''}>${escapeHtml(mqtCodeDisp(e.code) + ' · ' + e.name)} · biblioteca</option>`).join('')}`;
+      openQuickModal(presetCode ? `Armário ${mqtCodeDisp(code0)}` : 'Armário', `
+        <div class="field-hint" style="margin-top:0">O artigo tem o <b>descritivo geral</b> do armário; cada armário é um <b>subartigo</b> com as dimensões e as unidades. Fica em Carpintarias, à unidade (un). Os do Revit com este keynote entram como subartigos por tipo.</div>
+        <label class="field-label" for="arm-pick">Armário</label>
+        <select class="form-input" id="arm-pick">${pickOpts}</select>
+        <div id="arm-own">
+          <label class="field-label" for="arm-code">Keynote</label>
+          <input type="text" class="form-input" id="arm-code" value="${escapeHtml(mqtCodeDisp(code0))}" placeholder="ARM 01" autocomplete="off" style="max-width:160px">
+          ${libArms.length ? `<label class="field-label" for="arm-base">Partir do descritivo de</label>
+          <select class="form-input" id="arm-base"><option value="">— Texto livre —</option>${libArms.map(e => `<option value="${escapeHtml(e.code)}"${ex?.from === e.code ? ' selected' : ''}>${escapeHtml(mqtCodeDisp(e.code) + ' · ' + e.name)}</option>`).join('')}</select>` : ''}
+          <label class="field-label" for="arm-text">Descritivo geral</label>
+          <textarea class="form-input" id="arm-text" rows="5" placeholder="Ex.: Fornecimento e montagem de roupeiros em MDF hidrófugo lacado a branco, com portas de abrir, varão e prateleiras, conforme desenho de pormenor.">${escapeHtml(ex?.text || '')}</textarea>
+        </div>
+        <div id="arm-libtxt" class="arm-libtxt" hidden></div>
+        <div id="arm-revit" class="field-hint"></div>
+        <label class="field-label">Subartigos <span class="muted">(dimensões em cm)</span></label>
+        <div id="arm-subs"></div>
+        <button type="button" class="text-btn" id="arm-sub-add">+ Subartigo</button>
         <div id="arm-msg" class="form-msg"></div>
-        <div class="mqt-modal-acts">${ex ? '<button type="button" class="secondary-btn danger-text" id="arm-del">Apagar o armário</button>' : '<span></span>'}<button type="button" class="primary-btn" id="arm-save">${ex ? 'Guardar' : 'Acrescentar'}</button></div>`);
-      const txt = document.getElementById('arm-text');
-      document.getElementById('arm-base')?.addEventListener('change', e => {
+        <div class="mqt-modal-acts">${ex ? '<button type="button" class="secondary-btn danger-text" id="arm-del">Apagar o armário</button>' : '<span></span>'}<button type="button" class="primary-btn" id="arm-save">Guardar</button></div>`);
+      const $ = id => document.getElementById(id), txt = $('arm-text'), box = $('arm-subs');
+      const readSubs = () => { box.querySelectorAll('.arm-sub').forEach(r => { const sb = subs[Number(r.dataset.i)]; r.querySelectorAll('.arm-in').forEach(i => { if (i.dataset.f === 'q') { const v = numOrNull(i.value.replace(/\s/g, '')); if (v) (sb.q ||= {})[i.dataset.b] = v; else if (sb.q) delete sb.q[i.dataset.b]; } else sb[i.dataset.f] = i.value.trim(); }); }); };
+      const paintSubs = () => {
+        box.innerHTML = subs.map(subRow).join('');
+        box.querySelectorAll('.arm-sub-del').forEach(b => b.addEventListener('click', () => { readSubs(); subs.splice(Number(b.closest('.arm-sub').dataset.i), 1); paintSubs(); }));
+      };
+      const paintMode = () => {
+        $('arm-own').hidden = isLib; const lt = $('arm-libtxt'); lt.hidden = !isLib;
+        if (isLib) { const el = lib.elByCode[code0]; lt.innerHTML = `<span class="field-label">Descritivo geral · ${escapeHtml(mqtCodeDisp(code0))} (biblioteca)</span><p>${escapeHtml(mqtArticleText(el, cfg.specs || {}, lib).text)}</p><small class="muted">Para o ajustar só neste projeto, toca no artigo no MQT.</small>`; }
+        const r = revitN(code0); $('arm-revit').textContent = r ? `${fmtNum(r)} no modelo do Revit com este keynote (entram como subartigos por tipo).` : '';
+        $('arm-del') && ($('arm-del').hidden = isLib);
+      };
+      $('arm-pick').addEventListener('change', e => {
+        readSubs();
+        const v = e.target.value;
+        if (!v) { isLib = false; code0 = presetCode && !lib.elByCode[presetCode] ? presetCode : (custom[code0] ? freeCode : (isLib ? freeCode : code0)); $('arm-code').value = mqtCodeDisp(code0); txt.value = custom[code0]?.text || ''; }
+        else { code0 = v; isLib = !!(lib.elByCode[v] && !lib.elByCode[v]._custom); if (!isLib) { $('arm-code').value = mqtCodeDisp(v); txt.value = custom[v]?.text || ''; } }
+        subs = subsOf(code0); if (!subs.length) subs.push({ id: 1, label: '', l: '', p: '', a: '', q: {} });
+        paintSubs(); paintMode();
+      });
+      $('arm-base')?.addEventListener('change', e => {
         const el = lib.elByCode[String(e.target.value).toUpperCase()]; if (!el) return;
         if (txt.value.trim() && !confirm('Substituir o descritivo pelo do ' + mqtCodeDisp(el.code) + '?')) { e.target.value = ''; return; }
         txt.value = mqtArticleText(el, cfg.specs || {}, lib).text; txt.focus();
       });
-      setTimeout(() => (ex ? txt : document.getElementById('arm-code')).focus(), 60);
-      document.getElementById('arm-del')?.addEventListener('click', async () => {
-        if (!confirm(`Apagar o armário ${mqtCodeDisp(code0)} deste MQT?${fromRevit ? ' Os elementos do Revit com este keynote passam a aparecer como keynote desconhecido.' : ''}`)) return;
+      $('arm-sub-add').addEventListener('click', () => {
+        readSubs(); subs.push({ id: Math.max(0, ...subs.map(s => Number(s.id) || 0)) + 1, label: '', l: '', p: '', a: '', q: {} }); paintSubs();
+        box.querySelector('.arm-sub:last-child [data-f="label"]')?.focus();
+      });
+      paintSubs(); paintMode();
+      setTimeout(() => (presetCode ? box.querySelector('[data-f="label"]') : (isLib ? box.querySelector('[data-f="label"]') : $('arm-code')))?.focus(), 60);
+      $('arm-del')?.addEventListener('click', async () => {
+        if (!confirm(`Apagar o armário ${mqtCodeDisp(code0)} e os seus subartigos deste MQT?`)) return;
         try {
           const c2 = { ...custom }; delete c2[code0];
           const manual = { ...(cfg.manual || {}) }; delete manual[code0]; delete manual[mqtFull(code0, '')];
           const texts = { ...(cfg.texts || {}) }; delete texts[code0];
-          await mqtSaveCfg(mqtProjectId, { custom: c2, manual, texts }); closeQuickModal(); showToast('Armário apagado'); renderMqt();
+          const arm_subs = { ...(cfg.arm_subs || {}) }; delete arm_subs[code0];
+          await mqtSaveCfg(mqtProjectId, { custom: c2, manual, texts, arm_subs }); closeQuickModal(); showToast('Armário apagado'); renderMqt();
         } catch (e) { formError('arm-msg', 'Não foi possível apagar: ' + e.message); }
       });
-      document.getElementById('arm-save').addEventListener('click', async () => {
-        const code = mqtArmCode(document.getElementById('arm-code').value);
-        if (!code) { formError('arm-msg', 'Escreve o keynote no formato ARM 01.'); return; }
-        const lel = lib.elByCode[code];
-        if (lel && !lel._custom) { formError('arm-msg', `O ${mqtCodeDisp(code)} já existe na biblioteca. Para o pôr neste MQT usa «+ Artigo → Artigo da biblioteca»; para um armário só deste projeto escolhe outro número.`); return; }
-        if (code !== code0 && custom[code]) { formError('arm-msg', `O ${mqtCodeDisp(code)} já existe neste MQT.`); return; }
-        const text = txt.value.trim();
-        if (!text) { formError('arm-msg', 'Escreve o descritivo do armário.'); return; }
-        const q = {}; document.querySelectorAll('.arm-q').forEach(i => { const v = numOrNull(i.value.replace(/\s/g, '')); if (v) q[i.dataset.b] = v; });
+      $('arm-save').addEventListener('click', async () => {
+        readSubs();
+        let code = code0;
+        const c2 = { ...custom };
+        const texts = { ...(cfg.texts || {}) };
+        if (!isLib) {
+          code = mqtArmCode($('arm-code').value);
+          if (!code) { formError('arm-msg', 'Escreve o keynote no formato ARM 01.'); return; }
+          const lel = lib.elByCode[code];
+          if (lel && !lel._custom) { formError('arm-msg', `O ${mqtCodeDisp(code)} já existe na biblioteca: escolhe-o em «Armário» lá em cima, ou usa outro número.`); return; }
+          if (code !== code0 && custom[code]) { formError('arm-msg', `O ${mqtCodeDisp(code)} já existe neste MQT.`); return; }
+          const text = txt.value.trim();
+          if (!text) { formError('arm-msg', 'Escreve o descritivo geral do armário.'); return; }
+          if (code !== code0) delete c2[code0];
+          c2[code] = { name: 'Armário', text, from: $('arm-base')?.value || null, at: custom[code0]?.at || new Date().toISOString() };
+          if (custom[code0]?.text !== text) { delete texts[code0]; delete texts[code]; }
+        }
+        const keep = subs.filter(sb => sb.label || mqtArmDim(sb.l) || mqtArmDim(sb.p) || mqtArmDim(sb.a) || Object.values(sb.q || {}).some(q => q > 0));
+        if (!keep.length && !revitN(code)) { formError('arm-msg', 'Acrescenta pelo menos um subartigo (as dimensões e as unidades).'); return; }
         try {
-          const c2 = { ...custom }; if (ex && code !== code0) delete c2[code0];
-          c2[code] = { name: 'Armário', text, from: document.getElementById('arm-base')?.value || null, at: new Date().toISOString() };
-          const manual = { ...(cfg.manual || {}) }; delete manual[code0]; delete manual[mqtFull(code0, '')];
-          manual[code] = q;   // sem unidades: fica «a considerar» (o Revit pode trazê-las)
-          const texts = { ...(cfg.texts || {}) }; delete texts[code0]; delete texts[code];
-          await mqtSaveCfg(mqtProjectId, { custom: c2, manual, texts });
-          closeQuickModal(); showToast(ex ? 'Armário guardado' : `Armário ${mqtCodeDisp(code)} acrescentado`); renderMqt();
+          const arm_subs = { ...(cfg.arm_subs || {}) }; delete arm_subs[code0];
+          arm_subs[code] = keep.map(sb => ({ id: Number(sb.id) || 1, label: sb.label || '', l: sb.l || '', p: sb.p || '', a: sb.a || '', q: sb.q || {} }));
+          const manual = { ...(cfg.manual || {}) }; [code0, code].forEach(c => { delete manual[c]; delete manual[mqtFull(c, '')]; });
+          await mqtSaveCfg(mqtProjectId, { custom: c2, manual, texts, arm_subs });
+          closeQuickModal(); showToast(`${mqtCodeDisp(code)} guardado · ${keep.length} subartigo${keep.length === 1 ? '' : 's'}`); renderMqt();
         } catch (e) { formError('arm-msg', 'Não foi possível guardar: ' + e.message); }
       });
     }
@@ -30298,6 +30380,16 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         if (!qs.length) { const it = items[(mqtFull(el.code, pk.letter)).toUpperCase()] || add(el, pk.letter, '', '', 0, 'manual', ''); it.reserved = true; it.byHand = true; return; }
         qs.forEach(([b, q]) => { add(el, pk.letter, '', b, Number(q), 'manual', '').byHand = true; if (b) blocksSet.add(b); });
       });
+      // armários: cada subartigo à mão (dimensões e unidades) entra com a chave «~id» (fica pela ordem em que foi criado)
+      Object.entries(cfg.arm_subs || {}).forEach(([code, list]) => {
+        const el = lib.elByCode[String(code).toUpperCase()]; if (!el || !Array.isArray(list)) return;
+        list.forEach(sb => {
+          const tk = '~' + String(sb.id).padStart(3, '0'), extra = ' — ' + mqtArmSubText(sb);
+          const qs = Object.entries(sb.q || {}).filter(([, q]) => Number(q) > 0);
+          if (!qs.length) { const it = add(el, '', tk, '', 0, 'manual', extra); it.reserved = true; it.byHand = true; return; }
+          qs.forEach(([b, q]) => { add(el, '', tk, b, Number(q), 'manual', extra).byHand = true; if (b) blocksSet.add(b); });
+        });
+      });
       // tirados deste MQT (chave do subartigo, ou "@CÓDIGO" para o artigo todo): não entram, mesmo que voltem nas
       // tabelas do Revit; o que se acrescenta à mão volta a entrar
       const removed = cfg.removed || {};
@@ -30756,12 +30848,12 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       els.forEach(([e, o, n]) => { e.code = n; });
       new Set([...lib.variants, ...(devMode ? MOCK_MQT.variants : [])]).forEach(v => { const n = U[String(v.element_code).toUpperCase()]; if (n) v.element_code = n; });
       // 2) MQT dos projetos
-      const projs = devMode ? MOCK_MQT.project : ((await supabase.from('mqt_project').select('project_id, manual, specs, texts, ord, removed')).data || []);
+      const projs = devMode ? MOCK_MQT.project : ((await supabase.from('mqt_project').select('project_id, manual, specs, texts, ord, removed, arm_subs')).data || []);
       for (const pr of projs) {
         const specs = mqtRemapObj(pr.specs || {}, U); if (specs.__derived) specs.__derived = mqtRemapObj(specs.__derived, U);
         const ord = pr.ord ? { ...pr.ord, arts: Object.fromEntries(Object.entries(pr.ord.arts || {}).map(([ch, l]) => [ch, (l || []).map(x => mqtRemapKey(x, U))])), subs: mqtRemapObj(pr.ord.subs || {}, U, true) } : (pr.ord ?? null);
-        const patch = { manual: mqtRemapObj(pr.manual || {}, U), texts: mqtRemapObj(pr.texts || {}, U), specs, ord, removed: mqtRemapObj(pr.removed || {}, U) };
-        if (JSON.stringify(patch) === JSON.stringify({ manual: pr.manual || {}, texts: pr.texts || {}, specs: pr.specs || {}, ord: pr.ord ?? null, removed: pr.removed || {} })) continue;
+        const patch = { manual: mqtRemapObj(pr.manual || {}, U), texts: mqtRemapObj(pr.texts || {}, U), specs, ord, removed: mqtRemapObj(pr.removed || {}, U), arm_subs: mqtRemapObj(pr.arm_subs || {}, U) };
+        if (JSON.stringify(patch) === JSON.stringify({ manual: pr.manual || {}, texts: pr.texts || {}, specs: pr.specs || {}, ord: pr.ord ?? null, removed: pr.removed || {}, arm_subs: pr.arm_subs || {} })) continue;
         if (devMode) Object.assign(pr, patch);
         else { const r = await supabase.from('mqt_project').update({ ...patch, updated_at: now }).eq('project_id', pr.project_id); if (r.error) throw r.error; }
       }
@@ -30927,7 +31019,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         const val = st ? Math.round(st.med * l.q * 100) / 100 : null;
         return `<tr class="mqt-it ${l.lvl === 2 ? 'mqt-sub' : 'mqt-art mqt-one'}${cls}${l.miss ? ' miss' : ''}"${dk}${editable && l.st !== 'del' ? ` data-mqt-item="${escapeHtml(l.key)}" tabindex="0"` : ''}>
           <td class="art">${grip}${escapeHtml(l.num)}</td>
-          <td class="ds">${head(l.full + (l.typeKey ? ' · ' + l.typeKey : ''), l.nm)}<span class="tx">${md(l.text)}</span>${notes(l)}</td>
+          <td class="ds">${head(l.full + (l.typeKey && !String(l.typeKey).startsWith('~') ? ' · ' + l.typeKey : ''), l.nm)}<span class="tx">${md(l.text)}</span>${notes(l)}</td>
           <td class="un">${escapeHtml(l.unit)}</td>
           <td class="num qt">${l.res ? '<span class="muted">—</span>' : mqtQ(l.q)}</td>
           <td class="num pu">${st ? escapeHtml(fmtEUR(st.med)) : '<span class="muted">—</span>'}</td>
@@ -31490,6 +31582,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       const el = lib.elByCode[String(code).toUpperCase()]; if (!el) return;
       if (el._custom) return openMqtArmModal(lib, cfg, mq, el.code);
       const EL = el.code.toUpperCase();
+      const armBtn = mqtIsArm(el.code) ? '<button type="button" class="secondary-btn" id="mqt-art-arm">Subartigos (dimensões e unidades)</button>' : '';
       const std = mqtArticleText(el, cfg.specs || {}, lib).text;
       const own = cfg.texts?.[EL];
       const fields = [...new Set([...String(own || el.text || '').matchAll(/\{([^}]+)\}/g)].map(m => m[1].trim()).filter(f => f.toLowerCase() !== 'var'))];
@@ -31498,7 +31591,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         ${mqtOwnTextHtml(own ? mqtFillFields(own, sp, []) : std, std, !!own)}
         ${fields.length ? `<label class="field-label">Completar o texto</label>${fields.map(f => `<input type="text" class="form-input mqt-spec-in" data-f="${escapeHtml(f)}" placeholder="${escapeHtml(f)}" value="${escapeHtml(sp[f] || '')}" style="margin-bottom:6px">`).join('')}` : ''}
         <div id="mqt-it-msg" class="form-msg"></div>
-        <div class="mqt-modal-acts"><button type="button" class="secondary-btn danger-text" id="mqt-art-del">Tirar o artigo do MQT</button><button type="button" class="primary-btn" id="mqt-it-save">Guardar</button></div>`);
+        <div class="mqt-modal-acts"><button type="button" class="secondary-btn danger-text" id="mqt-art-del">Tirar o artigo do MQT</button>${armBtn}<button type="button" class="primary-btn" id="mqt-it-save">Guardar</button></div>`);
+      document.getElementById('mqt-art-arm')?.addEventListener('click', () => openMqtArmModal(lib, cfg, mq, el.code));
       document.getElementById('mqt-art-del').addEventListener('click', async () => {
         const its = Object.values(mq.items).filter(x => x.el.code.toUpperCase() === EL);
         const n = its.length;
@@ -31524,7 +31618,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
     }
     function openMqtItemModal(lib, cfg, mq, it, stats) {
       const el = it.el, code = el.code.toUpperCase();
-      if (el._custom) return openMqtArmModal(lib, cfg, mq, el.code);
+      if (el._custom || mqtIsArm(el.code)) return openMqtArmModal(lib, cfg, mq, el.code);
       const isSub = mqtHasSubs(lib, el);
       const ownKey = isSub ? it.key : code;
       const std = isSub ? mqtSubText(lib, it, cfg.specs || {}).text : it.desc;
@@ -31575,11 +31669,11 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
     }
     // Tirar do MQT deste projeto: os à mão apagam-se; os do Revit (e calculados) ficam em «Retirados», com Repor
     async function mqtRemove(cfg, its, label, removeKey) {
-      const before = { manual: cfg.manual || {}, removed: cfg.removed || {} };
-      const manual = JSON.parse(JSON.stringify(before.manual)), removed = JSON.parse(JSON.stringify(before.removed));
-      its.forEach(it => { delete manual[it.full]; delete manual[it.full.toUpperCase()]; });
+      const before = { manual: cfg.manual || {}, removed: cfg.removed || {}, arm_subs: cfg.arm_subs || {} };
+      const manual = JSON.parse(JSON.stringify(before.manual)), removed = JSON.parse(JSON.stringify(before.removed)), arm_subs = JSON.parse(JSON.stringify(before.arm_subs));
+      its.forEach(it => { delete manual[it.full]; delete manual[it.full.toUpperCase()]; if (mqtIsArm(it.el.code)) delete arm_subs[it.el.code.toUpperCase()]; });
       if (removeKey) removed[removeKey] = { at: dateKey(new Date()), label };
-      await mqtSaveCfg(mqtProjectId, { manual, removed });
+      await mqtSaveCfg(mqtProjectId, { manual, removed, arm_subs });
       showToast(`${label} tirado do MQT`, { undo: async () => { try { await mqtSaveCfg(mqtProjectId, before); renderMqt(); } catch (e) { showError('repor', e); } } });
       renderMqt();
     }
@@ -31674,6 +31768,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         <div id="mqt-man-msg" class="form-msg"></div>
         <button type="button" class="primary-btn" id="mqt-man-save">Acrescentar</button>`);
       const picker = attachMqtPicker('mqt-man-pick', lib, { preset: presetCode, onPick: o => {
+        if (mqtIsArm(o.k)) { closeQuickModal(); setTimeout(() => openMqtArmModal(lib, cfg, mq, o.k), 80); return; }
         document.getElementById('mqt-man-unit').textContent = `Unidade: ${o.unit}${o.unit === 'vg' ? ' (põe 1)' : ''}`;
         const first = document.querySelector('.mqt-man-in'); if (first) { if (o.unit === 'vg' && !first.value) first.value = '1'; first.focus(); first.select(); }
       } });
