@@ -11,9 +11,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>NOVA Compass</title>
 <!-- Ícone: o N ameixa com brilho no fundo preto (assets/brand/gerador/render-icons.js) -->
-<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
+<!-- ao mudar o ícone: gerar de novo, subir ?v= aqui e no manifest.webmanifest, e ICON_V no código (aviso para reinstalar no iPhone) -->
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png?v=3">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png?v=3">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png?v=3">
 <link rel="manifest" href="manifest.webmanifest">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -4796,6 +4797,9 @@
   .arm-dims label { display: flex; flex-direction: column; gap: 2px; font-size: var(--fs-xs); color: var(--text-2); }
   .arm-dims .form-input { margin: 0; }
   .arm-libtxt { margin-top: var(--sp-3); } .arm-libtxt p { margin: var(--sp-1) 0; font-size: var(--fs-sm); color: var(--text-2); line-height: 1.5; }
+  .icn-new { display: flex; justify-content: center; margin: var(--sp-1) 0 var(--sp-4); }
+  .icn-new img { width: 88px; height: 88px; border-radius: 20px; box-shadow: 0 10px 30px -12px rgba(0,0,0,.5); }
+  .icn-steps { margin: var(--sp-3) 0 0; padding-left: 20px; display: grid; gap: var(--sp-2); font-size: var(--fs-md); line-height: 1.5; }
   .pop-menu { position: fixed; z-index: 1300; min-width: 230px; max-width: calc(100vw - 16px); padding: var(--sp-1-5); background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: var(--shadow-lg); animation: popIn .14s ease-out; }
   .pop-menu button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; padding: var(--sp-2) var(--sp-2-5); border: 0; border-radius: var(--r-sm); background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
   .pop-menu button:hover, .pop-menu button:focus-visible { background: var(--surface-2); outline: none; }
@@ -5577,6 +5581,26 @@
 
     // Dados de demonstração (MOCK_*) ficam inativos: não há forma de ligar este modo no build publicado.
     const devMode = false;
+    // ---------- Ícone da app instalada ----------
+    // O Android (Chrome, app instalada pelo manifesto) troca o ícone sozinho quando o manifesto muda. O iPhone fixa o
+    // ícone quando a app é adicionada ao ecrã principal e não deixa mudá-lo: aí, a app avisa uma vez como reinstalar.
+    // Cada app do ecrã principal guarda a versão do ícone com que foi instalada; instalações anteriores a este registo
+    // (já com sessão iniciada) contam como versão 0 — também as do Android, feitas antes de haver manifesto.
+    const ICON_V = 3;
+    const iconInstall = (() => {
+      try {
+        const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+        if (!standalone) return null;
+        const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (/Mac/.test(navigator.platform || '') && navigator.maxTouchPoints > 1);
+        let v = localStorage.getItem('nova-icon-v');
+        if (v == null) {
+          const old = Object.keys(localStorage).some(k => /^sb-.+-auth-token$/.test(k));
+          v = old ? '0' : String(ICON_V);
+          localStorage.setItem('nova-icon-v', v);
+        }
+        return { v: Number(v) || 0, ios };
+      } catch (_) { return null; }
+    })();
 
     const MOCK_PROJECTS = [
       { id: 'mock-1', owner_id: 'mock-member-1', name: 'Edifício Miradouro', code: 'NOVA-001', client: 'Promotora Atlântico', address: 'Rua do Miradouro 12, Vila Nova de Gaia', status: 'WIP', area: 1240, awarding_date: '2025-11-03', commission_value: 48000, team_id: 'mock-team-alpha', project_types: { name: 'Habitação Coletiva' }, teams: { name: 'Team Alpha' } },
@@ -29025,6 +29049,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
     async function appOpenNotices() {
       if (appOpenNotices.done) return; appOpenNotices.done = true;
       const me = await getCurrentMember(); if (!me?.id) return;
+      setTimeout(() => iconUpdateNotice().catch(() => {}), 2500);   // fica em fila atrás dos pedidos e das novidades
       // 1) os meus pedidos que ficaram feitos e que ainda não vi
       let done = [];
       if (devMode) done = mockTickets.filter(t => t.created_by === me.id && t.author_seen === false && t.status === 'done');
@@ -29048,6 +29073,25 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       if (!(await nwWait())) return;
       // visto até onde chegou: se fechar na 2.ª de 5, as 3 seguintes voltam na próxima abertura
       showNews(fresh, { onClose: k => newsMarkSeen(me.id, k >= fresh.length - 1 ? null : fresh[k].published_at) });
+    }
+    // Ícone novo e a app do ecrã principal ainda com o antigo: no iPhone (sempre) e no Android só se foi instalada antes
+    // do manifesto (essas não se atualizam sozinhas). «Mais tarde» volta a lembrar daqui a 3 dias.
+    async function iconUpdateNotice() {
+      const I = iconInstall;
+      if (!I || I.v >= ICON_V || !(I.ios || I.v === 0)) return;
+      try { if (Number(localStorage.getItem('nova-icon-later') || 0) > Date.now()) return; } catch (_) { return; }
+      if (!(await nwWait())) return;
+      const done = () => { try { localStorage.setItem('nova-icon-v', String(ICON_V)); localStorage.removeItem('nova-icon-later'); } catch (_) {} I.v = ICON_V; closeQuickModal(); };
+      const steps = I.ios
+        ? ['Toca sem soltar no ícone <b>Compass</b> no ecrã principal → <b>Remover app</b> → <b>Eliminar do ecrã principal</b>. Não se perde nada.', 'No <b>Safari</b>, abre o Compass, toca em <b>Partilhar</b> (quadrado com seta) → <b>Adicionar ao ecrã principal</b>.', 'Entra outra vez com o teu email: no iPhone, cada instalação começa sem sessão.']
+        : ['Toca sem soltar no ícone <b>Compass</b> → <b>Desinstalar</b> (ou arrasta para <b>Remover</b>). Não se perde nada.', 'No <b>Chrome</b>, abre o Compass → <b>⋮</b> → <b>Instalar app</b>.', 'A partir daí, o ícone passa a atualizar-se sozinho.'];
+      openQuickModal('Ícone novo da app', `
+        <div class="icn-new"><img src="assets/icons/apple-touch-icon.png?v=${ICON_V}" alt="O ícone novo do Compass" width="88" height="88"></div>
+        <p class="field-hint" style="margin-top:0">O Compass tem um ícone novo. ${I.ios ? 'O iPhone não deixa as apps mudarem o ícone depois de instaladas' : 'Esta instalação é anterior às atualizações automáticas do ícone'}: para o veres, volta a pôr a app no ecrã principal (1 minuto).</p>
+        <ol class="icn-steps">${steps.map(x => `<li>${x}</li>`).join('')}</ol>
+        <div class="mqt-modal-acts"><button type="button" class="secondary-btn" id="icn-later">Mais tarde</button><button type="button" class="primary-btn" id="icn-done">Já está</button></div>`);
+      document.getElementById('icn-later').addEventListener('click', () => { try { localStorage.setItem('nova-icon-later', String(Date.now() + 3 * 864e5)); } catch (_) {} closeQuickModal(); });
+      document.getElementById('icn-done').addEventListener('click', done);
     }
     function newsMarkSeen(id, upTo = null) {
       const now = upTo || new Date().toISOString();
