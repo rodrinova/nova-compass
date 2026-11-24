@@ -31988,77 +31988,175 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       return exceljsPromise;
     }
     const mqtSafeName = s => String(s || 'projeto').replace(/<[^>]*>/g, '').replace(/[\\/:*?"<>|]+/g, '').trim().slice(0, 60) || 'projeto';
+    // ---------- Excel da NOVA: o mesmo cuidado dos relatórios (para todos os Excel que a app exporta) ----------
+    // Letra Calibri (vem com o Office em qualquer computador, Windows ou Mac); cinzentos quentes da marca; capa em ameixa
+    // com o logótipo claro, como os relatórios do Investment Intelligence; linhas finíssimas; sem a grelha do Excel.
+    const XL = {
+      font: 'Calibri', ink: 'FF1B1A19', soft: 'FF6B6660', mute: 'FF8A847D', line: 'FFE4E3DE', hair: 'FFEEEDE9',
+      stone: 'FFF3F3F0', paper: 'FFF7F7F5', plum: 'FF714D79', band: 'FF4E2954', bandText: 'FFF2EAF1', bandSoft: 'FFD9C9DD',
+      input: 'FFFBF4E2', inputLine: 'FFE8D7A8', miss: 'FFF6E1DF',
+      new: 'FF2E5C9E', rev: 'FF2D6A3E', del: 'FF9A3A33',
+      money: '#,##0.00 "€";-#,##0.00 "€";"—"', qty: '#,##0.00',
+    };
+    const xlFont = (o = {}) => ({ name: XL.font, size: 10, color: { argb: XL.ink }, ...o });
+    const xlFill = argb => ({ type: 'pattern', pattern: 'solid', fgColor: { argb } });
+    let xlLogoCache = null;
+    // logótipo claro para a capa (PNG em base64 e proporção)
+    async function xlLogo() {
+      if (xlLogoCache) return xlLogoCache;
+      try {
+        const blob = await (await fetch('assets/nova-logo-white-cropped.png')).blob();
+        const b64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(blob); });
+        const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = 'data:image/png;base64,' + b64; });
+        return (xlLogoCache = { b64, ratio: img.naturalWidth / img.naturalHeight });
+      } catch (_) { return null; }
+    }
+    // folha com a capa da NOVA: faixa ameixa com o logótipo e a data, o título pequeno em maiúsculas, o título e a linha de dados
+    async function xlSheet(wb, name, { cols, eyebrow, title, meta, date = new Date().toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' }), landscape = false }) {
+      const ws = wb.addWorksheet(name, {
+        views: [{ showGridLines: false, zoomScale: 110 }],
+        properties: { defaultRowHeight: 16 },
+        pageSetup: { paperSize: 9, orientation: landscape ? 'landscape' : 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0, horizontalCentered: true, margins: { left: .45, right: .45, top: .55, bottom: .7, header: .25, footer: .3 } },
+      });
+      ws.columns = cols;
+      const n = cols.filter(c => !c.hidden).length;
+      const band = [1, 2, 3, 4, 5, 6, 7];
+      band.forEach(r => { for (let c = 1; c <= n; c++) ws.getCell(r, c).fill = xlFill(XL.band); });
+      [[1, 10], [2, 22], [3, 14], [4, 15], [5, 26], [6, 17], [7, 12]].forEach(([r, h]) => { ws.getRow(r).height = h; });
+      const logo = await xlLogo();
+      if (logo) ws.addImage(wb.addImage({ base64: logo.b64, extension: 'png' }), { tl: { col: 0.25, row: 1.15 }, ext: { width: Math.round(18 * logo.ratio), height: 18 }, editAs: 'absolute' });
+      else { ws.getCell(2, 1).value = 'NOVA'; ws.getCell(2, 1).font = xlFont({ size: 13, bold: true, color: { argb: XL.bandText } }); }
+      const right = ws.getCell(2, n); right.value = date; right.font = xlFont({ size: 8.5, color: { argb: XL.bandSoft } }); right.alignment = { horizontal: 'right', vertical: 'middle' };
+      const t = (r, v, f) => { const c = ws.getCell(r, 1); c.value = v; c.font = xlFont(f); c.alignment = { vertical: 'middle' }; };
+      t(4, String(eyebrow || '').toUpperCase(), { size: 8, bold: true, color: { argb: XL.bandSoft } });
+      t(5, title, { name: 'Calibri Light', size: 18, color: { argb: XL.bandText } });
+      t(6, meta, { size: 9.5, color: { argb: XL.bandSoft } });
+      ws.getRow(8).height = 10;
+      return ws;
+    }
+    // cabeçalho de tabela: legenda pequena e cinzenta, traço escuro por baixo (como os títulos dos relatórios)
+    function xlHead(ws, r, labels, { right = [] } = {}) {
+      const row = ws.getRow(r); row.height = 22;
+      labels.forEach((l, i) => {
+        const c = row.getCell(i + 1); c.value = l;
+        c.font = xlFont({ size: 8.5, bold: true, color: { argb: XL.soft } });
+        c.alignment = { vertical: 'bottom', horizontal: right.includes(i + 1) ? 'right' : 'left', wrapText: true };
+        c.border = { bottom: { style: 'medium', color: { argb: XL.ink } } };
+      });
+    }
+    // rodapé de todas as páginas: projeto à esquerda, página à direita, discreto
+    const xlFooter = (ws, left) => { ws.headerFooter.oddFooter = `&L&"Calibri"&8&K8A847DNOVA Associates · ${String(left).replace(/&/g, '&&')}&R&"Calibri"&8&K8A847DPágina &P de &N`; };
+
     // Excel a partir das linhas (MQT em curso ou revisão fechada): um ficheiro por bloco, cores e notas das revisões
     async function mqtExportExcel(project, lines, { stats, revN, draft, block }) {
       const ExcelJS = await loadExcelJs();
-      const wb = new ExcelJS.Workbook(); wb.creator = 'NOVA Compass';
-      const ws = wb.addWorksheet(stats ? 'Estimativa' : 'MQT', { views: [{ state: 'frozen', ySplit: 6 }], pageSetup: { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: .5, right: .5, top: .6, bottom: .6, header: .3, footer: .3 } } });
-      const cQ = 4, cP = 5, cT = 6, cK = 7;
+      const wb = new ExcelJS.Workbook(); wb.creator = 'NOVA Associates'; wb.company = 'NOVA Associates';
+      const cQ = 4, cP = 5, cT = 6, cK = 7, NC = 6;
       const L = n => String.fromCharCode(64 + n);
-      ws.columns = [{ width: 9 }, { width: 72 }, { width: 6 }, { width: 12 }, { width: 13 }, { width: 15 }, { width: 14, hidden: true }];
       const pname = String(project?.name || '').replace(/<[^>]*>/g, '');
       const bl = block != null ? mqtBlockLabel(block) : '';
-      const R = mqtRevLabel(revN) + (draft ? ' (em preparação)' : '');
-      ws.getCell('A1').value = 'NOVA Associates'; ws.getCell('A1').font = { bold: true, size: 14 };
-      ws.getCell('A2').value = (stats ? 'Estimativa orçamental — Mapa de Quantidades e Trabalhos' : 'Mapa de Quantidades e Trabalhos') + (bl ? ' — ' + bl : ''); ws.getCell('A2').font = { bold: true, size: 12 };
-      ws.getCell('A3').value = [project?.code, pname, bl, R].filter(Boolean).join(' · ');
-      ws.getCell('A4').value = `${new Date().toLocaleDateString('pt-PT')}${stats ? ' · preços de referência atualizados à data' : ' · preencher os preços unitários (células a amarelo)'}${revN > 0 ? ` · azul: artigo novo · verde: revisto · vermelho: retirado em ${mqtRevLabel(revN)}` : ''}`;
-      ws.getCell('A4').font = { color: { argb: 'FF666666' }, size: 9 };
-      const hr = ws.getRow(6);
-      hr.values = ['Art.', 'Designação', 'Un.', 'Quantidade', 'Preço unit. (€)', 'Total (€)', 'Keynote'];
-      hr.font = { bold: true, color: { argb: 'FFFFFFFF' } }; hr.alignment = { vertical: 'middle', wrapText: true };
-      hr.eachCell(c => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF3A2E39' } }; });
-      const border = { bottom: { style: 'hair', color: { argb: 'FFBBBBBB' } } };
-      const money = '#,##0.00 €', qfmt = '#,##0.00';
-      const fill = argb => ({ type: 'pattern', pattern: 'solid', fgColor: { argb } });
-      const COL = { new: 'FF1F5FBF', rev: 'FF1E8E3E', del: 'FFC0392B' };
-      const font = (l, extra = {}) => ({ ...(l.st ? { color: { argb: COL[l.st] } } : {}), ...(l.st === 'del' ? { strike: true } : {}), ...extra });
+      const R = mqtRevLabel(revN) + (draft ? ' em preparação' : '');
+      wb.title = `Mapa de Quantidades e Trabalhos — ${pname}`;
+      const ws = await xlSheet(wb, stats ? 'Estimativa' : 'MQT', {
+        cols: [{ width: 8.5 }, { width: 70 }, { width: 6.5 }, { width: 12 }, { width: 14 }, { width: 15.5 }, { width: 14, hidden: true }],
+        eyebrow: stats ? 'Estimativa orçamental · Mapa de Quantidades e Trabalhos' : 'Mapa de Quantidades e Trabalhos',
+        title: [project?.code, pname].filter(Boolean).join(' · '),
+        meta: [bl, R, stats ? 'Preços de referência à data' : 'Para concurso'].filter(Boolean).join('   ·   '),
+      });
+      // indicações (e a legenda das cores das revisões)
+      const ind = ws.getCell(9, 1);
+      const parts = [{ text: stats ? 'Preços de referência da NOVA, atualizados à data. Uso interno.' : 'Preencher apenas os preços unitários, nas células assinaladas. As quantidades e os totais calculam-se sozinhos.', font: xlFont({ size: 9, color: { argb: XL.soft } }) }];
+      if (revN > 0) parts.push({ text: `     Em ${mqtRevLabel(revN)}:  `, font: xlFont({ size: 9, color: { argb: XL.soft } }) },
+        { text: 'novo', font: xlFont({ size: 9, bold: true, color: { argb: XL.new } }) }, { text: '  ·  ', font: xlFont({ size: 9, color: { argb: XL.mute } }) },
+        { text: 'revisto', font: xlFont({ size: 9, bold: true, color: { argb: XL.rev } }) }, { text: '  ·  ', font: xlFont({ size: 9, color: { argb: XL.mute } }) },
+        { text: 'retirado', font: xlFont({ size: 9, bold: true, strike: true, color: { argb: XL.del } }) });
+      ind.value = { richText: parts };
+      ws.getRow(10).height = 8;
+      const HR = 11;
+      xlHead(ws, HR, ['Art.', 'Designação', 'Un.', 'Quantidade', 'Preço unit.', 'Total', 'Keynote'], { right: [cQ, cP, cT] });
+      ws.views = [{ showGridLines: false, zoomScale: 110, state: 'frozen', ySplit: HR }];
+      ws.pageSetup.printTitlesRow = `${HR}:${HR}`;
+      const COL = { new: XL.new, rev: XL.rev, del: XL.del };
+      const font = (l, extra = {}) => xlFont({ ...(l.st ? { color: { argb: COL[l.st] } } : {}), ...(l.st === 'del' ? { strike: true } : {}), ...extra });
+      const hair = { bottom: { style: 'thin', color: { argb: XL.hair } } };
       // descritivo + notas em itálico (a da revisão atual com a cor dela; as antigas a cinzento)
       const desc = (l, bold) => {
-        const parts = [{ text: String(l.text || ''), font: font(l, bold ? { bold: true } : {}) }];
-        (l.notes || []).forEach(n => parts.push({ text: '\n' + mqtNoteText(n), font: { italic: true, size: 9, color: { argb: n.rev === revN && l.st ? COL[l.st] : 'FF808080' } } }));
-        if (l.res) parts.push({ text: '\nA considerar — sem medição', font: { italic: true, size: 9, color: { argb: 'FF808080' } } });
-        return parts.length > 1 ? { richText: parts } : parts[0].text;
+        const out = [{ text: String(l.text || ''), font: font(l, bold ? { bold: true } : {}) }];
+        (l.notes || []).forEach(n => out.push({ text: '\n' + mqtNoteText(n), font: xlFont({ italic: true, size: 8.5, color: { argb: n.rev === revN && l.st ? COL[l.st] : XL.mute } }) }));
+        if (l.res) out.push({ text: '\nA considerar — sem medição', font: xlFont({ italic: true, size: 8.5, color: { argb: XL.mute } }) });
+        return { richText: out };
       };
-      let r = 7; const subCells = []; let first = 7, curCh = null;
+      let r = HR + 1; const subCells = []; let first = r, curCh = null;
       const closeCh = () => {
         if (!curCh) return;
-        const sr = ws.getRow(r); sr.getCell(2).value = `Total do capítulo ${curCh.num}`; sr.getCell(2).alignment = { horizontal: 'right' }; sr.font = { bold: true };
-        sr.getCell(cT).value = { formula: `SUM(${L(cT)}${first}:${L(cT)}${r - 1})` }; sr.getCell(cT).numFmt = money;
+        const sr = ws.getRow(r); sr.height = 20;
+        sr.getCell(2).value = `Total do capítulo ${curCh.num}`; sr.getCell(2).alignment = { horizontal: 'right', vertical: 'middle' };
+        sr.getCell(2).font = xlFont({ size: 9, color: { argb: XL.soft } });
+        const tc = sr.getCell(cT); tc.value = { formula: `SUM(${L(cT)}${first}:${L(cT)}${r - 1})` }; tc.numFmt = XL.money;
+        tc.font = xlFont({ bold: true }); tc.alignment = { vertical: 'middle' }; tc.border = { top: { style: 'thin', color: { argb: XL.ink } } };
         subCells.push([curCh, `${L(cT)}${r}`]); r += 2;
       };
       lines.forEach(l => {
         if (l.t === 'ch') {
           closeCh(); curCh = l;
-          ws.getCell(r, 1).value = String(l.num); ws.getCell(r, 2).value = String(l.text).toUpperCase();
-          for (let k = 1; k <= cT; k++) { ws.getCell(r, k).fill = fill('FFEFEAEE'); ws.getCell(r, k).font = font(l, { bold: true }); }
+          const row = ws.getRow(r); row.height = 24;
+          for (let k = 1; k <= NC; k++) { const c = row.getCell(k); c.fill = xlFill(XL.stone); c.border = { bottom: { style: 'thin', color: { argb: XL.line } } }; c.alignment = { vertical: 'middle' }; }
+          row.getCell(1).value = String(l.num); row.getCell(1).font = font(l, { bold: true, color: { argb: l.st ? COL[l.st] : XL.plum } });
+          row.getCell(2).value = String(l.text).toUpperCase(); row.getCell(2).font = font(l, { bold: true, size: 9.5 });
           r++; first = r; return;
         }
-        const row = ws.getRow(r);
-        row.getCell(1).value = l.num; row.getCell(1).font = font(l, l.t === 'art' || l.lvl === 1 ? { bold: true } : {}); row.getCell(1).alignment = { vertical: 'top' };
-        row.getCell(2).value = desc(l, false); row.getCell(2).alignment = { wrapText: true, vertical: 'top', indent: l.lvl === 2 ? 2 : 0 };
-        if (typeof row.getCell(2).value === 'string') row.getCell(2).font = font(l);
+        const row = ws.getRow(r), main = l.t === 'art' || l.lvl === 1;
+        const nc = row.getCell(1); nc.value = l.num; nc.font = font(l, main ? { bold: true } : { color: { argb: l.st ? COL[l.st] : XL.soft } }); nc.alignment = { vertical: 'top' };
+        const dc = row.getCell(2); dc.value = desc(l, false); dc.alignment = { wrapText: true, vertical: 'top', indent: l.lvl === 2 ? 2 : 0 };
+        // altura pelo texto (o Excel não a acerta sozinho ao abrir): ~90 caracteres por linha nesta largura, com margem
+        const cpl = l.lvl === 2 ? 82 : 87, nLines = String(l.text || '').split('\n').reduce((t, p) => t + Math.max(1, Math.ceil(p.length / cpl)), 0) + (l.notes || []).length + (l.res ? 1 : 0);
+        row.height = Math.max(18, nLines * 13.2 + 9);
         if (l.t === 'item') {
-          row.getCell(3).value = l.unit; row.getCell(3).font = font(l);
-          if (!l.res) { row.getCell(cQ).value = l.q; row.getCell(cQ).numFmt = qfmt; row.getCell(cQ).font = font(l); }
+          const uc = row.getCell(3); uc.value = l.unit; uc.font = font(l, { color: { argb: l.st ? COL[l.st] : XL.soft } }); uc.alignment = { vertical: 'top' };
+          const qc = row.getCell(cQ); if (!l.res) { qc.value = l.q; qc.numFmt = XL.qty; } qc.font = font(l); qc.alignment = { vertical: 'top', horizontal: 'right' };
           const st = l.st === 'del' ? null : stats?.[String(l.full).toUpperCase()];
           const pu = row.getCell(cP);
-          if (st) pu.value = st.med; else if (l.st !== 'del') pu.fill = fill(stats ? 'FFFCE8E8' : 'FFFFF6D5');
-          pu.numFmt = money; pu.protection = { locked: false };
-          row.getCell(cT).value = { formula: `IF(${L(cP)}${r}="","",${L(cQ)}${r}*${L(cP)}${r})` }; row.getCell(cT).numFmt = money;
-          row.getCell(cK).value = l.full + (l.typeKey ? '|' + l.typeKey : '');
+          if (st) pu.value = st.med;
+          else if (l.st !== 'del') { pu.fill = xlFill(stats ? XL.miss : XL.input); pu.border = { top: { style: 'thin', color: { argb: XL.inputLine } }, bottom: { style: 'thin', color: { argb: XL.inputLine } }, left: { style: 'thin', color: { argb: XL.inputLine } }, right: { style: 'thin', color: { argb: XL.inputLine } } }; }
+          pu.numFmt = XL.money; pu.font = font(l); pu.alignment = { vertical: 'top' }; pu.protection = { locked: false };
+          const tc = row.getCell(cT); tc.value = { formula: `IF(${L(cP)}${r}="","",${L(cQ)}${r}*${L(cP)}${r})` }; tc.numFmt = XL.money; tc.font = font(l); tc.alignment = { vertical: 'top' };
+          row.getCell(cK).value = l.full + (l.typeKey ? '|' + l.typeKey : ''); row.getCell(cK).font = xlFont({ size: 8, color: { argb: XL.mute } });
         }
-        for (let k = 1; k <= cT; k++) row.getCell(k).border = border;
+        for (let k = 1; k <= NC; k++) { const c = row.getCell(k); c.border = { ...(c.border || {}), ...hair }; }
         r++;
       });
       closeCh();
-      ws.getCell(r, 2).value = 'RESUMO' + (bl ? ' — ' + bl : ''); ws.getCell(r, 2).font = { bold: true }; r++;
-      subCells.forEach(([c, ref]) => { ws.getCell(r, 1).value = String(c.num); ws.getCell(r, 2).value = c.text; ws.getCell(r, cT).value = { formula: ref }; ws.getCell(r, cT).numFmt = money; r++; });
-      ws.getCell(r, 2).value = 'TOTAL (sem IVA)'; ws.getCell(r, 2).font = { bold: true };
-      ws.getCell(r, cT).value = { formula: subCells.map(x => x[1]).join('+') || '0' }; ws.getCell(r, cT).numFmt = money; ws.getCell(r, cT).font = { bold: true };
-      ws.getCell(r + 1, 2).value = 'Aos valores acresce IVA à taxa legal em vigor.'; ws.getCell(r + 1, 2).font = { italic: true, size: 9 };
-      if (!stats) { ws.getCell(r + 3, 2).value = 'Empreiteiro:'; ws.getCell(r + 4, 2).value = 'Data:'; ws.getCell(r + 5, 2).value = 'Assinatura:'; }
-      ws.headerFooter.oddFooter = '&L' + [pname, bl, R].filter(Boolean).join(' · ').replace(/&/g, '&&') + '&RPágina &P de &N';
+      // Resumo: título com traço escuro, um capítulo por linha e o total numa faixa ameixa
+      r++;
+      const rh = ws.getRow(r); rh.height = 22;
+      rh.getCell(1).value = 'RESUMO' + (bl ? ' · ' + bl.toUpperCase() : ''); rh.getCell(1).font = xlFont({ size: 8.5, bold: true, color: { argb: XL.plum } });
+      for (let k = 1; k <= NC; k++) { rh.getCell(k).border = { bottom: { style: 'medium', color: { argb: XL.ink } } }; rh.getCell(k).alignment = { vertical: 'bottom' }; }
+      r++;
+      subCells.forEach(([c, ref]) => {
+        const row = ws.getRow(r); row.height = 18;
+        row.getCell(1).value = String(c.num); row.getCell(1).font = xlFont({ color: { argb: XL.plum }, bold: true });
+        row.getCell(2).value = c.text; row.getCell(2).font = xlFont();
+        row.getCell(cT).value = { formula: ref }; row.getCell(cT).numFmt = XL.money; row.getCell(cT).font = xlFont();
+        for (let k = 1; k <= NC; k++) { row.getCell(k).border = hair; row.getCell(k).alignment = { vertical: 'middle' }; }
+        r++;
+      });
+      const tr = ws.getRow(r); tr.height = 26;
+      for (let k = 1; k <= NC; k++) { tr.getCell(k).fill = xlFill(XL.band); tr.getCell(k).alignment = { vertical: 'middle' }; }
+      tr.getCell(2).value = 'Total (sem IVA)'; tr.getCell(2).font = xlFont({ bold: true, size: 11, color: { argb: XL.bandText } });
+      const tt = tr.getCell(cT); tt.value = { formula: subCells.map(x => x[1]).join('+') || '0' }; tt.numFmt = XL.money; tt.font = xlFont({ bold: true, size: 11, color: { argb: XL.bandText } });
+      const iva = ws.getCell(r + 1, 2); iva.value = 'Aos valores acresce IVA à taxa legal em vigor.'; iva.font = xlFont({ italic: true, size: 8.5, color: { argb: XL.mute } });
+      if (!stats) {
+        // para o empreiteiro preencher: o nome, a data e a assinatura, numa linha fina
+        let s = r + 4;
+        ws.getCell(s - 1, 1).value = 'PROPOSTA'; ws.getCell(s - 1, 1).font = xlFont({ size: 8.5, bold: true, color: { argb: XL.plum } });
+        ['Empreiteiro', 'Data', 'Assinatura'].forEach(lab => {
+          const row = ws.getRow(s); row.height = 26;
+          row.getCell(1).value = lab; row.getCell(1).font = xlFont({ size: 9, color: { argb: XL.soft } }); row.getCell(1).alignment = { vertical: 'bottom' };
+          row.getCell(2).border = { bottom: { style: 'thin', color: { argb: XL.line } } };
+          s++;
+        });
+      }
+      xlFooter(ws, [pname, bl, mqtRevLabel(revN)].filter(Boolean).join(' · '));
       const buf = await wb.xlsx.writeBuffer();
       mqtDownload(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `MQT_${mqtSafeName(project?.code || pname)}${bl ? '_' + mqtSafeName(bl).replace(/\s+/g, '') : ''}_${mqtRevLabel(revN)}${draft ? '_preparacao' : ''}${stats ? '_estimativa' : ''}.xlsx`);
     }
