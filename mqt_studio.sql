@@ -129,6 +129,8 @@ alter table public.mqt_project add column if not exists custom jsonb not null de
 -- Subartigos dos armários (ARM XX): um por armário, com dimensões (cm) e unidades por bloco
 --   { "ARM01": [{ "id": 1, "label": "Roupeiro do quarto 1", "l": "120", "p": "60", "a": "240", "q": { "": 2 } }] }
 alter table public.mqt_project add column if not exists arm_subs jsonb not null default '{}';
+-- Revisão do MQT com o Gemini (função mqt-ai): { at, resumo, model, pontos: [{ id, tipo, impacto, titulo, porque, acao, artigo, opcoes, state, choice }] }
+alter table public.mqt_project add column if not exists ai_review jsonb;
 -- Revisões emitidas (R00, R01…): fotografia fixa de cada bloco, numeração fixa dos artigos e contagens
 create table if not exists public.mqt_revisions (
   id uuid primary key default gen_random_uuid(),
