@@ -86,29 +86,25 @@ window.renderLogo = (kind, bg, w) => {
   else { const nh = w * .5, nw = nh * 353 / 382; D.monogram(g, w / 2 - nw / 2, w / 2 - nh / 2, nh, ink); }
   return true;
 };
-// Ícone (LinkedIn, app instalada no telemóvel, separador do browser): fundo preto e o N ameixa, nítido e de cor fixa,
-// retroiluminado — a luz nasce atrás da letra: um contorno de luz colado às arestas e um halo largo projetado no fundo.
+// Ícone (LinkedIn, app instalada no telemóvel, separador do browser). Contenção: a marca manda, a luz sussurra.
+// Fundo preto quente com um levantar de luz quase impercetível; o N claro, sólido e nítido (contraste alto);
+// por trás dele uma auréola muito ténue e próxima — só se dá por ela quando se olha com atenção.
 // O N ocupa ~38 % da altura (respira; cabe na zona segura dos ícones «maskable» do Android).
-window.renderIcon = (w, { nh: nhF = .38, light = 1.35, grainAmt = 2.2, ink = '#5E3D69' } = {}) => {
+window.renderIcon = (w, { nh: nhF = .38, light = 1, grainAmt = 1.2, ink = '#D3C6D8' } = {}) => {
   const g = canvas(w, w);
-  g.fillStyle = '#040304'; g.fillRect(0, 0, w, w);
+  g.fillStyle = '#0A090A'; g.fillRect(0, 0, w, w);
   const nh = w * nhF, nw = nh * 353 / 382, x = w / 2 - nw / 2, y = w / 2 - nh / 2;
-  // a luz atrás da letra (desenhada noutra tela, para se poder somar com «lighter»)
+  // levantar de luz no fundo, centrado ligeiramente acima (luz de cima, não um holofote)
+  const lift = g.createRadialGradient(w / 2, w * .44, 0, w / 2, w * .46, w * .62);
+  lift.addColorStop(0, `rgba(58,40,64,${.55 * light})`); lift.addColorStop(.55, `rgba(30,22,33,${.35 * light})`); lift.addColorStop(1, 'rgba(10,9,10,0)');
+  g.fillStyle = lift; g.fillRect(0, 0, w, w);
+  // auréola atrás do N: uma passagem larga e outra próxima, ambas muito ténues
   const L = document.createElement('canvas'); L.width = L.height = w; const l = L.getContext('2d');
-  // 1) halo largo no fundo, centrado atrás do N
-  const halo = l.createRadialGradient(w / 2, w / 2, nh * .15, w / 2, w / 2, w * .58);
-  halo.addColorStop(0, `rgba(150,96,170,${.55 * light})`); halo.addColorStop(.35, `rgba(96,56,112,${.28 * light})`); halo.addColorStop(1, 'rgba(0,0,0,0)');
-  l.fillStyle = halo; l.fillRect(0, 0, w, w);
-  // 2) a forma do N iluminada por trás: várias passagens desfocadas, cada vez mais próximas e claras
-  [[.10, 'rgba(160,104,182,0.55)'], [.045, 'rgba(205,160,222,0.55)'], [.016, 'rgba(240,215,248,0.75)']].forEach(([b, c]) => {
-    l.save(); l.filter = `blur(${Math.max(1, w * b * light)}px)`; D.monogram(l, x, y, nh, c); l.restore();
+  [[.07, `rgba(150,105,165,${.16 * light})`], [.018, `rgba(205,175,215,${.20 * light})`]].forEach(([b, c]) => {
+    l.save(); l.filter = `blur(${Math.max(1, w * b)}px)`; D.monogram(l, x, y, nh, c); l.restore();
   });
   g.save(); g.globalCompositeOperation = 'lighter'; g.drawImage(L, 0, 0); g.restore();
-  // cantos mais escuros (vinheta)
-  const vig = g.createRadialGradient(w * .5, w * .5, w * .32, w * .5, w * .5, w * .74);
-  vig.addColorStop(0, 'rgba(0,0,0,0)'); vig.addColorStop(1, 'rgba(0,0,0,0.6)');
-  g.fillStyle = vig; g.fillRect(0, 0, w, w);
-  // 3) o N por cima, nítido e de cor fixa: tapa a luz e fica só o contorno a brilhar
+  // o N: claro, sólido, nítido
   D.monogram(g, x, y, nh, ink);
   if (grainAmt) D.grain(g, w, w, grainAmt, 11);
   return true;

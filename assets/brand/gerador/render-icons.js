@@ -8,7 +8,7 @@ const OUT = [
   [IC + 'icon-192.png', 192, { grainAmt: .6 }],
   [IC + 'apple-touch-icon.png', 180, { grainAmt: .6 }],
   [IC + 'icon-maskable-512.png', 512, { nh: .34 }],   // Android recorta em círculo: um pouco mais pequeno
-  [IC + 'favicon-32.png', 32, { nh: .62, light: 1, grainAmt: 0, ink: '#7A5286' }],   // no separador o N precisa de ler-se
+  [IC + 'favicon-32.png', 32, { nh: .62, light: .6, grainAmt: 0 }],   // no separador o N precisa de ler-se
 ];
 (async () => {
   const b = await chromium.launch();
