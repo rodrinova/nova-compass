@@ -123,7 +123,8 @@ alter table public.mqt_project add column if not exists created_at timestamptz n
 alter table public.mqt_project add column if not exists created_by uuid references public.team_members(id) on delete set null;
 -- removed: artigos do Revit tirados deste MQT { "PRD 01A": { at, label }, "@PRD01": artigo inteiro }; não entram mesmo que voltem nas tabelas
 alter table public.mqt_project add column if not exists removed jsonb not null default '{}';
--- Armários só deste projeto (keynote ARM XX): { "ARM05": { name, text, from, at } }; as unidades ficam em manual
+-- Artigos só deste projeto (qualquer keynote: ARM 05, TS 01, LL 01…): { "TS01": { name, text, unit, chapter, code, at } };
+-- as quantidades ficam em manual (nos armários, em arm_subs)
 alter table public.mqt_project add column if not exists custom jsonb not null default '{}';
 -- Subartigos dos armários (ARM XX): um por armário, com dimensões (cm) e unidades por bloco
 --   { "ARM01": [{ "id": 1, "label": "Roupeiro do quarto 1", "l": "120", "p": "60", "a": "240", "q": { "": 2 } }] }
