@@ -4665,6 +4665,17 @@
   .dbk-pcheck { width: 18px; height: 18px; accent-color: var(--accent); flex: none; margin: 0 4px 0 2px; cursor: pointer; }
   .dbk-past-hint { margin: 0 0 8px; }
   .mqt-top { display: flex; gap: var(--sp-2-5); align-items: center; flex-wrap: wrap; margin: var(--sp-1) 0 var(--sp-2); }
+  /* cabeçalho do MQT do projeto: acompanha o scroll, logo por baixo da barra do topo (Voltar, + Artigo, Carregar tabelas) */
+  .mqt-top.mqt-sticky { position: sticky; top: calc(52px + env(safe-area-inset-top, 0px)); z-index: 6; margin-left: calc(-1 * var(--sp-3)); margin-right: calc(-1 * var(--sp-3)); padding: var(--sp-2) var(--sp-3); border-radius: 0 0 var(--r-md) var(--r-md); transition: background-color .2s, box-shadow .2s; }
+  .mqt-top.mqt-sticky.stuck { background: var(--bg); box-shadow: 0 1px 0 var(--border), 0 10px 22px -16px rgba(0,0,0,.35); }
+  .mqt-sentinel { height: 1px; margin-bottom: -1px; }
+  @media (max-width: 560px) {
+    .mqt-top.mqt-sticky.stuck { flex-wrap: nowrap; gap: var(--sp-2); }
+    .mqt-top.mqt-sticky.stuck .mqt-ptitle, .mqt-top.mqt-sticky.stuck .mqt-back-l { display: none; }
+    .mqt-top.mqt-sticky.stuck .mqt-back { padding: 0 var(--sp-2); }
+    .mqt-top.mqt-sticky.stuck .mqt-actions { flex: 1; flex-wrap: nowrap; justify-content: flex-end; }
+    .mqt-top.mqt-sticky.stuck .mqt-actions .toolbar-btn { padding: 0 var(--sp-3); }
+  }
   .mqt-proj { flex: 1 1 260px; max-width: 460px; margin: 0; }
   .mqt-actions, .mqt-tabacts { display: flex; gap: var(--sp-2); flex-wrap: wrap; align-items: center; }
   .mqt-meta { font-size: var(--fs-sm); color: var(--text-2); margin-bottom: var(--sp-1); }
@@ -30065,7 +30076,9 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       const frame = now => {
         const dt = Math.min(40, now - last); last = now;
         // deslizar junto às margens: zona de ~1/5 do ecrã (máx. 120 px); velocidade cresce com a proximidade e o tempo
-        const top = Math.max(0, vTop()), bot = vBot(), E = Math.max(48, Math.min(100, (bot - top) / 6));
+        // a zona de cima começa por baixo do que está preso no topo (barra da app, cabeçalho do MQT)
+        const cover = Math.max(0, ...[...document.querySelectorAll('.nav-bar, .mqt-top.stuck')].map(x => x.getBoundingClientRect().bottom));
+        const top = Math.max(0, vTop(), cover), bot = vBot(), E = Math.max(48, Math.min(100, (bot - top) / 6));
         // só desliza depois de o ponteiro se mexer de propósito (pegar num item já junto à margem não arranca a página)
         if (!armed && Math.abs(py - py0) > 12) armed = true;
         let f = 0;
@@ -30545,6 +30558,15 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       });
     }
     // ---------- MQT de um projeto ----------
+    // o cabeçalho preso ganha fundo e sombra só quando já está a acompanhar o scroll
+    function mqtWatchSticky(box) {
+      box.__mqtIO?.disconnect();
+      const sen = box.querySelector('.mqt-sentinel'), top = box.querySelector('.mqt-top.mqt-sticky');
+      if (!sen || !top || !('IntersectionObserver' in window)) return;
+      const navH = document.querySelector('.nav-bar')?.getBoundingClientRect().height || 52;
+      box.__mqtIO = new IntersectionObserver(([en]) => top.classList.toggle('stuck', !en.isIntersecting && en.boundingClientRect.top < navH + 1), { rootMargin: `-${Math.round(navH)}px 0px 0px 0px`, threshold: 0 });
+      box.__mqtIO.observe(sen);
+    }
     async function renderMqtProject(box, lib, projects) {
       const project = projects.find(p => p.id === mqtProjectId);
       const { runs, cfg, revs } = await mqtLoadProject(mqtProjectId);
@@ -30563,8 +30585,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       const cnt = mqtCounts(working);
       const nIssues = Object.keys(mq.issues.noKey).length + Object.keys(mq.issues.unknown).length + Object.keys(mq.issues.noVariant).length + Object.keys(mq.issues.badVariant).length + Object.keys(mq.issues.noField).length + mq.issues.missing.length;
       const pname = [project?.code, project?.name].filter(Boolean).join(' · ');
-      const head = `<div class="mqt-top">
-          <button type="button" class="secondary-btn toolbar-btn mqt-back" id="mqt-home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Todos os MQT</button>
+      const head = `<div class="mqt-sentinel" aria-hidden="true"></div><div class="mqt-top mqt-sticky">
+          <button type="button" class="secondary-btn toolbar-btn mqt-back" id="mqt-home" aria-label="Todos os MQT"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span class="mqt-back-l">Todos os MQT</span></button>
           <div class="mqt-ptitle"><b>${escapeHtml(pname)}</b><span>${cfg.exists ? (viewRev ? `a ver ${mqtRevLabel(viewRev.rev)}` : `${mqtRevLabel(nextN)} em preparação${lastRev ? ` · última revisão ${mqtRevLabel(lastRev.rev)} (${escapeHtml(fmtDayMonth(String(lastRev.created_at).slice(0, 10)))})` : ''}`) : 'sem MQT'}</span></div>
           <div class="mqt-actions">${cfg.exists && !viewRev ? `<button type="button" class="primary-btn toolbar-btn btn-caret" id="mqt-add" aria-haspopup="menu" aria-expanded="false">+ Artigo<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><button type="button" class="primary-btn toolbar-btn" id="mqt-upload">Carregar tabelas</button><input type="file" id="mqt-file" accept=".txt,.csv,.tsv" multiple hidden>` : ''}</div>
         </div>`;
@@ -30599,6 +30621,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         <div class="billing-bar"><div class="segmented" id="mqt-tabs">${tabs.map(([k, l, n]) => `<button type="button" data-mtab="${k}" class="${k === mqtTab ? 'active' : ''}">${l}${n ? `<em class="alert">${n}</em>` : ''}</button>`).join('')}</div>
           <span class="mqt-tabacts">${acts}</span></div>
         <div id="mqt-drop">${body}</div>`;
+      mqtWatchSticky(box);
       // eventos
       document.getElementById('mqt-home').addEventListener('click', () => { mqtProjectId = ''; mqtViewRev = null; renderMqt(); });
       box.querySelectorAll('[data-mtab]').forEach(b => b.addEventListener('click', () => { mqtTab = b.dataset.mtab; renderMqt(); }));
