@@ -99,12 +99,18 @@ const SCHEMA = {
 };
 const SYSTEM = `És um arquiteto sénior e medidor-orçamentista português, a rever o Mapa de Quantidades e Trabalhos (MQT) de arquitetura de um projeto da NOVA Associates, que vai a concurso de empreiteiros.
 O MQT é só de arquitetura (as especialidades têm mapas próprios). Unidades da NOVA: m², ml, un, vg, m³ (m³ só em movimento de terras). Espessuras em mm.
+Como a NOVA estrutura os MQT (no MQT Studio, a partir do modelo Revit):
+- Cada keynote do Revit é um artigo (ex.: PAVi 10 = pavimento cerâmico A); as variantes (PAVi 10a, 10b…) são subartigos com o que as distingue (dimensões, espessura, versão com impermeabilização…).
+- Cada camada construtiva é um ARTIGO PRÓPRIO, no seu capítulo: bases, enchimentos e betonilhas (BPAi/BPAe), impermeabilizações e isolamentos gerais, revestimento final (PAVi/PAVe/REV…), rodapés, etc. O descritivo de um revestimento NÃO inclui as camadas que têm artigo próprio.
+- O MQT vai sendo construído: as tabelas do Revit são carregadas por partes, por isso pode faltar um capítulo inteiro só porque a tabela ainda não foi carregada.
+- É dada a biblioteca de keynotes da NOVA (o que existe). Usa-a: se a camada ou o trabalho em falta tem keynote na biblioteca, refere esse keynote.
 Método: percorre o MQT artigo a artigo. Para cada artigo, pensa em COMO AQUILO FUNCIONA EM OBRA — onde está (exterior/interior, em contacto com água, solo, fogo, tráfego), de que camadas e peças precisa para cumprir a função, como se liga ao que está à volta — e compara com o que o descritivo realmente inclui. Os buracos são as lacunas.
-Exemplos de lacunas: parede exterior ou enterrada sem impermeabilização / barreira pára-vapor / isolamento; janela sem ferragens, vedantes, soleira, peitoril, caixa de estore ou selagem perimetral; cobertura sem tela, rufos, caleiras ou tubos de queda; pavimento sem regularização, betonilha ou rodapé; zonas húmidas sem impermeabilização sob o revestimento; porta sem aro, guarnições, fechadura ou batente; revestimento cerâmico sem argamassa-cola e juntas; carpintarias sem ferragens ou acabamento; guardas sem fixações; pinturas sem primário.
+Exemplos de lacunas DENTRO do artigo: janela sem ferragens, vedantes, soleira, peitoril ou selagem perimetral; porta sem aro, guarnições, fechadura ou batente; revestimento cerâmico sem cimento-cola, juntas ou perfis de remate; pavimento de madeira flutuante sem a tela/base do próprio sistema; carpintarias sem ferragens ou acabamento; guardas sem fixações; pinturas sem primário.
+Exemplos de ARTIGOS que podem estar em falta (camadas que na NOVA são artigos separados): betonilha ou enchimento sob os pavimentos; impermeabilização ou isolamento de paredes exteriores/enterradas e de coberturas; impermeabilização de zonas húmidas quando o revestimento não é a versão «com impermeabilização»; rodapés; rufos, caleiras e tubos de queda.
 Objetivo: os poucos pontos que mais valem a pena (regra 80/20). No máximo 12, do mais importante para o menos. Se houver poucos, devolve poucos. Frases curtas e diretas.
 Tipos, por esta prioridade:
-- lacuna (o principal): o que falta DENTRO de um artigo existente para a coisa funcionar ou ficar completa. Ação "texto": reescreve o descritivo desse artigo acrescentando o que falta.
-- omissao: um trabalho que falta no MQT e não cabe em nenhum artigo existente (ex.: impermeabilização da laje de cobertura quando não há artigo de cobertura com tela, limpeza final, remates). Ação "novo".
+- lacuna (o principal): o que falta DENTRO de um artigo existente e pertence a esse elemento (ex.: ferragens, vedantes e soleira de uma janela; primário de uma pintura; juntas, cruzetas e perfis de remate de um cerâmico). Ação "texto": reescreve o descritivo desse artigo acrescentando o que falta. NUNCA metas no descritivo de um artigo uma camada que na NOVA é artigo próprio (betonilha, enchimento, isolamento, impermeabilização geral).
+- omissao: um artigo que pode estar em falta no MQT — incluindo uma camada que é artigo próprio e não aparece (ex.: o pavimento não tem betonilha/enchimento por baixo). Escreve-o assim: «Pode estar em falta um artigo de X, uma vez que as camadas são artigos separados» e, se a tabela pode ainda não ter sido carregada, diz isso. Se esse artigo existe na biblioteca: ação "nota", com o keynote da biblioteca no texto (ex.: «BPAi 01 — Enchimento em betonilha»). Só se não existir na biblioteca: ação "novo".
 - erro: só se for relevante — descritivo contraditório, unidade errada para o trabalho, quantidade suspeita (zero, desproporcionada), artigo no capítulo errado.
 - protecao / complemento: só quando valem mesmo a pena e não há lacunas mais importantes (ex.: «incluindo todos os trabalhos e materiais necessários», amostras e aprovação prévia, «ou equivalente aprovado», classe/norma).
 Para cada ponto:
@@ -128,10 +134,14 @@ Deno.serve(async (req) => {
     const chapters = (Array.isArray(b.chapters) ? b.chapters : []).map((c: any) => `${cut(c.code, 10)} · ${cut(c.name, 80)}`).join("\n");
     const mqt = lines.map((l: any) => l.t === "ch" ? `\n## ${cut(l.n, 8)} ${cut(l.x, 120)} [capítulo ${cut(l.ch, 10)}]` : `${cut(l.n, 12)} | ${cut(l.k, 24)} | ${cut(l.x, 600)} | ${cut(l.u, 6)} | ${l.q ?? "—"}`).join("\n");
     const p = b.project || {};
+    const libtxt = (Array.isArray(b.library) ? b.library : []).slice(0, 700).map((e: any) => `${cut(e.c, 10)} | ${cut(e.k, 16)} · ${cut(e.n, 80)}`).join("\n");
     const prompt = `Projeto: ${cut([p.code, p.name].filter(Boolean).join(" · "), 200)}${p.type ? `\nTipologia: ${cut(p.type, 120)}` : ""}
 
 Capítulos da biblioteca (código · nome), para artigos novos:
 ${chapters}
+
+Biblioteca de keynotes da NOVA (keynote · designação, por capítulo) — o que existe para usar:
+${libtxt || "(não enviada)"}
 
 MQT (número | keynote | descritivo | unidade | quantidade):
 ${mqt}`;
