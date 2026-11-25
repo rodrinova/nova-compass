@@ -128,6 +128,8 @@ alter table public.mqt_project add column if not exists removed jsonb not null d
 alter table public.mqt_project add column if not exists custom jsonb not null default '{}';
 -- Subartigos dos armários (ARM XX): um por armário, com dimensões (cm) e unidades por bloco
 --   { "ARM01": [{ "id": 1, "label": "Roupeiro do quarto 1", "l": "120", "p": "60", "a": "240", "q": { "": 2 } }] }
+-- Também os vãos (VE XX exteriores, VI XX interiores): largura e altura, e o modo de funcionamento opcional (f)
+--   { "VE01": [{ "id": 1, "label": "Janela da sala", "l": "120", "a": "140", "f": "Oscilobatente", "q": { "": 2 } }] }
 alter table public.mqt_project add column if not exists arm_subs jsonb not null default '{}';
 -- Revisão do MQT com o Gemini (função mqt-ai): { at, resumo, model, pontos: [{ id, tipo, impacto, titulo, porque, acao, artigo, opcoes, state, choice }] }
 alter table public.mqt_project add column if not exists ai_review jsonb;
