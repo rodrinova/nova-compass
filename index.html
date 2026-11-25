@@ -4808,7 +4808,12 @@
   .arm-t .arm-in:focus, .arm-t .arm-in:focus-visible { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); box-shadow: inset 0 -2px 0 var(--accent); }
   .arm-t .arm-in::placeholder { color: var(--text-3); }
   .arm-t .c-n { width: 26px; text-align: center; color: var(--text-3); font-size: var(--fs-xs); font-variant-numeric: tabular-nums; }
-  .arm-t .c-v { width: 44px; } .arm-t .c-v .arm-in { text-align: center; }
+  .arm-t .c-v { width: 92px; }
+  .arm-kv { display: flex; align-items: center; height: 34px; padding-left: 6px; cursor: text; }
+  .arm-kp { flex: none; color: var(--accent); font-weight: var(--fw-semibold); font-size: var(--fs-xs); line-height: 20px; white-space: nowrap; letter-spacing: .01em; }
+  .arm-t .arm-kv .arm-in { width: 1.6em; height: 20px; line-height: 20px; flex: none; padding: 0; margin: 0; font-family: inherit; letter-spacing: .01em; color: var(--accent); font-weight: var(--fw-semibold); font-size: var(--fs-xs); }
+  .arm-kv:focus-within { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); box-shadow: inset 0 -2px 0 var(--accent); }
+  .arm-kv:focus-within .arm-in { background: none; box-shadow: none; }
   .arm-t .c-l { min-width: 170px; }
   .arm-t .c-d, .arm-t .c-q { width: 74px; } .arm-t td.c-d .arm-in, .arm-t td.c-q .arm-in { text-align: right; font-variant-numeric: tabular-nums; }
   .arm-t th.c-d, .arm-t th.c-q { text-align: right; }
@@ -29912,6 +29917,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
             });
           }
         }
+        if (D) st.code(pk.code);
         $('nw-save').textContent = saveLbl;
         if (!pk || fam === 'ARM') return;
         const fch = mqtFamilyChapter(lib, cfg, pk.fam) || (D?.chRe && lib.chapters.find(c => D.chRe.test(c.name || ''))?.code) || null;
@@ -30180,9 +30186,10 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
     function mqtSubTable(host, { blocks, multi }) {
       let D = null, subs = [], code = '';
       const ph = (i, t) => i ? '' : t;
+      const kp = () => mqtCodeDisp(code) || D.nome;   // prefixo do keynote da variante (VE 03 → VE 03a)
       const row = (sb, i) => `<tr data-i="${i}">
           <td class="c-n">${i + 1}</td>
-          ${D.vars ? `<td class="c-v"><input type="text" class="arm-in" data-f="v" maxlength="1" autocapitalize="off" spellcheck="false" placeholder="—" aria-label="Variante do subartigo ${i + 1}" value="${escapeHtml(String(sb.v || '').toLowerCase())}"></td>` : ''}
+          ${D.vars ? `<td class="c-v"><label class="arm-kv"><span class="arm-kp">${escapeHtml(kp())}</span><input type="text" class="arm-in" data-f="v" maxlength="1" autocapitalize="off" spellcheck="false" placeholder="a" aria-label="Variante do subartigo ${i + 1} (fica ${escapeHtml(kp())}a, ${escapeHtml(kp())}b…)" value="${escapeHtml(String(sb.v || '').toLowerCase())}"></label></td>` : ''}
           <td class="c-l"><input type="text" class="arm-in" data-f="label" placeholder="${escapeHtml(ph(i, 'ex.: ' + D.ph))}" aria-label="Designação do subartigo ${i + 1}" value="${escapeHtml(sb.label || '')}"></td>
           ${D.dims.map(([f, t]) => `<td class="c-d"><input type="text" inputmode="decimal" class="arm-in" data-f="${f}" placeholder="${ph(i, 'cm')}" aria-label="${t} do subartigo ${i + 1} (cm)" value="${escapeHtml(sb[f] ?? '')}"></td>`).join('')}
           ${D.func ? `<td class="c-f"><input type="text" class="arm-in" data-f="f" list="arm-func-list" placeholder="${escapeHtml(ph(i, 'ex.: oscilobatente'))}" aria-label="Modo de funcionamento do subartigo ${i + 1}" value="${escapeHtml(sb.f || '')}"></td>` : ''}
@@ -30192,9 +30199,9 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       const add = () => { read(); subs.push(mqtBlankSub(Math.max(0, ...subs.map(x => Number(x.id) || 0)) + 1)); paint(); };
       const paint = () => {
         host.innerHTML = `${D.func ? `<datalist id="arm-func-list">${MQT_FUNC.map(f => `<option value="${escapeHtml(f)}">`).join('')}</datalist>` : ''}
-          <div class="arm-tw"><table class="arm-t"><thead><tr><th class="c-n">#</th>${D.vars ? '<th class="c-v" title="Variante do mesmo sistema (a, b…)">Var.</th>' : ''}<th class="c-l">Designação</th>${D.dims.map(([, t]) => `<th class="c-d" title="${t} em cm">${t}</th>`).join('')}${D.func ? '<th class="c-f">Funcionamento</th>' : ''}${blocks.map(b => `<th class="c-q">${escapeHtml(multi ? mqtBlockLabel(b) : 'Un.')}</th>`).join('')}<th class="c-x"></th></tr></thead>
+          <div class="arm-tw"><table class="arm-t"><thead><tr><th class="c-n">#</th>${D.vars ? '<th class="c-v" title="Keynote da variante do mesmo sistema: escreve a letra (a, b…)">Keynote</th>' : ''}<th class="c-l">Designação</th>${D.dims.map(([, t]) => `<th class="c-d" title="${t} em cm">${t}</th>`).join('')}${D.func ? '<th class="c-f">Funcionamento</th>' : ''}${blocks.map(b => `<th class="c-q">${escapeHtml(multi ? mqtBlockLabel(b) : 'Un.')}</th>`).join('')}<th class="c-x"></th></tr></thead>
           <tbody>${subs.map(row).join('')}</tbody></table></div>
-          <div class="arm-t-foot"><button type="button" class="text-btn" data-add>+ Subartigo</button><span class="muted">${D.vars ? 'Var. = variante do mesmo sistema (a, b…), fica no mesmo artigo · ' : ''}dimensões em cm · Enter passa à linha de baixo</span></div>`;
+          <div class="arm-t-foot"><button type="button" class="text-btn" data-add>+ Subartigo</button><span class="muted">${D.vars ? 'Keynote: escreve a letra da variante do mesmo sistema (a, b…), fica no mesmo artigo · ' : ''}dimensões em cm · Enter passa à linha de baixo</span></div>`;
       };
       host.addEventListener('click', e => {
         if (e.target.closest('[data-add]')) { add(); host.querySelector('tbody tr:last-child .arm-in')?.focus(); return; }
@@ -30213,6 +30220,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       return {
         get: () => { read(); return subs; },
         set: (list, fam, c) => { if (D) read(); D = MQT_DIM[fam]; code = c || ''; subs = list?.length ? list : [mqtBlankSub(1)]; paint(); },
+        // o keynote mudou (ex.: VE 03 → VE 04): atualiza o prefixo das variantes sem redesenhar
+        code: c => { if (!c || c === code || !D) return; code = c; host.querySelectorAll('.arm-kp').forEach(x => { x.textContent = kp(); }); },
         focus: () => host.querySelector('tbody .arm-in')?.focus()
       };
     }
@@ -30273,6 +30282,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       const st = mqtSubTable(box, { blocks, multi });
       const readSubs = () => { subs = st.get(); };
       const paintSubs = () => st.set(subs, FAM, code0);
+      $('arm-code')?.addEventListener('input', e => { const c = mqtDimCode(e.target.value); if (c && mqtDimFam(c) === FAM) st.code(c); });
       const paintMode = () => {
         $('arm-own').hidden = isLib; const lt = $('arm-libtxt'); lt.hidden = !isLib;
         if (isLib) { const el = lib.elByCode[code0]; lt.innerHTML = `<span class="field-label">Descritivo geral · ${escapeHtml(mqtCodeDisp(code0))} (biblioteca)</span><p>${escapeHtml(mqtArticleText(el, cfg.specs || {}, lib).text)}</p><small class="muted">Para o ajustar só neste projeto, toca no artigo no MQT.</small>`; }
