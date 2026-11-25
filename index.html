@@ -4787,6 +4787,10 @@
   .mqt-table tr.fl-noq > td:first-child { box-shadow: inset 3px 0 0 var(--danger); }
   .mqt-table tr.fl-unk .kc { color: var(--warning); }
   .mqt-draft-note { margin: 0 0 var(--sp-2); }
+  .mqt-imp-upd, .mqt-imp-new { display: inline-block; margin-left: 8px; padding: 0 8px; border-radius: var(--r-full); font-size: 11px; font-weight: var(--fw-semibold); line-height: 20px; vertical-align: 1px; }
+  .mqt-imp-upd { background: var(--accent-soft); color: var(--accent); }
+  .mqt-imp-new { background: color-mix(in srgb, var(--success) 14%, transparent); color: var(--success); }
+  .mqt-imp-keep { margin: var(--sp-2) 0; }
   #quick-modal textarea[readonly], #quick-modal input[readonly] { background: var(--surface-2); color: var(--text-2); }
   .mqt-table tr.fl-unk > td { background-color: color-mix(in srgb, var(--warning) 11%, transparent); }
   .mqt-own-h { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--sp-2); }
@@ -32327,26 +32331,43 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         catch (e) { parsed.push({ name: f.name, rows: [], cols: {}, cells: [], warnings: ['Não consegui ler: ' + e.message] }); }
       }
       const next = (runs[0]?.version || 0) + 1;
+      // Atualização ou tabela nova? Cada tabela reconhece-se pelo título (o nome da tabela do Revit) ou, sem título,
+      // pelo nome do ficheiro sem extensão. A que já estava carregada é substituída pela nova versão; as outras
+      // tabelas do carregamento anterior mantêm-se (não é preciso voltar a carregar tudo).
+      const tkey = f => mqtNormHead(f?.title || String(f?.name || '').replace(/\.[^.]+$/, ''));
+      const prevRun = runs[0] || null, prevFiles = prevRun?.files || [];
+      const prevRows = prevRun ? await mqtRunRows(prevRun).catch(() => []) : [];
+      const rowKey = r => r.s || (prevFiles.length === 1 ? tkey(prevFiles[0]) : (prevFiles.find(f => f.title && f.title === r.c) ? tkey(prevFiles.find(f => f.title === r.c)) : ''));
+      let keepOthers = true;
       const colsTxt = p => Object.keys(p.cols || {}).map(k => k === 'k' ? 'Keynote' : k === 't' ? 'Tipo' : k === 'tm' ? 'Marca de tipo' : k === 'l' ? 'Nível' : k === 'b' ? 'Bloco' : k === 'c' ? 'Categoria' : MQT_FIELD_LABEL[k] || k).join(', ') || '—';
       const show = () => {
-        const rows = parsed.flatMap(p => p.rows);
+        const newKeys = new Set(parsed.filter(p => p.rows.length).map(tkey));
+        const prevByKey = {}; prevRows.forEach(r => { const k = rowKey(r); (prevByKey[k] ||= 0); prevByKey[k]++; });
+        const kept = keepOthers ? prevFiles.filter(f => !newKeys.has(tkey(f))) : [];
+        const keptKeys = new Set(kept.map(tkey));
+        const keptRows = keepOthers ? prevRows.filter(r => { const k = rowKey(r); return k ? keptKeys.has(k) : false; }) : [];
+        const orphan = keepOthers ? prevRows.filter(r => !rowKey(r)).length : 0;
+        const rows = [...parsed.flatMap(p => p.rows.map(r => ({ ...r, s: tkey(p) }))), ...keptRows];
+        const fileState = p => { const k = tkey(p); const was = prevFiles.find(f => tkey(f) === k); return !p.rows.length ? '' : was ? `<span class="mqt-imp-upd">atualiza a tabela já carregada · ${fmtNum(was.rows ?? prevByKey[k] ?? 0)} → ${fmtNum(p.rows.length)} linhas</span>` : prevRun ? '<span class="mqt-imp-new">tabela nova</span>' : ''; };
         const keyed = rows.filter(r => mqtParseKey(r.k)).length;
         const mq = mqtCompute(lib, rows, {});
         openQuickModal(`Carregar tabelas · carregamento ${next}`, `
-          <div class="mqt-files">${parsed.map((p, i) => `<div class="mqt-file"><b>${escapeHtml(p.title || p.name)}</b><small>${escapeHtml(p.name)} · ${p.rows.length} linhas · ${escapeHtml(colsTxt(p))}${p.mapped ? ' · colunas indicadas à mão' : ''}</small>${p.rows.length ? '' : p.warnings.map(w => `<small class="warn">${escapeHtml(w)}</small>`).join('')}${(p.cells || []).length ? `<button type="button" class="text-btn" data-cm-open="${i}">${p.rows.length ? 'Ver as colunas' : 'Dizer onde está cada coisa'}</button>` : ''}</div>`).join('')}</div>
+          <div class="mqt-files">${parsed.map((p, i) => `<div class="mqt-file"><b>${escapeHtml(p.title || p.name)}</b>${fileState(p)}<small>${escapeHtml(p.name)} · ${p.rows.length} linhas · ${escapeHtml(colsTxt(p))}${p.mapped ? ' · colunas indicadas à mão' : ''}</small>${p.rows.length ? '' : p.warnings.map(w => `<small class="warn">${escapeHtml(w)}</small>`).join('')}${(p.cells || []).length ? `<button type="button" class="text-btn" data-cm-open="${i}">${p.rows.length ? 'Ver as colunas' : 'Dizer onde está cada coisa'}</button>` : ''}</div>`).join('')}</div>
+          ${prevFiles.filter(f => !newKeys.has(tkey(f))).length ? `<label class="mqt-chk mqt-imp-keep"><input type="checkbox" id="mqt-imp-keep"${keepOthers ? ' checked' : ''}> Manter as outras tabelas do carregamento ${prevRun.version} <span class="muted">(${prevFiles.filter(f => !newKeys.has(tkey(f))).map(f => escapeHtml(f.title || f.name)).join(', ')})</span></label>` : ''}
           <div class="mqt-imp-sum"><span><b>${rows.length}</b> elementos</span><span><b>${keyed}</b> com keynote</span><span><b>${Object.keys(mq.items).length}</b> artigos</span>${mq.blocks.length > 1 ? `<span><b>${mq.blocks.length}</b> blocos</span>` : ''}</div>
           <label class="field-label" for="mqt-run-label">Nota <span class="muted">(opcional)</span></label>
           <input type="text" id="mqt-run-label" class="form-input" maxlength="80" placeholder="ex.: depois da revisão da cozinha">
-          <div class="field-hint">O MQT em curso passa a usar estas tabelas. As revisões já fechadas não mudam.</div>
+          <div class="field-hint">O MQT em curso passa a usar estas tabelas${kept.length ? ' (e as que se mantêm)' : ''}. As revisões já fechadas não mudam.${orphan ? ` ${orphan} linhas antigas sem tabela reconhecida não passam.` : ''}</div>
           <div id="mqt-imp-msg" class="form-msg"></div>
           <button type="button" class="primary-btn" id="mqt-imp-save"${rows.length ? '' : ' disabled'}>Guardar</button>`);
         document.querySelectorAll('[data-cm-open]').forEach(b => b.addEventListener('click', () => mapIt(Number(b.dataset.cmOpen))));
+        document.getElementById('mqt-imp-keep')?.addEventListener('change', e => { keepOthers = e.target.checked; show(); });
         document.getElementById('mqt-imp-save').addEventListener('click', async () => {
           const btn = document.getElementById('mqt-imp-save'); btn.disabled = true;
           try {
             const me = await getCurrentMember();
             if (!cfg?.exists) await mqtSaveCfg(mqtProjectId, {});
-            const row = { project_id: mqtProjectId, version: next, label: document.getElementById('mqt-run-label').value.trim() || null, files: parsed.map(p => ({ name: p.name, title: p.title, rows: p.rows.length })), rows, created_by: me?.id || null, created_at: new Date().toISOString() };
+            const row = { project_id: mqtProjectId, version: next, label: document.getElementById('mqt-run-label').value.trim() || null, files: [...parsed.map(p => ({ name: p.name, title: p.title, rows: p.rows.length, ...(prevFiles.some(f => tkey(f) === tkey(p)) ? { upd: prevRun.version } : {}) })), ...kept.map(f => ({ ...f, kept: prevRun.version }))], rows, created_by: me?.id || null, created_at: new Date().toISOString() };
             if (devMode) MOCK_MQT.runs.push({ id: 'mrun-' + Date.now(), ...row });
             else { const r = await supabase.from('mqt_runs').insert(row); if (r.error) throw r.error; }
             closeQuickModal(); haptic(); showToast('Tabelas carregadas');
