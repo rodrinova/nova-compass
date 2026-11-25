@@ -30061,6 +30061,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       return {
         project: { code: project?.code || '', name: String(project?.name || '').replace(/<[^>]*>/g, '') },
         chapters: lib.chapters.map(c => ({ code: c.code, name: c.name })),
+        // a biblioteca de keynotes (o que existe): o Gemini aponta o keynote certo quando falta um artigo/camada
+        library: lib.elements.filter(e => !e._custom && e.active !== false).map(e => ({ c: e.chapter_code, k: mqtCodeDisp(e.code), n: e.name })),
         lines: (lines || []).filter(l => l.st !== 'del').map(l => l.t === 'ch'
           ? { t: 'ch', n: String(l.num), x: l.text, ch: l.key }
           : { t: l.t, n: String(l.num), k: l.t === 'art' ? mqtCodeDisp(l.code) : (l.full || mqtCodeDisp(l.code)), x: String(l.text || '').slice(0, 600), u: l.unit || '', q: l.t === 'item' && !l.res ? l.q : null }),
