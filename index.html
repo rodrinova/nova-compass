@@ -4785,7 +4785,7 @@
   .mqt-own-h .field-label { flex: 1; min-width: 0; margin-bottom: var(--sp-1-5); }
   .mqt-own-h .mqt-tag { white-space: nowrap; }
   .mqt-own-reset { display: inline-flex; align-items: center; gap: 6px; flex: none; width: auto; white-space: nowrap; height: 30px; padding: 0 var(--sp-3); margin-bottom: var(--sp-1-5); font-size: var(--fs-sm); }
-  .mqt-own-reset[hidden] { display: none; }
+  .mqt-own-reset:disabled { opacity: .45; cursor: default; }
   .mqt-own-reset svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
   .mqt-tag.own { border: 0; font-family: inherit; line-height: inherit; }
   button.mqt-tag.own { cursor: pointer; }
@@ -32346,15 +32346,16 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
     // ---------- Artigo: completar texto, quantidade à mão, variante dos calculados ----------
     // Texto próprio do projeto: campo de texto com o descritivo atual; "Repor o standard" volta ao da biblioteca
     const mqtOwnTextHtml = (cur, std, own) => `<div class="mqt-own-h"><label class="field-label" for="mqt-own">Descritivo neste projeto ${own ? '<span class="mqt-tag own">descritivo alterado</span>' : ''}</label>
-          <button type="button" class="secondary-btn mqt-own-reset" id="mqt-own-reset"${own ? '' : ' hidden'} title="Volta ao descritivo da biblioteca de keynotes e guarda"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 6.5A5 5 0 1 1 3 9.5"/><path d="M3 3v3.5h3.5"/></svg>Repor o original</button></div>
+          <button type="button" class="secondary-btn mqt-own-reset" id="mqt-own-reset"${own ? ' title="Volta ao descritivo da biblioteca de keynotes e guarda"' : ' disabled title="Já está o descritivo original da biblioteca"'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 6.5A5 5 0 1 1 3 9.5"/><path d="M3 3v3.5h3.5"/></svg>Repor o original</button></div>
         <textarea id="mqt-own" class="form-input" rows="5">${escapeHtml(cur)}</textarea>
         <div class="field-hint">Só muda neste projeto; a biblioteca fica igual.</div>
         <details class="mqt-std"><summary>Ver o descritivo standard</summary><div>${escapeHtml(std)}</div></details>`;
-    // «Repor o original»: aparece quando o descritivo está alterado (guardado ou a ser escrito); um toque repõe e guarda
+    // «Repor o original»: sempre à vista; ativo quando o descritivo está alterado (guardado ou a ser escrito); um toque repõe e guarda
     function mqtWireOwnReset(std, onReset) {
       const ta = document.getElementById('mqt-own'), b = document.getElementById('mqt-own-reset'); if (!ta || !b) return;
       const saved = !b.hidden;
-      ta.addEventListener('input', () => { b.hidden = !saved && ta.value.trim() === std.trim(); });
+      const sync = () => { const same = ta.value.trim() === std.trim(); b.disabled = !saved && same; b.title = b.disabled ? 'Já está o descritivo original da biblioteca' : saved ? 'Volta ao descritivo da biblioteca de keynotes e guarda' : 'Volta ao descritivo da biblioteca'; };
+      ta.addEventListener('input', sync);
       b.addEventListener('click', () => { ta.value = std; onReset(saved); });
     }
     function mqtOwnValue(texts, key, std) {
@@ -32388,7 +32389,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       });
       let reset = false;
       // repor: com o texto já guardado, guarda logo (fica o original); a meio de escrever, só volta o campo ao original
-      mqtWireOwnReset(std, saved => { reset = true; if (saved) document.getElementById('mqt-it-save').click(); else document.getElementById('mqt-own-reset').hidden = true; });
+      mqtWireOwnReset(std, saved => { reset = true; if (saved) document.getElementById('mqt-it-save').click(); else document.getElementById('mqt-own-reset').disabled = true; });
       document.getElementById('mqt-it-save').addEventListener('click', async () => {
         try {
           const specs = JSON.parse(JSON.stringify(cfg.specs || {}));
@@ -32431,7 +32432,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         <div class="mqt-modal-acts"><button type="button" class="secondary-btn danger-text" id="mqt-it-del">Tirar do MQT</button><button type="button" class="primary-btn" id="mqt-it-save">Guardar</button></div>`);
       let reset = false;
       // repor: com o texto já guardado, guarda logo (fica o original); a meio de escrever, só volta o campo ao original
-      mqtWireOwnReset(std, saved => { reset = true; if (saved) document.getElementById('mqt-it-save').click(); else document.getElementById('mqt-own-reset').hidden = true; });
+      mqtWireOwnReset(std, saved => { reset = true; if (saved) document.getElementById('mqt-it-save').click(); else document.getElementById('mqt-own-reset').disabled = true; });
       document.getElementById('mqt-it-save').addEventListener('click', async () => {
         try {
           const specs = JSON.parse(JSON.stringify(cfg.specs || {}));
