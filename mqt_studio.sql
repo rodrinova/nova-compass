@@ -156,3 +156,7 @@ revoke all on public.mqt_revisions from anon;
 -- biblioteca de keynotes; sai quando o descritivo é editado e guardado, ou com «✓ Revisto».
 alter table public.mqt_elements add column if not exists text_draft boolean not null default false;
 alter table public.mqt_variants add column if not exists text_draft boolean not null default false;
+
+-- Designação própria do projeto (o nome do artigo, como o descritivo em texts): { "PAVE08": "Calçada em cubo de granito",
+-- "PAVI 04A": "Cerâmico A da cozinha" } — artigo pelo código, subartigo pela chave. Vazio = a da biblioteca.
+alter table public.mqt_project add column if not exists names jsonb not null default '{}'::jsonb;
