@@ -130,6 +130,7 @@ alter table public.mqt_project add column if not exists custom jsonb not null de
 --   { "ARM01": [{ "id": 1, "label": "Roupeiro do quarto 1", "l": "120", "p": "60", "a": "240", "q": { "": 2 } }] }
 -- Também os vãos (VE XX exteriores, VI XX interiores): largura e altura, e o modo de funcionamento opcional (f)
 --   { "VE01": [{ "id": 1, "label": "Janela da sala", "l": "120", "a": "140", "f": "Oscilobatente", "q": { "": 2 } }] }
+--   v (opcional, só vãos): variante do mesmo sistema (VE 06a, VE 06b…), uma letra minúscula
 alter table public.mqt_project add column if not exists arm_subs jsonb not null default '{}';
 -- Revisão do MQT com o Gemini (função mqt-ai): { at, resumo, model, pontos: [{ id, tipo, impacto, titulo, porque, acao, artigo, opcoes, state, choice }] }
 alter table public.mqt_project add column if not exists ai_review jsonb;
