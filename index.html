@@ -4776,6 +4776,15 @@
   .mqt-table tr.st-del .mqt-note.cur { color: var(--danger); }
   .mqt-tag { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: var(--r-full); background: var(--accent-soft); color: var(--accent); font-size: 11px; font-weight: var(--fw-semibold); vertical-align: 1px; }
   .mqt-tag.res { background: var(--surface-3); color: var(--text-2); }
+  /* do Revit sem correspondência (ou sem medição): outra luz na própria tabela */
+  .mqt-tag.fl-unk, .mqt-tag.fl-var { background: color-mix(in srgb, var(--warning) 16%, transparent); color: var(--warning); }
+  .mqt-tag.fl-noq { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); }
+  .mqt-table tr.fl > td { background-color: color-mix(in srgb, var(--warning) 7%, transparent); }
+  .mqt-table tr.fl-var > td { background-color: color-mix(in srgb, var(--warning) 4%, transparent); }
+  .mqt-table tr.fl-noq > td { background-color: color-mix(in srgb, var(--danger) 6%, transparent); }
+  .mqt-table tr.fl > td:first-child { box-shadow: inset 3px 0 0 color-mix(in srgb, var(--warning) 80%, transparent), inset 14px 0 14px -12px color-mix(in srgb, var(--warning) 45%, transparent); }
+  .mqt-table tr.fl-noq > td:first-child { box-shadow: inset 3px 0 0 color-mix(in srgb, var(--danger) 80%, transparent), inset 14px 0 14px -12px color-mix(in srgb, var(--danger) 40%, transparent); }
+  .mqt-table tr.fl-unk .kc { color: var(--warning); }
   .mqt-legend { display: flex; gap: var(--sp-4); flex-wrap: wrap; font-size: var(--fs-xs); color: var(--text-3); margin: var(--sp-1) 0 var(--sp-2); }
   .mqt-banner.warn { background: var(--warning-soft); display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; }
   .mqt-fill-art { border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--sp-3); margin-top: var(--sp-2); display: grid; gap: var(--sp-2); }
@@ -18872,7 +18881,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { id: 'mqt-studio', cat: 'proj', ctx: ['mqt', 'detail'],
         q: 'faço o MQT a partir do Revit e emito revisões',
         a: 'MQT Studio: cada projeto tem o seu MQT (abre-se antes das tabelas, em «+ Novo MQT» ou no ⋯ da ficha do projeto). As tabelas do Revit (.txt) montam os artigos pelos keynotes. Os descritivos vêm da biblioteca e podem ajustar-se em cada projeto. Fechas R00, R01…: novos a azul, revistos a verde, retirados a vermelho e rasurados.',
-        steps: ['**MQT Studio → + Novo MQT** e escolhe o projeto (ou, na ficha do projeto, **⋯ → MQT**).', 'No Revit, cada tipo tem o **Keynote** da biblioteca (ex.: PRD 01a = bloco térmico 250 mm). Exporta as tabelas (Ficheiro → Exportar → Relatórios → Tabela) e toca em **Carregar tabelas**.', 'Toca num artigo ou subartigo para **ajustar o descritivo neste projeto** (a biblioteca não muda) ou repor o standard. Os descritivos que não ajustaste seguem sempre a biblioteca: o que mudares lá aparece em todos os MQT (as revisões já fechadas não mudam).', 'Para tirar um artigo deste projeto, toca nele → **Tirar do MQT** (no artigo com subartigos: **Tirar o artigo do MQT**). Os que vêm do Revit ficam em **Retirados deste MQT**, no fundo, e não voltam mesmo que estejam nas tabelas — até tocares em **Repor**.', 'Avisos do modelo (keynotes desconhecidos, variantes, medições ou campos por definir): aparecem numa faixa por cima do MQT, que se abre com os botões **Descrever** e **Definir**. Só aparece quando há avisos.', 'Armários (keynote **ARM XX**): ficam sempre em **Carpintarias**, à unidade, e cada elemento do Revit com esse keynote conta 1 un. Os da biblioteca põem-se em **+ Artigo → Artigo da biblioteca**; um armário só deste projeto cria-se em **+ Artigo → Artigo novo** com o keynote ARM (keynote, descritivo — pode partir do de um armário da biblioteca — e unidades).', '**✦ Rever com o Gemini** (ao lado do Excel): o Gemini lê o MQT artigo a artigo, pensa em como cada coisa funciona e procura as **lacunas** — o que falta dentro dos artigos (ex.: parede exterior sem impermeabilização, janela sem ferragens ou vedantes) e artigos que faltam no MQT —; depois, só se valer muito, erros e proteção. No máximo 12 pontos, do mais ao menos importante, com a cor do impacto (verde a vermelho). O MQT fica à esquerda; em cada ponto escolhe uma das versões do texto (1, 2, 3), escreve à mão ou ignora: **Aplicar** ajusta logo o MQT (com Anular). A revisão fica guardada no projeto.', '**Procurar** (à esquerda de + Artigo, e na biblioteca de keynotes): escreve e os resultados acendem logo; a barra mostra «3 de 12» e as setas ↑ ↓ (ou Enter / Shift+Enter) andam entre eles; Esc limpa; Ctrl/⌘+F vai direto para a barra. Dentro de cada capítulo, os artigos ficam juntos por família de keynote (os ARM todos juntos, depois os VI…); um keynote novo vai para junto dos da sua família ou, se for uma família nova, para perto dos artigos com o descritivo mais parecido.', 'A seta ao lado de cada capítulo e de cada artigo recolhe-o ou abre-o; **Fechar tudo** / **Abrir tudo** no topo. Fica lembrado neste computador. O mesmo na biblioteca de keynotes.', 'Quando estiver pronto, **Fechar R00**: a numeração fica fixa. Nas revisões seguintes (R01, R02…) aparecem os novos (azul), revistos (verde) e retirados (vermelho, rasurados — desaparecem na revisão seguinte), com a nota em itálico.', 'A biblioteca global é uma tabela em **MQT Studio → Biblioteca de keynotes**: escreve nas células (grava sozinho); na linha **+ keynote** escreve PRD 05 para um elemento ou PRD 05d para um subartigo; também podes colar linhas do Excel.', 'Para mudar um elemento de ordem ou de capítulo, arrasta-o pelos pontinhos (ou ↑ ↓ no teclado); junto ao topo ou ao fundo do ecrã a página desliza sozinha e Esc cancela. Os capítulos também se arrastam (pelos pontinhos do capítulo): a ordem muda em todos os MQT ainda sem R00 e o código do capítulo mantém-se. Cada projeto pode ainda ter a sua ordem de capítulos, arrastando-os no MQT do projeto. Os keynotes renumeram-se sozinhos — quem muda de capítulo passa para o prefixo desse capítulo (ex.: DEM 03 → PRD 07) — e a mudança chega a todos os MQT dos projetos, com a numeração dos artigos (até à R00; depois fica fixa). No Revit, volta a carregar o ficheiro de keynotes e acerta os tipos.', 'Exporta o **Excel** (um por bloco); as propostas dos empreiteiros entram em **Preços** e alimentam a estimativa.'],
+        steps: ['**MQT Studio → + Novo MQT** e escolhe o projeto (ou, na ficha do projeto, **⋯ → MQT**).', 'No Revit, cada tipo tem o **Keynote** da biblioteca (ex.: PRD 01a = bloco térmico 250 mm). Exporta as tabelas (Ficheiro → Exportar → Relatórios → Tabela) e toca em **Carregar tabelas**.', 'Toca num artigo ou subartigo para **ajustar o descritivo neste projeto** (a biblioteca não muda) ou repor o standard. Os descritivos que não ajustaste seguem sempre a biblioteca: o que mudares lá aparece em todos os MQT (as revisões já fechadas não mudam).', 'Para tirar um artigo deste projeto, toca nele → **Tirar do MQT** (no artigo com subartigos: **Tirar o artigo do MQT**). Os que vêm do Revit ficam em **Retirados deste MQT**, no fundo, e não voltam mesmo que estejam nas tabelas — até tocares em **Repor**.', 'Todos os keynotes das tabelas do Revit entram no MQT, com a medição (a coluna **Área** nativa do Revit, ou Comprimento, Volume, Contagem). Os que não têm correspondência na biblioteca, as variantes que só existem no Revit e os que vêm sem medição ficam com **outra luz** na própria tabela (âmbar ou vermelho) e uma etiqueta; toca num keynote sem correspondência para o descrever. Os avisos do modelo (keynotes desconhecidos, variantes, medições ou campos por definir) aparecem também numa faixa por cima do MQT, que se abre com os botões **Descrever** e **Definir**. Só aparece quando há avisos.', 'Armários (keynote **ARM XX**): ficam sempre em **Carpintarias**, à unidade, e cada elemento do Revit com esse keynote conta 1 un. Os da biblioteca põem-se em **+ Artigo → Artigo da biblioteca**; um armário só deste projeto cria-se em **+ Artigo → Artigo novo** com o keynote ARM (keynote, descritivo — pode partir do de um armário da biblioteca — e unidades).', '**✦ Rever com o Gemini** (ao lado do Excel): o Gemini lê o MQT artigo a artigo, pensa em como cada coisa funciona e procura as **lacunas** — o que falta dentro dos artigos (ex.: parede exterior sem impermeabilização, janela sem ferragens ou vedantes) e artigos que faltam no MQT —; depois, só se valer muito, erros e proteção. No máximo 12 pontos, do mais ao menos importante, com a cor do impacto (verde a vermelho). O MQT fica à esquerda; em cada ponto escolhe uma das versões do texto (1, 2, 3), escreve à mão ou ignora: **Aplicar** ajusta logo o MQT (com Anular). A revisão fica guardada no projeto.', '**Procurar** (à esquerda de + Artigo, e na biblioteca de keynotes): escreve e os resultados acendem logo; a barra mostra «3 de 12» e as setas ↑ ↓ (ou Enter / Shift+Enter) andam entre eles; Esc limpa; Ctrl/⌘+F vai direto para a barra. Dentro de cada capítulo, os artigos ficam juntos por família de keynote (os ARM todos juntos, depois os VI…); um keynote novo vai para junto dos da sua família ou, se for uma família nova, para perto dos artigos com o descritivo mais parecido.', 'A seta ao lado de cada capítulo e de cada artigo recolhe-o ou abre-o; **Fechar tudo** / **Abrir tudo** no topo. Fica lembrado neste computador. O mesmo na biblioteca de keynotes.', 'Quando estiver pronto, **Fechar R00**: a numeração fica fixa. Nas revisões seguintes (R01, R02…) aparecem os novos (azul), revistos (verde) e retirados (vermelho, rasurados — desaparecem na revisão seguinte), com a nota em itálico.', 'A biblioteca global é uma tabela em **MQT Studio → Biblioteca de keynotes**: escreve nas células (grava sozinho); na linha **+ keynote** escreve PRD 05 para um elemento ou PRD 05d para um subartigo; também podes colar linhas do Excel.', 'Para mudar um elemento de ordem ou de capítulo, arrasta-o pelos pontinhos (ou ↑ ↓ no teclado); junto ao topo ou ao fundo do ecrã a página desliza sozinha e Esc cancela. Os capítulos também se arrastam (pelos pontinhos do capítulo): a ordem muda em todos os MQT ainda sem R00 e o código do capítulo mantém-se. Cada projeto pode ainda ter a sua ordem de capítulos, arrastando-os no MQT do projeto. Os keynotes renumeram-se sozinhos — quem muda de capítulo passa para o prefixo desse capítulo (ex.: DEM 03 → PRD 07) — e a mudança chega a todos os MQT dos projetos, com a numeração dos artigos (até à R00; depois fica fixa). No Revit, volta a carregar o ficheiro de keynotes e acerta os tipos.', 'Exporta o **Excel** (um por bloco); as propostas dos empreiteiros entram em **Preços** e alimentam a estimativa.'],
         kw: 'gemini ia inteligencia artificial rever revisao omissoes erros sugestoes armario armarios arm roupeiro movel carpintaria unidade mqt mapa quantidades trabalhos medicoes revit lt keynote notas chave tabelas schedules revisao r00 r01 revisoes descritivo override texto proprio biblioteca subartigo eliminar apagar tirar retirar repor recolher arrastar mover capitulo renumerar codigo keynote ordem fechar abrir expandir colapsar artigo novo revisto retirado estimativa empreiteiro proposta concurso bloco',
         tour: [{ go: 'nav:mqt', sel: '#mqt-htabs', text: 'MQT de todos os projetos, preços dos empreiteiros e a biblioteca de keynotes.' }] },
       { id: 'trabalhos-a-mais', cat: 'money', ctx: ['detail', 'home'],
@@ -29862,7 +29871,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       Object.entries(cfg.custom || {}).forEach(([k, c]) => { if ((String(k).match(MQT_NUM_RE) || [])[1]?.toUpperCase() === F && c?.chapter) count[c.chapter] = (count[c.chapter] || 0) + 1; });
       return Object.entries(count).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
     }
-    function openMqtNewArtModal(lib, cfg, mq, preset) {
+    function openMqtNewArtModal(lib, cfg, mq, preset, pre) {
       const custom = cfg.custom || {};
       const pk0 = preset ? mqtNewCode(preset) : null;
       const code0 = pk0?.code || '';
@@ -29874,7 +29883,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         <div class="field-hint" style="margin-top:0">Artigo só deste projeto, que não está na biblioteca (ex.: TS 01 torneira, LL 01 lava-loiça). Com armários (ARM) e vãos (VE, VI), a tabela dos subartigos abre-se por baixo.</div>
         <div class="mqt-g2">
           <div><label class="field-label" for="nw-code">Keynote</label><input type="text" class="form-input" id="nw-code" value="${escapeHtml(code0 ? mqtCodeDisp(code0) : '')}" placeholder="TS 01" autocomplete="off"></div>
-          <div id="nw-unit-w"><label class="field-label" for="nw-unit">Unidade</label><select class="form-input" id="nw-unit">${MQT_UNITS.map(u => `<option${(ex?.unit || 'un') === u ? ' selected' : ''}>${u}</option>`).join('')}</select></div>
+          <div id="nw-unit-w"><label class="field-label" for="nw-unit">Unidade</label><select class="form-input" id="nw-unit">${MQT_UNITS.map(u => `<option${(ex?.unit || pre?.unit || 'un') === u ? ' selected' : ''}>${u}</option>`).join('')}</select></div>
         </div>
         <label class="field-label" for="nw-ch">Capítulo</label>
         <select class="form-input" id="nw-ch"><option value="">— Em que capítulo fica? —</option>${chs.map(c => `<option value="${escapeHtml(c.code)}"${ex?.chapter === c.code ? ' selected' : ''}>${escapeHtml(c.code + ' · ' + c.name)}</option>`).join('')}</select>
@@ -30426,6 +30435,10 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       if (!n) return null;
       for (const [k, list] of Object.entries(MQT_HEADS)) if (list.includes(n)) return k;
       if (n.includes('keynote') || n.includes('notachave')) return 'k';
+      // nomes nativos do Revit com prefixo ou sufixo (ex.: «Área (m²)», «Área do piso», «Area Total»)
+      if (/^areas?/.test(n) || n === 'superficie') return 'a';
+      if (/^(comprimento|length)/.test(n)) return 'len';
+      if (/^volume/.test(n)) return 'v';
       return null;
     }
     // "12,35 m²" / "1 234.5" / "12500 mm" → número na unidade base (m, m², m³)
@@ -30651,6 +30664,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
     const mqtNumOf = code => Number((String(code || '').replace(/\s+/g, '').match(MQT_NUM_RE) || [])[2]) || 0;
     const MQT_STOP = new Set('para com sem pela pelo pelos pelas incluindo inclui todos todas todo toda conforme fornecimento montagem aplicacao execucao assentamento tipo cada desde entre sobre mesmo outros outras deste desta projeto pormenor'.split(' '));
     const mqtWords = t => new Set(normTxt(t).split(/[^a-z0-9]+/).filter(w => w.length >= 4 && !MQT_STOP.has(w)));
+    const MQT_GHOST_CH = '~';
+    const MQT_GHOST_CHAPTER = { code: MQT_GHOST_CH, name: 'Keynotes do Revit sem correspondência na biblioteca', sort_order: 1e9 };
     function mqtFamRank(lib, chCode) {
       const els = lib.elements.filter(e => e.chapter_code === chCode && e.active !== false);
       const rank = {}, words = {};
@@ -30697,7 +30712,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       const vOrd = it => it.variant ? (Number(it.variant.sort_order) || 0) : 0;
       const byList = (list, k) => { const i = (list || []).indexOf(k); return i < 0 ? 1e6 : i; };
       // ordem própria dos capítulos neste projeto (arrastada no MQT); os que faltam seguem a biblioteca
-      const chs = ord?.chs?.length ? [...lib.chapters].sort((a, b) => byList(ord.chs, a.code) - byList(ord.chs, b.code)) : lib.chapters;
+      let chs = ord?.chs?.length ? [...lib.chapters].sort((a, b) => byList(ord.chs, a.code) - byList(ord.chs, b.code)) : lib.chapters;
+      if (Object.values(mq.items).some(it => it.el.chapter_code === MQT_GHOST_CH)) chs = [...chs, MQT_GHOST_CHAPTER];
       chs.forEach(ch => {
         const R = mqtFamRank(lib, ch.code);
         const its = Object.values(mq.items).filter(it => it.el.chapter_code === ch.code && (q(it) > 0 || (it.reserved && !it.qty)))
@@ -30889,9 +30905,9 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         c.arts.forEach(a => {
           const EL = a.el.code.toUpperCase();
           const artNum = num.art[EL] ??= `${chNum}.${nextIn(num.art, chNum)}`;
-          const item = (r, lvl, n) => ({ res: r.it.reserved && !r.q ? 1 : 0, t: 'item', lvl, key: r.it.key, ch: c.ch.code, code: a.el.code, nm: (lvl === 1 ? a.el.name : r.it.variant?.label) || '', full: r.it.full, typeKey: r.it.typeKey || '', num: n, text: r.text, unit: r.it.el.unit, q: Math.round(r.q * 100) / 100, own: !!r.own, src: src(r.it), miss: r.missing.length ? 1 : 0 });
+          const item = (r, lvl, n) => ({ fl: r.it.flag || '', res: r.it.reserved && !r.q ? 1 : 0, t: 'item', lvl, key: r.it.key, ch: c.ch.code, code: a.el.code, nm: (lvl === 1 ? a.el.name : r.it.variant?.label) || '', full: r.it.full, typeKey: r.it.typeKey || '', num: n, text: r.text, unit: r.it.el.unit, q: Math.round(r.q * 100) / 100, own: !!r.own, src: src(r.it), miss: r.missing.length ? 1 : 0 });
           if (a.subs) {
-            lines.push({ t: 'art', key: EL, ch: c.ch.code, code: a.el.code, nm: a.el.name || '', num: artNum, text: a.text, own: !!a.own, miss: a.missing.length ? 1 : 0 });
+            lines.push({ fl: a.el._ghost ? 'unk' : '', t: 'art', key: EL, ch: c.ch.code, code: a.el.code, nm: a.el.name || '', num: artNum, text: a.text, own: !!a.own, miss: a.missing.length ? 1 : 0 });
             a.rows.forEach(r => { const n = num.sub[r.it.key] ??= `${artNum}.${nextIn(num.sub, artNum)}`; lines.push(item(r, 2, n)); });
           } else lines.push(item(a.rows[0], 1, artNum));
         });
@@ -30949,11 +30965,20 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       const blocksSet = new Set();
       const byKey = {};        // keynote completo → linhas
       const keyInfo = {};      // keynote completo → { code, letter }
+      const ghosts = {};       // keynotes do Revit que não estão na biblioteca → { code, fam, rows }
       rows.forEach(r => {
         const pk = mqtParseKey(r.k);
         if (!pk) { const g = `${r.c || ''}|${r.t || '(sem tipo)'}`; (issues.noKey[g] ||= { c: r.c, t: r.t, n: 0 }).n++; return; }
         const el = lib.elByCode[pk.code];
-        if (!el || pk.bad) { (issues.unknown[r.k] ||= { k: r.k, t: r.t, n: 0 }).n++; return; }
+        if (!el || pk.bad) {
+          (issues.unknown[r.k] ||= { k: r.k, t: r.t, n: 0 }).n++;
+          // sem correspondência na biblioteca: entra na mesma no MQT, assinalado (código + medição do Revit)
+          const gm = String(r.k || '').trim().replace(/\s+/g, '').match(/^([A-Za-z]{1,6})[-.]?(\d{1,3})(?:[.\-_]?([A-Za-z]))?$/);
+          const gc = gm ? gm[1] + gm[2].padStart(2, '0') : String(r.k || '').trim().replace(/\s+/g, '');
+          (ghosts[gc.toUpperCase()] ||= { code: gc, fam: gm?.[1] || '', rows: [] }).rows.push({ r, letter: (gm?.[3] || '').toUpperCase() });
+          if (r.b) blocksSet.add(r.b);
+          return;
+        }
         const vars = lib.varsOf[pk.code] || [];
         if (vars.length && !pk.letter) { (issues.noVariant[pk.code] ||= { k: el.code, t: r.t, n: 0, vars }).n++; }
         if (pk.letter && !vars.some(v => v.letter.toUpperCase() === pk.letter) && !(cfg.arm_subs?.[pk.code] || []).some(sb => String(sb.v || '').toUpperCase() === pk.letter)) { (issues.badVariant[r.k] ||= { k: r.k, t: r.t, n: 0 }).n++; }
@@ -30969,22 +30994,46 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         it.qb[block] = (it.qb[block] || 0) + qty;
         return it;
       };
+      // variante que só existe no Revit (PAVe 08a sem o «a» na biblioteca): entra, assinalada
+      const badVar = (el, code, letter) => !!letter && !el._custom && !(lib.varsOf[code] || []).some(v => v.letter.toUpperCase() === letter) && !(cfg.arm_subs?.[code] || []).some(sb => String(sb.v || '').toUpperCase() === letter);
+      // sem medição (a tabela não tem a coluna, ou a linha vem sem valor): entra «a considerar», assinalado
+      const noQty = (el, letter) => { const it = add(el, letter, '', '', 0, 'model', ''); it.reserved = true; it.flag = 'noq'; return it; };
       Object.entries(byKey).forEach(([full, rs]) => {
         const { code, letter } = keyInfo[full];
         const el = lib.elByCode[code];
         const field = mqtElementField(el, rs);
-        if (!field) { issues.noField[full] = { k: full, need: MQT_SOURCES.find(s => s[0] === el.qty_source)?.[1] || el.unit }; return; }
+        if (!field) { issues.noField[full] = { k: full, need: MQT_SOURCES.find(s => s[0] === el.qty_source)?.[1] || el.unit }; noQty(el, letter); return; }
+        let got = 0;
         rs.forEach(r => {
           let q = mqtRowQty(r, field);
           if (q == null) { issues.noField[full] = { k: full, need: MQT_FIELD_LABEL[field] || 'Largura e altura' }; return; }
+          got++;
           let typeKey = '', extra = '';
           if (el.split_by_type) {
             typeKey = r.tm || r.t || '';
             if (typeKey) extra = ` — tipo ${typeKey}${r.w != null && r.h != null ? ` (${fmtNum(r.w)} × ${fmtNum(r.h)} m)` : ''}`;
           }
-          add(el, letter, typeKey, r.b || '', q, 'model', extra);
+          const it = add(el, letter, typeKey, r.b || '', q, 'model', extra);
+          if (badVar(el, code, letter)) it.flag = 'var';
+        });
+        if (!got) noQty(el, letter);
+      });
+      // os que não estão na biblioteca: um artigo provisório por código (no capítulo da família; sem família, à parte)
+      Object.values(ghosts).forEach(g => {
+        const rs = g.rows.map(x => x.r);
+        const fld = ['a', 'len', 'v', 'n'].find(f => rs.some(r => r[f] != null)) || null;
+        const ch = (g.fam && mqtFamilyChapter(lib, cfg, g.fam)) || MQT_GHOST_CH;
+        const el = { id: 'ghost:' + g.code, code: g.code, chapter_code: ch, name: '', unit: { a: 'm²', len: 'ml', v: 'm³', n: 'un' }[fld] || 'un',
+          qty_source: { a: 'area', len: 'length', v: 'volume', n: 'count' }[fld] || 'count', text: 'Keynote do Revit que não está na biblioteca: toca aqui para o descrever neste MQT (ou cria-o na Biblioteca de keynotes).',
+          split_by_type: false, active: true, derive_from: [], waste_pct: 0, sort_order: 99000 + (Number(String(g.code).replace(/\D/g, '')) || 0), _custom: true, _ghost: true };
+        g.rows.forEach(({ r, letter }) => {
+          const q = fld ? mqtRowQty(r, fld) : null;
+          const it = q == null ? noQty(el, letter) : add(el, letter, '', r.b || '', Number(q) || 0, 'model', '');
+          it.flag = 'unk';
         });
       });
+      // do modelo mas com medição zero: fica «a considerar», assinalado
+      Object.values(items).forEach(it => { if (it.source !== 'model' || Object.values(it.qb).some(q => q > 0)) return; it.reserved = true; if (!it.flag) it.flag = 'noq'; });
       // calculados a partir de outros (pintura = área dos rebocos/estuques…)
       lib.elements.filter(e => e.active !== false && e.qty_source === 'derived' && (e.derive_from || []).length).forEach(el => {
         const opt = derivedCfg[el.code.toUpperCase()];
@@ -31713,13 +31762,14 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       if (!lines.length) return `<div class="gantt-wrap"><div class="gantt-empty">${editable ? 'O MQT ainda está vazio. Carrega as tabelas do Revit ou acrescenta em <b>+ Artigo</b>.' : 'Esta revisão não tem artigos.'}</div></div>`;
       const md = s => escapeHtml(s).replace(/\[([^\]]+)\]/g, '<mark>[$1]</mark>');
       const notes = l => (l.notes || []).map(n => `<div class="mqt-note${n.rev === revN ? ' cur' : ''}">${escapeHtml(mqtNoteText(n))}</div>`).join('');
-      const tags = l => [l.own ? '<span class="mqt-tag">texto do projeto</span>' : '', l.res ? '<span class="mqt-tag res">a considerar</span>' : l.src === 'manual' ? ' · à mão' : l.src === 'derived' ? ' · calculado' : ''].join('');
+      const FL = { unk: 'sem correspondência na biblioteca', var: 'variante que não está na biblioteca', noq: 'sem medição no Revit' };
+      const tags = l => [l.fl && FL[l.fl] && !(l.fl === 'unk' && l.lvl === 2) ? `<span class="mqt-tag fl-${l.fl}">${FL[l.fl]}</span>` : '', l.own ? '<span class="mqt-tag">texto do projeto</span>' : '', l.res && l.fl !== 'noq' ? '<span class="mqt-tag res">a considerar</span>' : l.res ? '' : l.src === 'manual' ? ' · à mão' : l.src === 'derived' ? ' · calculado' : ''].join('');
       // subtotais por capítulo
       const chSub = {}; let curCh = null;
       lines.forEach(l => { if (l.t === 'ch') curCh = l.num; else if (l.t === 'item' && l.st !== 'del') { const st = stats[String(l.full).toUpperCase()]; if (st) chSub[curCh] = (chSub[curCh] || 0) + Math.round(st.med * l.q * 100) / 100; } });
       const tt = mqtLinesTotal(lines, stats);
       const rows = lines.map(l => {
-        const cls = l.st ? ` st-${l.st}` : '';
+        const cls = (l.st ? ` st-${l.st}` : '') + (l.fl ? ` fl fl-${l.fl}` : '');
         const grip = l.st !== 'del' && reorder ? `<button type="button" class="mqt-grip" aria-label="Mover ${escapeHtml(l.full || mqtCodeDisp(l.code))} (↑ ↓)" title="Arrastar para mudar a ordem">${MQT_GRIP}</button>` : '';
         const EL = String(l.code || '').toUpperCase();
         const dk = l.t === 'ch' ? ` data-ch="${escapeHtml(l.key)}" data-lv="c"` : ` data-ch="${escapeHtml(l.ch || '')}" data-el="${escapeHtml(EL)}" data-lv="${l.t === 'art' ? 'a' : l.lvl === 2 ? 's' : 'i'}" data-k="${escapeHtml(l.key)}" data-fc="${escapeHtml(l.ch || '')}"${l.t === 'item' && l.lvl === 2 ? ` data-fe="${escapeHtml(EL)}"` : ''}`;
@@ -32271,7 +32321,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       return out;
     }
     function openMqtArtModal(lib, cfg, mq, code) {
-      const el = lib.elByCode[String(code).toUpperCase()]; if (!el) return;
+      const el = lib.elByCode[String(code).toUpperCase()] || Object.values(mq.items).find(it => it.el._ghost && it.el.code.toUpperCase() === String(code).toUpperCase())?.el; if (!el) return;
+      if (el._ghost) return mqtIsDim(el.code) ? openMqtArmModal(lib, cfg, mq, el.code) : openMqtNewArtModal(lib, cfg, mq, el.code, { unit: el.unit });
       if (el._custom) return mqtIsDim(el.code) ? openMqtArmModal(lib, cfg, mq, el.code) : openMqtNewArtModal(lib, cfg, mq, el.code);
       const EL = el.code.toUpperCase();
       const armBtn = mqtIsDim(el.code) ? '<button type="button" class="secondary-btn" id="mqt-art-arm">Subartigos (dimensões e unidades)</button>' : '';
@@ -32311,7 +32362,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
     function openMqtItemModal(lib, cfg, mq, it, stats) {
       const el = it.el, code = el.code.toUpperCase();
       if (mqtIsDim(el.code)) return openMqtArmModal(lib, cfg, mq, el.code);
-      if (el._custom) return openMqtNewArtModal(lib, cfg, mq, el.code);
+      if (el._custom) return openMqtNewArtModal(lib, cfg, mq, el.code, el._ghost ? { unit: el.unit } : null);
       const isSub = mqtHasSubs(lib, el);
       const ownKey = isSub ? it.key : code;
       const std = isSub ? mqtSubText(lib, it, cfg.specs || {}).text : it.desc;
