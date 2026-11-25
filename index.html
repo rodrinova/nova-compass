@@ -3769,10 +3769,6 @@
   /* a pastilha do separador ativo tem um brilho lento */
   .seg-thumb::after, .nav-ind::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(100deg, transparent 30%, var(--k-spot) 50%, transparent 70%); background-size: 250% 100%; animation: kSheen 7s ease-in-out infinite; }
 
-  /* luz que segue o rato dentro dos cartões (computador) */
-  @media (hover: hover) {
-    :is(.gantt-wrap, .stat-tile, .client-card, .kpi-strip, .hero-card, .team-card, .projects-table-wrap).k-lit { background-image: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), var(--k-spot), transparent 65%); }
-  }
 
   /* toque: onda que nasce do dedo */
   .k-rip { position: fixed; pointer-events: none; overflow: hidden; z-index: 2147483000; }
@@ -33552,25 +33548,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       setTimeout(() => box.remove(), 650);
     }, { passive: true });
 
-    // Luz que segue o rato dentro do cartão por baixo do cursor; título grande com parallax no scroll
+    // Título grande com parallax no scroll (a luz que seguia o rato saiu: pesava e distraía)
     (() => {
-      let lit = null, mx = 0, my = 0, q = false;
-      const CARD = '.gantt-wrap, .stat-tile, .client-card, .kpi-strip, .hero-card, .team-card, .projects-table-wrap';
-      document.addEventListener('pointermove', e => {
-        if (e.pointerType !== 'mouse' || reduceMotion.matches) return;
-        mx = e.clientX; my = e.clientY;
-        if (q) return; q = true;
-        requestAnimationFrame(() => {
-          q = false;
-          const el = document.elementFromPoint(mx, my)?.closest(CARD);
-          if (lit && lit !== el) { lit.classList.remove('k-lit'); }
-          lit = el || null;
-          if (!el) return;
-          const r = el.getBoundingClientRect();
-          el.style.setProperty('--mx', (mx - r.left) + 'px'); el.style.setProperty('--my', (my - r.top) + 'px');
-          el.classList.add('k-lit');
-        });
-      }, { passive: true });
       let sq = false;
       window.addEventListener('scroll', () => {
         if (sq || reduceMotion.matches) return; sq = true;
