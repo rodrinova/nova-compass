@@ -4785,6 +4785,12 @@
   .mqt-table tr.fl-noq > td:first-child { box-shadow: inset 3px 0 0 var(--danger); }
   .mqt-table tr.fl-unk .kc { color: var(--warning); }
   .mqt-table tr.fl-unk > td { background-color: color-mix(in srgb, var(--warning) 11%, transparent); }
+  .mqt-own-h { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--sp-2); }
+  .mqt-own-h .field-label { flex: 1; min-width: 0; margin-bottom: var(--sp-1-5); }
+  .mqt-own-h .mqt-tag { white-space: nowrap; }
+  .mqt-own-reset { display: inline-flex; align-items: center; gap: 6px; flex: none; width: auto; white-space: nowrap; height: 30px; padding: 0 var(--sp-3); margin-bottom: var(--sp-1-5); font-size: var(--fs-sm); }
+  .mqt-own-reset[hidden] { display: none; }
+  .mqt-own-reset svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
   .mqt-tag.own { border: 0; font-family: inherit; line-height: inherit; }
   button.mqt-tag.own { cursor: pointer; }
   button.mqt-tag.own:hover, button.mqt-tag.own:focus-visible { background: var(--accent); color: #fff; }
@@ -32343,10 +32349,18 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
 
     // ---------- Artigo: completar texto, quantidade à mão, variante dos calculados ----------
     // Texto próprio do projeto: campo de texto com o descritivo atual; "Repor o standard" volta ao da biblioteca
-    const mqtOwnTextHtml = (cur, std, own) => `<label class="field-label" for="mqt-own">Descritivo neste projeto ${own ? '<span class="mqt-tag">texto do projeto</span>' : ''}</label>
+    const mqtOwnTextHtml = (cur, std, own) => `<div class="mqt-own-h"><label class="field-label" for="mqt-own">Descritivo neste projeto ${own ? '<span class="mqt-tag own">descritivo alterado</span>' : ''}</label>
+          <button type="button" class="secondary-btn mqt-own-reset" id="mqt-own-reset"${own ? '' : ' hidden'} title="Volta ao descritivo da biblioteca de keynotes e guarda"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 6.5A5 5 0 1 1 3 9.5"/><path d="M3 3v3.5h3.5"/></svg>Repor o original</button></div>
         <textarea id="mqt-own" class="form-input" rows="5">${escapeHtml(cur)}</textarea>
-        <div class="field-hint">Só muda neste projeto; a biblioteca fica igual.${own ? ' <button type="button" class="text-btn" id="mqt-own-reset">Repor o descritivo standard</button>' : ''}</div>
+        <div class="field-hint">Só muda neste projeto; a biblioteca fica igual.</div>
         <details class="mqt-std"><summary>Ver o descritivo standard</summary><div>${escapeHtml(std)}</div></details>`;
+    // «Repor o original»: aparece quando o descritivo está alterado (guardado ou a ser escrito); um toque repõe e guarda
+    function mqtWireOwnReset(std, onReset) {
+      const ta = document.getElementById('mqt-own'), b = document.getElementById('mqt-own-reset'); if (!ta || !b) return;
+      const saved = !b.hidden;
+      ta.addEventListener('input', () => { b.hidden = !saved && ta.value.trim() === std.trim(); });
+      b.addEventListener('click', () => { ta.value = std; onReset(saved); });
+    }
     function mqtOwnValue(texts, key, std) {
       const v = (document.getElementById('mqt-own')?.value || '').trim();
       const out = { ...(texts || {}) };
@@ -32377,7 +32391,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         catch (e) { formError('mqt-it-msg', e.message); }
       });
       let reset = false;
-      document.getElementById('mqt-own-reset')?.addEventListener('click', () => { reset = true; document.getElementById('mqt-own').value = std; showToast('Descritivo standard reposto — falta guardar'); });
+      // repor: com o texto já guardado, guarda logo (fica o original); a meio de escrever, só volta o campo ao original
+      mqtWireOwnReset(std, saved => { reset = true; if (saved) document.getElementById('mqt-it-save').click(); else document.getElementById('mqt-own-reset').hidden = true; });
       document.getElementById('mqt-it-save').addEventListener('click', async () => {
         try {
           const specs = JSON.parse(JSON.stringify(cfg.specs || {}));
@@ -32388,7 +32403,10 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
           if (reset && v === std.trim()) delete texts[EL];
           else if (v !== shown.trim()) texts = mqtOwnValue(cfg.texts, EL, std);
           await mqtSaveCfg(mqtProjectId, { specs, texts });
-          closeQuickModal(); showToast('Guardado'); renderMqt();
+          const before = cfg.texts?.[EL];
+          closeQuickModal(); renderMqt();
+          if (reset && before && !texts[EL]) showToast('Descritivo original reposto', { undo: async () => { try { await mqtSaveCfg(mqtProjectId, { texts: { ...texts, [EL]: before } }); renderMqt(); } catch (err) { showError('anular', err); } } });
+          else showToast('Guardado');
         } catch (e) { formError('mqt-it-msg', 'Não foi possível guardar: ' + e.message); }
       });
     }
@@ -32416,7 +32434,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         <div id="mqt-it-msg" class="form-msg"></div>
         <div class="mqt-modal-acts"><button type="button" class="secondary-btn danger-text" id="mqt-it-del">Tirar do MQT</button><button type="button" class="primary-btn" id="mqt-it-save">Guardar</button></div>`);
       let reset = false;
-      document.getElementById('mqt-own-reset')?.addEventListener('click', () => { reset = true; document.getElementById('mqt-own').value = std; showToast('Descritivo standard reposto — falta guardar'); });
+      // repor: com o texto já guardado, guarda logo (fica o original); a meio de escrever, só volta o campo ao original
+      mqtWireOwnReset(std, saved => { reset = true; if (saved) document.getElementById('mqt-it-save').click(); else document.getElementById('mqt-own-reset').hidden = true; });
       document.getElementById('mqt-it-save').addEventListener('click', async () => {
         try {
           const specs = JSON.parse(JSON.stringify(cfg.specs || {}));
@@ -32435,7 +32454,10 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
             patch.manual = manual;
           }
           await mqtSaveCfg(mqtProjectId, patch);
-          closeQuickModal(); showToast('Guardado'); renderMqt();
+          const before = cfg.texts?.[ownKey];
+          closeQuickModal(); renderMqt();
+          if (reset && before && !texts[ownKey]) showToast('Descritivo original reposto', { undo: async () => { try { await mqtSaveCfg(mqtProjectId, { texts: { ...texts, [ownKey]: before } }); renderMqt(); } catch (err) { showError('anular', err); } } });
+          else showToast('Guardado');
         } catch (e) { formError('mqt-it-msg', 'Não foi possível guardar: ' + e.message); }
       });
       document.getElementById('mqt-it-del')?.addEventListener('click', async () => {
