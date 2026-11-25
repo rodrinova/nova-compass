@@ -4796,6 +4796,7 @@
   .arm-dims { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: var(--sp-2); margin-top: var(--sp-2); }
   .arm-dims label { display: flex; flex-direction: column; gap: 2px; font-size: var(--fs-xs); color: var(--text-2); }
   .arm-dims .form-input { margin: 0; }
+  .arm-dims .arm-var { max-width: 72px; }
   .arm-func { display: flex; flex-direction: column; gap: 2px; margin-top: var(--sp-2); font-size: var(--fs-xs); color: var(--text-2); }
   .arm-func .form-input { margin: 0; }
   .arm-libtxt { margin-top: var(--sp-3); } .arm-libtxt p { margin: var(--sp-1) 0; font-size: var(--fs-sm); color: var(--text-2); line-height: 1.5; }
@@ -29749,9 +29750,9 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
     const MQT_DIM = {
       ARM: { nome: 'Armário', novo: 'Novo armário', dims: [['l', 'Largura'], ['p', 'Profundidade'], ['a', 'Altura']], func: false,
         ph: 'Roupeiro do quarto 1', txt: 'Fornecimento e montagem de roupeiros em MDF hidrófugo lacado a branco, com portas de abrir, varão e prateleiras, conforme desenho de pormenor.' },
-      VE: { nome: 'Vão exterior', novo: 'Novo vão exterior', dims: [['l', 'Largura'], ['a', 'Altura']], func: true, chRe: /caixilh|serralh|v[ãa]os/i,
+      VE: { nome: 'Vão exterior', novo: 'Novo vão exterior', dims: [['l', 'Largura'], ['a', 'Altura']], func: true, vars: true, chRe: /caixilh|serralh|v[ãa]os/i,
         ph: 'Janela da sala', txt: 'Fornecimento e montagem de caixilharia em alumínio com corte térmico, vidro duplo, incluindo ferragens, vedantes, soleiras e todos os remates, conforme mapa de vãos.' },
-      VI: { nome: 'Vão interior', novo: 'Novo vão interior', dims: [['l', 'Largura'], ['a', 'Altura']], func: true, chRe: /carpint|portas|v[ãa]os/i,
+      VI: { nome: 'Vão interior', novo: 'Novo vão interior', dims: [['l', 'Largura'], ['a', 'Altura']], func: true, vars: true, chRe: /carpint|portas|v[ãa]os/i,
         ph: 'Porta do quarto 1', txt: 'Fornecimento e montagem de porta interior em MDF lacado, com aro, guarnições, dobradiças e fechadura, conforme mapa de vãos.' }
     };
     const MQT_FUNC = ['Fixo', 'De batente', 'Oscilobatente', 'De correr', 'Elevação e correr', 'Basculante', 'Pivotante', 'De fole', 'Guilhotina'];
@@ -30108,9 +30109,10 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       const revitN = c => Object.values(mq.issues.unknown || {}).filter(x => mqtDimCode(x.k) === c).reduce((t, x) => t + x.n, 0)
         + Object.values(mq.items || {}).filter(it => it.el.code.toUpperCase() === c && it.source === 'model').reduce((t, it) => t + it.qty, 0);
       const subRow = (sb, i) => `<div class="arm-sub" data-i="${i}">
-          <div class="arm-sub-h"><b>Subartigo ${i + 1}</b><button type="button" class="icon-x arm-sub-del" aria-label="Retirar o subartigo ${i + 1}" title="Retirar">×</button></div>
+          <div class="arm-sub-h"><b>Subartigo ${i + 1}${D.vars && sb.v ? ` · ${escapeHtml(mqtCodeDisp(code0) + String(sb.v).toLowerCase())}` : ''}</b><button type="button" class="icon-x arm-sub-del" aria-label="Retirar o subartigo ${i + 1}" title="Retirar">×</button></div>
           <input type="text" class="form-input arm-in" data-f="label" placeholder="Designação (opcional) — ex.: ${escapeHtml(D.ph)}" value="${escapeHtml(sb.label || '')}">
           <div class="arm-dims">
+            ${D.vars ? `<label class="arm-var"><span>Variante</span><input type="text" class="form-input arm-in" data-f="v" maxlength="1" autocapitalize="off" placeholder="a, b…" value="${escapeHtml(String(sb.v || '').toLowerCase())}"></label>` : ''}
             ${D.dims.map(([f, t]) => `<label><span>${t}</span><input type="text" inputmode="decimal" class="form-input arm-in" data-f="${f}" placeholder="cm" value="${escapeHtml(sb[f] ?? '')}"></label>`).join('')}
             ${blocks.map(b => `<label class="arm-q"><span>${escapeHtml(multi ? mqtBlockLabel(b) : 'Unidades')}</span><input type="text" inputmode="decimal" class="form-input arm-in" data-f="q" data-b="${escapeHtml(b)}" placeholder="un" value="${sb.q?.[b] ? escapeHtml(String(sb.q[b])) : ''}"></label>`).join('')}
           </div>
@@ -30135,6 +30137,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         <div id="arm-libtxt" class="arm-libtxt" hidden></div>
         <div id="arm-revit" class="field-hint"></div>
         <label class="field-label">Subartigos <span class="muted">(dimensões em cm)</span></label>
+        ${D.vars ? `<div class="field-hint" style="margin-top:0">Variante (opcional): no mesmo sistema, uma letra por cada forma de funcionamento — fica ${escapeHtml(mqtCodeDisp(code0))}a, ${escapeHtml(mqtCodeDisp(code0))}b… dentro deste artigo. Os do Revit com esse keynote (ex.: ${escapeHtml(code0)}a) também entram aqui.</div>` : ''}
         ${D.func ? `<datalist id="arm-func-list">${MQT_FUNC.map(f => `<option value="${escapeHtml(f)}">`).join('')}</datalist>` : ''}
         <div id="arm-subs"></div>
         <button type="button" class="text-btn" id="arm-sub-add">+ Subartigo</button>
@@ -30201,11 +30204,12 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
           if (chapter) c2[code].chapter = chapter;
           if (custom[code0]?.text !== text) { delete texts[code0]; delete texts[code]; }
         }
-        const keep = subs.filter(sb => sb.label || sb.f || mqtArmDim(sb.l) || mqtArmDim(sb.p) || mqtArmDim(sb.a) || Object.values(sb.q || {}).some(q => q > 0));
+        if (D.vars && subs.some(sb => sb.v && !/^[a-z]$/i.test(sb.v))) { formError('arm-msg', 'A variante é uma só letra: a, b, c…'); return; }
+        const keep = subs.filter(sb => sb.label || sb.f || sb.v || mqtArmDim(sb.l) || mqtArmDim(sb.p) || mqtArmDim(sb.a) || Object.values(sb.q || {}).some(q => q > 0));
         if (!keep.length && !revitN(code)) { formError('arm-msg', 'Acrescenta pelo menos um subartigo (as dimensões e as unidades).'); return; }
         try {
           const arm_subs = { ...(cfg.arm_subs || {}) }; delete arm_subs[code0];
-          arm_subs[code] = keep.map(sb => ({ id: Number(sb.id) || 1, label: sb.label || '', l: sb.l || '', p: D.dims.some(([f]) => f === 'p') ? sb.p || '' : '', a: sb.a || '', ...(D.func && sb.f ? { f: sb.f } : {}), q: sb.q || {} }));
+          arm_subs[code] = keep.map(sb => ({ id: Number(sb.id) || 1, label: sb.label || '', l: sb.l || '', p: D.dims.some(([f]) => f === 'p') ? sb.p || '' : '', a: sb.a || '', ...(D.func && sb.f ? { f: sb.f } : {}), ...(D.vars && sb.v ? { v: sb.v.toLowerCase() } : {}), q: sb.q || {} }));
           const manual = { ...(cfg.manual || {}) }; [code0, code].forEach(c => { delete manual[c]; delete manual[mqtFull(c, '')]; });
           await mqtSaveCfg(mqtProjectId, { custom: c2, manual, texts, arm_subs });
           closeQuickModal(); showToast(`${mqtCodeDisp(code)} guardado · ${keep.length} subartigo${keep.length === 1 ? '' : 's'}`); renderMqt();
@@ -30767,7 +30771,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         if (!el || pk.bad) { (issues.unknown[r.k] ||= { k: r.k, t: r.t, n: 0 }).n++; return; }
         const vars = lib.varsOf[pk.code] || [];
         if (vars.length && !pk.letter) { (issues.noVariant[pk.code] ||= { k: el.code, t: r.t, n: 0, vars }).n++; }
-        if (pk.letter && !vars.some(v => v.letter.toUpperCase() === pk.letter)) { (issues.badVariant[r.k] ||= { k: r.k, t: r.t, n: 0 }).n++; }
+        if (pk.letter && !vars.some(v => v.letter.toUpperCase() === pk.letter) && !(cfg.arm_subs?.[pk.code] || []).some(sb => String(sb.v || '').toUpperCase() === pk.letter)) { (issues.badVariant[r.k] ||= { k: r.k, t: r.t, n: 0 }).n++; }
         const full = mqtFull(el.code, pk.letter);
         keyInfo[full] = { code: pk.code, letter: pk.letter };
         (byKey[full] ||= []).push(r);
@@ -30821,10 +30825,11 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       Object.entries(cfg.arm_subs || {}).forEach(([code, list]) => {
         const el = lib.elByCode[String(code).toUpperCase()]; if (!el || !Array.isArray(list)) return;
         list.forEach(sb => {
-          const tk = '~' + String(sb.id).padStart(3, '0'), extra = ' — ' + mqtArmSubText(sb, code);
+          // variante (VE 06a, VE 06b…): o mesmo sistema com outro funcionamento, no mesmo artigo
+          const tk = '~' + String(sb.id).padStart(3, '0'), extra = ' — ' + mqtArmSubText(sb, code), lt = String(sb.v || '').toUpperCase();
           const qs = Object.entries(sb.q || {}).filter(([, q]) => Number(q) > 0);
-          if (!qs.length) { const it = add(el, '', tk, '', 0, 'manual', extra); it.reserved = true; it.byHand = true; return; }
-          qs.forEach(([b, q]) => { add(el, '', tk, b, Number(q), 'manual', extra).byHand = true; if (b) blocksSet.add(b); });
+          if (!qs.length) { const it = add(el, lt, tk, '', 0, 'manual', extra); it.reserved = true; it.byHand = true; return; }
+          qs.forEach(([b, q]) => { add(el, lt, tk, b, Number(q), 'manual', extra).byHand = true; if (b) blocksSet.add(b); });
         });
       });
       // tirados deste MQT (chave do subartigo, ou "@CÓDIGO" para o artigo todo): não entram, mesmo que voltem nas
