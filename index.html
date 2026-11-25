@@ -4736,6 +4736,12 @@
   .mqt-foldall { display: inline-flex; gap: var(--sp-3); margin-right: var(--sp-3); }
   .mqt-foldall .text-btn { font-size: var(--fs-sm); }
   .mqt-libbar .mqt-foldall { margin: 0 var(--sp-2); }
+  .mqt-grid tr.g-draft > td { background-color: color-mix(in srgb, var(--warning) 7%, transparent); }
+  .mqt-grid tr.g-draft > td:first-child { box-shadow: inset 3px 0 0 var(--warning); }
+  .g-draft-tag { display: inline-flex; align-items: center; gap: 6px; margin: 2px 0 4px 6px; padding: 0 3px 0 8px; border-radius: var(--r-full); background: color-mix(in srgb, var(--warning) 16%, transparent); color: var(--warning); font-size: 11px; font-weight: var(--fw-semibold); line-height: 20px; white-space: nowrap; }
+  .g-draft-ok { border: 0; border-radius: var(--r-full); padding: 0 7px; background: var(--surface); color: var(--text-2); font: inherit; font-size: 11px; line-height: 16px; cursor: pointer; }
+  .g-draft-ok:hover { color: var(--success); }
+  .g-draft-n { flex: none; padding: 0 9px; border-radius: var(--r-full); background: color-mix(in srgb, var(--warning) 16%, transparent); color: var(--warning); font-size: var(--fs-xs); font-weight: var(--fw-semibold); line-height: 22px; white-space: nowrap; }
   .mqt-removed summary { cursor: pointer; font-weight: var(--fw-semibold); }
   .mqt-removed[open] summary { margin-bottom: var(--sp-2); }
   @media (prefers-reduced-motion: reduce) { .mqt-fold svg { transition: none; } }
@@ -31927,16 +31933,16 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
           <td class="g-act">${els.length ? '' : `<button type="button" class="g-del" data-del aria-label="Apagar capítulo" title="Apagar capítulo">×</button>`}</td></tr>`);
         els.forEach(e => {
           const vs = lib.varsOf[e.code.toUpperCase()] || [];
-          rows.push(`<tr class="g-el${e.active === false ? ' off' : ''}" data-kind="el" data-id="${escapeHtml(e.id)}" data-ch="${escapeHtml(ch.code)}" data-fc="${escapeHtml(ch.code)}" data-s="${escapeHtml([e.code, mqtCodeDisp(e.code), e.name, e.text, vs.map(v => mqtFull(e.code, v.letter) + ' ' + v.label).join(' ')].join(' '))}">
+          rows.push(`<tr class="g-el${e.active === false ? ' off' : ''}${e.text_draft ? ' g-draft' : ''}" data-kind="el" data-id="${escapeHtml(e.id)}" data-ch="${escapeHtml(ch.code)}" data-fc="${escapeHtml(ch.code)}" data-s="${escapeHtml([e.code, mqtCodeDisp(e.code), e.name, e.text, vs.map(v => mqtFull(e.code, v.letter) + ' ' + v.label).join(' ')].join(' '))}">
             <td><span class="g-kc">${vs.length ? mqtFoldBtn('e:' + e.code.toUpperCase(), 'os subtipos de ' + mqtCodeDisp(e.code)) : '<span class="mqt-fold-sp"></span>'}<button type="button" class="mqt-grip" aria-label="Mover ${escapeHtml(mqtCodeDisp(e.code))} (↑ ↓)" title="Arrastar (também para outro capítulo): renumera os keynotes, em todos os projetos">${MQT_GRIP}</button><input class="g-in g-code" data-f="code" value="${escapeHtml(mqtCodeDisp(e.code))}" aria-label="Keynote"></span></td>
-            <td><input class="g-in g-name" data-f="name" value="${escapeHtml(e.name)}" aria-label="Designação"></td>
+            <td><input class="g-in g-name" data-f="name" value="${escapeHtml(e.name)}" aria-label="Designação">${e.text_draft ? `<span class="g-draft-tag" title="Descritivo proposto pelo Claude, ainda não revisto pela equipa. Some quando o descritivo for editado e guardado.">descritivo proposto · por rever<button type="button" class="g-draft-ok" data-draft-ok aria-label="Marcar como revisto">✓ Revisto</button></span>` : ''}</td>
             <td><select class="g-in" data-f="unit" aria-label="Unidade">${unitOpts(e.unit)}</select></td>
             <td><textarea class="g-in g-text" data-f="text" rows="1" aria-label="Descritivo do artigo" placeholder="Descritivo do artigo — {var} = subartigo; {marca}, {cor}… completam-se no projeto">${escapeHtml(e.text)}</textarea></td>
             <td><select class="g-in g-src" data-f="qty_source" aria-label="Medição">${srcOpts(e.qty_source)}</select></td>
             <td class="g-act"><button type="button" class="g-add" data-addvar="${escapeHtml(e.code)}" aria-label="Acrescentar subtipo" title="Acrescentar subtipo (Ctrl+Enter)">+</button><button type="button" class="g-more" data-more aria-label="Mais opções" title="Perdas, categoria do Revit, cálculo…">⋯</button><button type="button" class="g-del" data-del aria-label="Apagar elemento" title="Apagar elemento e subartigos">×</button></td></tr>`);
-          vs.forEach(v => rows.push(`<tr class="g-var" data-kind="var" data-id="${escapeHtml(v.id)}" data-el="${escapeHtml(e.code)}" data-ch="${escapeHtml(ch.code)}" data-fc="${escapeHtml(ch.code)}" data-fe="${escapeHtml(e.code.toUpperCase())}" data-s="${escapeHtml([e.code + '.' + v.letter, e.name, v.label, v.text].join(' '))}">
+          vs.forEach(v => rows.push(`<tr class="g-var${v.text_draft ? ' g-draft' : ''}" data-kind="var" data-id="${escapeHtml(v.id)}" data-el="${escapeHtml(e.code)}" data-ch="${escapeHtml(ch.code)}" data-fc="${escapeHtml(ch.code)}" data-fe="${escapeHtml(e.code.toUpperCase())}" data-s="${escapeHtml([e.code + '.' + v.letter, e.name, v.label, v.text].join(' '))}">
             <td><span class="g-kc"><button type="button" class="mqt-grip" aria-label="Mover ${escapeHtml(mqtFull(e.code, v.letter))} (↑ ↓)" title="Arrastar: muda a ordem em todos os projetos">${MQT_GRIP}</button><span class="g-pre">${escapeHtml(mqtCodeDisp(e.code))}</span><input class="g-in g-suf" data-f="letter" value="${escapeHtml(mqtSufDisp(v.letter))}" aria-label="Sufixo do subartigo"></span></td>
-            <td><input class="g-in g-label" data-f="label" value="${escapeHtml(v.label)}" aria-label="Subartigo"></td>
+            <td><input class="g-in g-label" data-f="label" value="${escapeHtml(v.label)}" aria-label="Subartigo">${v.text_draft ? `<span class="g-draft-tag" title="Descritivo proposto pelo Claude, ainda não revisto pela equipa. Some quando o descritivo for editado e guardado.">descritivo proposto · por rever<button type="button" class="g-draft-ok" data-draft-ok aria-label="Marcar como revisto">✓ Revisto</button></span>` : ''}</td>
             <td class="g-inh">${escapeHtml(e.unit)}</td>
             <td><textarea class="g-in g-text" data-f="text" rows="1" aria-label="Texto próprio do subartigo" placeholder="(usa o descritivo do artigo)">${escapeHtml(v.text || '')}</textarea></td>
             <td></td>
@@ -31950,7 +31956,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
           <td></td><td></td></tr>`);
       });
       rows.push(`<tr class="g-newch" data-kind="newch"><td><input class="g-in g-code" data-f="code" placeholder="+ cap." aria-label="Código do novo capítulo"></td><td colspan="4"><input class="g-in" data-f="name" placeholder="nome do novo capítulo · Enter cria"></td><td></td></tr>`);
-      return `<div class="mqt-libbar">${mqtFindHtml('mqt-lib-search', 'Procurar keynote, designação ou texto…')}<span class="mqt-foldall"><button type="button" class="text-btn" data-fold-all="1">Fechar tudo</button><button type="button" class="text-btn" data-fold-all="0">Abrir tudo</button></span><span class="mqt-saved" id="mqt-saved" aria-live="polite"></span></div>
+      return `<div class="mqt-libbar">${mqtFindHtml('mqt-lib-search', 'Procurar keynote, designação ou texto…')}<span class="mqt-foldall"><button type="button" class="text-btn" data-fold-all="1">Fechar tudo</button><button type="button" class="text-btn" data-fold-all="0">Abrir tudo</button></span>${(() => { const n = lib.elements.filter(e => e.text_draft).length + lib.variants.filter(v => v.text_draft).length; return n ? `<span class="g-draft-n" title="Descritivos propostos pelo Claude, ainda por rever">${n} por rever</span>` : ''; })()}<span class="mqt-saved" id="mqt-saved" aria-live="polite"></span></div>
         <div class="field-hint" style="margin:0 0 10px">Escreve nas células — grava sozinho. Para criar, escreve o keynote na linha <b>+ keynote</b> do capítulo: <b>PRD 05</b> cria um elemento, <b>PRD 05d</b> cria o subartigo d. Podes colar várias linhas do Excel (Keynote, Designação, Un., Descritivo). Enter e ↑ ↓ mudam de linha. Arrasta um elemento pelos pontinhos para mudar a ordem ou de capítulo: os keynotes renumeram-se sozinhos (ex.: DEM 03 largado nas alvenarias passa a PRD) e mudam também nos MQT dos projetos — depois, atualiza o ficheiro de keynotes no Revit. <b>+</b> (ou Ctrl+Enter) numa linha acrescenta um subtipo por baixo — ex.: outra espessura. Vários campos por subtipo (ex.: espessura e cor): no descritivo usa <b>{var}</b> e <b>{cor}</b>; no subtipo escreve <b>60 mm | branca</b>.</div>
         <div class="gantt-wrap mqt-gridwrap"><table class="mqt-grid">
           <colgroup><col style="width:150px"><col style="width:260px"><col style="width:74px"><col><col style="width:150px"><col style="width:84px"></colgroup>
@@ -32072,6 +32078,19 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         t.addEventListener('blur', () => { t.classList.remove('open'); t.style.height = ''; setTimeout(() => { if (document.activeElement !== t) bar.hidden = true; }, 120); });
       });
       // gravar uma célula
+      // descritivo proposto (escrito pelo Claude) e ainda por rever: o aviso sai ao editar e guardar, ou em «Revisto»
+      const clearDraft = tr => {
+        tr.classList.remove('g-draft'); tr.querySelector('.g-draft-tag')?.remove();
+        const n = lib.elements.filter(x => x.text_draft).length + lib.variants.filter(x => x.text_draft).length, c = box.querySelector('.g-draft-n');
+        if (c) { if (n) c.textContent = `${n} por rever`; else c.remove(); }
+      };
+      grid.addEventListener('click', async ev => {
+        const b = ev.target.closest('[data-draft-ok]'); if (!b) return;
+        ev.preventDefault(); ev.stopPropagation();
+        const tr = b.closest('tr'), isVar = tr.dataset.kind === 'var', x = isVar ? varById(tr.dataset.id) : elById(tr.dataset.id); if (!x) return;
+        try { await dbUpdate(isVar ? 'mqt_variants' : 'mqt_elements', x.id, { text_draft: false }, isVar ? MOCK_MQT.variants : MOCK_MQT.elements); x.text_draft = false; clearDraft(tr); saved('Revisto'); }
+        catch (e2) { showError('marcar como revisto', e2); }
+      });
       const saveCell = async (inp) => {
         const tr = inp.closest('tr'), kind = tr.dataset.kind, f = inp.dataset.f;
         let v = inp.value; if (f !== 'text') v = v.trim();
@@ -32098,8 +32117,9 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
             const old = e.code;
             // keynote novo: muda também nos MQT dos projetos, tabelas carregadas, preços e regras
             if (f === 'code') { await mqtApplyRenames(lib, { [old]: v }); saved('Guardado'); showToast(`Keynote ${mqtCodeDisp(old)} → ${mqtCodeDisp(v)}, também nos MQT dos projetos. No Revit, os tipos com ${mqtCodeDisp(old)} também têm de mudar.`, { ms: 6000 }); rerender(); return; }
-            await dbUpdate('mqt_elements', e.id, { [f]: v, updated_at: new Date().toISOString() }, MOCK_MQT.elements);
-            e[f] = v; saved('Guardado');
+            const undraft = f === 'text' && e.text_draft;
+            await dbUpdate('mqt_elements', e.id, { [f]: v, updated_at: new Date().toISOString(), ...(undraft ? { text_draft: false } : {}) }, MOCK_MQT.elements);
+            e[f] = v; saved('Guardado'); if (undraft) { e.text_draft = false; clearDraft(tr); }
             if (f === 'unit') tr.parentNode.querySelectorAll(`tr.g-var[data-el="${CSS.escape(e.code)}"] .g-inh`).forEach(td => { td.textContent = v; });
             return;
           }
@@ -32114,8 +32134,9 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
               if ((lib.varsOf[vv.element_code.toUpperCase()] || []).some(x => x.id !== vv.id && x.letter.toUpperCase() === v.toUpperCase())) { err('Esse sufixo já existe neste elemento.'); inp.value = vv.letter; return; }
             }
             if (f === 'label' && !v) { inp.value = vv.label; return; }
-            await dbUpdate('mqt_variants', vv.id, { [f]: f === 'text' ? (v || null) : v }, MOCK_MQT.variants);
-            vv[f] = f === 'text' ? (v || null) : v; saved('Guardado');
+            const undraft = f === 'text' && vv.text_draft;
+            await dbUpdate('mqt_variants', vv.id, { [f]: f === 'text' ? (v || null) : v, ...(undraft ? { text_draft: false } : {}) }, MOCK_MQT.variants);
+            vv[f] = f === 'text' ? (v || null) : v; saved('Guardado'); if (undraft) { vv.text_draft = false; clearDraft(tr); }
             if (f === 'letter') inp.value = mqtSufDisp(v);
           }
         } catch (e2) { showError('guardar', e2); }

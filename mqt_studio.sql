@@ -151,3 +151,8 @@ alter table public.mqt_revisions enable row level security;
 drop policy if exists "team_only" on public.mqt_revisions;
 create policy "team_only" on public.mqt_revisions for all to authenticated using (private.is_team_member()) with check (private.is_team_member());
 revoke all on public.mqt_revisions from anon;
+
+-- Descritivos propostos pelo Claude e ainda não revistos pela equipa: aviso «descritivo proposto · por rever» na
+-- biblioteca de keynotes; sai quando o descritivo é editado e guardado, ou com «✓ Revisto».
+alter table public.mqt_elements add column if not exists text_draft boolean not null default false;
+alter table public.mqt_variants add column if not exists text_draft boolean not null default false;
