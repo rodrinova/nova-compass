@@ -4787,6 +4787,9 @@
   .mqt-table tr.fl-noq > td:first-child { box-shadow: inset 3px 0 0 var(--danger); }
   .mqt-table tr.fl-unk .kc { color: var(--warning); }
   .mqt-draft-note { margin: 0 0 var(--sp-2); }
+  .mqt-scope { margin: 0 0 var(--sp-1); }
+  .mqt-scope .segmented button:disabled { opacity: .45; cursor: not-allowed; }
+  .scope-off { display: none !important; }
   .mqt-imp-upd, .mqt-imp-new { display: inline-block; margin-left: 8px; padding: 0 8px; border-radius: var(--r-full); font-size: 11px; font-weight: var(--fw-semibold); line-height: 20px; vertical-align: 1px; }
   .mqt-imp-upd { background: var(--accent-soft); color: var(--accent); }
   .mqt-imp-new { background: color-mix(in srgb, var(--success) 14%, transparent); color: var(--success); }
@@ -30669,9 +30672,10 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       const vars = lib.varsOf[it.el.code.toUpperCase()] || [];
       const v = it.variant, missing = [];
       const sp = { ...(specs?.[it.el.code.toUpperCase()] || {}), ...(specs?.[it.full.toUpperCase()] || {}) };
-      let t = v && v.text ? mqtFillFields(mqtClean(v.text.replace(/\{var\}/gi, mqtParts(v.label)[0])), { ...sp, ...mqtVarVals(lib, it.el, v) }, missing) : mqtCap(v ? mqtVarLabel(v) : vars.length ? '[variante]' : '');
+      // descritivo do subartigo é opcional: variante sem texto fica sem descritivo (a designação já diz qual é)
+      let t = v && v.text ? mqtFillFields(mqtClean(v.text.replace(/\{var\}/gi, mqtParts(v.label)[0])), { ...sp, ...mqtVarVals(lib, it.el, v) }, missing) : v ? '' : mqtCap(vars.length ? '[variante]' : '');
       if (it.extra) t = t ? t + it.extra : mqtCap(it.extra.replace(/^ — /, ''));
-      return { text: t || it.el.name, missing };
+      return { text: v ? t : (t || it.el.name), missing };
     }
     // Momentos de cada capítulo: os artigos ficam juntos por família de keynote (os ARM todos juntos, depois os VI…).
     // Cada família da biblioteca fica onde está o seu primeiro artigo; uma família só do projeto fica logo a seguir à
@@ -30748,7 +30752,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         out.push({ ch, arts });
       });
       // texto próprio do projeto (override do descritivo standard): artigo por código, subartigo pela chave
-      const own = (key, sp) => { const t = texts[key]; if (!t) return null; const missing = []; return { text: mqtFillFields(t, sp, missing), missing }; };
+      const own = (key, sp) => { const t = texts[key]; if (t == null) return null; const missing = []; return { text: mqtFillFields(t, sp, missing), missing }; };
       out.forEach((c, i) => {
         c.num = i + 1;
         c.arts.forEach((a, j) => {
@@ -32404,10 +32408,10 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
 
     // ---------- Artigo: completar texto, quantidade à mão, variante dos calculados ----------
     // Texto próprio do projeto: campo de texto com o descritivo atual; "Repor o standard" volta ao da biblioteca
-    const mqtOwnTextHtml = (cur, std, own) => `<div class="mqt-own-h"><label class="field-label" for="mqt-own">Descritivo neste projeto ${own ? '<span class="mqt-tag own">descritivo alterado no projeto</span>' : ''}</label>
+    const mqtOwnTextHtml = (cur, std, own) => `<div class="mqt-own-h"><label class="field-label" for="mqt-own">Descritivo <span class="scope-lbl">neste projeto</span> ${own ? '<span class="mqt-tag own">descritivo alterado no projeto</span>' : ''}</label>
           ${own ? '<button type="button" class="secondary-btn mqt-own-reset" id="mqt-own-reset" title="Volta ao descritivo da biblioteca de keynotes e guarda">' : '<button type="button" id="mqt-own-reset" hidden>'}<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 6.5A5 5 0 1 1 3 9.5"/><path d="M3 3v3.5h3.5"/></svg>Repor o original</button></div>
         <textarea id="mqt-own" class="form-input" rows="5">${escapeHtml(cur)}</textarea>
-        <div class="field-hint">Só muda neste projeto; a biblioteca fica igual.</div>
+        <div class="field-hint">Num subartigo, o descritivo é opcional: em branco fica em branco.</div>
         <details class="mqt-std"><summary>Ver o descritivo standard</summary><div>${escapeHtml(std)}</div></details>`;
     // «Repor o original»: só nos artigos da biblioteca com o descritivo alterado neste projeto; um toque repõe e guarda
     function mqtWireOwnReset(std, onReset) {
@@ -32415,7 +32419,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       b.addEventListener('click', () => { ta.value = std; onReset(true); });
     }
     // Designação neste projeto: por omissão a da biblioteca; mudada fica em mqt_project.names
-    const mqtOwnNameHtml = (cur, std) => `<div class="mqt-own-h"><label class="field-label" for="mqt-own-name">Designação neste projeto ${cur && cur !== std ? '<span class="mqt-tag own">designação alterada no projeto</span>' : ''}</label>
+    const mqtOwnNameHtml = (cur, std) => `<div class="mqt-own-h"><label class="field-label" for="mqt-own-name">Designação <span class="scope-lbl">neste projeto</span> ${cur && cur !== std ? '<span class="mqt-tag own">designação alterada no projeto</span>' : ''}</label>
           ${cur && cur !== std ? '<button type="button" class="secondary-btn mqt-own-reset" id="mqt-name-reset" title="Volta à designação da biblioteca de keynotes (guarda ao carregar em Guardar)"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 6.5A5 5 0 1 1 3 9.5"/><path d="M3 3v3.5h3.5"/></svg>Repor a original</button>' : ''}</div>
         <input type="text" id="mqt-own-name" class="form-input" value="${escapeHtml(cur || std || '')}" placeholder="${escapeHtml(std || 'Designação')}">`;
     function mqtNameValue(names, key, std) {
@@ -32431,15 +32435,45 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
     const mqtDraftNoteHtml = (el, name, text) => `<div class="mqt-banner warn mqt-draft-note"><span><b>Descritivo por rever na Biblioteca de keynotes.</b> O descritivo de ${escapeHtml(mqtCodeDisp(el.code))} foi proposto e ainda não foi revisto. Revê-o primeiro na biblioteca (a correção vale para todos os projetos); depois podes ajustá-lo só neste projeto.</span><button type="button" class="primary-btn toolbar-btn" id="mqt-go-lib">Rever na biblioteca</button></div>
         <label class="field-label" for="mqt-own-name">Designação</label><input type="text" id="mqt-own-name" class="form-input" value="${escapeHtml(name || '')}" readonly>
         <label class="field-label" for="mqt-own">Descritivo</label><textarea id="mqt-own" class="form-input" rows="5" readonly>${escapeHtml(text)}</textarea>`;
+    // Onde guardar a designação e o descritivo: «Só neste projeto» (mqt_project.names/texts) ou «No original»
+    // (biblioteca de keynotes: vale para todos os projetos). Artigo da biblioteca ainda por rever: só o original.
+    const mqtScopeHtml = (draft, libOk) => libOk ? `<div class="mqt-scope"><div class="segmented" role="radiogroup" aria-label="Onde guardar">
+          <button type="button" data-scope="proj" class="${draft ? '' : 'active'}"${draft ? ' disabled title="Revê primeiro o original (está por rever na biblioteca)"' : ''}>Só neste projeto</button>
+          <button type="button" data-scope="lib" class="${draft ? 'active' : ''}">No original (biblioteca)</button></div>
+        <div class="field-hint" id="mqt-scope-hint">${draft ? '<b>Descritivo por rever na biblioteca:</b> corrige aqui o original — vale para todos os projetos. Depois podes ajustá-lo só neste projeto.' : 'Só muda neste projeto; a biblioteca fica igual.'}</div></div>` : '';
+    function mqtWireScope({ draft, libOk, proj, orig }) {
+      let scope = draft && libOk ? 'lib' : 'proj';
+      const nm = document.getElementById('mqt-own-name'), ta = document.getElementById('mqt-own'), hint = document.getElementById('mqt-scope-hint');
+      const vals = { proj: { ...proj }, lib: { ...orig } };
+      const put = () => { if (nm) nm.value = vals[scope].name || ''; if (ta) ta.value = vals[scope].text || ''; document.querySelectorAll('#mqt-own-reset, #mqt-name-reset, .mqt-own-h .mqt-tag.own').forEach(b => b.classList.toggle('scope-off', scope === 'lib')); document.querySelectorAll('.scope-lbl').forEach(x => { x.textContent = scope === 'lib' ? 'no original (biblioteca)' : 'neste projeto'; }); };
+      document.querySelectorAll('[data-scope]').forEach(b => b.addEventListener('click', () => {
+        if (b.disabled || b.dataset.scope === scope) return;
+        vals[scope] = { name: nm?.value, text: ta?.value };
+        scope = b.dataset.scope; put();
+        document.querySelectorAll('[data-scope]').forEach(x => x.classList.toggle('active', x === b));
+        put; if (hint) hint.innerHTML = scope === 'lib' ? '<b>No original:</b> muda a biblioteca de keynotes — vale para todos os projetos (os que tiverem texto próprio mantêm-no).' : 'Só muda neste projeto; a biblioteca fica igual.';
+      }));
+      if (scope === 'lib') put();
+      return () => scope;
+    }
+    // Guarda no original (biblioteca): elemento ou variante; dá o artigo por revisto (ele e as variantes)
+    async function mqtSaveOriginal(lib, el, variant, name, text) {
+      const now = new Date().toISOString();
+      if (variant) await dbUpdate('mqt_variants', variant.id, { label: name || variant.label, text: text || null, text_draft: false }, MOCK_MQT.variants);
+      else await dbUpdate('mqt_elements', el.id, { name: name || el.name, text: text || '', text_draft: false, updated_at: now }, MOCK_MQT.elements);
+      if (el.text_draft) await dbUpdate('mqt_elements', el.id, { text_draft: false }, MOCK_MQT.elements);
+      for (const v of (lib.varsOf[el.code.toUpperCase()] || []).filter(v => v.text_draft && v !== variant)) await dbUpdate('mqt_variants', v.id, { text_draft: false }, MOCK_MQT.variants);
+      mqtLibCache = null;
+    }
     function mqtGoLib(code) {
       document.getElementById('mqt-go-lib')?.addEventListener('click', () => {
         mqtFindQ.lib = mqtCodeDisp(code); closeQuickModal(); mqtProjectId = ''; mqtHomeTab = 'lib'; renderMqt(); window.scrollTo(0, 0);
       });
     }
-    function mqtOwnValue(texts, key, std) {
+    function mqtOwnValue(texts, key, std, allowBlank = false) {
       const v = (document.getElementById('mqt-own')?.value || '').trim();
       const out = { ...(texts || {}) };
-      if (!v || v === std.trim()) delete out[key]; else out[key] = v;
+      if (v === String(std || '').trim() || (!v && !allowBlank)) delete out[key]; else out[key] = v;
       return out;
     }
     function openMqtArtModal(lib, cfg, mq, code) {
@@ -32453,8 +32487,9 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       const fields = [...new Set([...String(own || el.text || '').matchAll(/\{([^}]+)\}/g)].map(m => m[1].trim()).filter(f => f.toLowerCase() !== 'var'))];
       const sp = cfg.specs?.[EL] || {};
       openQuickModal(`${mqtCodeDisp(el.code)} · ${el.name}`, `
-        ${mqtDrafted(lib, el) && !own && !cfg.names?.[EL] ? mqtDraftNoteHtml(el, el.name, std) : `${mqtOwnNameHtml(cfg.names?.[EL], el.name)}
-        ${mqtOwnTextHtml(own ? mqtFillFields(own, sp, []) : std, std, !!own)}`}
+        ${mqtScopeHtml(mqtDrafted(lib, el) && !own && !cfg.names?.[EL], true)}
+        ${mqtOwnNameHtml(cfg.names?.[EL], el.name)}
+        ${mqtOwnTextHtml(own ? mqtFillFields(own, sp, []) : std, std, !!own)}
         ${fields.length ? `<label class="field-label">Completar o texto</label>${fields.map(f => `<input type="text" class="form-input mqt-spec-in" data-f="${escapeHtml(f)}" placeholder="${escapeHtml(f)}" value="${escapeHtml(sp[f] || '')}" style="margin-bottom:6px">`).join('')}` : ''}
         <div id="mqt-it-msg" class="form-msg"></div>
         <div class="mqt-modal-acts"><button type="button" class="secondary-btn danger-text" id="mqt-art-del">Tirar o artigo do MQT</button>${armBtn}<button type="button" class="primary-btn" id="mqt-it-save">Guardar</button></div>`);
@@ -32466,7 +32501,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         try { await mqtRemove(cfg, its, `${mqtCodeDisp(el.code)} · ${el.name}`, its.some(x => x.source !== 'manual') ? '@' + EL : null); closeQuickModal(); }
         catch (e) { formError('mqt-it-msg', e.message); }
       });
-      mqtWireNameReset(el.name); mqtGoLib(el.code);
+      mqtWireNameReset(el.name);
+      const scopeOf = mqtWireScope({ draft: mqtDrafted(lib, el) && !own && !cfg.names?.[EL], libOk: true, proj: { name: cfg.names?.[EL] || el.name, text: own ? mqtFillFields(own, sp, []) : std }, orig: { name: el.name, text: el.text || '' } });
       let reset = false;
       // repor: com o texto já guardado, guarda logo (fica o original); a meio de escrever, só volta o campo ao original
       mqtWireOwnReset(std, () => { reset = true; document.getElementById('mqt-it-save').click(); });
@@ -32474,6 +32510,13 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         try {
           const specs = JSON.parse(JSON.stringify(cfg.specs || {}));
           if (fields.length) { const o = specs[EL] ||= {}; document.querySelectorAll('.mqt-spec-in').forEach(i => { const v = i.value.trim(); if (v) o[i.dataset.f] = v; else delete o[i.dataset.f]; }); }
+          if (scopeOf() === 'lib') {
+            const nv = document.getElementById('mqt-own-name').value.trim(), tv = document.getElementById('mqt-own').value.trim();
+            if (!nv) { formError('mqt-it-msg', 'A designação não pode ficar vazia.'); return; }
+            await mqtSaveOriginal(lib, el, null, nv, tv);
+            await mqtSaveCfg(mqtProjectId, { specs });
+            closeQuickModal(); showToast(`Original de ${mqtCodeDisp(el.code)} guardado na biblioteca`); renderMqt(); return;
+          }
           const shown = own ? mqtFillFields(own, sp, []) : std;
           let texts = { ...(cfg.texts || {}) };
           const v = document.getElementById('mqt-own').value.trim();
@@ -32494,7 +32537,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       const isSub = mqtHasSubs(lib, el);
       const ownKey = isSub ? it.key : code;
       const std = isSub ? mqtSubText(lib, it, cfg.specs || {}).text : it.desc;
-      const own = cfg.texts?.[ownKey];
+      const own = cfg.texts?.[ownKey], hasOwn = own != null && (isSub || own !== '');
       const stdName = isSub ? (it.variant ? mqtVarLabel(it.variant) : it.typeKey && !String(it.typeKey).startsWith('~') ? it.typeKey : '') : el.name;
       const fields = [...new Set([...(String(own || (it.variant && it.variant.text) || el.text).matchAll(/\{([^}]+)\}/g))].map(m => m[1].trim()).filter(f => f.toLowerCase() !== 'var'))];
       const sp = { ...(cfg.specs?.[code] || {}), ...(cfg.specs?.[it.full.toUpperCase()] || {}) };
@@ -32502,17 +32545,21 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       const st = stats?.[it.full.toUpperCase()];
       const man = it.source === 'manual' ? (cfg.manual?.[it.full] || cfg.manual?.[it.full.toUpperCase()] || {}) : null;
       const derived = it.source === 'derived';
-      const shown = own ? mqtFillFields(own, sp, []) : std;
+      // o original deste artigo/subartigo na biblioteca: o elemento ou a variante (um tipo do Revit sem variante não tem)
+      const libVar = isSub ? it.variant || null : null, libOk = !isSub || !!libVar;
+      const shown = hasOwn ? mqtFillFields(own, sp, []) : std;
       openQuickModal(`${it.full}${it.typeKey ? ' · ' + it.typeKey : ''} · ${it.el.name}`, `
         <div class="field-hint" style="margin-top:0">${escapeHtml(el.unit)} · ${mqtQ(it.qty)} ${it.source === 'model' ? '· vem do Revit' : it.source === 'derived' ? `· calculado a partir de ${escapeHtml((el.derive_from || []).join(', '))}` : '· à mão'}${st ? ` · referência ${escapeHtml(fmtEUR(st.med))} (${st.n} preço${st.n > 1 ? 's' : ''})` : ''}</div>
-        ${mqtDrafted(lib, el) && !own && !cfg.names?.[ownKey] ? mqtDraftNoteHtml(el, stdName, std) : `${mqtOwnNameHtml(cfg.names?.[ownKey], stdName)}
-        ${mqtOwnTextHtml(shown, std, !!own)}`}
+        ${mqtScopeHtml(libOk && mqtDrafted(lib, el) && !hasOwn && !cfg.names?.[ownKey], libOk)}
+        ${mqtOwnNameHtml(cfg.names?.[ownKey], stdName)}
+        ${mqtOwnTextHtml(shown, std, hasOwn)}
         ${fields.length ? `<label class="field-label">Completar o texto</label>${fields.map(f => `<input type="text" class="form-input mqt-spec-in" data-f="${escapeHtml(f)}" placeholder="${escapeHtml(f)}" value="${escapeHtml(sp[f] || '')}" style="margin-bottom:6px">`).join('')}` : ''}
         ${derived && vars.length ? `<label class="field-label" for="mqt-dv">Variante</label><select id="mqt-dv" class="form-input">${vars.map(v => `<option value="${escapeHtml(v.letter.toUpperCase())}"${v.letter.toUpperCase() === it.letter ? ' selected' : ''}>${escapeHtml(v.letter + ' · ' + v.label)}</option>`).join('')}<option value="off">Não entra neste projeto</option></select>` : derived ? `<label class="mqt-chk"><input type="checkbox" id="mqt-doff"> Não entra neste projeto</label>` : ''}
         ${man ? `<label class="field-label">Quantidade (${escapeHtml(el.unit)})</label>${mq.cols.map(b => `<div class="mqt-qrow"><span>${escapeHtml(mqtMulti(mq) ? mqtBlockLabel(b) : 'Quantidade')}</span><input type="text" inputmode="decimal" class="form-input mqt-man-in" data-b="${escapeHtml(b)}" value="${man[b] != null ? escapeHtml(String(man[b]).replace('.', ',')) : ''}"></div>`).join('')}` : ''}
         <div id="mqt-it-msg" class="form-msg"></div>
         <div class="mqt-modal-acts"><button type="button" class="secondary-btn danger-text" id="mqt-it-del">Tirar do MQT</button><button type="button" class="primary-btn" id="mqt-it-save">Guardar</button></div>`);
-      mqtWireNameReset(stdName); mqtGoLib(el.code);
+      mqtWireNameReset(stdName);
+      const scopeOf = mqtWireScope({ draft: libOk && mqtDrafted(lib, el) && !hasOwn && !cfg.names?.[ownKey], libOk, proj: { name: cfg.names?.[ownKey] || stdName, text: shown }, orig: libVar ? { name: libVar.label, text: libVar.text || '' } : { name: el.name, text: el.text || '' } });
       let reset = false;
       // repor: com o texto já guardado, guarda logo (fica o original); a meio de escrever, só volta o campo ao original
       mqtWireOwnReset(std, () => { reset = true; document.getElementById('mqt-it-save').click(); });
@@ -32522,10 +32569,16 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
           if (fields.length) { const o = specs[code] ||= {}; document.querySelectorAll('.mqt-spec-in').forEach(i => { const v = i.value.trim(); if (v) o[i.dataset.f] = v; else delete o[i.dataset.f]; }); }
           if (derived) { specs.__derived ||= {}; const dv = document.getElementById('mqt-dv'); specs.__derived[code] = dv ? dv.value : (document.getElementById('mqt-doff')?.checked ? 'off' : ''); if (!specs.__derived[code]) delete specs.__derived[code]; }
           let texts = { ...(cfg.texts || {}) };
-          const v = document.getElementById('mqt-own').value.trim();
+          const toLib = libOk && scopeOf() === 'lib';
+          if (toLib) {
+            const nv = document.getElementById('mqt-own-name').value.trim(), tv = document.getElementById('mqt-own').value.trim();
+            if (!nv) { formError('mqt-it-msg', 'A designação não pode ficar vazia.'); return; }
+            await mqtSaveOriginal(lib, el, libVar, nv, tv);
+          }
+          const v = toLib ? shown.trim() : document.getElementById('mqt-own').value.trim();
           if (reset && v === std.trim()) delete texts[ownKey];
-          else if (v !== shown.trim()) texts = mqtOwnValue(cfg.texts, ownKey, std);
-          const patch = { specs, texts, names: mqtNameValue(cfg.names, ownKey, stdName) };
+          else if (v !== shown.trim()) texts = mqtOwnValue(cfg.texts, ownKey, std, isSub);
+          const patch = toLib ? { specs } : { specs, texts, names: mqtNameValue(cfg.names, ownKey, stdName) };
           if (man) {
             const manual = JSON.parse(JSON.stringify(cfg.manual || {}));
             const q = {}; document.querySelectorAll('.mqt-man-in').forEach(i => { const v2 = numOrNull(i.value.replace(/\s/g, '')); if (v2) q[i.dataset.b] = v2; });
@@ -32536,7 +32589,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
           await mqtSaveCfg(mqtProjectId, patch);
           const before = cfg.texts?.[ownKey];
           closeQuickModal(); renderMqt();
-          if (reset && before && !texts[ownKey]) showToast('Descritivo original reposto', { undo: async () => { try { await mqtSaveCfg(mqtProjectId, { texts: { ...texts, [ownKey]: before } }); renderMqt(); } catch (err) { showError('anular', err); } } });
+          if (toLib) showToast(`Original de ${it.full} guardado na biblioteca`);
+          else if (reset && before != null && texts[ownKey] == null) showToast('Descritivo original reposto', { undo: async () => { try { await mqtSaveCfg(mqtProjectId, { texts: { ...texts, [ownKey]: before } }); renderMqt(); } catch (err) { showError('anular', err); } } });
           else showToast('Guardado');
         } catch (e) { formError('mqt-it-msg', 'Não foi possível guardar: ' + e.message); }
       });
