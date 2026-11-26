@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Compass">
 <!-- Versão da app = número do pull request que a publicou; aparece no aviso de atualização -->
-<meta name="app-version" content="229">
+<meta name="app-version" content="230">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>NOVA Compass</title>
 <!-- Ícone: o N ameixa com brilho no fundo preto (assets/brand/gerador/render-icons.js) -->
@@ -31172,7 +31172,9 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         const pk = mqtParseKey(full); const el = pk && lib.elByCode[pk.code];
         if (!el || !qb) return;
         const qs = Object.entries(qb).filter(([, q]) => Number(q) > 0);
-        // sem quantidade: fica no MQT "a considerar" (reserva o keynote; em todos os blocos)
+        // sem quantidade: fica no MQT "a considerar" (reserva o keynote; em todos os blocos) — mas só enquanto o modelo
+        // não o medir: se o Revit já traz o artigo (ex.: BPA 02b), a reserva vazia (BPA 02) não cria uma linha a mais
+        if (!qs.length && Object.values(items).some(i => i.code === el.code && i.source === 'model' && Object.values(i.qb).some(q => q > 0))) return;
         if (!qs.length) { const it = items[(mqtFull(el.code, pk.letter)).toUpperCase()] || add(el, pk.letter, '', '', 0, 'manual', ''); it.reserved = true; it.byHand = true; return; }
         qs.forEach(([b, q]) => { add(el, pk.letter, '', b, Number(q), 'manual', '').byHand = true; if (b) blocksSet.add(b); });
       });
