@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Compass">
 <!-- Versão da app = número do pull request que a publicou; aparece no aviso de atualização -->
-<meta name="app-version" content="227">
+<meta name="app-version" content="228">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>NOVA Compass</title>
 <!-- Ícone: o N ameixa com brilho no fundo preto (assets/brand/gerador/render-icons.js) -->
@@ -30805,10 +30805,10 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       const byList = (list, k) => { const i = (list || []).indexOf(k); return i < 0 ? 1e6 : i; };
       // ordem própria dos capítulos neste projeto (arrastada no MQT); os que faltam seguem a biblioteca
       let chs = ord?.chs?.length ? [...lib.chapters].sort((a, b) => byList(ord.chs, a.code) - byList(ord.chs, b.code)) : lib.chapters;
-      if (Object.values(mq.items).some(it => it.el.chapter_code === MQT_GHOST_CH)) chs = [...chs, MQT_GHOST_CHAPTER];
+      if (Object.values(mq.items).some(it => (it.ch || it.el.chapter_code) === MQT_GHOST_CH)) chs = [...chs, MQT_GHOST_CHAPTER];
       chs.forEach(ch => {
         const R = mqtFamRank(lib, ch.code);
-        const its = Object.values(mq.items).filter(it => it.el.chapter_code === ch.code && (q(it) > 0 || (it.reserved && !it.qty)))
+        const its = Object.values(mq.items).filter(it => (it.ch || it.el.chapter_code) === ch.code && (q(it) > 0 || (it.reserved && !it.qty)))
           .sort((a, b) => mqtElCmp(R, a.el, b.el) || (vOrd(a) - vOrd(b)) || mqtKeyCmp(a.letter, b.letter) || mqtKeyCmp(a.typeKey, b.typeKey));
         if (!its.length) return;
         let arts = [];
@@ -30998,7 +30998,9 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         lines.push({ t: 'ch', key: c.ch.code, num: chNum, text: c.ch.name });
         c.arts.forEach(a => {
           const EL = a.el.code.toUpperCase();
-          const artNum = num.art[EL] ??= `${chNum}.${nextIn(num.art, chNum)}`;
+          // um artigo que aparece fora do capítulo da biblioteca (isolamento horizontal/vertical) tem número próprio nesse capítulo
+          const NK = c.ch.code !== a.el.chapter_code ? `${EL}@${c.ch.code}` : EL;
+          const artNum = num.art[NK] ??= `${chNum}.${nextIn(num.art, chNum)}`;
           const dr = drafted(a.el) ? 1 : 0;
           const item = (r, lvl, n) => ({ dr, ownNm: (lvl === 1 ? names[EL] : names[r.it.key]) ? 1 : 0, fl: r.it.flag || '', res: r.it.reserved && !r.q ? 1 : 0, t: 'item', lvl, key: r.it.key, ch: c.ch.code, code: a.el.code, nm: (lvl === 1 ? names[EL] || a.el.name : names[r.it.key] || r.it.variant?.label) || '', full: r.it.full, typeKey: r.it.typeKey || '', num: n, text: r.text, unit: r.it.el.unit, q: Math.round(r.q * 100) / 100, own: !!r.own, src: src(r.it), miss: r.missing.length ? 1 : 0 });
           if (a.subs) {
@@ -31136,6 +31138,17 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       });
       // do modelo mas com medição zero: fica «a considerar», assinalado
       Object.values(items).forEach(it => { if (it.source !== 'model' || Object.values(it.qb).some(q => q > 0)) return; it.reserved = true; if (!it.flag) it.flag = 'noq'; });
+      // isolamentos: o mesmo keynote (ex.: ISO 02h) vai para Isolamentos horizontais quando vem de coberturas, pavimentos ou tetos
+      // e para Isolamentos verticais quando vem de paredes — pelo tipo do Revit, não pelo capítulo da biblioteca
+      const chIso = re => lib.chapters.find(c => /isolament/i.test(c.name || '') && re.test(c.name || ''))?.code;
+      const chH = chIso(/horizont/i), chV = chIso(/vertic/i);
+      if (chH && chV) Object.values(items).forEach(it => {
+        if (![chH, chV].includes(it.el.chapter_code)) return;
+        const rs = byKey[it.full] || [];
+        const horiz = r => /^(basic roof|roof|floor|compound ceiling|ceiling|sloped glazing)\b/i.test(r.t || '') || /cobert|pavim|tect|teto|laje/i.test(r.c || '');
+        const vert = r => /^(basic wall|wall|curtain wall|stacked wall)\b/i.test(r.t || '') || /parede/i.test(r.c || '');
+        if (rs.length && rs.every(horiz)) it.ch = chH; else if (rs.length && rs.every(vert)) it.ch = chV;
+      });
       // calculados a partir de outros (pintura = área dos rebocos/estuques…)
       lib.elements.filter(e => e.active !== false && e.qty_source === 'derived' && (e.derive_from || []).length).forEach(el => {
         const opt = derivedCfg[el.code.toUpperCase()];
@@ -31197,7 +31210,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       // por capítulo, pela ordem da biblioteca
       const chapters = [];
       lib.chapters.forEach(ch => {
-        const list = Object.values(items).filter(it => it.el.chapter_code === ch.code && (it.qty > 0 || it.reserved))
+        const list = Object.values(items).filter(it => (it.ch || it.el.chapter_code) === ch.code && (it.qty > 0 || it.reserved))
           .sort((a, b) => (a.el.sort_order - b.el.sort_order) || a.code.localeCompare(b.code) || a.letter.localeCompare(b.letter) || String(a.typeKey).localeCompare(String(b.typeKey), 'pt', { numeric: true }));
         if (list.length) chapters.push({ ch, items: list });
       });
