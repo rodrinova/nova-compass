@@ -4787,6 +4787,31 @@
   .mqt-table tr.fl-noq > td:first-child { box-shadow: inset 3px 0 0 var(--danger); }
   .mqt-table tr.fl-unk .kc { color: var(--warning); }
   .mqt-draft-note { margin: 0 0 var(--sp-2); }
+  #kn-props[hidden] { display: none; }
+  .kn-bar { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; margin-bottom: var(--sp-2); }
+  .kn-bar .mqt-find { flex: 1 1 260px; }
+  .kn-hint { margin: 0 0 var(--sp-2); }
+  .kn-table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); table-layout: fixed; }
+  .kn-table th { text-align: left; font-size: var(--fs-xs); color: var(--text-3); font-weight: var(--fw-semibold); padding: 8px; border-bottom: 1px solid var(--border); }
+  .kn-table td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .kn-ch td { background: var(--surface-2); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .02em; color: var(--text-2); }
+  .kn-k { font-weight: var(--fw-semibold); color: var(--accent); white-space: nowrap; }
+  .kn-var .kn-k { padding-left: 18px; font-weight: var(--fw-medium); }
+  .kn-in { width: 100%; box-sizing: border-box; min-height: 42px; resize: vertical; border: 1px solid transparent; border-radius: var(--r-sm); background: var(--surface-2); color: var(--text); font: inherit; font-size: var(--fs-sm); line-height: 1.4; padding: 6px 8px; }
+  .kn-in:hover { border-color: var(--border); }
+  .kn-in:focus { outline: none; border-color: var(--accent); background: var(--surface); box-shadow: var(--focus); }
+  .kn-meta { display: flex; align-items: center; gap: var(--sp-2); margin-top: 3px; font-size: 11px; }
+  .kn-meta .text-btn { font-size: 11px; }
+  .kn-st { color: var(--text-3); }
+  .kn-s-lib .kn-st, .kn-s-proj .kn-st { color: var(--accent); font-weight: var(--fw-semibold); }
+  .kn-s-prop .kn-in { background: color-mix(in srgb, var(--warning) 12%, var(--surface)); border-color: color-mix(in srgb, var(--warning) 50%, transparent); }
+  .kn-s-prop .kn-st { color: var(--warning); font-weight: var(--fw-semibold); }
+  .kn-d { color: var(--text-2); line-height: 1.45; font-size: var(--fs-xs); }
+  .kn-cut { color: var(--text-3); opacity: .55; text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--text-3) 50%, transparent); }
+  mark.kn-keep { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--text); border-radius: 3px; padding: 0 1px; }
+  .kn-base { color: var(--text-3); }
+  .kn-plus { color: var(--accent); font-weight: var(--fw-semibold); }
+  @media (max-width: 760px) { .kn-table colgroup { display: none; } .kn-table, .kn-table tbody, .kn-table tr, .kn-table td { display: block; width: auto; } .kn-table thead { display: none; } .kn-row td { border: 0; padding: 4px 8px; } .kn-row { border-bottom: 1px solid var(--border); padding: 6px 0; } }
   .mqt-scope { margin: 0 0 var(--sp-1); }
   .mqt-scope .segmented button:disabled { opacity: .45; cursor: not-allowed; }
   .scope-off { display: none !important; }
@@ -18906,7 +18931,7 @@ Grant-CsApplicationAccessPolicy -PolicyName "NOVA-Compass" -Global</pre>
       { id: 'mqt-studio', cat: 'proj', ctx: ['mqt', 'detail'],
         q: 'faço o MQT a partir do Revit e emito revisões',
         a: 'MQT Studio: cada projeto tem o seu MQT (abre-se antes das tabelas, em «+ Novo MQT» ou no ⋯ da ficha do projeto). As tabelas do Revit (.txt) montam os artigos pelos keynotes. Os descritivos vêm da biblioteca e podem ajustar-se em cada projeto. Fechas R00, R01…: novos a azul, revistos a verde, retirados a vermelho e rasurados.',
-        steps: ['**MQT Studio → + Novo MQT** e escolhe o projeto (ou, na ficha do projeto, **⋯ → MQT**).', 'No Revit, cada tipo tem o **Keynote** da biblioteca (ex.: PRD 01a = bloco térmico 250 mm). Exporta as tabelas (Ficheiro → Exportar → Relatórios → Tabela) e toca em **Carregar tabelas**.', 'Toca num artigo ou subartigo para **ajustar a designação e o descritivo neste projeto** (a biblioteca não muda) ou repor o original. Os descritivos que não ajustaste seguem sempre a biblioteca: o que mudares lá aparece em todos os MQT (as revisões já fechadas não mudam).', 'Para tirar um artigo deste projeto, toca nele → **Tirar do MQT** (no artigo com subartigos: **Tirar o artigo do MQT**). Os que vêm do Revit ficam em **Retirados deste MQT**, no fundo, e não voltam mesmo que estejam nas tabelas — até tocares em **Repor**.', 'Artigos cujo descritivo da biblioteca ainda está **por rever** (proposto e não revisto) ficam destacados a âmbar no MQT do projeto: revê-los primeiro na **Biblioteca de keynotes** (botão **Rever na biblioteca**, no artigo); só depois se ajustam só no projeto.', 'Todos os keynotes das tabelas do Revit entram no MQT, com a medição (a coluna **Área** nativa do Revit, ou Comprimento, Volume, Contagem). Os que não têm correspondência na biblioteca ficam **destacados** (âmbar, com etiqueta) até lhes escreveres um descritivo — toca no keynote para o descrever; os que vêm sem medição ficam a vermelho. As variantes que só existem no Revit levam só um **aro discreto** ao lado do keynote. A etiqueta **descritivo alterado no projeto** quer dizer que o descritivo da biblioteca foi mudado neste projeto: toca nela (ou, dentro do artigo, em **Repor o original**) para voltar ao descritivo da biblioteca (com Anular). Os artigos intocados não têm etiqueta nem botão. Os avisos do modelo (keynotes desconhecidos, variantes, medições ou campos por definir) aparecem também numa faixa por cima do MQT, que se abre com os botões **Descrever** e **Definir**. Só aparece quando há avisos.', 'Armários (keynote **ARM XX**): ficam sempre em **Carpintarias**, à unidade, e cada elemento do Revit com esse keynote conta 1 un. Os da biblioteca põem-se em **+ Artigo → Artigo da biblioteca**; um armário só deste projeto cria-se em **+ Artigo → Artigo novo** com o keynote ARM (keynote, descritivo — pode partir do de um armário da biblioteca — e unidades).', '**✦ Rever com o Gemini** (ao lado do Excel): o Gemini lê o MQT artigo a artigo, pensa em como cada coisa funciona e procura as **lacunas** — o que falta dentro dos artigos (ex.: parede exterior sem impermeabilização, janela sem ferragens ou vedantes) e artigos que faltam no MQT —; depois, só se valer muito, erros e proteção. No máximo 12 pontos, do mais ao menos importante, com a cor do impacto (verde a vermelho). O MQT fica à esquerda; em cada ponto escolhe uma das versões do texto (1, 2, 3), escreve à mão ou ignora: **Aplicar** ajusta logo o MQT (com Anular). A revisão fica guardada no projeto.', '**Procurar** (à esquerda de + Artigo, e na biblioteca de keynotes): escreve e os resultados acendem logo; a barra mostra «3 de 12» e as setas ↑ ↓ (ou Enter / Shift+Enter) andam entre eles; Esc limpa; Ctrl/⌘+F vai direto para a barra. Dentro de cada capítulo, os artigos ficam juntos por família de keynote (os ARM todos juntos, depois os VI…); um keynote novo vai para junto dos da sua família ou, se for uma família nova, para perto dos artigos com o descritivo mais parecido.', 'A seta ao lado de cada capítulo e de cada artigo recolhe-o ou abre-o; **Fechar tudo** / **Abrir tudo** no topo. Fica lembrado neste computador. O mesmo na biblioteca de keynotes.', 'Quando estiver pronto, **Fechar R00**: a numeração fica fixa. Nas revisões seguintes (R01, R02…) aparecem os novos (azul), revistos (verde) e retirados (vermelho, rasurados — desaparecem na revisão seguinte), com a nota em itálico.', 'A biblioteca global é uma tabela em **MQT Studio → Biblioteca de keynotes**: escreve nas células (grava sozinho); na linha **+ keynote** escreve PRD 05 para um elemento ou PRD 05d para um subartigo; também podes colar linhas do Excel.', 'Para mudar um elemento de ordem ou de capítulo, arrasta-o pelos pontinhos (ou ↑ ↓ no teclado); junto ao topo ou ao fundo do ecrã a página desliza sozinha e Esc cancela. Os capítulos também se arrastam (pelos pontinhos do capítulo): a ordem muda em todos os MQT ainda sem R00 e o código do capítulo mantém-se. Cada projeto pode ainda ter a sua ordem de capítulos, arrastando-os no MQT do projeto. Os keynotes renumeram-se sozinhos — quem muda de capítulo passa para o prefixo desse capítulo (ex.: DEM 03 → PRD 07) — e a mudança chega a todos os MQT dos projetos, com a numeração dos artigos (até à R00; depois fica fixa). No Revit, volta a carregar o ficheiro de keynotes e acerta os tipos.', 'No projeto, **Excel ▾ → Ficheiro de keynotes (Revit)** descarrega o .txt pronto a carregar no Revit: os textos vêm dos descritivos deste projeto (sem «Fornecimento e aplicação de…» nem «de acordo com…»), com os campos já definidos e os artigos só do projeto.', 'Exporta o **Excel** (um por bloco); as propostas dos empreiteiros entram em **Preços** e alimentam a estimativa.'],
+        steps: ['**MQT Studio → + Novo MQT** e escolhe o projeto (ou, na ficha do projeto, **⋯ → MQT**).', 'No Revit, cada tipo tem o **Keynote** da biblioteca (ex.: PRD 01a = bloco térmico 250 mm). Exporta as tabelas (Ficheiro → Exportar → Relatórios → Tabela) e toca em **Carregar tabelas**.', 'Toca num artigo ou subartigo para **ajustar a designação e o descritivo neste projeto** (a biblioteca não muda) ou repor o original. Os descritivos que não ajustaste seguem sempre a biblioteca: o que mudares lá aparece em todos os MQT (as revisões já fechadas não mudam).', 'Para tirar um artigo deste projeto, toca nele → **Tirar do MQT** (no artigo com subartigos: **Tirar o artigo do MQT**). Os que vêm do Revit ficam em **Retirados deste MQT**, no fundo, e não voltam mesmo que estejam nas tabelas — até tocares em **Repor**.', 'Artigos cujo descritivo da biblioteca ainda está **por rever** (proposto e não revisto) ficam destacados a âmbar no MQT do projeto: revê-los primeiro na **Biblioteca de keynotes** (botão **Rever na biblioteca**, no artigo); só depois se ajustam só no projeto.', 'Todos os keynotes das tabelas do Revit entram no MQT, com a medição (a coluna **Área** nativa do Revit, ou Comprimento, Volume, Contagem). Os que não têm correspondência na biblioteca ficam **destacados** (âmbar, com etiqueta) até lhes escreveres um descritivo — toca no keynote para o descrever; os que vêm sem medição ficam a vermelho. As variantes que só existem no Revit levam só um **aro discreto** ao lado do keynote. A etiqueta **descritivo alterado no projeto** quer dizer que o descritivo da biblioteca foi mudado neste projeto: toca nela (ou, dentro do artigo, em **Repor o original**) para voltar ao descritivo da biblioteca (com Anular). Os artigos intocados não têm etiqueta nem botão. Os avisos do modelo (keynotes desconhecidos, variantes, medições ou campos por definir) aparecem também numa faixa por cima do MQT, que se abre com os botões **Descrever** e **Definir**. Só aparece quando há avisos.', 'Armários (keynote **ARM XX**): ficam sempre em **Carpintarias**, à unidade, e cada elemento do Revit com esse keynote conta 1 un. Os da biblioteca põem-se em **+ Artigo → Artigo da biblioteca**; um armário só deste projeto cria-se em **+ Artigo → Artigo novo** com o keynote ARM (keynote, descritivo — pode partir do de um armário da biblioteca — e unidades).', '**✦ Rever com o Gemini** (ao lado do Excel): o Gemini lê o MQT artigo a artigo, pensa em como cada coisa funciona e procura as **lacunas** — o que falta dentro dos artigos (ex.: parede exterior sem impermeabilização, janela sem ferragens ou vedantes) e artigos que faltam no MQT —; depois, só se valer muito, erros e proteção. No máximo 12 pontos, do mais ao menos importante, com a cor do impacto (verde a vermelho). O MQT fica à esquerda; em cada ponto escolhe uma das versões do texto (1, 2, 3), escreve à mão ou ignora: **Aplicar** ajusta logo o MQT (com Anular). A revisão fica guardada no projeto.', '**Procurar** (à esquerda de + Artigo, e na biblioteca de keynotes): escreve e os resultados acendem logo; a barra mostra «3 de 12» e as setas ↑ ↓ (ou Enter / Shift+Enter) andam entre eles; Esc limpa; Ctrl/⌘+F vai direto para a barra. Dentro de cada capítulo, os artigos ficam juntos por família de keynote (os ARM todos juntos, depois os VI…); um keynote novo vai para junto dos da sua família ou, se for uma família nova, para perto dos artigos com o descritivo mais parecido.', 'A seta ao lado de cada capítulo e de cada artigo recolhe-o ou abre-o; **Fechar tudo** / **Abrir tudo** no topo. Fica lembrado neste computador. O mesmo na biblioteca de keynotes.', 'Quando estiver pronto, **Fechar R00**: a numeração fica fixa. Nas revisões seguintes (R01, R02…) aparecem os novos (azul), revistos (verde) e retirados (vermelho, rasurados — desaparecem na revisão seguinte), com a nota em itálico.', 'A biblioteca global é uma tabela em **MQT Studio → Biblioteca de keynotes**: escreve nas células (grava sozinho); na linha **+ keynote** escreve PRD 05 para um elemento ou PRD 05d para um subartigo; também podes colar linhas do Excel.', 'Para mudar um elemento de ordem ou de capítulo, arrasta-o pelos pontinhos (ou ↑ ↓ no teclado); junto ao topo ou ao fundo do ecrã a página desliza sozinha e Esc cancela. Os capítulos também se arrastam (pelos pontinhos do capítulo): a ordem muda em todos os MQT ainda sem R00 e o código do capítulo mantém-se. Cada projeto pode ainda ter a sua ordem de capítulos, arrastando-os no MQT do projeto. Os keynotes renumeram-se sozinhos — quem muda de capítulo passa para o prefixo desse capítulo (ex.: DEM 03 → PRD 07) — e a mudança chega a todos os MQT dos projetos, com a numeração dos artigos (até à R00; depois fica fixa). No Revit, volta a carregar o ficheiro de keynotes e acerta os tipos.', 'Separador **Keynotes** (no projeto e no início do MQT Studio): o texto de cada keynote para o Revit, ao lado do descritivo com o que entra realçado e o que sai esbatido. Escreve para ajustar (no projeto escolhes se fica na biblioteca ou só no projeto), «Repor automático» volta ao calculado, e **✦ Propor com o Gemini** sugere os textos (aceitas uma a uma ou todas). Os subartigos partem do texto do artigo e acrescentam o que os distingue.', 'No projeto, **Excel ▾ → Ficheiro de keynotes (Revit)** descarrega o .txt pronto a carregar no Revit: os textos vêm dos descritivos deste projeto (sem «Fornecimento e aplicação de…» nem «de acordo com…»), com os campos já definidos e os artigos só do projeto.', 'Exporta o **Excel** (um por bloco); as propostas dos empreiteiros entram em **Preços** e alimentam a estimativa.'],
         kw: 'gemini ia inteligencia artificial rever revisao omissoes erros sugestoes armario armarios arm roupeiro movel carpintaria unidade mqt mapa quantidades trabalhos medicoes revit lt keynote notas chave tabelas schedules revisao r00 r01 revisoes descritivo override texto proprio biblioteca subartigo eliminar apagar tirar retirar repor recolher arrastar mover capitulo renumerar codigo keynote ordem fechar abrir expandir colapsar artigo novo revisto retirado estimativa empreiteiro proposta concurso bloco',
         tour: [{ go: 'nav:mqt', sel: '#mqt-htabs', text: 'MQT de todos os projetos, preços dos empreiteiros e a biblioteca de keynotes.' }] },
       { id: 'trabalhos-a-mais', cat: 'money', ctx: ['detail', 'home'],
@@ -31352,11 +31377,13 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         stats = mqtPriceStats(pr);
         acts = `<button type="button" class="secondary-btn toolbar-btn" id="mqt-quote-import">Carregar proposta</button><button type="button" class="text-btn" id="mqt-price-manual">+ Preço à mão</button>`;
         body = mqtPricesHtml(lib, pr, stats, projects);
+      } else if (tab === 'kn') {
+        body = '<div id="kn-wrap"></div>';
       } else {
         acts = `<button type="button" class="secondary-btn toolbar-btn" id="mqt-kn-export">Ficheiro de keynotes (Revit)</button>`;
         body = mqtLibGridHtml(lib);
       }
-      const tabs = [['list', 'MQT dos projetos'], ['prices', 'Preços'], ['lib', 'Biblioteca de keynotes']];
+      const tabs = [['list', 'MQT dos projetos'], ['prices', 'Preços'], ['lib', 'Biblioteca de keynotes'], ['kn', 'Keynotes (Revit)']];
       box.innerHTML = `
         <div class="billing-bar"><div class="segmented" id="mqt-htabs">${tabs.map(([k, l]) => `<button type="button" data-htab="${k}" class="${k === tab ? 'active' : ''}">${l}</button>`).join('')}</div>
           <span class="mqt-tabacts">${acts}<button type="button" class="text-btn" id="mqt-how">Como preparar o Revit</button></span></div>
@@ -31371,6 +31398,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       box.querySelectorAll('[data-mqt-pricek]').forEach(r => r.addEventListener('click', () => openMqtPriceDetail(lib, pr, stats, r.dataset.mqtPricek)));
       document.getElementById('mqt-price-cfg')?.addEventListener('click', () => openMqtPriceCfg(pr.settings));
       if (tab === 'lib') attachMqtLibGrid(box, lib);
+      if (tab === 'kn') mqtAttachKn(box, lib, null, null);
     }
     async function openMqtNewModal(projects) {
       let ov; try { ov = await mqtLoadOverview(); } catch (e) { showError('abrir', e); return; }
@@ -31427,7 +31455,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         document.getElementById('mqt-open-new').addEventListener('click', async () => { try { await mqtSaveCfg(mqtProjectId, {}); showToast('MQT aberto'); renderMqt(); } catch (e) { showError('abrir o MQT', e); } });
         return;
       }
-      const tabs = [['mqt', 'MQT', 0], ['revs', 'Revisões', 0]];
+      const tabs = [['mqt', 'MQT', 0], ['keys', 'Keynotes', 0], ['revs', 'Revisões', 0]];
       let body = '', acts = '';
       if (mqtTab === 'mqt') {
         const src = viewRev ? viewRev.blocks || {} : Object.fromEntries(Object.entries(working).map(([k, v]) => [k, v.lines]));
@@ -31446,7 +31474,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
           + mqtLinesHtml(lines, stats, { editable: !viewRev, reorder: !viewRev && !lastRev, revN, block: keys.length > 1 ? bk : null, counts: !viewRev && lastRev ? cnt : null, allTotal: keys.length > 1 ? keys.reduce((t, k) => t + mqtLinesTotal(src[k], stats).total, 0) : null })
           + (!viewRev ? mqtRemovedHtml(cfg) : '');
         box.__mqtExport = { src, keys, revN, draft: !viewRev };
-      } else body = mqtRevsHtml(revs, runs, nextN, cnt);
+      } else if (mqtTab === 'keys') body = '<div id="kn-wrap"></div>';
+      else body = mqtRevsHtml(revs, runs, nextN, cnt);
       box.innerHTML = head + `
         ${latest ? `<div class="mqt-meta">Tabelas: carregamento ${latest.version}${latest.label ? ' · ' + escapeHtml(latest.label) : ''} · ${escapeHtml(fmtDayMonth(String(latest.created_at).slice(0, 10)))} · ${mq.keyed} de ${mq.rowsCount} elementos com keynote${!viewRev ? ' · <button type="button" class="text-btn mqt-how-link" id="mqt-how">Como preparar o Revit</button>' : ''}</div>` : ''}
         <div class="billing-bar"><div class="segmented" id="mqt-tabs">${tabs.map(([k, l, n]) => `<button type="button" data-mtab="${k}" class="${k === mqtTab ? 'active' : ''}">${l}${n ? `<em class="alert">${n}</em>` : ''}</button>`).join('')}</div>
@@ -31456,6 +31485,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       // eventos
       document.getElementById('mqt-home').addEventListener('click', () => { mqtProjectId = ''; mqtViewRev = null; renderMqt(); });
       box.querySelectorAll('[data-mtab]').forEach(b => b.addEventListener('click', () => { mqtTab = b.dataset.mtab; renderMqt(); }));
+      if (mqtTab === 'keys' && box.querySelector('#kn-wrap')) mqtAttachKn(box, lib, cfg, project);
       document.getElementById('mqt-how')?.addEventListener('click', openMqtHowTo);
       document.getElementById('mqt-add')?.addEventListener('click', e => popMenu(e.currentTarget, [
         { label: 'Artigo da biblioteca', sub: 'Escolhe o keynote e a quantidade', run: () => openMqtManualModal(lib, cfg, mq, null) },
@@ -32892,34 +32922,144 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       if (!t) t = String(name || '').trim();
       return t.charAt(0).toUpperCase() + t.slice(1);
     }
-    // Ficheiro de keynotes para o Revit: chave ⇥ texto ⇥ pai (UTF-16 com BOM, como o Revit gosta), pronto a carregar.
-    // O texto vem do descritivo (sem «Fornecimento e aplicação de…» nem o fecho «de acordo com…»). No projeto (cfg):
-    // usa a designação e o descritivo do projeto, completa os campos já definidos e junta os artigos só do projeto
-    // (e as variantes dos vãos, VE 06a, VE 06b…).
-    function mqtExportKeynotes(lib, cfg = null, project = null) {
-      const clean = s => String(s || '').replace(/[\t\r\n]+/g, ' ').trim();
-      const texts = cfg?.texts || {}, names = cfg?.names || {}, specs = cfg?.specs || {};
+    // Partes do descritivo para o realce: o que sai no início (ação), o que entra no keynote e o que sai no fim (fecho)
+    function mqtKnParts(text) {
+      const t = String(text || '');
+      const VERB = '(?:fornecimento|execução|execucao|aplicação|aplicacao|montagem|assentamento|colocação|colocacao|instalação|instalacao|elaboração|elaboracao|construção|construcao|manutenção|manutencao|desmontagem|realização|realizacao)';
+      const m = t.match(new RegExp(`^\\s*(?:${VERB}(?:\\s*,\\s*|\\s+e\\s+|\\s+))+(?:de|do|da|dos|das)\\s+`, 'i'));
+      const a = m ? m[0].length : 0; let b = t.length;
+      [/[,;.]?\s*(?:,\s*)?(?:de acordo com|conforme|segundo)\s+(?:[^,;.]*?)(?:desenhos?|peças|pecas|projet|especifica|indicaç|indicac|caderno|fabricante|fornecedor|recomenda)/i,
+       /[,;]?\s*(?:bem como\s+|e\s+)?(?:incluindo\s+)?(?:e\s+)?todos os (?:materiais|trabalhos|acessórios|cortes)/i].forEach(re => { const r = re.exec(t.slice(a)); if (r) b = Math.min(b, a + r.index); });
+      return { pre: t.slice(0, a), core: t.slice(a, b), post: t.slice(b) };
+    }
+    // Uma linha por capítulo, artigo e subartigo, com o texto automático, os ajustes (biblioteca: kn_text; projeto:
+    // mqt_project.kn_texts) e o que vale (projeto › biblioteca › automático). O subartigo parte do texto do artigo e
+    // acrescenta o que o distingue (o descritivo da variante, ou a designação).
+    function mqtKnRows(lib, cfg = null) {
+      const clean = s => String(s || '').replace(/[\t\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
+      const texts = cfg?.texts || {}, names = cfg?.names || {}, specs = cfg?.specs || {}, kt = cfg?.kn_texts || {};
       const fill = (t, sp) => String(t || '').replace(/\{([^}]+)\}/g, (all, f) => sp?.[f.trim()] || all);
-      const lines = [];
+      const lowFirst = x => x && !/^[A-ZÀ-Ý]{2}/.test(x) ? x.charAt(0).toLowerCase() + x.slice(1) : x;
+      const sub = (base, extra) => clean(`${base}${extra ? ', ' + lowFirst(clean(extra).replace(/[;.]+$/, '')) : ''}`);
+      const rows = [];
       lib.chapters.forEach(ch => {
         const els = lib.elements.filter(e => e.chapter_code === ch.code && e.active !== false && !e._ghost).sort((a, b) => (a._custom ? 1 : 0) - (b._custom ? 1 : 0) || a.sort_order - b.sort_order || mqtKeyCmp(a.code, b.code));
         if (!els.length) return;
-        lines.push(`${ch.code}\t${clean(ch.name)}`);
+        rows.push({ t: 'ch', key: ch.code, text: clean(ch.name) });
         els.forEach(e => {
-          const EL = e.code.toUpperCase(), nm = names[EL] || e.name;
-          lines.push(`${mqtCodeDisp(e.code)}\t${clean(mqtKeynoteText(fill(texts[EL] ?? e.text, specs[EL]), nm))}\t${ch.code}`);
-          (lib.varsOf[EL] || []).forEach(v => { const k = mqtFull(e.code, v.letter); lines.push(`${k}\t${clean(nm + ' — ' + (names[k.toUpperCase()] || mqtVarLabel(v)))}\t${mqtCodeDisp(e.code)}`); });
+          const EL = e.code.toUpperCase(), nm = names[EL] || e.name, desc = clean(fill(texts[EL] ?? e.text, specs[EL]));
+          const r = { t: 'el', key: mqtCodeDisp(e.code), id: EL, el: e, nm, desc, auto: clean(mqtKeynoteText(desc, nm)), lib: e._custom ? null : (e.kn_text || null), proj: kt[EL] ?? null, custom: !!e._custom, parent: ch.code };
+          rows.push(r);
+          (lib.varsOf[EL] || []).forEach(v => {
+            const k = mqtFull(e.code, v.letter), id = k.toUpperCase(), vd = clean(fill(v.text, { ...(specs[EL] || {}), ...(specs[id] || {}) }));
+            const extra = lowFirst(vd ? mqtKeynoteText(vd, '') : (names[id] || mqtVarLabel(v)));
+            rows.push({ t: 'var', key: k, id, v, el: e, nm: names[id] || mqtVarLabel(v), desc: vd || mqtVarLabel(v), base: r, extra, lib: v.kn_text || null, proj: kt[id] ?? null, custom: !!e._custom, parent: mqtCodeDisp(e.code) });
+          });
           // vãos só do projeto: uma linha por variante (VE 06a, VE 06b…)
-          const vs = [...new Map((cfg?.arm_subs?.[EL] || []).filter(sb => sb.v).map(sb => [String(sb.v).toLowerCase(), sb])).values()];
-          vs.forEach(sb => lines.push(`${mqtCodeDisp(e.code)}${String(sb.v).toLowerCase()}\t${clean(nm + ' — ' + [sb.label, sb.f].filter(Boolean).join(', '))}\t${mqtCodeDisp(e.code)}`));
+          [...new Map((cfg?.arm_subs?.[EL] || []).filter(sb => sb.v).map(sb => [String(sb.v).toLowerCase(), sb])).values()].forEach(sb => {
+            const k = `${mqtCodeDisp(e.code)}${String(sb.v).toLowerCase()}`;
+            rows.push({ t: 'var', key: k, id: k.toUpperCase(), el: e, nm: sb.label || '', desc: [sb.label, sb.f].filter(Boolean).join(', '), base: r, extra: [sb.label, sb.f].filter(Boolean).join(', '), lib: null, proj: kt[k.toUpperCase()] ?? null, custom: true, parent: mqtCodeDisp(e.code) });
+          });
         });
       });
+      // o automático do subartigo vem do que vale no artigo (incluindo o ajuste do artigo)
+      rows.forEach(r => { if (r.t === 'el') r.eff = r.proj ?? r.lib ?? r.auto; });
+      rows.forEach(r => { if (r.t === 'var') { r.auto = sub(r.base.eff, r.extra); r.eff = r.proj ?? r.lib ?? r.auto; } });
+      return rows;
+    }
+    // Ficheiro de keynotes para o Revit: chave ⇥ texto ⇥ pai (UTF-16 com BOM, como o Revit gosta), pronto a carregar.
+    // No projeto (cfg): designação, descritivo e ajustes do projeto, campos já definidos e os artigos só do projeto.
+    function mqtExportKeynotes(lib, cfg = null, project = null) {
+      const lines = mqtKnRows(lib, cfg).map(r => r.t === 'ch' ? `${r.key}\t${r.text}` : `${r.key}\t${String(r.eff).replace(/[\t\r\n]+/g, ' ')}\t${r.parent}`);
       const txt = lines.join('\r\n') + '\r\n';
       const buf = new Uint8Array(2 + txt.length * 2); buf[0] = 0xFF; buf[1] = 0xFE;
       for (let i = 0; i < txt.length; i++) { const c = txt.charCodeAt(i); buf[2 + i * 2] = c & 0xFF; buf[3 + i * 2] = c >> 8; }
       const nm = project ? `Keynotes - ${mqtSafeName([project.code, project.name].filter(Boolean).join(' '))}.txt` : 'NOVA_keynotes.txt';
       mqtDownload(new Blob([buf], { type: 'text/plain' }), nm);
       showToast(project ? 'Ficheiro de keynotes do projeto descarregado' : 'Ficheiro de keynotes descarregado');
+    }
+    // ---------- Keynotes: o texto de cada keynote (o que vai para o Revit), à vista e editável ----------
+    function mqtKnHtml(rows, { project = null } = {}) {
+      const st = r => r.prop != null ? ['prop', 'proposta do Gemini'] : r.proj != null ? ['proj', 'ajustado neste projeto'] : r.lib != null ? ['lib', 'ajustado na biblioteca'] : ['auto', 'automático'];
+      const descHtml = r => {
+        if (r.t === 'var') return `<span class="kn-base">${escapeHtml(r.base.eff)}</span> <span class="kn-plus">+</span> <mark class="kn-keep">${escapeHtml(r.extra || '—')}</mark>`;
+        const p = mqtKnParts(r.desc);
+        return r.desc ? `<span class="kn-cut">${escapeHtml(p.pre)}</span><mark class="kn-keep">${escapeHtml(p.core)}</mark><span class="kn-cut">${escapeHtml(p.post)}</span>` : `<span class="muted">sem descritivo: usa a designação</span>`;
+      };
+      const n = rows.filter(r => r.t !== 'ch').length, adj = rows.filter(r => r.t !== 'ch' && (r.proj != null || r.lib != null)).length;
+      return `<div class="kn-bar">${mqtFindHtml('kn-find', 'Procurar keynote ou texto…')}
+          ${project ? `<div class="segmented kn-scope" role="radiogroup" aria-label="Onde guardar os ajustes"><button type="button" data-kn-scope="lib" class="active">Ajustes na biblioteca</button><button type="button" data-kn-scope="proj">Só neste projeto</button></div>` : ''}
+          <button type="button" class="secondary-btn toolbar-btn mai-btn" id="kn-ai" title="O Gemini cruza o descritivo do artigo com o de cada subartigo e propõe o texto de cada keynote">✦ Propor com o Gemini</button>
+          <button type="button" class="primary-btn toolbar-btn" id="kn-dl">Descarregar .txt</button></div>
+        <div class="field-hint kn-hint">O texto que vai para o Revit. Ao lado, o descritivo: <mark class="kn-keep">realçado</mark> o que entra; <span class="kn-cut">esbatido</span> o que sai (a ação do início e o fecho). Os subartigos partem do texto do artigo e acrescentam o que os distingue. Escreve no texto para o ajustar (grava ao sair); «Repor automático» volta ao texto calculado. ${n} keynotes · ${adj} ajustados.</div>
+        <div id="kn-props" class="mqt-banner warn" hidden></div>
+        <div class="gantt-wrap mqt-gridwrap"><table class="kn-table"><colgroup><col style="width:110px"><col style="width:46%"><col></colgroup>
+          <thead><tr><th>Keynote</th><th>Texto do keynote (Revit)</th><th>Descritivo</th></tr></thead><tbody>
+          ${rows.map((r, i) => r.t === 'ch' ? `<tr class="kn-ch"><td colspan="3"><b>${escapeHtml(r.key)}</b> · ${escapeHtml(r.text)}</td></tr>` : `<tr class="kn-row kn-${r.t} kn-s-${st(r)[0]}" data-i="${i}">
+            <td class="kn-k">${escapeHtml(r.key)}</td>
+            <td class="kn-t"><textarea class="kn-in" rows="${Math.min(6, Math.ceil(String(r.prop ?? r.eff).length / 64) + 1)}" aria-label="Texto do keynote ${escapeHtml(r.key)}">${escapeHtml(r.prop ?? r.eff)}</textarea>
+              <div class="kn-meta"><span class="kn-st">${st(r)[1]}</span>${r.prop != null ? '<button type="button" class="text-btn" data-kn-accept>Aceitar</button><button type="button" class="text-btn" data-kn-reject>Recusar</button>' : (r.proj != null || r.lib != null) ? '<button type="button" class="text-btn" data-kn-reset>Repor automático</button>' : ''}${r.custom ? '<span class="muted">· só deste projeto</span>' : ''}</div></td>
+            <td class="kn-d">${descHtml(r)}</td></tr>`).join('')}
+          </tbody></table></div>`;
+    }
+    function mqtAttachKn(box, lib, cfg, project, rerender) {
+      let rows = mqtKnRows(lib, cfg), scope = 'lib';
+      const paint = () => { const y = window.scrollY; box.querySelector('#kn-wrap').innerHTML = mqtKnHtml(rows, { project }); window.scrollTo(0, y); wire(); };
+      const save = async (r, val) => {
+        const v = String(val || '').trim();
+        const sc = r.custom || !project ? (r.custom ? 'proj' : 'lib') : scope;
+        const isAuto = !v || v === r.auto;
+        if (sc === 'lib') {
+          await dbUpdate(r.v ? 'mqt_variants' : 'mqt_elements', (r.v || r.el).id, { kn_text: isAuto ? null : v }, r.v ? MOCK_MQT.variants : MOCK_MQT.elements);
+          (r.v || r.el).kn_text = isAuto ? null : v; mqtLibCache = null;
+          if (project && cfg.kn_texts?.[r.id] != null) { const kt = { ...cfg.kn_texts }; delete kt[r.id]; cfg.kn_texts = kt; await mqtSaveCfg(mqtProjectId, { kn_texts: kt }); }
+        } else {
+          const kt = { ...(cfg.kn_texts || {}) }; if (isAuto) delete kt[r.id]; else kt[r.id] = v;
+          cfg.kn_texts = kt; await mqtSaveCfg(mqtProjectId, { kn_texts: kt });
+        }
+      };
+      const refresh = () => { const props = Object.fromEntries(rows.filter(r => r.prop != null).map(r => [r.id, r.prop])); rows = mqtKnRows(lib, cfg); rows.forEach(r => { if (props[r.id] != null && props[r.id] !== r.eff) r.prop = props[r.id]; }); paint(); };
+      const wire = () => {
+        const tb = box.querySelector('.kn-table');
+        box.querySelectorAll('[data-kn-scope]').forEach(b => { b.classList.toggle('active', b.dataset.knScope === scope); b.addEventListener('click', () => { scope = b.dataset.knScope; box.querySelectorAll('[data-kn-scope]').forEach(x => x.classList.toggle('active', x === b)); }); });
+        box.querySelectorAll('.kn-row').forEach(tr => {
+          const r = rows[Number(tr.dataset.i)], ta = tr.querySelector('.kn-in');
+          ta.addEventListener('change', async () => { try { delete r.prop; await save(r, ta.value); showToast('Texto do keynote guardado'); refresh(); } catch (e) { showError('guardar o keynote', e); } });
+          tr.querySelector('[data-kn-reset]')?.addEventListener('click', async () => {
+            try { if (project && r.proj != null) { const kt = { ...(cfg.kn_texts || {}) }; delete kt[r.id]; cfg.kn_texts = kt; await mqtSaveCfg(mqtProjectId, { kn_texts: kt }); } else await save({ ...r, custom: false }, ''); refresh(); }
+            catch (e) { showError('repor o keynote', e); }
+          });
+          tr.querySelector('[data-kn-accept]')?.addEventListener('click', async () => { try { const v = ta.value; delete r.prop; await save(r, v); refresh(); } catch (e) { showError('guardar o keynote', e); } });
+          tr.querySelector('[data-kn-reject]')?.addEventListener('click', () => { delete r.prop; refresh(); });
+        });
+        mqtAttachFind(document.getElementById('kn-find'), { table: tb, scope: 'kn:' + (project?.id || 'lib'), rows: [...tb.querySelectorAll('tbody tr.kn-row')], text: tr => { const r = rows[Number(tr.dataset.i)]; return `${r.key} ${r.prop ?? r.eff} ${r.desc}`; } });
+        document.getElementById('kn-dl')?.addEventListener('click', () => mqtExportKeynotes(lib, cfg, project));
+        const pending = rows.filter(r => r.prop != null);
+        const pb = document.getElementById('kn-props');
+        if (pb) { pb.hidden = !pending.length; if (pending.length) { pb.innerHTML = `<span><b>${pending.length} propostas do Gemini</b> por aceitar (a amarelo). Revê-as e aceita uma a uma, ou todas de uma vez — guardam ${!project || scope === 'lib' ? 'na biblioteca' : 'só neste projeto'}.</span><button type="button" class="primary-btn toolbar-btn" id="kn-accept-all">Aceitar todas</button>`; document.getElementById('kn-accept-all').addEventListener('click', async e => { e.currentTarget.disabled = true; try { for (const r of pending) { const v = r.prop; delete r.prop; await save(r, v); } showToast(`${pending.length} textos guardados`); refresh(); } catch (err) { showError('guardar os keynotes', err); refresh(); } }); } }
+        document.getElementById('kn-ai')?.addEventListener('click', e => mqtKnAi(e.currentTarget, rows, project, () => { const y = window.scrollY; paint(); window.scrollTo(0, y); }));
+      };
+      paint();
+    }
+    // O Gemini propõe o texto de cada keynote: cruza o descritivo do artigo com o do subartigo e decide o que manter
+    async function mqtKnAi(btn, rows, project, done) {
+      const items = rows.filter(r => r.t !== 'ch');
+      if (!items.length) return;
+      btn.disabled = true; const label = btn.textContent;
+      try {
+        let got = 0;
+        for (let i = 0; i < items.length; i += 60) {
+          btn.textContent = `✦ A pensar… ${Math.min(i + 60, items.length)}/${items.length}`;
+          const part = items.slice(i, i + 60).map(r => ({ id: r.id, k: r.key, nivel: r.t === 'var' ? 'subartigo' : 'artigo', designacao: r.t === 'var' ? r.el.name : r.nm, descritivo: r.t === 'var' ? r.base.desc : r.desc, variante: r.t === 'var' ? `${r.nm}${r.desc && r.desc !== r.nm ? ' — ' + r.desc : ''}` : '', atual: r.eff }));
+          let out;
+          if (devMode) out = { itens: part.map(x => ({ id: x.id, texto: x.atual })) };
+          else { const r = await supabase.functions.invoke('mqt-ai', { body: { mode: 'keynotes', items: part } }); if (r.error) throw r.error; out = r.data; if (out?.error) throw new Error(out.error); }
+          (out?.itens || []).forEach(x => { const r = items.find(y => y.id === x.id); const t = String(x.texto || '').trim(); if (r && t && t !== r.eff) { r.prop = t; got++; } });
+        }
+        showToast(got ? `${got} propostas do Gemini para rever` : 'O Gemini não propõe alterações');
+        done();
+      } catch (e) { showError('pedir as propostas ao Gemini', e); }
+      finally { btn.disabled = false; btn.textContent = label; }
     }
     function mqtDownload(blob, name) {
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
