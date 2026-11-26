@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Compass">
 <!-- Versão da app = número do pull request que a publicou; aparece no aviso de atualização -->
-<meta name="app-version" content="228">
+<meta name="app-version" content="229">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>NOVA Compass</title>
 <!-- Ícone: o N ameixa com brilho no fundo preto (assets/brand/gerador/render-icons.js) -->
@@ -5103,6 +5103,12 @@
   .mqt-bar i { display: block; height: 100%; border-radius: inherit; background: var(--success); transition: width .4s; }
   .mqt-ck { display: grid; grid-template-columns: 22px 1fr auto; gap: var(--sp-2-5); align-items: center; padding: var(--sp-2) 0; border-top: 1px solid var(--border); }
   .mqt-ck:first-of-type { border-top: none; }
+  .mqt-ck-acts { display: inline-flex; align-items: center; gap: var(--sp-2); }
+  .mqt-wx { border: 0; background: none; color: var(--text-3); font-size: 12px; line-height: 1; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; }
+  .mqt-wx:hover { background: var(--surface-3); color: var(--text); }
+  .mqt-wx:focus-visible { outline: none; box-shadow: var(--focus); }
+  .mqt-warn-back { padding: var(--sp-2) 0 0; font-size: var(--fs-xs); }
+  .mqt-warn-none { padding: var(--sp-1) var(--sp-3); }
   .mqt-ico { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: var(--fw-bold); }
   .mqt-ck.s-ok .mqt-ico { background: var(--success-soft); color: var(--success); }
   .mqt-ck.s-warn .mqt-ico { background: var(--warning-soft); color: var(--warning); }
@@ -31085,7 +31091,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         }
         const vars = lib.varsOf[pk.code] || [];
         if (vars.length && !pk.letter) { (issues.noVariant[pk.code] ||= { k: el.code, t: r.t, n: 0, vars }).n++; }
-        if (pk.letter && !vars.some(v => v.letter.toUpperCase() === pk.letter) && !(cfg.arm_subs?.[pk.code] || []).some(sb => String(sb.v || '').toUpperCase() === pk.letter) && !described(mqtFull(el.code, pk.letter), pk.code)) { (issues.badVariant[r.k] ||= { k: r.k, t: r.t, n: 0 }).n++; }
+        if (pk.letter && !el._custom && !vars.some(v => v.letter.toUpperCase() === pk.letter) && !(cfg.arm_subs?.[pk.code] || []).some(sb => String(sb.v || '').toUpperCase() === pk.letter) && !described(mqtFull(el.code, pk.letter), pk.code)) { (issues.badVariant[r.k] ||= { k: r.k, t: r.t, n: 0, full: mqtFull(el.code, pk.letter) }).n++; }
         const full = mqtFull(el.code, pk.letter);
         keyInfo[full] = { code: pk.code, letter: pk.letter };
         (byKey[full] ||= []).push(r);
@@ -31496,7 +31502,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         body = (!viewRev && missN ? `<div class="mqt-banner warn"><span><b>${mq.issues.missing.length} ${mq.issues.missing.length === 1 ? 'artigo tem' : 'artigos têm'} campos por preencher</b> (${missN} ${missN === 1 ? 'campo' : 'campos'}). A revisão só se fecha com tudo preenchido.</span><button type="button" class="primary-btn toolbar-btn" id="mqt-fill">Preencher agora</button></div>` : '')
           + (viewRev ? `<div class="mqt-banner">A ver a revisão <b>${mqtRevLabel(viewRev.rev)}</b>, fechada a ${escapeHtml(new Date(viewRev.created_at).toLocaleDateString('pt-PT'))}${viewRev.note ? ' · ' + escapeHtml(viewRev.note) : ''}. É uma fotografia: não muda. <button type="button" class="text-btn" id="mqt-rev-back">Voltar ao MQT em curso</button></div>` : '')
           + (!viewRev && !latest ? mqtEmptyHtml(true) : '')
-          + (!viewRev ? mqtWarnHtml(mq) : '')
+          + (!viewRev ? mqtWarnHtml(mq, cfg.specs?.__warn_off || {}) : '')
           + (keys.length > 1 ? `<div class="segmented mqt-blocks" id="mqt-blocks">${keys.map(b => `<button type="button" data-mblock="${escapeHtml(b)}" class="${b === bk ? 'active' : ''}">${escapeHtml(mqtBlockLabel(b))}</button>`).join('')}</div>` : '')
           + mqtLinesHtml(lines, stats, { editable: !viewRev, reorder: !viewRev && !lastRev, revN, block: keys.length > 1 ? bk : null, counts: !viewRev && lastRev ? cnt : null, allTotal: keys.length > 1 ? keys.reduce((t, k) => t + mqtLinesTotal(src[k], stats).total, 0) : null })
           + (!viewRev ? mqtRemovedHtml(cfg) : '');
@@ -31538,6 +31544,11 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       ]));
       box.querySelectorAll('[data-mblock]').forEach(b => b.addEventListener('click', () => { mqtBlock = b.dataset.mblock; renderMqt(); }));
       box.querySelectorAll('[data-mqt-arm]').forEach(b => b.addEventListener('click', () => openMqtArmModal(lib, cfg, mq, b.dataset.mqtArm)));
+      // avisos: retirar um (fica guardado neste MQT), voltar a mostrar os retirados, editar a linha da variante
+      const warnOff = async next => { try { const specs = JSON.parse(JSON.stringify(cfg.specs || {})); if (next && Object.keys(next).length) specs.__warn_off = next; else delete specs.__warn_off; await mqtSaveCfg(mqtProjectId, { specs }); renderMqt(); } catch (e) { showError('guardar os avisos', e); } };
+      box.querySelectorAll('[data-mqt-woff]').forEach(b => b.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); const id = b.dataset.mqtWoff; warnOff({ ...(cfg.specs?.__warn_off || {}), [id]: 1 }); showToast('Aviso retirado', { undo: () => { const n = { ...(cfg.specs?.__warn_off || {}) }; delete n[id]; warnOff(n); } }); }));
+      box.querySelectorAll('[data-mqt-won]').forEach(b => b.addEventListener('click', () => warnOff(null)));
+      box.querySelectorAll('[data-mqt-edit]').forEach(b => b.addEventListener('click', () => { const F = b.dataset.mqtEdit.toUpperCase(); const it = Object.values(mq.items).find(i => String(i.full).toUpperCase() === F); if (it) openMqtItemModal(lib, cfg, mq, it, stats); else showToast('Esta linha não está no MQT deste bloco'); }));
       box.querySelectorAll('[data-mqt-new]').forEach(b => b.addEventListener('click', () => openMqtNewArtModal(lib, cfg, mq, b.dataset.mqtNew)));
       // nada fica por preencher: com campos variáveis em falta, primeiro pede-os
       const closeRev = () => mq.issues.missing.length ? openMqtFillFields(lib, cfg, mq, 'Antes de fechar a revisão, preenche os campos que faltam.') : openMqtCloseRev(lib, mq, cfg, lastRev, nextN);
@@ -31992,22 +32003,25 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
     }
     // Avisos do modelo (o que veio do Revit e precisa de atenção): faixa discreta por cima do MQT, que se abre.
     // Só aparece quando há avisos. As lacunas de conteúdo (o que falta nos artigos) são com o Gemini.
-    function mqtWarnHtml(mq) {
+    // off = avisos retirados neste MQT (specs.__warn_off: { id: 1 }); cada aviso tem um ✕ e, quando dá, «Editar»
+    function mqtWarnHtml(mq, off = {}) {
       const I = mq.issues;
-      const row = (main, sub, act = '') => `<div class="mqt-ck s-warn"><span class="mqt-ico">!</span><span class="mqt-ckm"><b>${main}</b>${sub ? `<small>${sub}</small>` : ''}</span>${act}</div>`;
+      let hidden = 0;
+      const row = (main, sub, act = '', id = '') => { if (id && off[id]) { hidden++; return ''; } return `<div class="mqt-ck s-warn"><span class="mqt-ico">!</span><span class="mqt-ckm"><b>${main}</b>${sub ? `<small>${sub}</small>` : ''}</span><span class="mqt-ck-acts">${act}${id ? `<button type="button" class="mqt-wx" data-mqt-woff="${escapeHtml(id)}" aria-label="Retirar este aviso" title="Retirar este aviso">✕</button>` : ''}</span></div>`; };
       const list = [
-        ...Object.values(I.noKey).sort((a, b) => b.n - a.n).map(x => row(`Sem keynote: ${escapeHtml(x.t || '(sem tipo)')}`, `${escapeHtml(x.c || '')} · ${x.n} elemento${x.n > 1 ? 's' : ''} — não entra no MQT`)),
+        ...Object.values(I.noKey).sort((a, b) => b.n - a.n).map(x => row(`Sem keynote: ${escapeHtml(x.t || '(sem tipo)')}`, `${escapeHtml(x.c || '')} · ${x.n} elemento${x.n > 1 ? 's' : ''} — não entra no MQT`, '', `nokey:${x.c || ''}|${x.t || ''}`)),
         ...Object.values(I.unknown).map(x => mqtArmCode(x.k)
-          ? row(`${MQT_DIM[mqtDimFam(mqtArmCode(x.k))].nome} sem descritivo: ${escapeHtml(x.k)}`, `${escapeHtml(x.t || '')} · ${x.n} no modelo — descreve-o neste MQT ou cria-o na Biblioteca`, `<button type="button" class="text-btn" data-mqt-arm="${escapeHtml(x.k)}">Descrever</button>`)
-          : row(`Keynote desconhecido: ${escapeHtml(x.k)}`, `${escapeHtml(x.t || '')} · ${x.n} elemento${x.n > 1 ? 's' : ''} — descreve-o neste MQT, acrescenta-o na Biblioteca ou corrige no Revit`, mqtNewCode(x.k) ? `<button type="button" class="text-btn" data-mqt-new="${escapeHtml(x.k)}">Descrever</button>` : '')),
-        ...Object.values(I.noVariant).map(x => row(`Falta a variante: ${escapeHtml(mqtCodeDisp(x.k))}`, `${escapeHtml(x.t || '')} · usa ${x.vars.map(v => escapeHtml(`${mqtFull(x.k, v.letter)} (${v.label})`)).join(', ')}`)),
-        ...Object.values(I.badVariant).map(x => row(`Variante que não existe: ${escapeHtml(x.k)}`, `${escapeHtml(x.t || '')} · ${x.n} elemento${x.n > 1 ? 's' : ''}`)),
-        ...Object.values(I.noField).map(x => row(`Falta a medição: ${escapeHtml(x.k)}`, `A tabela não tem a coluna ${escapeHtml(x.need)}`)),
-        ...I.missing.map(m => row(`Por definir: ${escapeHtml(m.key)}`, escapeHtml(m.fields.join(', ')), `<button type="button" class="text-btn" data-mqt-spec="${escapeHtml(m.key)}">Definir</button>`))
-      ];
-      if (!list.length) return '';
+          ? row(`${MQT_DIM[mqtDimFam(mqtArmCode(x.k))].nome} sem descritivo: ${escapeHtml(x.k)}`, `${escapeHtml(x.t || '')} · ${x.n} no modelo — descreve-o neste MQT ou cria-o na Biblioteca`, `<button type="button" class="text-btn" data-mqt-arm="${escapeHtml(x.k)}">Descrever</button>`, `unk:${x.k}`)
+          : row(`Keynote desconhecido: ${escapeHtml(x.k)}`, `${escapeHtml(x.t || '')} · ${x.n} elemento${x.n > 1 ? 's' : ''} — descreve-o neste MQT, acrescenta-o na Biblioteca ou corrige no Revit`, mqtNewCode(x.k) ? `<button type="button" class="text-btn" data-mqt-new="${escapeHtml(x.k)}">Descrever</button>` : '', `unk:${x.k}`)),
+        ...Object.values(I.noVariant).map(x => row(`Falta a variante: ${escapeHtml(mqtCodeDisp(x.k))}`, `${escapeHtml(x.t || '')} · usa ${x.vars.map(v => escapeHtml(`${mqtFull(x.k, v.letter)} (${v.label})`)).join(', ')}`, '', `novar:${x.k}`)),
+        ...Object.values(I.badVariant).map(x => row(`Variante que não existe na biblioteca: ${escapeHtml(x.k)}`, `${escapeHtml(x.t || '')} · ${x.n} elemento${x.n > 1 ? 's' : ''} — descreve-a neste MQT (deixa de avisar) ou cria-a na Biblioteca`, x.full ? `<button type="button" class="text-btn" data-mqt-edit="${escapeHtml(x.full)}">Editar</button>` : '', `badvar:${x.k}`)),
+        ...Object.values(I.noField).map(x => row(`Falta a medição: ${escapeHtml(x.k)}`, `A tabela não tem a coluna ${escapeHtml(x.need)}`, '', `nofield:${x.k}`)),
+        ...I.missing.map(m => row(`Por definir: ${escapeHtml(m.key)}`, escapeHtml(m.fields.join(', ')), `<button type="button" class="text-btn" data-mqt-spec="${escapeHtml(m.key)}">Definir</button>`, `miss:${m.key}`))
+      ].filter(Boolean);
+      const back = hidden ? `<div class="mqt-warn-back"><button type="button" class="text-btn" data-mqt-won>Mostrar ${hidden === 1 ? 'o aviso retirado' : `os ${hidden} avisos retirados`}</button></div>` : '';
+      if (!list.length) return back ? `<div class="mqt-warn mqt-warn-none">${back}</div>` : '';
       let open = false; try { open = localStorage.getItem('mqt-warn-open') === '1'; } catch (_) { /* sem armazenamento */ }
-      return `<details class="mqt-warn"${open ? ' open' : ''}><summary><span class="mqt-warn-dot" aria-hidden="true"></span><b>${list.length} ${list.length === 1 ? 'aviso' : 'avisos'} do modelo</b><span class="muted">keynotes, variantes e medições a acertar</span><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5"/></svg></summary><div class="mqt-warn-l">${list.join('')}</div></details>`;
+      return `<details class="mqt-warn"${open ? ' open' : ''}><summary><span class="mqt-warn-dot" aria-hidden="true"></span><b>${list.length} ${list.length === 1 ? 'aviso' : 'avisos'} do modelo</b><span class="muted">keynotes, variantes e medições a acertar</span><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5"/></svg></summary><div class="mqt-warn-l">${list.join('')}${back}</div></details>`;
     }
     function mqtPricesHtml(lib, pr, stats, projects) {
       const pName = id => projects.find(p => p.id === id)?.name || '';
