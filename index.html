@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Compass">
 <!-- Versão da app = número do pull request que a publicou; aparece no aviso de atualização -->
-<meta name="app-version" content="226">
+<meta name="app-version" content="227">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>NOVA Compass</title>
 <!-- Ícone: o N ameixa com brilho no fundo preto (assets/brand/gerador/render-icons.js) -->
@@ -31061,6 +31061,13 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       const byKey = {};        // keynote completo → linhas
       const keyInfo = {};      // keynote completo → { code, letter }
       const ghosts = {};       // keynotes do Revit que não estão na biblioteca → { code, fam, rows }
+      // variante que não está na biblioteca mas já foi descrita e guardada neste MQT (descritivo ou designação próprios): deixa de ser aviso
+      // (sem subartigos na biblioteca, o texto fica guardado pelo código do artigo)
+      const described = (full, code) => {
+        const keys = [String(full).toUpperCase()]; if (code && !(lib.varsOf[String(code).toUpperCase()] || []).length) keys.push(String(code).toUpperCase());
+        const has = o => Object.keys(o || {}).some(k => { const K = k.toUpperCase(); return keys.some(F => K === F || K.startsWith(F + '|')); });
+        return has(cfg.texts) || has(cfg.names);
+      };
       rows.forEach(r => {
         const pk = mqtParseKey(r.k);
         if (!pk) { const g = `${r.c || ''}|${r.t || '(sem tipo)'}`; (issues.noKey[g] ||= { c: r.c, t: r.t, n: 0 }).n++; return; }
@@ -31076,7 +31083,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         }
         const vars = lib.varsOf[pk.code] || [];
         if (vars.length && !pk.letter) { (issues.noVariant[pk.code] ||= { k: el.code, t: r.t, n: 0, vars }).n++; }
-        if (pk.letter && !vars.some(v => v.letter.toUpperCase() === pk.letter) && !(cfg.arm_subs?.[pk.code] || []).some(sb => String(sb.v || '').toUpperCase() === pk.letter)) { (issues.badVariant[r.k] ||= { k: r.k, t: r.t, n: 0 }).n++; }
+        if (pk.letter && !vars.some(v => v.letter.toUpperCase() === pk.letter) && !(cfg.arm_subs?.[pk.code] || []).some(sb => String(sb.v || '').toUpperCase() === pk.letter) && !described(mqtFull(el.code, pk.letter), pk.code)) { (issues.badVariant[r.k] ||= { k: r.k, t: r.t, n: 0 }).n++; }
         const full = mqtFull(el.code, pk.letter);
         keyInfo[full] = { code: pk.code, letter: pk.letter };
         (byKey[full] ||= []).push(r);
@@ -31109,7 +31116,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
             if (typeKey) extra = ` — tipo ${typeKey}${r.w != null && r.h != null ? ` (${fmtNum(r.w)} × ${fmtNum(r.h)} m)` : ''}`;
           }
           const it = add(el, letter, typeKey, r.b || '', q, 'model', extra);
-          if (badVar(el, code, letter)) it.flag = 'var';
+          if (badVar(el, code, letter) && !described(full, code)) it.flag = 'var';
         });
         if (!got) noQty(el, letter);
       });
