@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Compass">
 <!-- Versão da app = número do pull request que a publicou; aparece no aviso de atualização -->
-<meta name="app-version" content="231">
+<meta name="app-version" content="232">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>NOVA Compass</title>
 <!-- Ícone: o N ameixa com brilho no fundo preto (assets/brand/gerador/render-icons.js) -->
@@ -29913,7 +29913,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
     const MQT_ARM_CH = '20';
     const mqtArmCh = lib => lib.chapters.find(c => /carpint/i.test(c.name || ''))?.code || (lib.chapters.some(c => c.code === MQT_ARM_CH) ? MQT_ARM_CH : null);
     const mqtIsArm = c => /^ARM\d/i.test(String(c || '').replace(/\s+/g, ''));
-    // Famílias cujo artigo tem subartigos com as dimensões (armários, vãos, painéis de fachada e espelhos). Os vãos pedem também o modo de funcionamento.
+    // Famílias cujo artigo tem subartigos com as dimensões (armários, vãos e espelhos). Os vãos pedem também o modo de funcionamento.
     const MQT_DIM = {
       ARM: { nome: 'Armário', um: 'armário', novo: 'Novo armário', dims: [['l', 'Largura'], ['p', 'Profundidade'], ['a', 'Altura']], func: false,
         ph: 'Roupeiro do quarto 1', txt: 'Fornecimento e montagem de roupeiros em MDF hidrófugo lacado a branco, com portas de abrir, varão e prateleiras, conforme desenho de pormenor.' },
@@ -29921,15 +29921,13 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         ph: 'Janela da sala', txt: 'Fornecimento e montagem de caixilharia em alumínio com corte térmico, vidro duplo, incluindo ferragens, vedantes, soleiras e todos os remates, conforme mapa de vãos.' },
       VI: { nome: 'Vão interior', um: 'vão', novo: 'Novo vão interior', dims: [['l', 'Largura'], ['a', 'Altura']], func: true, vars: true, chRe: /carpint|portas|v[ãa]os/i,
         ph: 'Porta do quarto 1', txt: 'Fornecimento e montagem de porta interior em MDF lacado, com aro, guarnições, dobradiças e fechadura, conforme mapa de vãos.' },
-      PAN: { nome: 'Painel de fachada', um: 'painel', novo: 'Novo painel de fachada', dims: [['l', 'Largura'], ['a', 'Altura']], func: false, vars: true, chRe: /caixilh|fachada|serralh|v[ãa]os/i,
-        ph: 'Painel fixo da sala', txt: 'Fornecimento e montagem de painel de vidro fixo em fachada cortina do sistema tipo Reynaers CW 50-SC ou equivalente, em vidro duplo de controlo solar e baixa emissividade, incluindo calços, vedantes em EPDM, juntas em silicone estrutural à cor, todos os trabalhos e materiais necessários ao seu perfeito acabamento e funcionamento, de acordo com as especificações do fabricante e os desenhos de projeto.' },
       VID: { nome: 'Espelho', um: 'espelho', novo: 'Novo espelho', dims: [['l', 'Largura'], ['a', 'Altura']], func: false, chRe: /vidro|espelho/i,
         ph: 'Espelho da I.S. 1', txt: 'Fornecimento e aplicação de espelho em vidro de 6 mm, c/ aresta biselada, incluindo estrutura de suporte e fixação, peças de remate, todos os trabalhos e materiais necessários ao seu perfeito acabamento, de acordo com as especificações do fabricante e os desenhos de projeto.' }
     };
     const MQT_FUNC = ['Fixo', 'De batente', 'Oscilobatente', 'De correr', 'Elevação e correr', 'Basculante', 'Pivotante', 'De fole', 'Guilhotina'];
-    const mqtDimFam = c => (String(c || '').replace(/\s+/g, '').match(/^(ARM|VID|PAN|VE|VI)\d/i) || [])[1]?.toUpperCase() || null;
+    const mqtDimFam = c => (String(c || '').replace(/\s+/g, '').match(/^(ARM|VID|VE|VI)\d/i) || [])[1]?.toUpperCase() || null;
     const mqtIsDim = c => !!mqtDimFam(c);
-    const mqtDimCode = raw => { const m = String(raw || '').replace(/\s+/g, '').match(/^(ARM|VID|PAN|VE|VI)[-.]?(\d{1,3})$/i); return m ? m[1].toUpperCase() + m[2].padStart(2, '0') : null; };
+    const mqtDimCode = raw => { const m = String(raw || '').replace(/\s+/g, '').match(/^(ARM|VID|VE|VI)[-.]?(\d{1,3})$/i); return m ? m[1].toUpperCase() + m[2].padStart(2, '0') : null; };
     const mqtArmCode = mqtDimCode;
     function mqtArmFix(e, lib) {
       if (!mqtIsDim(e.code)) return;
@@ -29972,7 +29970,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       const revitN = c => Object.values(mq.issues.unknown || {}).filter(x => mqtNewCode(x.k)?.code.toUpperCase() === String(c).toUpperCase()).reduce((t, x) => t + x.n, 0);
       const chs = lib.chapters;
       openQuickModal(ex ? `Artigo ${mqtCodeDisp(code0)}` : 'Artigo novo', `
-        <div class="field-hint" style="margin-top:0">Artigo só deste projeto, que não está na biblioteca (ex.: TS 01 torneira, LL 01 lava-loiça). Com armários (ARM), vãos (VE, VI), painéis de fachada (PAN) e espelhos (VID), a tabela dos subartigos abre-se por baixo.</div>
+        <div class="field-hint" style="margin-top:0">Artigo só deste projeto, que não está na biblioteca (ex.: TS 01 torneira, LL 01 lava-loiça). Com armários (ARM), vãos (VE, VI) e espelhos (VID), a tabela dos subartigos abre-se por baixo.</div>
         <div class="mqt-g2">
           <div><label class="field-label" for="nw-code">Keynote</label><input type="text" class="form-input" id="nw-code" value="${escapeHtml(code0 ? mqtCodeDisp(code0) : '')}" placeholder="TS 01" autocomplete="off"></div>
           <div id="nw-unit-w"><label class="field-label" for="nw-unit">Unidade</label><select class="form-input" id="nw-unit">${MQT_UNITS.map(u => `<option${(ex?.unit || pre?.unit || 'un') === u ? ' selected' : ''}>${u}</option>`).join('')}</select></div>
@@ -31078,7 +31076,13 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         const has = o => Object.keys(o || {}).some(k => { const K = k.toUpperCase(); return keys.some(F => K === F || K.startsWith(F + '|')); });
         return has(cfg.texts) || has(cfg.names);
       };
+      const sfaEl = lib.elements.filter(e => /^SFA\d/i.test(e.code) && e.active !== false).sort((a, b) => (a._custom ? 1 : 0) - (b._custom ? 1 : 0) || (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0))[0] || null;
       rows.forEach(r => {
+        // fachada cortina (como no MQT de referência): o artigo é o sistema (SFA) e cada tipo de painel (PAN 01, PAN 02…) é um
+        // subartigo à unidade; os painéis não dizem a que pano pertencem, por isso vão todos para o sistema
+        const pm = sfaEl && String(r.k || '').trim().replace(/\s+/g, '').match(/^PAN[-.]?(\d{1,3})([A-Za-z])?$/i);
+        if (pm) { const pc = 'PAN' + pm[1].padStart(2, '0'), pe = lib.elByCode[pc]; r = { ...r, k: sfaEl.code, w: null, h: null, _pan: `${mqtFull(pc, pm[2] || '')}${pe?.name ? ' · ' + pe.name : ''}` }; }
+        else if (sfaEl && /^SFA\d/i.test(String(r.k || '').replace(/\s+/g, ''))) return;
         const pk = mqtParseKey(r.k);
         if (!pk) { const g = `${r.c || ''}|${r.t || '(sem tipo)'}`; (issues.noKey[g] ||= { c: r.c, t: r.t, n: 0 }).n++; return; }
         const el = lib.elByCode[pk.code];
@@ -31121,7 +31125,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
           if (q == null) { issues.noField[full] = { k: full, need: MQT_FIELD_LABEL[field] || 'Largura e altura' }; return; }
           got++;
           let typeKey = '', extra = '';
-          if (el.split_by_type) {
+          if (r._pan) { typeKey = r._pan; extra = ` — ${r._pan}`; }
+          else if (el.split_by_type) {
             typeKey = r.tm || r.t || '';
             if (typeKey) extra = ` — tipo ${typeKey}${r.w != null && r.h != null ? ` (${fmtNum(r.w)} × ${fmtNum(r.h)} m)` : ''}`;
           }
