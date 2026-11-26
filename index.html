@@ -29905,19 +29905,21 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
     const MQT_ARM_CH = '20';
     const mqtArmCh = lib => lib.chapters.find(c => /carpint/i.test(c.name || ''))?.code || (lib.chapters.some(c => c.code === MQT_ARM_CH) ? MQT_ARM_CH : null);
     const mqtIsArm = c => /^ARM\d/i.test(String(c || '').replace(/\s+/g, ''));
-    // Famílias cujo artigo tem subartigos com as dimensões (armários e vãos). Os vãos pedem também o modo de funcionamento.
+    // Famílias cujo artigo tem subartigos com as dimensões (armários, vãos e espelhos). Os vãos pedem também o modo de funcionamento.
     const MQT_DIM = {
-      ARM: { nome: 'Armário', novo: 'Novo armário', dims: [['l', 'Largura'], ['p', 'Profundidade'], ['a', 'Altura']], func: false,
+      ARM: { nome: 'Armário', um: 'armário', novo: 'Novo armário', dims: [['l', 'Largura'], ['p', 'Profundidade'], ['a', 'Altura']], func: false,
         ph: 'Roupeiro do quarto 1', txt: 'Fornecimento e montagem de roupeiros em MDF hidrófugo lacado a branco, com portas de abrir, varão e prateleiras, conforme desenho de pormenor.' },
-      VE: { nome: 'Vão exterior', novo: 'Novo vão exterior', dims: [['l', 'Largura'], ['a', 'Altura']], func: true, vars: true, chRe: /caixilh|serralh|v[ãa]os/i,
+      VE: { nome: 'Vão exterior', um: 'vão', novo: 'Novo vão exterior', dims: [['l', 'Largura'], ['a', 'Altura']], func: true, vars: true, chRe: /caixilh|serralh|v[ãa]os/i,
         ph: 'Janela da sala', txt: 'Fornecimento e montagem de caixilharia em alumínio com corte térmico, vidro duplo, incluindo ferragens, vedantes, soleiras e todos os remates, conforme mapa de vãos.' },
-      VI: { nome: 'Vão interior', novo: 'Novo vão interior', dims: [['l', 'Largura'], ['a', 'Altura']], func: true, vars: true, chRe: /carpint|portas|v[ãa]os/i,
-        ph: 'Porta do quarto 1', txt: 'Fornecimento e montagem de porta interior em MDF lacado, com aro, guarnições, dobradiças e fechadura, conforme mapa de vãos.' }
+      VI: { nome: 'Vão interior', um: 'vão', novo: 'Novo vão interior', dims: [['l', 'Largura'], ['a', 'Altura']], func: true, vars: true, chRe: /carpint|portas|v[ãa]os/i,
+        ph: 'Porta do quarto 1', txt: 'Fornecimento e montagem de porta interior em MDF lacado, com aro, guarnições, dobradiças e fechadura, conforme mapa de vãos.' },
+      VID: { nome: 'Espelho', um: 'espelho', novo: 'Novo espelho', dims: [['l', 'Largura'], ['a', 'Altura']], func: false, chRe: /vidro|espelho/i,
+        ph: 'Espelho da I.S. 1', txt: 'Fornecimento e aplicação de espelho em vidro c/ 6 mm de esp., c/ aresta biselada, incluindo estrutura de suporte e fixação, peças de remate, todos os trabalhos e materiais necessários ao seu perfeito acabamento, de acordo com peças desenhadas e escritas.' }
     };
     const MQT_FUNC = ['Fixo', 'De batente', 'Oscilobatente', 'De correr', 'Elevação e correr', 'Basculante', 'Pivotante', 'De fole', 'Guilhotina'];
-    const mqtDimFam = c => (String(c || '').replace(/\s+/g, '').match(/^(ARM|VE|VI)\d/i) || [])[1]?.toUpperCase() || null;
+    const mqtDimFam = c => (String(c || '').replace(/\s+/g, '').match(/^(ARM|VID|VE|VI)\d/i) || [])[1]?.toUpperCase() || null;
     const mqtIsDim = c => !!mqtDimFam(c);
-    const mqtDimCode = raw => { const m = String(raw || '').replace(/\s+/g, '').match(/^(ARM|VE|VI)[-.]?(\d{1,3})$/i); return m ? m[1].toUpperCase() + m[2].padStart(2, '0') : null; };
+    const mqtDimCode = raw => { const m = String(raw || '').replace(/\s+/g, '').match(/^(ARM|VID|VE|VI)[-.]?(\d{1,3})$/i); return m ? m[1].toUpperCase() + m[2].padStart(2, '0') : null; };
     const mqtArmCode = mqtDimCode;
     function mqtArmFix(e, lib) {
       if (!mqtIsDim(e.code)) return;
@@ -29960,7 +29962,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       const revitN = c => Object.values(mq.issues.unknown || {}).filter(x => mqtNewCode(x.k)?.code.toUpperCase() === String(c).toUpperCase()).reduce((t, x) => t + x.n, 0);
       const chs = lib.chapters;
       openQuickModal(ex ? `Artigo ${mqtCodeDisp(code0)}` : 'Artigo novo', `
-        <div class="field-hint" style="margin-top:0">Artigo só deste projeto, que não está na biblioteca (ex.: TS 01 torneira, LL 01 lava-loiça). Com armários (ARM) e vãos (VE, VI), a tabela dos subartigos abre-se por baixo.</div>
+        <div class="field-hint" style="margin-top:0">Artigo só deste projeto, que não está na biblioteca (ex.: TS 01 torneira, LL 01 lava-loiça). Com armários (ARM), vãos (VE, VI) e espelhos (VID), a tabela dos subartigos abre-se por baixo.</div>
         <div class="mqt-g2">
           <div><label class="field-label" for="nw-code">Keynote</label><input type="text" class="form-input" id="nw-code" value="${escapeHtml(code0 ? mqtCodeDisp(code0) : '')}" placeholder="TS 01" autocomplete="off"></div>
           <div id="nw-unit-w"><label class="field-label" for="nw-unit">Unidade</label><select class="form-input" id="nw-unit">${MQT_UNITS.map(u => `<option${(ex?.unit || pre?.unit || 'un') === u ? ' selected' : ''}>${u}</option>`).join('')}</select></div>
@@ -30005,7 +30007,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
           document.getElementById('quick-modal').classList.toggle('qm-wide', !!D);
           if (D) {
             st.set(keepSubs, fam, pk.code);
-            $('nw-dimhint').innerHTML = `<b>${escapeHtml(D.nome)}</b>: o descritivo de cima é o geral; cada ${fam === 'ARM' ? 'armário' : 'vão'} é um subartigo, com as dimensões${D.func ? ', o modo de funcionamento (opcional)' : ''} e as unidades.${fam === 'ARM' ? ' Fica em Carpintarias.' : ''}`;
+            $('nw-dimhint').innerHTML = `<b>${escapeHtml(D.nome)}</b>: o descritivo de cima é o geral; cada ${D.um} é um subartigo, com as dimensões${D.func ? ', o modo de funcionamento (opcional)' : ''} e as unidades.${fam === 'ARM' ? ' Fica em Carpintarias.' : ''}`;
             const libF = lib.elements.filter(e => !e._custom && e.active !== false && mqtDimFam(e.code) === fam);
             $('nw-dimbase').innerHTML = libF.length ? `<label class="field-label" for="nw-base">Partir do descritivo de <span class="muted">(opcional)</span></label><select class="form-input" id="nw-base"><option value="">— Texto livre —</option>${libF.map(e => `<option value="${escapeHtml(e.code)}">${escapeHtml(mqtCodeDisp(e.code) + ' · ' + e.name)}</option>`).join('')}</select>` : '';
             $('nw-base')?.addEventListener('change', e => {
@@ -30046,7 +30048,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         const chapter = $('nw-ch').value;
         if (mqtIsDim(C)) {   // armários e vãos: grava o artigo e os subartigos da tabela de baixo
           const fam = mqtDimFam(C), D = MQT_DIM[fam];
-          if (fam !== 'ARM' && !chapter) { formError('nw-msg', 'Em que capítulo fica este vão? Escolhe-o acima.'); $('nw-ch').focus(); return; }
+          if (fam !== 'ARM' && !chapter) { formError('nw-msg', `Em que capítulo fica este ${D.um}? Escolhe-o acima.`); $('nw-ch').focus(); return; }
           const text = $('nw-text').value.trim();
           if (!text) { formError('nw-msg', `Escreve o descritivo geral do ${D.nome.toLowerCase()}.`); $('nw-text').focus(); return; }
           const subs = st.get();
@@ -30359,7 +30361,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       const chSel = FAM === 'ARM' ? '' : `<label class="field-label" for="arm-ch">Capítulo</label>
           <select class="form-input" id="arm-ch"><option value="">— Em que capítulo fica? —</option>${lib.chapters.map(c => `<option value="${escapeHtml(c.code)}"${chOf(code0) === c.code ? ' selected' : ''}>${escapeHtml(c.code + ' · ' + c.name)}</option>`).join('')}</select>`;
       openQuickModal(presetCode ? `${D.nome} ${mqtCodeDisp(code0)}` : D.nome, `
-        <div class="field-hint" style="margin-top:0">O artigo tem o <b>descritivo geral</b> do ${noun}; cada ${FAM === 'ARM' ? 'armário' : 'vão'} é um <b>subartigo</b> com as dimensões${D.func ? ', o modo de funcionamento' : ''} e as unidades. ${FAM === 'ARM' ? 'Fica em Carpintarias, ' : 'Fica '}à unidade (un). Os do Revit com este keynote entram como subartigos por tipo.</div>
+        <div class="field-hint" style="margin-top:0">O artigo tem o <b>descritivo geral</b> do ${noun}; cada ${D.um} é um <b>subartigo</b> com as dimensões${D.func ? ', o modo de funcionamento' : ''} e as unidades. ${FAM === 'ARM' ? 'Fica em Carpintarias, ' : 'Fica '}à unidade (un). Os do Revit com este keynote entram como subartigos por tipo.</div>
         <label class="field-label" for="arm-pick">${escapeHtml(D.nome)}</label>
         <select class="form-input" id="arm-pick">${pickOpts}</select>
         <div id="arm-own">
@@ -30428,7 +30430,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
           const text = txt.value.trim();
           if (!text) { formError('arm-msg', `Escreve o descritivo geral do ${noun}.`); return; }
           const chapter = $('arm-ch')?.value || null;
-          if (FAM !== 'ARM' && !chapter) { formError('arm-msg', 'Em que capítulo fica este vão? Escolhe-o acima.'); $('arm-ch').focus(); return; }
+          if (FAM !== 'ARM' && !chapter) { formError('arm-msg', `Em que capítulo fica este ${D.um}? Escolhe-o acima.`); $('arm-ch').focus(); return; }
           if (code !== code0) delete c2[code0];
           c2[code] = { name: custom[code0]?.name || pre?.name || D.nome, text, from: $('arm-base')?.value || null, at: custom[code0]?.at || new Date().toISOString() };
           if (chapter) c2[code].chapter = chapter;
