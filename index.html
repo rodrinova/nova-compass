@@ -4810,6 +4810,9 @@
   .kn-cut { color: var(--text-3); opacity: .55; text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--text-3) 50%, transparent); }
   mark.kn-keep { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--text); border-radius: 3px; padding: 0 1px; }
   .kn-base { color: var(--text-3); }
+  .kn-d { cursor: text; user-select: text; -webkit-user-select: text; }
+  .kn-d ::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); color: var(--text); }
+  .kn-pick { position: fixed; z-index: 200; display: flex; gap: var(--sp-1); padding: var(--sp-1); background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: 0 6px 20px rgba(0,0,0,.18); }
   .kn-plus { color: var(--accent); font-weight: var(--fw-semibold); }
   @media (max-width: 760px) { .kn-table colgroup { display: none; } .kn-table, .kn-table tbody, .kn-table tr, .kn-table td { display: block; width: auto; } .kn-table thead { display: none; } .kn-row td { border: 0; padding: 4px 8px; } .kn-row { border-bottom: 1px solid var(--border); padding: 6px 0; } }
   .mqt-scope { margin: 0 0 var(--sp-1); }
@@ -32984,17 +32987,34 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
     // ---------- Keynotes: o texto de cada keynote (o que vai para o Revit), à vista e editável ----------
     function mqtKnHtml(rows, { project = null } = {}) {
       const st = r => r.prop != null ? ['prop', 'proposta do Gemini'] : r.proj != null ? ['proj', 'ajustado neste projeto'] : r.lib != null ? ['lib', 'ajustado na biblioteca'] : ['auto', 'automático'];
+      const norm = x => String(x || '').toLowerCase().replace(/[\s,;.]+$/, '');
+      // realça no descritivo cada troço que o texto usa (o texto inteiro, ou os pedaços separados por vírgulas)
+      const cutHtml = (desc, want, fall) => {
+        const low = desc.toLowerCase(), w = norm(want);
+        let segs = [];
+        const at = w ? low.indexOf(w) : -1;
+        if (at >= 0) segs = [[at, at + w.length]];
+        else if (w) w.split(/\s*,\s*/).filter(x => x.length > 2).forEach(x => { const k = low.indexOf(x); if (k >= 0 && !segs.some(([s0, s1]) => k < s1 && k + x.length > s0)) segs.push([k, k + x.length]); });
+        if (!segs.length) { const p = fall(); return `<span class="kn-cut">${escapeHtml(p.pre)}</span><mark class="kn-keep">${escapeHtml(p.core)}</mark><span class="kn-cut">${escapeHtml(p.post)}</span>`; }
+        segs.sort((x, y) => x[0] - y[0]);
+        let out = '', i = 0;
+        segs.forEach(([s0, s1]) => { out += `<span class="kn-cut">${escapeHtml(desc.slice(i, s0))}</span><mark class="kn-keep">${escapeHtml(desc.slice(s0, s1))}</mark>`; i = s1; });
+        return out + `<span class="kn-cut">${escapeHtml(desc.slice(i))}</span>`;
+      };
       const descHtml = r => {
-        if (r.t === 'var') return `<span class="kn-base">${escapeHtml(r.base.eff)}</span> <span class="kn-plus">+</span> <mark class="kn-keep">${escapeHtml(r.extra || '—')}</mark>`;
-        const p = mqtKnParts(r.desc);
-        return r.desc ? `<span class="kn-cut">${escapeHtml(p.pre)}</span><mark class="kn-keep">${escapeHtml(p.core)}</mark><span class="kn-cut">${escapeHtml(p.post)}</span>` : `<span class="muted">sem descritivo: usa a designação</span>`;
+        const cur = r.prop ?? r.eff;
+        if (r.t === 'var') {
+          const b = r.base.eff, own = norm(cur).startsWith(norm(b)) ? String(cur).slice(b.length).replace(/^[\s,;]+/, '') : r.extra;
+          return `<span class="kn-base">${escapeHtml(b)}</span> <span class="kn-plus">+</span> <span class="kn-src">${r.desc ? cutHtml(r.desc, own, () => ({ pre: '', core: r.desc, post: '' })) : `<mark class="kn-keep">${escapeHtml(r.extra || '—')}</mark>`}</span>`;
+        }
+        return r.desc ? `<span class="kn-src">${cutHtml(r.desc, cur, () => mqtKnParts(r.desc))}</span>` : `<span class="muted">sem descritivo: usa a designação</span>`;
       };
       const n = rows.filter(r => r.t !== 'ch').length, adj = rows.filter(r => r.t !== 'ch' && (r.proj != null || r.lib != null)).length;
       return `<div class="kn-bar">${mqtFindHtml('kn-find', 'Procurar keynote ou texto…')}
           ${project ? `<div class="segmented kn-scope" role="radiogroup" aria-label="Onde guardar os ajustes"><button type="button" data-kn-scope="lib" class="active">Ajustes na biblioteca</button><button type="button" data-kn-scope="proj">Só neste projeto</button></div>` : ''}
           <button type="button" class="secondary-btn toolbar-btn mai-btn" id="kn-ai" title="O Gemini cruza o descritivo do artigo com o de cada subartigo e propõe o texto de cada keynote">✦ Propor com o Gemini</button>
           <button type="button" class="primary-btn toolbar-btn" id="kn-dl">Descarregar .txt</button></div>
-        <div class="field-hint kn-hint">O texto que vai para o Revit. Ao lado, o descritivo: <mark class="kn-keep">realçado</mark> o que entra; <span class="kn-cut">esbatido</span> o que sai (a ação do início e o fecho). Os subartigos partem do texto do artigo e acrescentam o que os distingue. Escreve no texto para o ajustar (grava ao sair); «Repor automático» volta ao texto calculado. ${n} keynotes · ${adj} ajustados.</div>
+        <div class="field-hint kn-hint">O texto que vai para o Revit. Ao lado, o descritivo: <mark class="kn-keep">realçado</mark> o que entra; <span class="kn-cut">esbatido</span> o que sai (a ação do início e o fecho). Os subartigos partem do texto do artigo e acrescentam o que os distingue. Para mudar o que entra, <b>seleciona com o rato uma parte do descritivo</b> e escolhe «Usar seleção» ou «Acrescentar»; também podes escrever no texto (grava ao sair). «Repor automático» volta ao texto calculado. ${n} keynotes · ${adj} ajustados.</div>
         <div id="kn-props" class="mqt-banner warn" hidden></div>
         <div class="gantt-wrap mqt-gridwrap"><table class="kn-table"><colgroup><col style="width:110px"><col style="width:46%"><col></colgroup>
           <thead><tr><th>Keynote</th><th>Texto do keynote (Revit)</th><th>Descritivo</th></tr></thead><tbody>
@@ -33022,12 +33042,41 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         }
       };
       const refresh = () => { const props = Object.fromEntries(rows.filter(r => r.prop != null).map(r => [r.id, r.prop])); rows = mqtKnRows(lib, cfg); rows.forEach(r => { if (props[r.id] != null && props[r.id] !== r.eff) r.prop = props[r.id]; }); paint(); };
+      const commit = async (r, v) => { try { delete r.prop; await save(r, v); showToast('Texto do keynote guardado'); refresh(); } catch (e) { showError('guardar o keynote', e); } };
+      const capFirst = x => x ? x.charAt(0).toUpperCase() + x.slice(1) : x;
+      const lowFirst = x => x && !/^[A-ZÀ-Ý]{2}/.test(x) ? x.charAt(0).toLowerCase() + x.slice(1) : x;
+      const tidy = x => String(x || '').replace(/[\t\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').replace(/^[\s,;.:+]+|[\s,;.:]+$/g, '').trim();
+      let pick = null;
+      const unpick = () => { pick?.remove(); pick = null; };
+      const onSel = () => setTimeout(() => {
+        const sel = window.getSelection(), txt = tidy(sel?.toString());
+        const td = sel && sel.rangeCount && !sel.isCollapsed ? sel.getRangeAt(0).commonAncestorContainer : null;
+        const cell = td && (td.nodeType === 1 ? td : td.parentElement)?.closest('.kn-d');
+        if (!txt || !cell || !box.contains(cell)) return unpick();
+        const tr = cell.closest('.kn-row'), r = rows[Number(tr.dataset.i)], ta = tr.querySelector('.kn-in');
+        unpick();
+        const rc = sel.getRangeAt(0).getBoundingClientRect();
+        pick = document.createElement('div'); pick.className = 'kn-pick'; pick.setAttribute('role', 'toolbar');
+        pick.innerHTML = `<button type="button" class="primary-btn toolbar-btn" data-p="use">Usar seleção</button><button type="button" class="secondary-btn toolbar-btn" data-p="add">Acrescentar</button>`;
+        document.body.appendChild(pick);
+        const w = pick.offsetWidth;
+        pick.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, rc.left + rc.width / 2 - w / 2)) + 'px';
+        pick.style.top = (rc.top > 48 ? rc.top - pick.offsetHeight - 6 : rc.bottom + 6) + 'px';
+        pick.addEventListener('mousedown', e => e.preventDefault());
+        pick.querySelectorAll('[data-p]').forEach(b => b.addEventListener('click', () => {
+          const base = tidy(ta.value);
+          const v = b.dataset.p === 'add' && base ? `${base}, ${lowFirst(txt)}` : (r.t === 'var' && !tidy(r.base.eff).toLowerCase().includes(txt.toLowerCase()) && b.dataset.p === 'use' ? `${tidy(r.base.eff)}, ${lowFirst(txt)}` : capFirst(txt));
+          unpick(); window.getSelection()?.removeAllRanges(); ta.value = v; commit(r, v);
+        }));
+      }, 0);
       const wire = () => {
         const tb = box.querySelector('.kn-table');
+        tb.addEventListener('mouseup', onSel); tb.addEventListener('touchend', onSel); tb.addEventListener('keyup', onSel);
+        if (!box._knPickWired) { box._knPickWired = true; document.addEventListener('mousedown', e => { if (pick && !pick.contains(e.target)) unpick(); }); window.addEventListener('scroll', () => unpick(), { passive: true }); }
         box.querySelectorAll('[data-kn-scope]').forEach(b => { b.classList.toggle('active', b.dataset.knScope === scope); b.addEventListener('click', () => { scope = b.dataset.knScope; box.querySelectorAll('[data-kn-scope]').forEach(x => x.classList.toggle('active', x === b)); }); });
         box.querySelectorAll('.kn-row').forEach(tr => {
           const r = rows[Number(tr.dataset.i)], ta = tr.querySelector('.kn-in');
-          ta.addEventListener('change', async () => { try { delete r.prop; await save(r, ta.value); showToast('Texto do keynote guardado'); refresh(); } catch (e) { showError('guardar o keynote', e); } });
+          ta.addEventListener('change', () => commit(r, ta.value));
           tr.querySelector('[data-kn-reset]')?.addEventListener('click', async () => {
             try { if (project && r.proj != null) { const kt = { ...(cfg.kn_texts || {}) }; delete kt[r.id]; cfg.kn_texts = kt; await mqtSaveCfg(mqtProjectId, { kn_texts: kt }); } else await save({ ...r, custom: false }, ''); refresh(); }
             catch (e) { showError('repor o keynote', e); }
