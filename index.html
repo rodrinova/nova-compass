@@ -32935,6 +32935,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
     // Uma linha por capítulo, artigo e subartigo, com o texto automático, os ajustes (biblioteca: kn_text; projeto:
     // mqt_project.kn_texts) e o que vale (projeto › biblioteca › automático). O subartigo parte do texto do artigo e
     // acrescenta o que o distingue (o descritivo da variante, ou a designação).
+    const MQT_KN_SKIP = new Set(['01', '02', '03']);
     function mqtKnRows(lib, cfg = null) {
       const clean = s => String(s || '').replace(/[\t\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
       const texts = cfg?.texts || {}, names = cfg?.names || {}, specs = cfg?.specs || {}, kt = cfg?.kn_texts || {};
@@ -32943,6 +32944,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       const sub = (base, extra) => clean(`${base}${extra ? ', ' + lowFirst(clean(extra).replace(/[;.]+$/, '')) : ''}`);
       const rows = [];
       lib.chapters.forEach(ch => {
+        // 01 Trabalhos preparatórios, 02 Demolições e 03 Movimento de terras não vão para os keynotes do Revit
+        if (MQT_KN_SKIP.has(String(ch.code))) return;
         const els = lib.elements.filter(e => e.chapter_code === ch.code && e.active !== false && !e._ghost).sort((a, b) => (a._custom ? 1 : 0) - (b._custom ? 1 : 0) || a.sort_order - b.sort_order || mqtKeyCmp(a.code, b.code));
         if (!els.length) return;
         rows.push({ t: 'ch', key: ch.code, text: clean(ch.name) });
