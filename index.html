@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Compass">
+<!-- Versão da app (ano.mês.dia-n.º do dia): sobe a cada publicação; aparece no aviso de atualização -->
+<meta name="app-version" content="2026.11.26-1">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>NOVA Compass</title>
 <!-- Ícone: o N ameixa com brilho no fundo preto (assets/brand/gerador/render-icons.js) -->
@@ -33835,6 +33837,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       const biggest = list => list.sort((a, b) => b.length - a.length)[0] || '';
       const mine = hash(biggest([...document.scripts].filter(s => !s.src).map(s => s.textContent)));
       let busy = false, last = 0, offered = false;
+      const verOf = html => (String(html).match(/<meta\s+name="app-version"\s+content="([^"]+)"/i) || [])[1] || '';
+      const myVer = document.querySelector('meta[name="app-version"]')?.content || '';
       const reload = () => location.replace(location.pathname + '?v=' + Date.now() + location.hash);
       async function check() {
         if (busy || offered || Date.now() - last < 60000) return;
@@ -33849,7 +33853,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
           const busyUser = currentViewState?.name !== 'home' || proposalState?.dirty || document.querySelector('#quick-modal[style*="flex"]') || !document.getElementById('pres')?.hidden || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || '');
           if (!busyUser) return reload();
           offered = true;
-          showToast('Há uma versão nova da app. Atualiza quando der jeito — não se perde nada do que está gravado.', { undo: async () => { await proposalState?.flush?.(); reload(); }, undoLabel: 'Atualizar', ms: 600000 });
+          const v = verOf(html), vTxt = v && v !== myVer ? ` (versão ${v}${myVer ? `; tens a ${myVer}` : ''})` : '';
+          showToast(`Há uma versão nova da app${vTxt}. Atualiza quando der jeito — não se perde nada do que está gravado.`, { undo: async () => { await proposalState?.flush?.(); reload(); }, undoLabel: 'Atualizar', ms: 600000 });
         } catch (_) { /* sem rede: tenta mais tarde */ } finally { busy = false; }
       }
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
