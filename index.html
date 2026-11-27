@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Compass">
 <!-- Versão da app = número do pull request que a publicou; aparece no aviso de atualização -->
-<meta name="app-version" content="234">
+<meta name="app-version" content="235">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>NOVA Compass</title>
 <!-- Ícone: o N ameixa com brilho no fundo preto (assets/brand/gerador/render-icons.js) -->
@@ -5108,6 +5108,8 @@
   .mqt-wx:hover { background: var(--surface-3); color: var(--text); }
   .mqt-wx:focus-visible { outline: none; box-shadow: var(--focus); }
   .mqt-warn-back { padding: var(--sp-2) 0 0; font-size: var(--fs-xs); }
+  .nw-dimtop { display: flex; align-items: flex-start; gap: var(--sp-2); justify-content: space-between; }
+  #nw-dimon { margin-top: var(--sp-2); }
   .mqt-warn-none { padding: var(--sp-1) var(--sp-3); }
   .mqt-ico { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: var(--fw-bold); }
   .mqt-ck.s-ok .mqt-ico { background: var(--success-soft); color: var(--success); }
@@ -29923,13 +29925,23 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         ph: 'Porta do quarto 1', txt: 'Fornecimento e montagem de porta interior em MDF lacado, com aro, guarnições, dobradiças e fechadura, conforme mapa de vãos.' },
       MSA: { nome: 'Móvel de casa de banho', um: 'móvel', novo: 'Novo móvel de casa de banho', dims: [['l', 'Largura'], ['p', 'Profundidade'], ['a', 'Altura']], func: false, chRe: /carpint/i,
         ph: 'Móvel da I.S. 1', txt: 'Fornecimento e montagem de móvel de casa de banho em MDF hidrófugo, conforme desenho de pormenor, incluindo ferragens, puxadores, todos os trabalhos e materiais necessários ao seu perfeito acabamento e funcionamento, de acordo com as especificações do fabricante e os desenhos de projeto.' },
+      MC: { nome: 'Móvel de cozinha', um: 'móvel', novo: 'Novo móvel de cozinha', dims: [['l', 'Largura'], ['p', 'Profundidade'], ['a', 'Altura']], func: false, chRe: /carpint/i,
+        ph: 'Módulo inferior do lava-loiça', txt: 'Fornecimento e montagem de móvel de cozinha em MDF hidrófugo, conforme desenho de pormenor, incluindo ferragens, puxadores, todos os trabalhos e materiais necessários ao seu perfeito acabamento e funcionamento, de acordo com as especificações do fabricante e os desenhos de projeto.' },
+      // opcionais (opt): a tabela das dimensões abre-se, mas pode fechar-se com o ✕ e o artigo fica normal (unidade e quantidade)
+      TBA: { nome: 'Bancada', um: 'bancada', novo: 'Nova bancada', dims: [['l', 'Comprimento'], ['p', 'Profundidade'], ['a', 'Espessura']], func: false, opt: true, chRe: /carpint|cantar|equipa/i,
+        ph: 'Bancada da cozinha', txt: 'Fornecimento e montagem de bancada conforme desenho de pormenor, incluindo negativos, rodatampos, remates, todos os trabalhos e materiais necessários ao seu perfeito acabamento, de acordo com as especificações do fabricante e os desenhos de projeto.' },
+      SES: { nome: 'Serralharia', um: 'elemento', novo: 'Nova serralharia', dims: [['l', 'Largura'], ['p', 'Profundidade'], ['a', 'Altura']], func: false, opt: true, chRe: /serralh/i,
+        ph: 'Armário técnico', txt: 'Fornecimento e montagem de serralharia conforme desenho de pormenor, incluindo fixações, ferragens, acabamento, todos os trabalhos e materiais necessários ao seu perfeito acabamento e funcionamento, de acordo com as especificações do fabricante e os desenhos de projeto.' },
       VID: { nome: 'Espelho', um: 'espelho', novo: 'Novo espelho', dims: [['l', 'Largura'], ['a', 'Altura']], func: false, chRe: /vidro|espelho/i,
         ph: 'Espelho da I.S. 1', txt: 'Fornecimento e aplicação de espelho em vidro de 6 mm, c/ aresta biselada, incluindo estrutura de suporte e fixação, peças de remate, todos os trabalhos e materiais necessários ao seu perfeito acabamento, de acordo com as especificações do fabricante e os desenhos de projeto.' }
     };
     const MQT_FUNC = ['Fixo', 'De batente', 'Oscilobatente', 'De correr', 'Elevação e correr', 'Basculante', 'Pivotante', 'De fole', 'Guilhotina'];
-    const mqtDimFam = c => (String(c || '').replace(/\s+/g, '').match(/^(ARM|MSA|VID|VE|VI)\d/i) || [])[1]?.toUpperCase() || null;
+    // artigos de famílias opcionais (TBA, SES) a que se fechou a tabela das dimensões: ficam artigos normais (mqtApplyCustom preenche)
+    const MQT_NODIM = new Set();
+    const mqtDimFamRaw = c => (String(c || '').replace(/\s+/g, '').match(/^(ARM|MSA|VID|TBA|SES|MC|VE|VI)\d/i) || [])[1]?.toUpperCase() || null;
+    const mqtDimFam = c => { const f = mqtDimFamRaw(c); if (!f || !MQT_NODIM.size) return f; const m = String(c || '').replace(/\s+/g, '').toUpperCase().match(/^([A-Z]+)(\d{1,3})/); return m && MQT_NODIM.has(m[1] + m[2].padStart(2, '0')) ? null : f; };
     const mqtIsDim = c => !!mqtDimFam(c);
-    const mqtDimCode = raw => { const m = String(raw || '').replace(/\s+/g, '').match(/^(ARM|MSA|VID|VE|VI)[-.]?(\d{1,3})$/i); return m ? m[1].toUpperCase() + m[2].padStart(2, '0') : null; };
+    const mqtDimCode = raw => { const m = String(raw || '').replace(/\s+/g, '').match(/^(ARM|MSA|VID|TBA|SES|MC|VE|VI)[-.]?(\d{1,3})$/i); return m ? m[1].toUpperCase() + m[2].padStart(2, '0') : null; };
     const mqtArmCode = mqtDimCode;
     function mqtArmFix(e, lib) {
       if (!mqtIsDim(e.code)) return;
@@ -29940,6 +29952,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       lib.elements = lib.elements.filter(e => !e._custom);
       Object.keys(lib.elByCode).forEach(k => { if (lib.elByCode[k]._custom) delete lib.elByCode[k]; });
       const armCh = mqtArmCh(lib) || lib.chapters[lib.chapters.length - 1]?.code || MQT_ARM_CH;
+      MQT_NODIM.clear(); Object.entries(cfg?.custom || {}).forEach(([code, c]) => { if (c?.nodim) MQT_NODIM.add(String(code).toUpperCase()); });
       Object.entries(cfg?.custom || {}).forEach(([code, c]) => {
         const C = String(code).toUpperCase();
         if (!c || lib.elByCode[C]) return;   // o da biblioteca prevalece (não se deixa criar o mesmo número)
@@ -29972,7 +29985,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       const revitN = c => Object.values(mq.issues.unknown || {}).filter(x => mqtNewCode(x.k)?.code.toUpperCase() === String(c).toUpperCase()).reduce((t, x) => t + x.n, 0);
       const chs = lib.chapters;
       openQuickModal(ex ? `Artigo ${mqtCodeDisp(code0)}` : 'Artigo novo', `
-        <div class="field-hint" style="margin-top:0">Artigo só deste projeto, que não está na biblioteca (ex.: TS 01 torneira, LL 01 lava-loiça). Com armários (ARM), móveis de casa de banho (MSA), vãos (VE, VI) e espelhos (VID), a tabela dos subartigos abre-se por baixo.</div>
+        <div class="field-hint" style="margin-top:0">Artigo só deste projeto, que não está na biblioteca (ex.: TS 01 torneira, LL 01 lava-loiça). Com armários (ARM), móveis de casa de banho (MSA) e de cozinha (MC), vãos (VE, VI) e espelhos (VID), a tabela dos subartigos abre-se por baixo; nas bancadas (TBA) e serralharias (SES) também, mas podes fechá-la com o ✕.</div>
         <div class="mqt-g2">
           <div><label class="field-label" for="nw-code">Keynote</label><input type="text" class="form-input" id="nw-code" value="${escapeHtml(code0 ? mqtCodeDisp(code0) : '')}" placeholder="TS 01" autocomplete="off"></div>
           <div id="nw-unit-w"><label class="field-label" for="nw-unit">Unidade</label><select class="form-input" id="nw-unit">${MQT_UNITS.map(u => `<option${(ex?.unit || pre?.unit || 'un') === u ? ' selected' : ''}>${u}</option>`).join('')}</select></div>
@@ -29986,8 +29999,9 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         <textarea class="form-input" id="nw-text" rows="5" placeholder="Ex.: Fornecimento e montagem de torneira monocomando de bancada, em aço inox escovado, incluindo ligações e todos os acessórios.">${escapeHtml(ex?.text || '')}</textarea>
         <div id="nw-q-w"><label class="field-label">Quantidade <span class="muted">(opcional: sem ela fica «a considerar»)</span></label>
         ${mq.cols.map(b => `<div class="mqt-qrow"><span>${escapeHtml(mqtMulti(mq) ? mqtBlockLabel(b) : 'Quantidade')}</span><input type="text" inputmode="decimal" class="form-input nw-q" data-b="${escapeHtml(b)}" placeholder="—" value="${man[b] ? escapeHtml(String(man[b])) : ''}"></div>`).join('')}</div>
+        <button type="button" class="text-btn" id="nw-dimon" hidden>+ Subartigos com dimensões e unidades</button>
         <div id="nw-dim" class="nw-dim" aria-hidden="true"><div class="nw-dim-in">
-          <div id="nw-dimhint" class="field-hint" style="margin-top:0"></div>
+          <div class="nw-dimtop"><div id="nw-dimhint" class="field-hint" style="margin-top:0"></div><button type="button" class="mqt-wx" id="nw-dimx" hidden aria-label="Sem subartigos com dimensões" title="Sem subartigos com dimensões (fica um artigo normal)">✕</button></div>
           <div id="nw-dimbase"></div>
           <label class="field-label">Subartigos</label>
           <div id="nw-subs"></div>
@@ -30002,11 +30016,13 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       // no botão: enquanto se escreve «ARM 17», o «ARM 1» não pode saltar logo de formulário)
       const saveLbl = ex ? 'Guardar' : 'Acrescentar';
       const st = mqtSubTable($('nw-subs'), { blocks: mq.cols, multi: mqtMulti(mq) });
-      let famNow = null;
+      let famNow = null, dimOff = !!ex?.nodim;
       const paint = () => {
         const pk = mqtNewCode($('nw-code').value), hint = $('nw-chhint');
         hint.textContent = ''; $('nw-revit').textContent = '';
-        const fam = pk && mqtDimFam(pk.code), D = fam && MQT_DIM[fam];
+        const famRaw = pk && mqtDimFamRaw(pk.code), DR = famRaw && MQT_DIM[famRaw];
+        const fam = DR && !(DR.opt && dimOff) ? famRaw : null, D = fam && MQT_DIM[fam];
+        $('nw-dimx').hidden = !(D && D.opt); $('nw-dimon').hidden = !(DR && DR.opt && dimOff);
         $('nw-unit-w').hidden = $('nw-q-w').hidden = !!D;
         $('nw-ch').hidden = $('nw-ch').previousElementSibling.hidden = fam === 'ARM';
         // armários e vãos: a tabela dos subartigos desce aqui mesmo (muda só de colunas se a família mudar)
@@ -30037,6 +30053,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         const r = revitN(pk.code); if (r) $('nw-revit').textContent = `${fmtNum(r)} no modelo do Revit com este keynote (entram com a medição da unidade escolhida).`;
       };
       $('nw-code').addEventListener('input', paint);
+      $('nw-dimx').addEventListener('click', () => { dimOff = true; paint(); $('nw-unit').focus(); });
+      $('nw-dimon').addEventListener('click', () => { dimOff = false; paint(); });
       paint();
       setTimeout(() => $(code0 ? 'nw-text' : 'nw-code')?.focus(), 60);
       $('nw-del')?.addEventListener('click', async () => {
@@ -30056,8 +30074,9 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         if (lel && !lel._custom) { formError('nw-msg', `O ${mqtCodeDisp(lel.code)} já existe na biblioteca: acrescenta-o em «Artigo da biblioteca», ou usa outro número.`); return; }
         if ((!code0 || C !== code0.toUpperCase()) && (custom[C] || custom[pk.code])) { formError('nw-msg', `O ${mqtCodeDisp(pk.code)} já existe neste MQT.`); return; }
         const chapter = $('nw-ch').value;
-        if (mqtIsDim(C)) {   // armários e vãos: grava o artigo e os subartigos da tabela de baixo
-          const fam = mqtDimFam(C), D = MQT_DIM[fam];
+        const famRaw = mqtDimFamRaw(C), optOff = !!(famRaw && MQT_DIM[famRaw].opt && dimOff);
+        if (famRaw && !optOff) {   // armários, vãos…: grava o artigo e os subartigos da tabela de baixo
+          const fam = famRaw, D = MQT_DIM[fam];
           if (fam !== 'ARM' && !chapter) { formError('nw-msg', `Em que capítulo fica este ${D.um}? Escolhe-o acima.`); $('nw-ch').focus(); return; }
           const text = $('nw-text').value.trim();
           if (!text) { formError('nw-msg', `Escreve o descritivo geral do ${D.nome.toLowerCase()}.`); $('nw-text').focus(); return; }
@@ -30081,11 +30100,13 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         const q = {}; document.querySelectorAll('.nw-q').forEach(i => { const v = numOrNull(i.value.replace(/\s/g, '')); if (v) q[i.dataset.b] = v; });
         try {
           const c2 = { ...custom }; if (code0) { delete c2[code0]; delete c2[code0.toUpperCase()]; }
-          c2[C] = { name: $('nw-name').value.trim(), text, unit: $('nw-unit').value, chapter, code: pk.code, at: ex?.at || new Date().toISOString() };
+          c2[C] = { name: $('nw-name').value.trim(), text, unit: $('nw-unit').value, chapter, code: pk.code, at: ex?.at || new Date().toISOString(), ...(optOff ? { nodim: true } : {}) };
           const manual = { ...(cfg.manual || {}) }; if (code0) [code0, code0.toUpperCase(), mqtFull(code0, '')].forEach(k => delete manual[k]);
           manual[C] = q;   // sem quantidade: fica «a considerar» (o Revit pode trazê-la)
           const texts = { ...(cfg.texts || {}) }; if (code0 && ex?.text !== text) delete texts[code0.toUpperCase()];
-          await mqtSaveCfg(mqtProjectId, { custom: c2, manual, texts });
+          const patch = { custom: c2, manual, texts };
+          if (optOff) { const arm_subs = { ...(cfg.arm_subs || {}) }; [code0, C].filter(Boolean).forEach(c => delete arm_subs[c.toUpperCase()]); patch.arm_subs = arm_subs; }
+          await mqtSaveCfg(mqtProjectId, patch);
           closeQuickModal(); showToast(ex ? 'Artigo guardado' : `${mqtCodeDisp(pk.code)} acrescentado`); renderMqt();
         } catch (e) { formError('nw-msg', 'Não foi possível guardar: ' + e.message); }
       });
@@ -30371,7 +30392,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       const chSel = FAM === 'ARM' ? '' : `<label class="field-label" for="arm-ch">Capítulo</label>
           <select class="form-input" id="arm-ch"><option value="">— Em que capítulo fica? —</option>${lib.chapters.map(c => `<option value="${escapeHtml(c.code)}"${chOf(code0) === c.code ? ' selected' : ''}>${escapeHtml(c.code + ' · ' + c.name)}</option>`).join('')}</select>`;
       openQuickModal(presetCode ? `${D.nome} ${mqtCodeDisp(code0)}` : D.nome, `
-        <div class="field-hint" style="margin-top:0">O artigo tem o <b>descritivo geral</b> do ${noun}; cada ${D.um} é um <b>subartigo</b> com as dimensões${D.func ? ', o modo de funcionamento' : ''} e as unidades. ${FAM === 'ARM' ? 'Fica em Carpintarias, ' : 'Fica '}à unidade (un). Os do Revit com este keynote entram como subartigos por tipo.</div>
+        <div class="nw-dimtop"><div class="field-hint" style="margin-top:0">O artigo tem o <b>descritivo geral</b> do ${noun}; cada ${D.um} é um <b>subartigo</b> com as dimensões${D.func ? ', o modo de funcionamento' : ''} e as unidades. ${FAM === 'ARM' ? 'Fica em Carpintarias, ' : 'Fica '}à unidade (un). Os do Revit com este keynote entram como subartigos por tipo.</div>${D.opt && ex ? `<button type="button" class="mqt-wx" id="arm-dimx" aria-label="Sem subartigos com dimensões" title="Sem subartigos com dimensões (fica um artigo normal)">✕</button>` : ''}</div>
         <label class="field-label" for="arm-pick">${escapeHtml(D.nome)}</label>
         <select class="form-input" id="arm-pick">${pickOpts}</select>
         <div id="arm-own">
@@ -30425,6 +30446,16 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
           const arm_subs = { ...(cfg.arm_subs || {}) }; delete arm_subs[code0];
           await mqtSaveCfg(mqtProjectId, { custom: c2, manual, texts, arm_subs }); closeQuickModal(); showToast(D.nome + ' apagado'); renderMqt();
         } catch (e) { formError('arm-msg', 'Não foi possível apagar: ' + e.message); }
+      });
+      // família opcional (TBA, SES): o ✕ fecha a tabela das dimensões — o artigo fica normal (unidade e quantidade), sem subartigos
+      $('arm-dimx')?.addEventListener('click', async () => {
+        if ((subs || []).some(sb => sb.label || sb.l || sb.a) && !confirm(`Tirar os subartigos com dimensões do ${mqtCodeDisp(code0)}? Fica um artigo normal, à unidade.`)) return;
+        try {
+          const c2 = { ...custom }; c2[code0] = { ...(custom[code0] || {}), nodim: true, unit: custom[code0]?.unit || 'un', chapter: custom[code0]?.chapter || chOf(code0) || null, code: code0 };
+          const arm_subs = { ...(cfg.arm_subs || {}) }; delete arm_subs[code0];
+          await mqtSaveCfg(mqtProjectId, { custom: c2, arm_subs });
+          closeQuickModal(); showToast(`${mqtCodeDisp(code0)} fica um artigo normal`); renderMqt();
+        } catch (e) { formError('arm-msg', 'Não foi possível guardar: ' + e.message); }
       });
       $('arm-save').addEventListener('click', async () => {
         readSubs();
