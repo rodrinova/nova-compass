@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Compass">
 <!-- Versão da app = número do pull request que a publicou; aparece no aviso de atualização -->
-<meta name="app-version" content="237">
+<meta name="app-version" content="238">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>NOVA Compass</title>
 <!-- Ícone: o N ameixa com brilho no fundo preto (assets/brand/gerador/render-icons.js) -->
@@ -4759,6 +4759,8 @@
   .mqt-art .art { color: var(--text); font-weight: var(--fw-semibold); }
   .mqt-sub td { padding-top: var(--sp-1); padding-bottom: var(--sp-1-5); }
   .mqt-sub .ds { padding-left: var(--sp-6); }
+  .mqt-sub3 .ds { padding-left: calc(var(--sp-6) * 2); }
+  .mqt-grp .kc { font-weight: var(--fw-semibold); }
   .mqt-sub .kn { font-weight: var(--fw-medium); }
   .mqt-art + .mqt-sub td, .mqt-sub + .mqt-sub td { border-top: none; }
   .mqt-sub:has(+ .mqt-sub) td { border-bottom: 1px dashed var(--border); }
@@ -30568,6 +30570,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       // nomes nativos do Revit com prefixo ou sufixo (ex.: «Área (m²)», «Área do piso», «Area Total»)
       if (/^areas?/.test(n) || n === 'superficie') return 'a';
       if (/^(comprimento|length)/.test(n)) return 'len';
+      if (/largura|width/.test(n)) return 'w';
+      if (/altura|height/.test(n) && !/nivel|level|desloc|offset|base|topo|top|peitoril|sill/.test(n)) return 'h';
       if (/^volume/.test(n)) return 'v';
       return null;
     }
@@ -31049,7 +31053,14 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
           const item = (r, lvl, n) => ({ dr, ownNm: (lvl === 1 ? names[EL] : names[r.it.key]) ? 1 : 0, fl: r.it.flag || '', res: r.it.reserved && !r.q ? 1 : 0, t: 'item', lvl, key: r.it.key, ch: c.ch.code, code: a.el.code, nm: (lvl === 1 ? names[EL] || a.el.name : names[r.it.key] || r.it.variant?.label) || '', full: r.it.full, typeKey: r.it.typeKey || '', num: n, text: r.text, unit: r.it.el.unit, q: Math.round(r.q * 100) / 100, own: !!r.own, src: src(r.it), miss: r.missing.length ? 1 : 0 });
           if (a.subs) {
             lines.push({ dr, ownNm: names[EL] ? 1 : 0, fl: a.el._ghost ? 'unk' : '', t: 'art', key: EL, ch: c.ch.code, code: a.el.code, nm: names[EL] || a.el.name || '', num: artNum, text: a.text, own: !!a.own, miss: a.missing.length ? 1 : 0 });
-            a.rows.forEach(r => { const n = num.sub[r.it.key] ??= `${artNum}.${nextIn(num.sub, artNum)}`; lines.push(item(r, 2, n)); });
+            // subartigos agrupados (painéis de fachada: tipo de painel → medidas): o grupo é 16.1.1 e as medidas 16.1.1.1…
+            let gNow = null, gNum = null;
+            a.rows.forEach(r => {
+              const g = r.it.grp || null;
+              if (!g) { const n = num.sub[r.it.key] ??= `${artNum}.${nextIn(num.sub, artNum)}`; lines.push(item(r, 2, n)); gNow = null; return; }
+              if (g !== gNow) { gNow = g; const gk = `${EL}#${g}`; gNum = num.sub[gk] ??= `${artNum}.${nextIn(num.sub, artNum)}`; lines.push({ dr, t: 'grp', lvl: 2, key: gk, ch: c.ch.code, code: a.el.code, nm: '', num: gNum, text: g }); }
+              const n = num.sub[r.it.key] ??= `${gNum}.${nextIn(num.sub, gNum)}`; lines.push(item(r, 3, n));
+            });
           } else lines.push(item(a.rows[0], 1, artNum));
         });
       });
@@ -31124,7 +31135,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
           const pc = 'PAN' + pm[1].padStart(2, '0'), pe = lib.elByCode[pc];
           const mm = v => { const x = Number(v); return Number.isFinite(x) && x > 0 ? Math.round(x > 20 ? x : x * 1000) : null; };
           const W = mm(r.w), H = mm(r.h), dim = W && H ? ` (${W}x${H}) mm` : ' (dimensões por indicar no Revit)';
-          r = { ...r, k: sfaEl.code, w: null, h: null, _pan: `${mqtFull(pc, pm[2] || '')}${pe?.name ? ' · ' + pe.name : ''},${dim}` };
+          const grp = `${mqtFull(pc, pm[2] || '')}${pe?.name ? ' · ' + pe.name : ''}`;
+          r = { ...r, k: sfaEl.code, w: null, h: null, _grp: grp, _dim: dim.trim(), _pan: `${grp},${dim}` };
         }
         else if (sfaEl && /^SFA\d/i.test(String(r.k || '').replace(/\s+/g, ''))) return;
         const pk = mqtParseKey(r.k);
@@ -31169,12 +31181,13 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
           if (q == null) { issues.noField[full] = { k: full, need: MQT_FIELD_LABEL[field] || 'Largura e altura' }; return; }
           got++;
           let typeKey = '', extra = '';
-          if (r._pan) { typeKey = r._pan; extra = ` — ${r._pan}`; }
+          if (r._pan) { typeKey = r._pan; extra = ` — ${r._dim}`; }
           else if (el.split_by_type) {
             typeKey = r.tm || r.t || '';
             if (typeKey) extra = ` — tipo ${typeKey}${r.w != null && r.h != null ? ` (${fmtNum(r.w)} × ${fmtNum(r.h)} m)` : ''}`;
           }
           const it = add(el, letter, typeKey, r.b || '', q, 'model', extra);
+          if (r._grp) it.grp = r._grp;
           if (badVar(el, code, letter) && !described(full, code)) it.flag = 'var';
         });
         if (!got) noQty(el, letter);
@@ -31979,8 +31992,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       // destaque forte só para o que não tem correspondência na biblioteca (até ter descritivo próprio) e o que vem sem medição;
       // a variante que só existe no Revit leva só um aro discreto ao lado do keynote
       const FL = { unk: 'sem correspondência na biblioteca', noq: 'sem medição no Revit' };
-      const tags = l => [l.fl && FL[l.fl] && !(l.fl === 'unk' && l.lvl === 2) ? `<span class="mqt-tag fl-${l.fl}">${FL[l.fl]}</span>` : '',
-        l.dr && (!l.fl || l.fl === 'var') && l.lvl !== 2 && l.st !== 'del' ? '<span class="mqt-tag fl-unk" title="O descritivo deste artigo foi proposto e ainda não foi revisto na Biblioteca de keynotes">descritivo por rever na biblioteca</span>' : '', l.res && l.fl !== 'noq' ? '<span class="mqt-tag res">a considerar</span>' : l.res ? '' : l.src === 'manual' ? ' · à mão' : l.src === 'derived' ? ' · calculado' : ''].join('');
+      const tags = l => [l.fl && FL[l.fl] && !(l.fl === 'unk' && l.lvl >= 2) ? `<span class="mqt-tag fl-${l.fl}">${FL[l.fl]}</span>` : '',
+        l.dr && (!l.fl || l.fl === 'var') && !(l.lvl >= 2) && l.st !== 'del' ? '<span class="mqt-tag fl-unk" title="O descritivo deste artigo foi proposto e ainda não foi revisto na Biblioteca de keynotes">descritivo por rever na biblioteca</span>' : '', l.res && l.fl !== 'noq' ? '<span class="mqt-tag res">a considerar</span>' : l.res ? '' : l.src === 'manual' ? ' · à mão' : l.src === 'derived' ? ' · calculado' : ''].join('');
       // subtotais por capítulo
       const chSub = {}; let curCh = null;
       lines.forEach(l => { if (l.t === 'ch') curCh = l.num; else if (l.t === 'item' && l.st !== 'del') { const st = stats[String(l.full).toUpperCase()]; if (st) chSub[curCh] = (chSub[curCh] || 0) + Math.round(st.med * l.q * 100) / 100; } });
@@ -31989,20 +32002,21 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         const cls = (l.st ? ` st-${l.st}` : '') + (l.fl && l.fl !== 'var' ? ` fl fl-${l.fl}` : l.dr && l.st !== 'del' ? ' fl fl-dr' : '');
         const grip = l.st !== 'del' && reorder ? `<button type="button" class="mqt-grip" aria-label="Mover ${escapeHtml(l.full || mqtCodeDisp(l.code))} (↑ ↓)" title="Arrastar para mudar a ordem">${MQT_GRIP}</button>` : '';
         const EL = String(l.code || '').toUpperCase();
-        const dk = l.t === 'ch' ? ` data-ch="${escapeHtml(l.key)}" data-lv="c"` : ` data-ch="${escapeHtml(l.ch || '')}" data-el="${escapeHtml(EL)}" data-lv="${l.t === 'art' ? 'a' : l.lvl === 2 ? 's' : 'i'}" data-k="${escapeHtml(l.key)}" data-fc="${escapeHtml(l.ch || '')}"${l.t === 'item' && l.lvl === 2 ? ` data-fe="${escapeHtml(EL)}"` : ''}`;
+        const dk = l.t === 'ch' ? ` data-ch="${escapeHtml(l.key)}" data-lv="c"` : ` data-ch="${escapeHtml(l.ch || '')}" data-el="${escapeHtml(EL)}" data-lv="${l.t === 'art' ? 'a' : l.t === 'grp' ? 'g' : l.lvl >= 2 ? 's' : 'i'}" data-k="${escapeHtml(l.key)}" data-fc="${escapeHtml(l.ch || '')}"${(l.t === 'item' && l.lvl >= 2) || l.t === 'grp' ? ` data-fe="${escapeHtml(EL)}"` : ''}`;
         // pontinho: descritivo da biblioteca alterado neste projeto (toca para repor o standard)
-        const ownKey = l.t === 'art' ? l.key : l.lvl === 2 ? l.key : EL;
+        const ownKey = l.t === 'art' ? l.key : l.lvl >= 2 ? l.key : EL;
         const marks = () => '';
         const ownWhat = l.own && l.ownNm ? 'designação e descritivo alterados no projeto' : l.ownNm ? 'designação alterada no projeto' : 'descritivo alterado no projeto';
         const ownTag = (l.own || l.ownNm) && l.st !== 'del' ? (editable ? `<button type="button" class="mqt-tag own" data-own-key="${escapeHtml(ownKey)}" data-own-t="${l.own ? 1 : 0}" data-own-n="${l.ownNm ? 1 : 0}" title="Alterado neste projeto · toca para repor o original da biblioteca">${ownWhat}</button>` : `<span class="mqt-tag own">${ownWhat}</span>`) : '';
         const head = (code, nm) => `<span class="kn"><b class="kc">${escapeHtml(code)}</b>${marks()}${nm ? `<span class="nm">${escapeHtml(nm)}</span>` : ''}${ownTag}${tags(l)}</span>`;
         if (l.t === 'ch') return `<tr class="mqt-ch${cls}" data-foldrow="c:${escapeHtml(l.key)}"${dk}><td class="art">${mqtFoldBtn('c:' + l.key, 'o capítulo ' + l.text)}${reorder ? `<button type="button" class="mqt-grip" aria-label="Mover o capítulo ${escapeHtml(l.text)} (↑ ↓)" title="Arrastar para mudar a ordem dos capítulos neste projeto">${MQT_GRIP}</button>` : ''}${escapeHtml(l.num)}</td><td colspan="4">${escapeHtml(l.text)}</td><td class="num tt">${chSub[l.num] ? escapeHtml(fmtEUR(chSub[l.num])) : ''}</td></tr>`;
         if (l.t === 'art') return `<tr class="mqt-it mqt-art${cls}${l.miss ? ' miss' : ''}"${dk}${editable && l.st !== 'del' ? ` data-mqt-art="${escapeHtml(l.key)}" tabindex="0"` : ''}><td class="art">${mqtFoldBtn('e:' + EL, 'os subartigos de ' + mqtCodeDisp(l.code))}${grip}${escapeHtml(l.num)}</td><td class="ds" colspan="5">${head(mqtCodeDisp(l.code), l.nm)}<span class="tx">${md(l.text)}</span>${notes(l)}</td></tr>`;
+        if (l.t === 'grp') return `<tr class="mqt-it mqt-sub mqt-grp${cls}"${dk}><td class="art">${escapeHtml(l.num)}</td><td class="ds" colspan="5"><span class="kn"><b class="kc">${escapeHtml(l.text)}</b></span></td></tr>`;
         const st = l.st === 'del' ? null : stats[String(l.full).toUpperCase()];
         const val = st ? Math.round(st.med * l.q * 100) / 100 : null;
-        return `<tr class="mqt-it ${l.lvl === 2 ? 'mqt-sub' : 'mqt-art mqt-one'}${cls}${l.miss ? ' miss' : ''}"${dk}${editable && l.st !== 'del' ? ` data-mqt-item="${escapeHtml(l.key)}" tabindex="0"` : ''}>
+        return `<tr class="mqt-it ${l.lvl === 3 ? 'mqt-sub mqt-sub3' : l.lvl === 2 ? 'mqt-sub' : 'mqt-art mqt-one'}${cls}${l.miss ? ' miss' : ''}"${dk}${editable && l.st !== 'del' ? ` data-mqt-item="${escapeHtml(l.key)}" tabindex="0"` : ''}>
           <td class="art">${grip}${escapeHtml(l.num)}</td>
-          <td class="ds">${head(l.full + (l.typeKey && !String(l.typeKey).startsWith('~') ? ' · ' + l.typeKey : ''), l.nm)}<span class="tx">${md(l.text)}</span>${notes(l)}</td>
+          <td class="ds">${head(l.lvl === 3 ? String(l.typeKey || '').split(' · ')[0] : l.full + (l.typeKey && !String(l.typeKey).startsWith('~') ? ' · ' + l.typeKey : ''), l.nm)}<span class="tx">${md(l.text)}</span>${notes(l)}</td>
           <td class="un">${escapeHtml(l.unit)}</td>
           <td class="num qt">${l.res ? '<span class="muted">—</span>' : mqtQ(l.q)}</td>
           <td class="num pu">${st ? escapeHtml(fmtEUR(st.med)) : '<span class="muted">—</span>'}</td>
@@ -33348,9 +33362,9 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         }
         const row = ws.getRow(r), main = l.t === 'art' || l.lvl === 1;
         const nc = row.getCell(1); nc.value = l.num; nc.font = font(l, main ? { bold: true } : { color: { argb: l.st ? COL[l.st] : XL.soft } }); nc.alignment = { vertical: 'top' };
-        const dc = row.getCell(2); dc.value = desc(l, false); dc.alignment = { wrapText: true, vertical: 'top', indent: l.lvl === 2 ? 2 : 0 };
+        const dc = row.getCell(2); dc.value = desc(l, false); dc.alignment = { wrapText: true, vertical: 'top', indent: l.lvl >= 2 ? (l.lvl - 1) * 2 : 0 };
         // altura pelo texto (o Excel não a acerta sozinho ao abrir): ~90 caracteres por linha nesta largura, com margem
-        const cpl = l.lvl === 2 ? 82 : 87, nLines = String(l.text || '').split('\n').reduce((t, p) => t + Math.max(1, Math.ceil(p.length / cpl)), 0) + (l.notes || []).length + (l.res ? 1 : 0);
+        const cpl = l.lvl >= 2 ? 82 : 87, nLines = String(l.text || '').split('\n').reduce((t, p) => t + Math.max(1, Math.ceil(p.length / cpl)), 0) + (l.notes || []).length + (l.res ? 1 : 0);
         row.height = Math.max(18, nLines * 13.2 + 9);
         if (l.t === 'item') {
           const uc = row.getCell(3); uc.value = l.unit; uc.font = font(l, { color: { argb: l.st ? COL[l.st] : XL.soft } }); uc.alignment = { vertical: 'top' };
