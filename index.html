@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Compass">
 <!-- Versão da app = número do pull request que a publicou; aparece no aviso de atualização -->
-<meta name="app-version" content="238">
+<meta name="app-version" content="239">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>NOVA Compass</title>
 <!-- Ícone: o N ameixa com brilho no fundo preto (assets/brand/gerador/render-icons.js) -->
@@ -4760,6 +4760,9 @@
   .mqt-sub td { padding-top: var(--sp-1); padding-bottom: var(--sp-1-5); }
   .mqt-sub .ds { padding-left: var(--sp-6); }
   .mqt-sub3 .ds { padding-left: calc(var(--sp-6) * 2); }
+  .mqt-table tr.hl > td, .mqt-table tr.hl.fl > td { background-color: #fff3a3; color: #1d1d1b; }
+  .mqt-table tr.hl > td .muted, .mqt-table tr.hl > td .tx { color: #3a3a36; }
+  .mqt-hl-chk { display: flex; align-items: center; gap: 8px; margin: 10px 0 4px; font-size: 0.875rem; cursor: pointer; }
   .mqt-grp .kc { font-weight: var(--fw-semibold); }
   .mqt-sub .kn { font-weight: var(--fw-medium); }
   .mqt-art + .mqt-sub td, .mqt-sub + .mqt-sub td { border-top: none; }
@@ -29945,6 +29948,21 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
     const MQT_FUNC = ['Fixo', 'De batente', 'Oscilobatente', 'De correr', 'Elevação e correr', 'Basculante', 'Pivotante', 'De fole', 'Guilhotina'];
     // artigos de famílias opcionais (TBA, SES) a que se fechou a tabela das dimensões: ficam artigos normais (mqtApplyCustom preenche)
     const MQT_NODIM = new Set();
+    // artigos destacados a amarelo neste projeto (specs.__hl: { CÓDIGO: 1 }) — no ecrã e no Excel
+    let MQT_HL = {};
+    const mqtHlHtml = code => `<label class="mqt-hl-chk"><input type="checkbox" id="mqt-hl-in" data-code="${escapeHtml(String(code).toUpperCase())}"${MQT_HL[String(code).toUpperCase()] ? ' checked' : ''}> Destacar a amarelo</label>`;
+    function mqtWireHl(cfg) {
+      const i = document.getElementById('mqt-hl-in'); if (!i) return;
+      i.addEventListener('change', async () => {
+        try {
+          const specs = JSON.parse(JSON.stringify(cfg.specs || {})); const hl = { ...(specs.__hl || {}) };
+          if (i.checked) hl[i.dataset.code] = 1; else delete hl[i.dataset.code];
+          if (Object.keys(hl).length) specs.__hl = hl; else delete specs.__hl;
+          await mqtSaveCfg(mqtProjectId, { specs }); cfg.specs = specs; MQT_HL = hl; renderMqt();
+          showToast(i.checked ? 'Destacado a amarelo' : 'Destaque retirado');
+        } catch (e) { i.checked = !i.checked; showError('guardar o destaque', e); }
+      });
+    }
     const mqtDimFamRaw = c => (String(c || '').replace(/\s+/g, '').match(/^(ARM|MSA|VID|TBA|SES|MCS|MCC|MCI|VE|VI)\d/i) || [])[1]?.toUpperCase() || null;
     const mqtDimFam = c => { const f = mqtDimFamRaw(c); if (!f || !MQT_NODIM.size) return f; const m = String(c || '').replace(/\s+/g, '').toUpperCase().match(/^([A-Z]+)(\d{1,3})/); return m && MQT_NODIM.has(m[1] + m[2].padStart(2, '0')) ? null : f; };
     const mqtIsDim = c => !!mqtDimFam(c);
@@ -30015,7 +30033,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         </div></div>
         <div id="nw-revit" class="field-hint"></div>
         <div id="nw-msg" class="form-msg"></div>
-        <div class="mqt-modal-acts">${ex ? '<button type="button" class="secondary-btn danger-text" id="nw-del">Apagar o artigo</button>' : ''}<button type="button" class="primary-btn" id="nw-save">${ex ? 'Guardar' : 'Acrescentar'}</button></div>`);
+        ${ex ? mqtHlHtml(code0) : ''}<div class="mqt-modal-acts">${ex ? '<button type="button" class="secondary-btn danger-text" id="nw-del">Apagar o artigo</button>' : ''}<button type="button" class="primary-btn" id="nw-save">${ex ? 'Guardar' : 'Acrescentar'}</button></div>`);
+      mqtWireHl(cfg);
       const $ = id => document.getElementById(id);
       let chTouched = !!ex?.chapter;
       $('nw-ch').addEventListener('change', () => { chTouched = true; paint(); });
@@ -30416,7 +30435,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         <label class="field-label">Subartigos</label>
         <div id="arm-subs"></div>
         <div id="arm-msg" class="form-msg"></div>
-        <div class="mqt-modal-acts">${ex ? `<button type="button" class="secondary-btn danger-text" id="arm-del">Apagar o ${escapeHtml(noun)}</button>` : '<span></span>'}<button type="button" class="primary-btn" id="arm-save">Guardar</button></div>`);
+        ${ex ? mqtHlHtml(code0) : ''}<div class="mqt-modal-acts">${ex ? `<button type="button" class="secondary-btn danger-text" id="arm-del">Apagar o ${escapeHtml(noun)}</button>` : '<span></span>'}<button type="button" class="primary-btn" id="arm-save">Guardar</button></div>`);
+      mqtWireHl(cfg);
       const $ = id => document.getElementById(id), txt = $('arm-text'), box = $('arm-subs');
       document.getElementById('quick-modal').classList.add('qm-wide');
       const st = mqtSubTable(box, { blocks, multi });
@@ -31570,6 +31590,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         const lines = src[bk] || [];
         const revN = viewRev ? viewRev.rev : nextN;
         acts = `<button type="button" class="secondary-btn toolbar-btn btn-caret" id="mqt-xls" aria-haspopup="menu" aria-expanded="false">Excel${viewRev ? ' ' + mqtRevLabel(viewRev.rev) : ''}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>${viewRev ? '' : `<button type="button" class="secondary-btn toolbar-btn mai-btn" id="mqt-ai" title="O Gemini lê o MQT e aponta omissões, erros e o que traz valor ou proteção">✦ Rever com o Gemini${cfg.ai_review?.pontos?.some(x => !x.state) ? `<em class="alert">${cfg.ai_review.pontos.filter(x => !x.state).length}</em>` : ''}</button><button type="button" class="secondary-btn toolbar-btn" id="mqt-close-rev">Fechar ${mqtRevLabel(nextN)}</button>`}`;
+        MQT_HL = cfg.specs?.__hl || {};
         const missN = mq.issues.missing.reduce((t, m) => t + m.fields.length, 0);
         body = (!viewRev && missN ? `<div class="mqt-banner warn"><span><b>${mq.issues.missing.length} ${mq.issues.missing.length === 1 ? 'artigo tem' : 'artigos têm'} campos por preencher</b> (${missN} ${missN === 1 ? 'campo' : 'campos'}). A revisão só se fecha com tudo preenchido.</span><button type="button" class="primary-btn toolbar-btn" id="mqt-fill">Preencher agora</button></div>` : '')
           + (viewRev ? `<div class="mqt-banner">A ver a revisão <b>${mqtRevLabel(viewRev.rev)}</b>, fechada a ${escapeHtml(new Date(viewRev.created_at).toLocaleDateString('pt-PT'))}${viewRev.note ? ' · ' + escapeHtml(viewRev.note) : ''}. É uma fotografia: não muda. <button type="button" class="text-btn" id="mqt-rev-back">Voltar ao MQT em curso</button></div>` : '')
@@ -31999,7 +32020,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       lines.forEach(l => { if (l.t === 'ch') curCh = l.num; else if (l.t === 'item' && l.st !== 'del') { const st = stats[String(l.full).toUpperCase()]; if (st) chSub[curCh] = (chSub[curCh] || 0) + Math.round(st.med * l.q * 100) / 100; } });
       const tt = mqtLinesTotal(lines, stats);
       const rows = lines.map(l => {
-        const cls = (l.st ? ` st-${l.st}` : '') + (l.fl && l.fl !== 'var' ? ` fl fl-${l.fl}` : l.dr && l.st !== 'del' ? ' fl fl-dr' : '');
+        const cls = (l.t !== 'ch' && MQT_HL[String(l.code || '').toUpperCase()] ? ' hl' : '') + (l.st ? ` st-${l.st}` : '') + (l.fl && l.fl !== 'var' ? ` fl fl-${l.fl}` : l.dr && l.st !== 'del' ? ' fl fl-dr' : '');
         const grip = l.st !== 'del' && reorder ? `<button type="button" class="mqt-grip" aria-label="Mover ${escapeHtml(l.full || mqtCodeDisp(l.code))} (↑ ↓)" title="Arrastar para mudar a ordem">${MQT_GRIP}</button>` : '';
         const EL = String(l.code || '').toUpperCase();
         const dk = l.t === 'ch' ? ` data-ch="${escapeHtml(l.key)}" data-lv="c"` : ` data-ch="${escapeHtml(l.ch || '')}" data-el="${escapeHtml(EL)}" data-lv="${l.t === 'art' ? 'a' : l.t === 'grp' ? 'g' : l.lvl >= 2 ? 's' : 'i'}" data-k="${escapeHtml(l.key)}" data-fc="${escapeHtml(l.ch || '')}"${(l.t === 'item' && l.lvl >= 2) || l.t === 'grp' ? ` data-fe="${escapeHtml(EL)}"` : ''}`;
@@ -32673,7 +32694,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         ${mqtOwnTextHtml(own ? mqtFillFields(own, sp, []) : std, std, !!own)}
         ${fields.length ? `<label class="field-label">Completar o texto</label>${fields.map(f => `<input type="text" class="form-input mqt-spec-in" data-f="${escapeHtml(f)}" placeholder="${escapeHtml(f)}" value="${escapeHtml(sp[f] || '')}" style="margin-bottom:6px">`).join('')}` : ''}
         <div id="mqt-it-msg" class="form-msg"></div>
-        <div class="mqt-modal-acts"><button type="button" class="secondary-btn danger-text" id="mqt-art-del">Tirar o artigo do MQT</button>${armBtn}<button type="button" class="primary-btn" id="mqt-it-save">Guardar</button></div>`);
+        ${mqtHlHtml(EL)}<div class="mqt-modal-acts"><button type="button" class="secondary-btn danger-text" id="mqt-art-del">Tirar o artigo do MQT</button>${armBtn}<button type="button" class="primary-btn" id="mqt-it-save">Guardar</button></div>`);
+      mqtWireHl(cfg);
       document.getElementById('mqt-art-arm')?.addEventListener('click', () => openMqtArmModal(lib, cfg, mq, el.code));
       document.getElementById('mqt-art-del').addEventListener('click', async () => {
         const its = Object.values(mq.items).filter(x => x.el.code.toUpperCase() === EL);
@@ -32738,7 +32760,8 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         ${derived && vars.length ? `<label class="field-label" for="mqt-dv">Variante</label><select id="mqt-dv" class="form-input">${vars.map(v => `<option value="${escapeHtml(v.letter.toUpperCase())}"${v.letter.toUpperCase() === it.letter ? ' selected' : ''}>${escapeHtml(v.letter + ' · ' + v.label)}</option>`).join('')}<option value="off">Não entra neste projeto</option></select>` : derived ? `<label class="mqt-chk"><input type="checkbox" id="mqt-doff"> Não entra neste projeto</label>` : ''}
         ${man ? `<label class="field-label">Quantidade (${escapeHtml(el.unit)})</label>${mq.cols.map(b => `<div class="mqt-qrow"><span>${escapeHtml(mqtMulti(mq) ? mqtBlockLabel(b) : 'Quantidade')}</span><input type="text" inputmode="decimal" class="form-input mqt-man-in" data-b="${escapeHtml(b)}" value="${man[b] != null ? escapeHtml(String(man[b]).replace('.', ',')) : ''}"></div>`).join('')}` : ''}
         <div id="mqt-it-msg" class="form-msg"></div>
-        <div class="mqt-modal-acts"><button type="button" class="secondary-btn danger-text" id="mqt-it-del">Tirar do MQT</button><button type="button" class="primary-btn" id="mqt-it-save">Guardar</button></div>`);
+        ${mqtHlHtml(code)}<div class="mqt-modal-acts"><button type="button" class="secondary-btn danger-text" id="mqt-it-del">Tirar do MQT</button><button type="button" class="primary-btn" id="mqt-it-save">Guardar</button></div>`);
+      mqtWireHl(cfg);
       mqtWireNameReset(stdName);
       const scopeOf = mqtWireScope({ draft: libOk && mqtDrafted(lib, el) && !hasOwn && !cfg.names?.[ownKey], libOk, proj: { name: cfg.names?.[ownKey] || stdName, text: shown }, orig: libVar ? { name: libVar.label, text: libVar.text || '' } : { name: el.name, text: el.text || '' } });
       let reset = false;
@@ -33378,6 +33401,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
           row.getCell(cK).value = l.full + (l.typeKey ? '|' + l.typeKey : ''); row.getCell(cK).font = xlFont({ size: 8, color: { argb: XL.mute } });
         }
         for (let k = 1; k <= NC; k++) { const c = row.getCell(k); c.border = { ...(c.border || {}), ...hair }; }
+        if (MQT_HL[String(l.code || '').toUpperCase()]) for (let k = 1; k <= NC; k++) row.getCell(k).fill = xlFill('FFFFF3A3');
         r++;
       });
       closeCh();
