@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Compass">
 <!-- Versão da app = número do pull request que a publicou; aparece no aviso de atualização -->
-<meta name="app-version" content="235">
+<meta name="app-version" content="236">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>NOVA Compass</title>
 <!-- Ícone: o N ameixa com brilho no fundo preto (assets/brand/gerador/render-icons.js) -->
@@ -29925,8 +29925,13 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
         ph: 'Porta do quarto 1', txt: 'Fornecimento e montagem de porta interior em MDF lacado, com aro, guarnições, dobradiças e fechadura, conforme mapa de vãos.' },
       MSA: { nome: 'Móvel de casa de banho', um: 'móvel', novo: 'Novo móvel de casa de banho', dims: [['l', 'Largura'], ['p', 'Profundidade'], ['a', 'Altura']], func: false, chRe: /carpint/i,
         ph: 'Móvel da I.S. 1', txt: 'Fornecimento e montagem de móvel de casa de banho em MDF hidrófugo, conforme desenho de pormenor, incluindo ferragens, puxadores, todos os trabalhos e materiais necessários ao seu perfeito acabamento e funcionamento, de acordo com as especificações do fabricante e os desenhos de projeto.' },
-      MC: { nome: 'Móvel de cozinha', um: 'móvel', novo: 'Novo móvel de cozinha', dims: [['l', 'Largura'], ['p', 'Profundidade'], ['a', 'Altura']], func: false, chRe: /carpint/i,
-        ph: 'Módulo inferior do lava-loiça', txt: 'Fornecimento e montagem de móvel de cozinha em MDF hidrófugo, conforme desenho de pormenor, incluindo ferragens, puxadores, todos os trabalhos e materiais necessários ao seu perfeito acabamento e funcionamento, de acordo com as especificações do fabricante e os desenhos de projeto.' },
+      // móveis de cozinha: superiores (MCS), de altura completa (MCC) e inferiores (MCI)
+      MCS: { nome: 'Móvel de cozinha superior', um: 'móvel', novo: 'Novo móvel de cozinha superior', dims: [['l', 'Largura'], ['p', 'Profundidade'], ['a', 'Altura']], func: false, chRe: /carpint/i,
+        ph: 'Módulo superior do exaustor', txt: 'Fornecimento e montagem de móvel de cozinha superior em MDF hidrófugo, conforme desenho de pormenor, incluindo ferragens, puxadores, todos os trabalhos e materiais necessários ao seu perfeito acabamento e funcionamento, de acordo com as especificações do fabricante e os desenhos de projeto.' },
+      MCC: { nome: 'Móvel de cozinha completo', um: 'móvel', novo: 'Novo móvel de cozinha completo', dims: [['l', 'Largura'], ['p', 'Profundidade'], ['a', 'Altura']], func: false, chRe: /carpint/i,
+        ph: 'Coluna do forno', txt: 'Fornecimento e montagem de móvel de cozinha completo em MDF hidrófugo, conforme desenho de pormenor, incluindo ferragens, puxadores, todos os trabalhos e materiais necessários ao seu perfeito acabamento e funcionamento, de acordo com as especificações do fabricante e os desenhos de projeto.' },
+      MCI: { nome: 'Móvel de cozinha inferior', um: 'móvel', novo: 'Novo móvel de cozinha inferior', dims: [['l', 'Largura'], ['p', 'Profundidade'], ['a', 'Altura']], func: false, chRe: /carpint/i,
+        ph: 'Módulo inferior do lava-loiça', txt: 'Fornecimento e montagem de móvel de cozinha inferior em MDF hidrófugo, conforme desenho de pormenor, incluindo ferragens, puxadores, todos os trabalhos e materiais necessários ao seu perfeito acabamento e funcionamento, de acordo com as especificações do fabricante e os desenhos de projeto.' },
       // opcionais (opt): a tabela das dimensões abre-se, mas pode fechar-se com o ✕ e o artigo fica normal (unidade e quantidade)
       TBA: { nome: 'Bancada', um: 'bancada', novo: 'Nova bancada', dims: [['l', 'Comprimento'], ['p', 'Profundidade'], ['a', 'Espessura']], func: false, opt: true, chRe: /carpint|cantar|equipa/i,
         ph: 'Bancada da cozinha', txt: 'Fornecimento e montagem de bancada conforme desenho de pormenor, incluindo negativos, rodatampos, remates, todos os trabalhos e materiais necessários ao seu perfeito acabamento, de acordo com as especificações do fabricante e os desenhos de projeto.' },
@@ -29938,10 +29943,10 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
     const MQT_FUNC = ['Fixo', 'De batente', 'Oscilobatente', 'De correr', 'Elevação e correr', 'Basculante', 'Pivotante', 'De fole', 'Guilhotina'];
     // artigos de famílias opcionais (TBA, SES) a que se fechou a tabela das dimensões: ficam artigos normais (mqtApplyCustom preenche)
     const MQT_NODIM = new Set();
-    const mqtDimFamRaw = c => (String(c || '').replace(/\s+/g, '').match(/^(ARM|MSA|VID|TBA|SES|MC|VE|VI)\d/i) || [])[1]?.toUpperCase() || null;
+    const mqtDimFamRaw = c => (String(c || '').replace(/\s+/g, '').match(/^(ARM|MSA|VID|TBA|SES|MCS|MCC|MCI|VE|VI)\d/i) || [])[1]?.toUpperCase() || null;
     const mqtDimFam = c => { const f = mqtDimFamRaw(c); if (!f || !MQT_NODIM.size) return f; const m = String(c || '').replace(/\s+/g, '').toUpperCase().match(/^([A-Z]+)(\d{1,3})/); return m && MQT_NODIM.has(m[1] + m[2].padStart(2, '0')) ? null : f; };
     const mqtIsDim = c => !!mqtDimFam(c);
-    const mqtDimCode = raw => { const m = String(raw || '').replace(/\s+/g, '').match(/^(ARM|MSA|VID|TBA|SES|MC|VE|VI)[-.]?(\d{1,3})$/i); return m ? m[1].toUpperCase() + m[2].padStart(2, '0') : null; };
+    const mqtDimCode = raw => { const m = String(raw || '').replace(/\s+/g, '').match(/^(ARM|MSA|VID|TBA|SES|MCS|MCC|MCI|VE|VI)[-.]?(\d{1,3})$/i); return m ? m[1].toUpperCase() + m[2].padStart(2, '0') : null; };
     const mqtArmCode = mqtDimCode;
     function mqtArmFix(e, lib) {
       if (!mqtIsDim(e.code)) return;
@@ -29985,7 +29990,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       const revitN = c => Object.values(mq.issues.unknown || {}).filter(x => mqtNewCode(x.k)?.code.toUpperCase() === String(c).toUpperCase()).reduce((t, x) => t + x.n, 0);
       const chs = lib.chapters;
       openQuickModal(ex ? `Artigo ${mqtCodeDisp(code0)}` : 'Artigo novo', `
-        <div class="field-hint" style="margin-top:0">Artigo só deste projeto, que não está na biblioteca (ex.: TS 01 torneira, LL 01 lava-loiça). Com armários (ARM), móveis de casa de banho (MSA) e de cozinha (MC), vãos (VE, VI) e espelhos (VID), a tabela dos subartigos abre-se por baixo; nas bancadas (TBA) e serralharias (SES) também, mas podes fechá-la com o ✕.</div>
+        <div class="field-hint" style="margin-top:0">Artigo só deste projeto, que não está na biblioteca (ex.: TS 01 torneira, LL 01 lava-loiça). Com armários (ARM), móveis de casa de banho (MSA) e de cozinha (MCS superior, MCC completo, MCI inferior), vãos (VE, VI) e espelhos (VID), a tabela dos subartigos abre-se por baixo; nas bancadas (TBA) e serralharias (SES) também, mas podes fechá-la com o ✕.</div>
         <div class="mqt-g2">
           <div><label class="field-label" for="nw-code">Keynote</label><input type="text" class="form-input" id="nw-code" value="${escapeHtml(code0 ? mqtCodeDisp(code0) : '')}" placeholder="TS 01" autocomplete="off"></div>
           <div id="nw-unit-w"><label class="field-label" for="nw-unit">Unidade</label><select class="form-input" id="nw-unit">${MQT_UNITS.map(u => `<option${(ex?.unit || pre?.unit || 'un') === u ? ' selected' : ''}>${u}</option>`).join('')}</select></div>
