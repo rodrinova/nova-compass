@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Compass">
 <!-- Versão da app = número do pull request que a publicou; aparece no aviso de atualização -->
-<meta name="app-version" content="236">
+<meta name="app-version" content="237">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>NOVA Compass</title>
 <!-- Ícone: o N ameixa com brilho no fundo preto (assets/brand/gerador/render-icons.js) -->
@@ -31218,20 +31218,26 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
           rs.forEach(r => { const q = mqtRowQty(r, fld); if (q) add(el, letter, '', r.b || '', q * Number(el.derive_factor || 1), 'derived', ''); });
         });
       });
+      // o Revit prevalece: um artigo que o modelo já mede não soma as quantidades postas à mão (nem os subartigos à mão
+      // dos armários/vãos) — ficam de fora e aparecem nos avisos, para se ver a diferença
+      const modelQ = {};
+      Object.values(items).forEach(i => { if (i.source !== 'model') return; const s = Object.values(i.qb).reduce((t, q) => t + (Number(q) || 0), 0); if (s > 0) modelQ[i.code.toUpperCase()] = (modelQ[i.code.toUpperCase()] || 0) + s; });
+      issues.overlap = {};
+      const overlap = (code, q) => { const C = code.toUpperCase(); const o = issues.overlap[C] ||= { k: code, revit: modelQ[C], hand: 0 }; o.hand += q; };
       // à mão
       Object.entries(manual).forEach(([full, qb]) => {
         const pk = mqtParseKey(full); const el = pk && lib.elByCode[pk.code];
         if (!el || !qb) return;
         const qs = Object.entries(qb).filter(([, q]) => Number(q) > 0);
-        // sem quantidade: fica no MQT "a considerar" (reserva o keynote; em todos os blocos) — mas só enquanto o modelo
-        // não o medir: se o Revit já traz o artigo (ex.: BPA 02b), a reserva vazia (BPA 02) não cria uma linha a mais
-        if (!qs.length && Object.values(items).some(i => i.code === el.code && i.source === 'model' && Object.values(i.qb).some(q => q > 0))) return;
+        // sem quantidade: fica no MQT "a considerar" (reserva o keynote) — mas só enquanto o modelo não o medir
+        if (modelQ[el.code.toUpperCase()]) { if (qs.length) overlap(el.code, qs.reduce((t, [, q]) => t + Number(q), 0)); return; }
         if (!qs.length) { const it = items[(mqtFull(el.code, pk.letter)).toUpperCase()] || add(el, pk.letter, '', '', 0, 'manual', ''); it.reserved = true; it.byHand = true; return; }
         qs.forEach(([b, q]) => { add(el, pk.letter, '', b, Number(q), 'manual', '').byHand = true; if (b) blocksSet.add(b); });
       });
       // armários: cada subartigo à mão (dimensões e unidades) entra com a chave «~id» (fica pela ordem em que foi criado)
       Object.entries(cfg.arm_subs || {}).forEach(([code, list]) => {
         const el = lib.elByCode[String(code).toUpperCase()]; if (!el || !Array.isArray(list)) return;
+        if (modelQ[el.code.toUpperCase()]) { const h = list.reduce((t, sb) => t + Object.values(sb.q || {}).reduce((u, q) => u + (Number(q) || 0), 0), 0); if (h) overlap(el.code, h); return; }
         list.forEach(sb => {
           // variante (VE 06a, VE 06b…): o mesmo sistema com outro funcionamento, no mesmo artigo
           const tk = '~' + String(sb.id).padStart(3, '0'), extra = ' — ' + mqtArmSubText(sb, code), lt = String(sb.v || '').toUpperCase();
@@ -31528,7 +31534,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
       if (mqtViewRev && !viewRev) mqtViewRev = null;
       const working = mqtAllLines(lib, mq, cfg, lastRev, nextN);
       const cnt = mqtCounts(working);
-      const nIssues = Object.keys(mq.issues.noKey).length + Object.keys(mq.issues.unknown).length + Object.keys(mq.issues.noVariant).length + Object.keys(mq.issues.badVariant).length + Object.keys(mq.issues.noField).length + mq.issues.missing.length;
+      const nIssues = Object.keys(mq.issues.noKey).length + Object.keys(mq.issues.unknown).length + Object.keys(mq.issues.noVariant).length + Object.keys(mq.issues.badVariant).length + Object.keys(mq.issues.noField).length + Object.keys(mq.issues.overlap || {}).length + mq.issues.missing.length;
       const pname = [project?.code, project?.name].filter(Boolean).join(' · ');
       const head = `<div class="mqt-sentinel" aria-hidden="true"></div><div class="mqt-top mqt-sticky">
           <button type="button" class="secondary-btn toolbar-btn mqt-back" id="mqt-home" aria-label="Todos os MQT"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span class="mqt-back-l">Todos os MQT</span></button>
@@ -32068,6 +32074,7 @@ ${row('<a href="https://novassociates.com" style="color:#714D79;text-decoration:
           : row(`Keynote desconhecido: ${escapeHtml(x.k)}`, `${escapeHtml(x.t || '')} · ${x.n} elemento${x.n > 1 ? 's' : ''} — descreve-o neste MQT, acrescenta-o na Biblioteca ou corrige no Revit`, mqtNewCode(x.k) ? `<button type="button" class="text-btn" data-mqt-new="${escapeHtml(x.k)}">Descrever</button>` : '', `unk:${x.k}`)),
         ...Object.values(I.noVariant).map(x => row(`Falta a variante: ${escapeHtml(mqtCodeDisp(x.k))}`, `${escapeHtml(x.t || '')} · usa ${x.vars.map(v => escapeHtml(`${mqtFull(x.k, v.letter)} (${v.label})`)).join(', ')}`, '', `novar:${x.k}`)),
         ...Object.values(I.badVariant).map(x => row(`Variante que não existe na biblioteca: ${escapeHtml(x.k)}`, `${escapeHtml(x.t || '')} · ${x.n} elemento${x.n > 1 ? 's' : ''} — descreve-a neste MQT (deixa de avisar) ou cria-a na Biblioteca`, x.full ? `<button type="button" class="text-btn" data-mqt-edit="${escapeHtml(x.full)}">Editar</button>` : '', `badvar:${x.k}`)),
+        ...Object.values(I.overlap || {}).map(x => row(`Medido no Revit: ${escapeHtml(mqtCodeDisp(x.k))}`, `O Revit mede ${fmtNum(x.revit)}; ${fmtNum(x.hand)} posto${x.hand === 1 ? '' : 's'} à mão não conta${x.hand === 1 ? '' : 'm'} (prevalece o Revit)${x.hand !== x.revit ? ' — os números não batem certo' : ''}`, '', `overlap:${x.k}`)),
         ...Object.values(I.noField).map(x => row(`Falta a medição: ${escapeHtml(x.k)}`, `A tabela não tem a coluna ${escapeHtml(x.need)}`, '', `nofield:${x.k}`)),
         ...I.missing.map(m => row(`Por definir: ${escapeHtml(m.key)}`, escapeHtml(m.fields.join(', ')), `<button type="button" class="text-btn" data-mqt-spec="${escapeHtml(m.key)}">Definir</button>`, `miss:${m.key}`))
       ].filter(Boolean);
